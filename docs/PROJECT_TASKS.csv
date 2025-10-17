@@ -1,0 +1,95 @@
+Task ID,Category,Task Name,Description,Status,Priority,Estimated Hours,Dependencies,Notes
+UI-001,Frontend,Home Page,Hero section with video background and artist carousels,COMPLETED,P0,8,None,Fully responsive with animations
+UI-002,Frontend,Videos Page,Video listing with filters and pagination,COMPLETED,P0,6,None,Grid layout with search integration
+UI-003,Frontend,Video Detail Page,Video player with artist info and related videos,COMPLETED,P0,8,UI-002,Custom video player component
+UI-004,Frontend,Shorts Page,Vertical feed with auto-play functionality,COMPLETED,P0,8,None,Swipe navigation implemented
+UI-005,Frontend,Artists/Search Page,Artist grid with advanced filters,COMPLETED,P0,10,None,Desktop and mobile filters
+UI-006,Frontend,Artist Detail Page,Full artist profile with booking form,COMPLETED,P0,12,UI-005,Tabs for videos and shorts
+UI-007,Frontend,Bookmarks Page,Saved videos and artists display,COMPLETED,P1,4,None,Grid layout with remove functionality
+UI-008,Frontend,About Page,Platform information and mission,COMPLETED,P2,2,None,Static content page
+UI-009,Frontend,FAQs Page,Accordion-based FAQ section,COMPLETED,P2,4,None,Accordion component built
+UI-010,Frontend,Terms Page,Terms of service content,COMPLETED,P2,2,None,Static content page
+UI-011,Frontend,Privacy Page,Privacy policy content,COMPLETED,P2,2,None,Static content page
+UI-012,Frontend,User Sign In,Email/password and OAuth login,COMPLETED,P0,8,None,Google and Facebook buttons ready
+UI-013,Frontend,User Sign Up,User registration with email verification UI,COMPLETED,P0,8,UI-012,Form validation implemented
+UI-014,Frontend,Artist Sign In,Artist-specific login page,COMPLETED,P0,6,UI-012,Separate flow from user login
+UI-015,Frontend,Artist Sign Up,Artist registration page,COMPLETED,P0,6,UI-013,Artist-specific form fields
+UI-016,Frontend,Forgot Password,Password recovery flow UI,COMPLETED,P1,4,UI-012,Email input and verification
+UI-017,Frontend,Reset Password,Password reset page,COMPLETED,P1,4,UI-016,Token-based reset flow
+UI-018,Frontend,Artist Profile Setup,Multi-step onboarding wizard,COMPLETED,P0,16,UI-015,7-step wizard with validation
+UI-019,Frontend,Artist Dashboard,Bookings overview and stats,COMPLETED,P0,12,None,Dashboard layout with cards
+UI-020,Frontend,Artist Profile Edit,Profile management page,COMPLETED,P0,8,UI-018,Edit all profile fields
+UI-021,Frontend,Media Management,Video and shorts upload UI,COMPLETED,P0,10,None,File upload interface
+UI-022,Frontend,Layout Components,Navbar with scroll effects,COMPLETED,P0,6,None,Transparent to dark transition
+UI-023,Frontend,Layout Components,Mobile bottom navigation bar,COMPLETED,P0,4,None,Fixed bottom bar with icons
+UI-024,Frontend,Layout Components,Sidebar navigation,COMPLETED,P0,4,None,Desktop navigation menu
+UI-025,Frontend,UI Components,Video card component,COMPLETED,P0,4,None,Reusable card with hover effects
+UI-026,Frontend,UI Components,Shorts card component,COMPLETED,P0,4,None,Vertical card layout
+UI-027,Frontend,UI Components,Artist card component,COMPLETED,P0,4,None,Profile card with CTA
+UI-028,Frontend,UI Components,Video player component,COMPLETED,P0,6,None,Custom player with controls
+UI-029,Frontend,UI Components,Shorts player component,COMPLETED,P0,6,None,Vertical player with swipe
+UI-030,Frontend,UI Components,OTP input component,COMPLETED,P0,3,None,Multi-digit input field
+UI-031,Frontend,UI Components,Phone input component,COMPLETED,P0,4,None,Country code dropdown
+UI-032,Frontend,UI Components,Date picker component,COMPLETED,P0,4,None,Calendar-based date selection
+UI-033,Frontend,UI Components,Modal component,COMPLETED,P0,3,None,Reusable modal wrapper
+UI-034,Frontend,UI Components,Accordion component,COMPLETED,P0,3,None,Expandable sections
+UI-035,Frontend,UI Components,Logo preloader,COMPLETED,P1,4,None,Scale/opacity animation
+UI-036,Frontend,Modal Components,Find Artist Modal,Search and filter modal,COMPLETED,P0,6,None,Advanced search interface
+UI-037,Frontend,Modal Components,Booking Request Modal,Booking form modal,COMPLETED,P0,8,None,Form with validation
+UI-038,Frontend,Modal Components,Booking Success Modal,Success confirmation,COMPLETED,P1,2,None,Confirmation message
+UI-039,Frontend,Icon Components,13 SVG icons,Home video shorts bookmark search share heart message etc,COMPLETED,P0,4,None,Lucide React icons
+UI-040,Frontend,Responsive Design,Mobile tablet desktop optimization,COMPLETED,P0,20,All UI tasks,Tailwind breakpoints
+API-001,Backend,Database Schema,User and Artist models with Prisma,COMPLETED,P0,8,None,PostgreSQL with Neon.tech
+API-002,Backend,Prisma Setup,ORM configuration and client,COMPLETED,P0,4,API-001,Singleton pattern implemented
+API-003,Backend,Health Check Endpoint,GET /api/health,COMPLETED,P0,2,API-002,Database connectivity test
+API-004,Backend,User Signup API,POST /api/auth/signup,PENDING,P0,6,API-001,Email/password registration
+API-005,Backend,User Signin API,POST /api/auth/signin,PENDING,P0,6,API-001,Email/password login
+API-006,Backend,Google OAuth API,POST /api/auth/google,PENDING,P0,8,API-001,NextAuth.js integration
+API-007,Backend,Facebook OAuth API,POST /api/auth/facebook,PENDING,P0,8,API-001,NextAuth.js integration
+API-008,Backend,Forgot Password API,POST /api/auth/forgot-password,PENDING,P0,6,API-001,Email token generation
+API-009,Backend,Reset Password API,POST /api/auth/reset-password,PENDING,P0,6,API-008,Token validation
+API-010,Backend,Artist Signup API,POST /api/auth/artist/signup,PENDING,P0,6,API-001,Artist registration
+API-011,Backend,Artist Signin API,POST /api/auth/artist/signin,PENDING,P0,6,API-001,Artist login
+API-012,Backend,Get User Profile,GET /api/users/profile,PENDING,P0,4,API-001,Authenticated endpoint
+API-013,Backend,Update User Profile,PUT /api/users/profile,PENDING,P0,6,API-001,Profile update with validation
+API-014,Backend,Email Verification,POST /api/users/verify-email,PENDING,P0,4,API-001,Email confirmation flow
+API-015,Backend,Phone OTP Verification,POST /api/users/verify-phone,PENDING,P0,6,API-001,OTP generation and validation
+API-016,Backend,Delete User Account,DELETE /api/users/account,PENDING,P1,4,API-001,GDPR compliance
+API-017,Backend,List Artists,GET /api/artists,PENDING,P0,8,API-001,Filtering and pagination
+API-018,Backend,Get Artist Detail,GET /api/artists/[id],PENDING,P0,4,API-001,Full artist profile
+API-019,Backend,Create Artist Profile,POST /api/artists/profile,PENDING,P0,8,API-001,Artist onboarding
+API-020,Backend,Update Artist Profile,PUT /api/artists/profile,PENDING,P0,8,API-001,Profile management
+API-021,Backend,Search Artists,GET /api/artists/search,PENDING,P0,6,API-017,Advanced search
+API-022,Backend,Artist Verification,POST /api/artists/verify,PENDING,P1,6,API-001,Verification workflow
+API-023,Backend,Dashboard Stats,GET /api/artists/dashboard/stats,PENDING,P0,6,API-001,Bookings and revenue stats
+API-024,Backend,Dashboard Bookings,GET /api/artists/dashboard/bookings,PENDING,P0,6,API-001,Bookings list
+API-025,Backend,List Videos,GET /api/videos,PENDING,P0,6,API-001,Video listing with filters
+API-026,Backend,Get Video Detail,GET /api/videos/[id],PENDING,P0,4,API-025,Video metadata
+API-027,Backend,List Shorts,GET /api/shorts,PENDING,P0,6,API-001,Shorts listing
+API-028,Backend,Add Bookmark,POST /api/bookmarks,PENDING,P0,4,API-001,Save video/artist
+API-029,Backend,Get Bookmarks,GET /api/bookmarks,PENDING,P0,4,API-001,User bookmarks list
+API-030,Backend,Remove Bookmark,DELETE /api/bookmarks/[id],PENDING,P0,4,API-001,Delete bookmark
+API-031,Backend,Create Booking,POST /api/bookings,PENDING,P0,8,API-001,Booking request
+API-032,Backend,List Bookings,GET /api/bookings,PENDING,P0,6,API-001,User/artist bookings
+API-033,Backend,Update Booking,PUT /api/bookings/[id],PENDING,P0,6,API-001,Status management
+API-034,Backend,Get Booking Detail,GET /api/bookings/[id],PENDING,P0,4,API-001,Booking information
+API-035,Backend,Upload Media,POST /api/media/upload,PENDING,P0,8,API-001,File upload handling
+API-036,Backend,List Media,GET /api/media,PENDING,P0,4,API-001,User media list
+API-037,Backend,Delete Media,DELETE /api/media/[id],PENDING,P0,4,API-001,Media deletion
+INT-001,Integration,YouTube OAuth Setup,OAuth configuration for YouTube Data API,PENDING,P0,6,API-001,Channel access
+INT-002,Integration,YouTube Auto-Fetch,Fetch videos from artist channel,PENDING,P0,12,INT-001,Metadata extraction
+INT-003,Integration,YouTube Sync,Refresh/sync functionality,PENDING,P1,6,INT-002,Periodic sync
+INT-004,Integration,Instagram OAuth Setup,OAuth for Instagram Graph API,PENDING,P0,6,API-001,Account access
+INT-005,Integration,Instagram Auto-Fetch,Fetch reels from artist account,PENDING,P0,12,INT-004,Metadata extraction
+INT-006,Integration,Instagram Sync,Refresh/sync functionality,PENDING,P1,6,INT-005,Periodic sync
+TEST-001,Testing,Unit Tests - Auth,Authentication endpoints testing,PENDING,P1,12,API-004 to API-011,Jest/Vitest
+TEST-002,Testing,Unit Tests - Users,User management endpoints testing,PENDING,P1,8,API-012 to API-016,Jest/Vitest
+TEST-003,Testing,Unit Tests - Artists,Artist endpoints testing,PENDING,P1,10,API-017 to API-024,Jest/Vitest
+TEST-004,Testing,Integration Tests,End-to-end API testing,PENDING,P1,16,All APIs,Supertest
+TEST-005,Testing,Frontend Tests,Component and page testing,PENDING,P2,20,All UI tasks,React Testing Library
+DEPLOY-001,Deployment,Production Database,Setup production PostgreSQL,PENDING,P0,4,API-001,Neon.tech production
+DEPLOY-002,Deployment,Environment Configuration,Production env variables,PENDING,P0,2,DEPLOY-001,Secrets management
+DEPLOY-003,Deployment,Build Optimization,Production build setup,PENDING,P1,6,None,Turbopack optimization
+DEPLOY-004,Deployment,Deployment Pipeline,CI/CD setup,PENDING,P1,8,None,GitHub Actions
+DEPLOY-005,Deployment,Monitoring Setup,Error tracking and logging,PENDING,P1,6,None,Sentry/LogRocket
+

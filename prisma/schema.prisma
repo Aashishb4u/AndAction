@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Model - Main user table for authentication and profile
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+
+  // Basic Profile Information (all nullable except email)
+  firstName String?
+  lastName  String?
+  countryCode String?
+  phoneNumber String?
+  password  String?  // Nullable for OAuth users
+
+  // Location Information
+  city      String?
+  state     String?
+  address   String?
+  zip       String?
+
+  // Profile & Account Status
+  avatar    String?
+  role      String   @default("user") // "user" or "artist"
+  isAccountVerified Boolean @default(false)
+  isArtistVerified  Boolean @default(false)
+
+  // Personal Information
+  gender    String?
+  dob       DateTime?
+
+  // OAuth Provider IDs (for social login)
+  googleId   String?  @unique
+  facebookId String?  @unique
+  appleId    String?  @unique
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  artist    Artist?  // One-to-one relation with Artist
+
+  @@index([email])
+  @@index([phoneNumber])
+  @@map("users")
+}
+
+// Artist Model - Extended profile for artists
+model Artist {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Basic Artist Information
+  stageName        String?
+  artistType       String?
+  subArtistType    String?
+  achievements     String?  @db.Text
+  yearsOfExperience Int?
+  shortBio         String?  @db.Text
+
+  // Performance Details (stored as comma-separated values for flexibility)
+  performingLanguage   String?  @db.Text  // Multi-value: "Hindi,English,Punjabi"
+  performingEventType  String?  @db.Text  // Multi-value: "Wedding,Corporate,Concert"
+  performingStates     String?  @db.Text  // Multi-value: "Maharashtra,Delhi,Karnataka"
+
+  // Performance Duration & Team
+  performingDurationFrom String?
+  performingDurationTo   String?
+  performingMembers      String?  @db.Text  // Multi-value
+  offStageMembers        String?  @db.Text  // Multi-value
+
+  // Contact Information
+  contactNumber   String?
+  whatsappNumber  String?
+  contactEmail    String?
+
+  // Pricing Information
+  soloChargesFrom          Decimal?  @db.Decimal(10, 2)
+  soloChargesTo            Decimal?  @db.Decimal(10, 2)
+  soloChargesDescription   String?   @db.Text
+
+  chargesWithBacklineFrom         Decimal?  @db.Decimal(10, 2)
+  chargesWithBacklineTo           Decimal?  @db.Decimal(10, 2)
+  chargesWithBacklineDescription  String?   @db.Text
+
+  // Social Media Integration (for future API integration)
+  youtubeChannelId String?
+  instagramId      String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([artistType])
+  @@map("artists")
+}
