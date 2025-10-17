@@ -1,0 +1,747 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand Colors */
+  --primary-pink: #E8047E;
+  --primary-orange: #ED4B22;
+  --background-black: #0F0F0F;
+  --background-light: #1B1B1B;
+  --green: #00B85C;
+  --orange: #FF9F1C;
+  --red: #FF2E4C;
+  --blue: #29B6F6;
+  --text-white: #F2F2F2;
+  --text-gray: #7F7F7F;
+  --text-light-gray: #d4d4d8;
+  --border-color: #2D2D2D;
+
+  /* Gradient Colors */
+  --gradient-primary: linear-gradient(135deg, #ED4B22 0%, #E8047E 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #d63e1e 0%, #d1036e 100%);
+
+  /* Background */
+  --background: var(--background-black);
+  --foreground: var(--text-white);
+}
+
+@theme inline {
+  /* Colors */
+  --color-primary-pink: var(--primary-pink);
+  --color-primary-orange: var(--primary-orange);
+  --color-background: var(--background);
+  --color-background-light: var(--background-light);
+  --color-card: var(--background-light);
+  --color-green: var(--green);
+  --color-orange: var(--orange);
+  --color-red: var(--red);
+  --color-blue: var(--blue);
+  --color-foreground: var(--foreground);
+  --color-text-gray: var(--text-gray);
+  --color-text-light-gray: var(--text-light-gray);
+
+  /* Fonts */
+  --font-sans: var(--font-raleway);
+  --font-mono: var(--font-poppins);
+
+  /* Custom Gradients */
+  --gradient-primary: var(--gradient-primary);
+  --gradient-primary-hover: var(--gradient-primary-hover);
+
+  /* Custom Colors */
+  --color-border-color: var(--border-color);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: normal;
+}
+
+/* Hide scrollbars for horizontal scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+/* Typography Utilities */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-raleway), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Title */
+.t1 {
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: bold;
+  font-family: var(--font-raleway), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Headings */
+.h1 {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: bold;
+  font-family: var(--font-raleway), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.h2 {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: bold;
+  font-family: var(--font-raleway), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.h3 {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: bold;
+  font-family: var(--font-raleway), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+
+/* Secondary Text */
+.secondary-text {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: normal;
+}
+
+/* Footnote */
+.footnote {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: normal;
+}
+
+/* Buttons */
+.btn1 {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: bold;
+  font-family: var(--font-raleway), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.btn2 {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: bold;
+  font-family: var(--font-raleway), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Input Text */
+.input-text {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: normal;
+  font-family: var(--font-raleway), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+
+/* Custom gradient text utility */
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Custom gradient button */
+.gradient-button {
+  background: var(--gradient-primary);
+  transition: all 0.3s ease;
+}
+
+.gradient-button:hover {
+  background: var(--gradient-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(232, 4, 126, 0.3);
+}
+
+.gradient-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.gradient-underline::after {
+  content: '';
+  display: block;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--gradient-primary);
+}
+
+
+
+/* Custom active nav item with gradient underline */
+.nav-active-underline::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--gradient-primary);
+  margin-top: 8px;
+}
+
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-pink);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-orange);
+}
+
+/* Safe area utilities for mobile bottom bar */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Mobile bottom bar animations */
+@keyframes bottomBarSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.bottom-bar-enter {
+  animation: bottomBarSlideUp 0.3s ease-out;
+}
+
+/* Preloader animations */
+@keyframes logoFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes logoGlow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 20px rgba(232, 4, 126, 0.3));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 30px rgba(232, 4, 126, 0.6));
+  }
+}
+
+.logo-animate {
+  animation: logoFadeIn 1s ease-out, logoGlow 2s ease-in-out infinite;
+}
+
+/* Modal animations */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalSlideOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+}
+
+.modal-backdrop {
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+.modal-content.closing {
+  animation: modalSlideOut 0.2s ease-in;
+}
+
+/* Custom scrollbar for modal */
+.modal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(232, 4, 126, 0.3);
+  border-radius: 3px;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(232, 4, 126, 0.5);
+}
+
+/* Shorts page specific styles */
+.shorts-container {
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+
+.shorts-item {
+  scroll-snap-align: start;
+}
+
+/* Smooth transitions for shorts */
+.shorts-transition {
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Enhanced smooth scrolling for shorts */
+.shorts-smooth {
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* Momentum scrolling for touch devices */
+.shorts-momentum {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbars for shorts container */
+.shorts-scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.shorts-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Video player optimizations */
+video {
+  object-fit: cover;
+  background: #000;
+}
+
+/* Prevent text selection on shorts */
+.shorts-no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Action buttons hover effects */
+.shorts-action-btn {
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.shorts-action-btn:hover {
+  transform: scale(1.1);
+  backdrop-filter: blur(15px);
+}
+
+.shorts-action-btn:active {
+  transform: scale(0.95);
+}
+
+/* Progress bar animation */
+.shorts-progress {
+  transition: width 0.1s linear;
+}
+
+/* Gradient overlays for better text readability */
+.shorts-gradient-overlay {
+  background: linear-gradient(to top,
+      rgba(0, 0, 0, 0.8) 0%,
+      rgba(0, 0, 0, 0.4) 30%,
+      transparent 60%,
+      rgba(0, 0, 0, 0.2) 100%);
+}
+
+/* Enhanced Mobile Bottom Bar Animations */
+@keyframes bottomBarItemPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes bottomBarGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(232, 4, 126, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 30px rgba(232, 4, 126, 0.4);
+  }
+}
+
+@keyframes bottomBarIndicatorFade {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@keyframes bottomBarBounce {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.15);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bottomBarRipple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes bottomBarShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes bottomBarFloatingDot {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+.bottom-bar-active-glow {
+  animation: bottomBarGlow 2s ease-in-out infinite;
+}
+
+.bottom-bar-indicator {
+  animation: bottomBarIndicatorFade 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation-fill-mode: forwards;
+}
+
+.bottom-bar-bounce {
+  animation: bottomBarBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.bottom-bar-ripple {
+  animation: bottomBarRipple 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.bottom-bar-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200% 100%;
+  animation: bottomBarShimmer 2s infinite;
+}
+
+.bottom-bar-floating-dot {
+  animation: bottomBarFloatingDot 2s ease-in-out infinite;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .shorts-mobile-padding {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+  }
+
+  /* Enhanced bottom bar for mobile */
+  .mobile-bottom-bar-enhanced {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  /* Inverts the icon so it becomes visible on dark backgrounds */
+  cursor: pointer;
+}
+
+/* Artists page specific styles */
+.artist-card-hover {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.artist-card-hover:hover {
+  transform: scale(1.02);
+  box-shadow: 0 20px 40px rgba(232, 4, 126, 0.15);
+}
+
+/* Filter dropdown styles */
+.filter-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+.filter-select:focus {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23E8047E' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* Artist grid animations */
+@keyframes artistCardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.artist-card-animate {
+  animation: artistCardFadeIn 0.6s ease-out forwards;
+}
+
+/* Stagger animation for cards */
+.artist-card-animate:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.artist-card-animate:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.artist-card-animate:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.artist-card-animate:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+.artist-card-animate:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+.artist-card-animate:nth-child(6) {
+  animation-delay: 0.6s;
+}
+
+/* Mobile filter modal animations */
+@keyframes mobileFilterSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.mobile-filter-modal {
+  animation: mobileFilterSlideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Enhanced bookmark button */
+.bookmark-btn {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.bookmark-btn:hover {
+  transform: scale(1.1);
+  backdrop-filter: blur(15px);
+}
+
+.bookmark-btn:active {
+  transform: scale(0.95);
+}
+
+/* Filter chip animations */
+.filter-chip {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.filter-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(232, 4, 126, 0.2);
+}
+
+/* Artist info icons */
+.artist-info-icon {
+  transition: color 0.3s ease;
+}
+
+.artist-card-hover:hover .artist-info-icon {
+  color: #E8047E;
+}
+
+/* Hero section entrance animations */
+@keyframes heroFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroFadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes heroBackgroundZoom {
+  from {
+    transform: scale(1.1);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Hero animation classes */
+.hero-bg-animate {
+  animation: heroBackgroundZoom 1.2s ease-out;
+}
+
+.hero-title-animate {
+  animation: heroFadeInUp 0.8s ease-out 0.2s both;
+}
+
+.hero-subtitle-animate {
+  animation: heroFadeInUp 0.8s ease-out 0.4s both;
+}
+
+.hero-button-animate {
+  animation: heroScaleIn 0.6s ease-out 0.6s both;
+}
+
+.hero-overlay-animate {
+  animation: heroFadeInDown 1s ease-out 0.1s both;
+}
