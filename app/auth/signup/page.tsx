@@ -20,12 +20,13 @@ function SignUpContent() {
   const [contactType, setContactType] = useState<ContactType>('phone');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
   const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Profile step state
-  const [selectedAvatar, setSelectedAvatar] = useState<number>(3); // Default to avatar 3
+  const [selectedAvatar, setSelectedAvatar] = useState<number>(3);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [state, setState] = useState('');
@@ -98,42 +99,108 @@ function SignUpContent() {
     return { strength: Math.min(score, 6), label, color };
   };
 
+  const getPhoneComponents = (fullNumber: string) => {
+    if (!fullNumber.startsWith('+')) {
+      return { countryCode: '', phoneNumber: fullNumber };
+    }
+    const match = fullNumber.match(/^(\+\d{1,4})(\d+)/);
+    if (match) {
+      return { countryCode: match[1], phoneNumber: match[2] };
+    }
+    // Fallback if the regex fails
+    return { countryCode: fullNumber.substring(0, 3), phoneNumber: fullNumber.substring(3) };
+  };
+
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const contactValue = contactType === 'phone' ? phone : email;
-    if (contactValue.trim()) {
-      setError('');
-      setIsLoading(true);
 
-      try {
-        // Simulate sending OTP
+    if (!contactValue.trim()) {
+      setError('Please enter your contact information.');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+
+    try {
+      if (contactType === 'phone') {
+        // --- CRITICAL CLEANING AND VALIDATION ---
+        // 1. Clean the raw phone digits (removes spaces, hyphens, etc.)
+        const cleanedPhoneNumber = phone.replace(/\D/g, '');
+        const countryCodeToSend = countryCode.trim(); // The country code (e.g., +91)
+
+        // 2. Validate against emptiness
+        if (!countryCodeToSend || !cleanedPhoneNumber) {
+          throw new Error('Please enter a valid phone number and select a country code.');
+        }
+
+        console.log(`Sending OTP to: ${countryCodeToSend} ${cleanedPhoneNumber}`);
+        // --- END CRITICAL CLEANING AND VALIDATION ---
+
+        const response = await fetch('/api/users/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // Send the cleaned components
+          body: JSON.stringify({ countryCode: countryCodeToSend, phoneNumber: cleanedPhoneNumber }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          // Check for specific server errors (like "user already exists")
+          throw new Error(data.message || 'Failed to send verification code (Server Error).');
+        }
+        setStep('otp');
+
+      } else {
         await new Promise(resolve => setTimeout(resolve, 1000));
         setStep('otp');
-      } catch (err) {
-        setError('Failed to send verification code. Please try again.');
-        console.error('Send OTP error:', err);
-      } finally {
-        setIsLoading(false);
+        setError('Email verification is currently simulated only.');
       }
+
+    } catch (err: any) {
+      const errorMessage = err.message || 'An unexpected network error occurred.';
+      setError(errorMessage);
+      console.error('Send OTP error:', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+
   const handleOTPSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp.length === 6) {
-      setIsLoading(true);
-      setError('');
+    if (otp.length !== 6) {
+      setError('Please enter the 6-digit code.');
+      return;
+    }
 
-      try {
-        // Simulate OTP verification
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setStep('password');
-      } catch (err) {
-        setError('Invalid verification code. Please try again.');
-        console.error('OTP verification error:', err);
-      } finally {
-        setIsLoading(false);
+    setIsLoading(true);
+    setError('');
+
+    const identifier = contactType === 'phone' ? getPhoneComponents(phone).phoneNumber : email;
+
+    try {
+      const response = await fetch('/api/users/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, otp }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Verification failed.');
       }
+
+      setStep('password');
+
+    } catch (err: any) {
+      setError(err.message || 'Invalid verification code. Please try again.');
+      console.error('OTP verification error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -158,16 +225,44 @@ function SignUpContent() {
     setError('');
   };
 
+
   const handleResendOTP = async () => {
     setIsLoading(true);
     setError('');
+    const contactValue = contactType === 'phone' ? phone : email;
 
     try {
-      // Simulate resending OTP
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      // Show success message or handle as needed
-    } catch (err) {
-      setError('Failed to resend verification code. Please try again.');
+      if (contactType === 'phone') {
+        const phoneNumber = phone.trim();
+
+        // Use the separate state variables
+        if (!countryCode || !phoneNumber) {
+          throw new Error('Invalid phone number format.');
+        }
+
+        const response = await fetch('/api/auth/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ countryCode, phoneNumber }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to resend verification code.');
+        }
+
+        setError('A new verification code has been sent.');
+        setOtp('');
+
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setError('A new email code has been sent (simulated).');
+        setOtp('');
+      }
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend verification code. Please try again.');
       console.error('Resend OTP error:', err);
     } finally {
       setIsLoading(false);
@@ -187,21 +282,35 @@ function SignUpContent() {
     setIsLoading(true);
     setError('');
 
-    try {
-      const contactValue = contactType === 'phone' ? phone : email;
-      await signUp(contactValue);
+    const userData = {
+      email: contactType === 'email' ? email : undefined,
+      phone: contactType === 'phone' ? getPhoneComponents(phone).phoneNumber : undefined, // Ensure only the raw number is sent
+      countryCode: contactType === 'phone' ? countryCode.trim() : undefined, // Include country code for phone registration
+      password: password,
+      firstName: firstName,
+      lastName: lastName,
+      avatar: selectedAvatar,
+      state: state,
+      city: city,
+      noMarketing: noMarketing,
+      shareData: shareData,
+    };
 
-      // Redirect to previous page or home
+    try {
+      await signUp(userData);
+
+      // 2. Handle success (Session cookie is now set by the backend API)
       const redirectUrl = getRedirectUrl(searchParams);
       router.push(redirectUrl);
-    } catch (err) {
-      setError('Failed to create account. Please try again.');
+
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to create account. Please check your inputs.';
+      setError(errorMessage);
       console.error('Sign up error:', err);
     } finally {
       setIsLoading(false);
     }
   };
-
   // const handleSocialSignUp = async (provider: 'google' | 'apple') => {
   //   setIsLoading(true);
   //   setError('');
@@ -270,6 +379,7 @@ function SignUpContent() {
                   placeholder="Enter mobile number"
                   value={phone}
                   onChange={setPhone}
+                  onCountryChange={(country) => setCountryCode(country.dialCode)}
                   required
                   disabled={isLoading}
                   variant="filled"

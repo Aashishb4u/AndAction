@@ -1,10 +1,10 @@
 'use client';
 
-// Authentication utilities and helpers
+import { signIn as nextAuthSignIn, signOut as nextAuthSignOut, getSession } from 'next-auth/react'; 
 
 export interface User {
   id: string;
-  email: string;
+  email: string | null; 
   name?: string;
   role: 'user' | 'artist';
 }
@@ -15,102 +15,117 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
-// Get redirect URL from query params or default to home
+export interface SignUpData {
+    email?: string;
+    countryCode?: string;
+    phone?: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    avatar: number; 
+    state: string;
+    city: string;
+    noMarketing: boolean;
+    shareData: boolean;
+}
+
 export const getRedirectUrl = (searchParams?: URLSearchParams): string => {
-  const redirectTo = searchParams?.get('redirect');
-  
-  // Validate redirect URL to prevent open redirects
+  const redirectTo = searchParams?.get('redirect');   
   if (redirectTo) {
     try {
       const url = new URL(redirectTo, window.location.origin);
-      // Only allow same-origin redirects
       if (url.origin === window.location.origin) {
         return redirectTo;
       }
     } catch {
       // Invalid URL, fall back to home
+      // TODO
     }
   }
-  
   return '/';
 };
 
-// Create redirect URL with current path as redirect parameter
 export const createAuthRedirectUrl = (authPath: string, currentPath?: string): string => {
   if (!currentPath || currentPath === '/' || currentPath.startsWith('/auth')) {
     return authPath;
   }
-  
+    
   const url = new URL(authPath, window.location.origin);
   url.searchParams.set('redirect', currentPath);
   return url.pathname + url.search;
 };
 
-// Simulate authentication (replace with real API calls)
 export const signIn = async (email: string): Promise<User> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Mock successful sign in
-  const user: User = {
-    id: '1',
-    email,
-    name: email.split('@')[0],
-    role: 'user'
-  };
-  
-  // Store in localStorage (replace with proper token management)
-  localStorage.setItem('auth_user', JSON.stringify(user));
-  
-  return user;
+    throw new Error("Sign in implementation is missing. Use nextAuthSignIn with credentials.");
 };
 
-export const signUp = async (email: string): Promise<User> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Mock successful sign up
-  const user: User = {
-    id: '1',
-    email,
-    name: email.split('@')[0],
-    role: 'user'
-  };
-  
-  // Store in localStorage (replace with proper token management)
-  localStorage.setItem('auth_user', JSON.stringify(user));
-  
-  return user;
+/**
+ * Sends the final consolidated user data to the production backend sign-up API.
+ * The backend API handles the session creation (setting the secure cookie).
+ * @param userData The full data payload from the multi-step form.
+ * @returns The newly created User object from the backend.
+ */
+export const signUp = async (userData: SignUpData): Promise<User> => {
+    const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.json();
+        throw new Error(errorBody.message || 'Registration failed due to a server error.');
+    }
+
+    const responseData = await response.json();
+    const newUserFromApi = responseData.data?.user; 
+    
+    if (!newUserFromApi) {
+        throw new Error('Registration succeeded but user data was missing from the response.');
+    }
+    // -----------------------------------------------------------
+    
+    const userForReturn: User = {
+        id: newUserFromApi.id,
+        email: newUserFromApi.email,
+        name: newUserFromApi.firstName,
+        role: newUserFromApi.role,
+    };    
+    return userForReturn;
 };
 
 export const signOut = async (): Promise<void> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Remove from localStorage
-  localStorage.removeItem('auth_user');
+    await nextAuthSignOut({ 
+        redirect: false, // Prevents automatic redirect to the sign-in page
+    });
 };
 
-export const getCurrentUser = (): User | null => {
-  if (typeof window === 'undefined') return null;
-  
-  try {
-    const userStr = localStorage.getItem('auth_user');
-    return userStr ? JSON.parse(userStr) : null;
-  } catch {
-    return null;
-  }
+export const getCurrentUser = async (): Promise<User | null> => {
+    if (typeof window === 'undefined') return null;
+
+    try {
+        const session = await getSession();
+
+        if (session?.user) {
+            return {
+                id: session.user.id,
+                email: session.user.email || null,
+                name: session.user.name || session.user.firstName,
+            } as User;
+        }
+        return null;
+    } catch (e) {
+        console.error("Error retrieving session:", e);
+        return null;
+    }
 };
 
-// Social authentication helpers
-export const signInWithGoogle = async (): Promise<User> => {
-  // Implement Google OAuth flow
-  console.log('Sign in with Google');
-  throw new Error('Google sign-in not implemented yet');
+export const signInWithGoogle = async (): Promise<void> => {
+    await nextAuthSignIn('google', { callbackUrl: getRedirectUrl() });
 };
 
-export const signInWithApple = async (): Promise<User> => {
-  // Implement Apple OAuth flow
-  console.log('Sign in with Apple');
-  throw new Error('Apple sign-in not implemented yet');
+export const signInWithApple = async (): Promise<void> => {
+    await nextAuthSignIn('apple', { callbackUrl: getRedirectUrl() });
 };
