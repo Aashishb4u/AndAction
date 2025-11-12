@@ -11,6 +11,7 @@ import PhoneInput from '@/components/ui/PhoneInput';
 import OTPInput from '@/components/ui/OTPInput';
 import { signUp, getRedirectUrl, signInWithGoogle, signInWithApple } from '@/lib/auth';
 import Image from 'next/image';
+import { signIn } from 'next-auth/react';
 
 type SignUpStep = 'contact' | 'otp' | 'password' | 'profile' | 'terms';
 type ContactType = 'phone' | 'email';
@@ -125,48 +126,39 @@ function SignUpContent() {
 
     try {
       if (contactType === 'phone') {
-        // --- CRITICAL CLEANING AND VALIDATION ---
-        // 1. Clean the raw phone digits (removes spaces, hyphens, etc.)
         const cleanedPhoneNumber = phone.replace(/\D/g, '');
-        const countryCodeToSend = countryCode.trim(); // The country code (e.g., +91)
-
-        // 2. Validate against emptiness
+        const countryCodeToSend = countryCode.trim();
         if (!countryCodeToSend || !cleanedPhoneNumber) {
           throw new Error('Please enter a valid phone number and select a country code.');
         }
-
-        console.log(`Sending OTP to: ${countryCodeToSend} ${cleanedPhoneNumber}`);
-        // --- END CRITICAL CLEANING AND VALIDATION ---
-
+        console.log(`Sending OTP to: ${countryCodeToSend}${cleanedPhoneNumber}`);
         const response = await fetch('/api/users/send-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          // Send the cleaned components
           body: JSON.stringify({ countryCode: countryCodeToSend, phoneNumber: cleanedPhoneNumber }),
         });
-
         const data = await response.json();
-
-        if (!response.ok) {
-          // Check for specific server errors (like "user already exists")
-          throw new Error(data.message || 'Failed to send verification code (Server Error).');
-        }
+        if (!response.ok) throw new Error(data.message || 'Failed to send verification code (Server Error).');
         setStep('otp');
-
       } else {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log(`Sending OTP to email: ${email}`);
+        const response = await fetch('/api/users/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.toLowerCase() }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Failed to send verification email.');
         setStep('otp');
-        setError('Email verification is currently simulated only.');
       }
-
     } catch (err: any) {
-      const errorMessage = err.message || 'An unexpected network error occurred.';
-      setError(errorMessage);
-      console.error('Send OTP error:', errorMessage);
+      setError(err.message || 'An unexpected network error occurred.');
+      console.error('Send OTP error:', err);
     } finally {
       setIsLoading(false);
     }
   };
+
 
 
   const handleOTPSubmit = async (e: React.FormEvent) => {
@@ -179,7 +171,11 @@ function SignUpContent() {
     setIsLoading(true);
     setError('');
 
-    const identifier = contactType === 'phone' ? getPhoneComponents(phone).phoneNumber : email;
+    // IMPORTANT: identifier must match the one stored by send-otp
+    const identifier =
+      contactType === 'phone'
+        ? `${countryCode.trim()}${phone.replace(/\D/g, '')}`   // include country code + raw digits
+        : email.toLowerCase();
 
     try {
       const response = await fetch('/api/users/verify-otp', {
@@ -194,8 +190,8 @@ function SignUpContent() {
         throw new Error(data.message || 'Verification failed.');
       }
 
+      // verified — move to create password
       setStep('password');
-
     } catch (err: any) {
       setError(err.message || 'Invalid verification code. Please try again.');
       console.error('OTP verification error:', err);
@@ -203,6 +199,7 @@ function SignUpContent() {
       setIsLoading(false);
     }
   };
+
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,43 +221,34 @@ function SignUpContent() {
     setConfirmPassword('');
     setError('');
   };
-
-
   const handleResendOTP = async () => {
     setIsLoading(true);
     setError('');
-    const contactValue = contactType === 'phone' ? phone : email;
-
     try {
       if (contactType === 'phone') {
-        const phoneNumber = phone.trim();
+        const phoneNumber = phone.replace(/\D/g, '');
+        if (!countryCode || !phoneNumber) throw new Error('Invalid phone number format.');
 
-        // Use the separate state variables
-        if (!countryCode || !phoneNumber) {
-          throw new Error('Invalid phone number format.');
-        }
-
-        const response = await fetch('/api/auth/send-otp', {
+        const response = await fetch('/api/users/send-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ countryCode, phoneNumber }),
+          body: JSON.stringify({ countryCode: countryCode.trim(), phoneNumber }),
         });
-
         const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to resend verification code.');
-        }
-
+        if (!response.ok) throw new Error(data.message || 'Failed to resend verification code.');
         setError('A new verification code has been sent.');
         setOtp('');
-
       } else {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setError('A new email code has been sent (simulated).');
+        const response = await fetch('/api/users/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.toLowerCase() }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Failed to resend verification email.');
+        setError('A new verification code has been sent to your email.');
         setOtp('');
       }
-
     } catch (err: any) {
       setError(err.message || 'Failed to resend verification code. Please try again.');
       console.error('Resend OTP error:', err);
@@ -268,6 +256,7 @@ function SignUpContent() {
       setIsLoading(false);
     }
   };
+
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,9 +286,12 @@ function SignUpContent() {
     };
 
     try {
-      await signUp(userData);
-
-      // 2. Handle success (Session cookie is now set by the backend API)
+      const result = await signUp(userData);          // calls /api/auth/signup
+      await signIn('credentials', {
+        contact: result.contactIdentifier,
+        password: userData.password,
+        redirect: false
+      });
       const redirectUrl = getRedirectUrl(searchParams);
       router.push(redirectUrl);
 
@@ -311,27 +303,6 @@ function SignUpContent() {
       setIsLoading(false);
     }
   };
-  // const handleSocialSignUp = async (provider: 'google' | 'apple') => {
-  //   setIsLoading(true);
-  //   setError('');
-
-  //   try {
-  //     if (provider === 'google') {
-  //       await signInWithGoogle();
-  //     } else {
-  //       await signInWithApple();
-  //     }
-
-  //     // Redirect to previous page or home
-  //     const redirectUrl = getRedirectUrl(searchParams);
-  //     router.push(redirectUrl);
-  //   } catch (err) {
-  //     setError(`${provider} sign-up is not available yet.`);
-  //     console.error(`${provider} sign-up error:`, err);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
 
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
@@ -480,7 +451,7 @@ function SignUpContent() {
                   Signup with Facebook
                 </Button>
 
-                <Button
+                {/*<Button
                   type="button"
                   variant="secondary"
                   size="md"
@@ -492,7 +463,7 @@ function SignUpContent() {
                     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                   </svg>
                   Sign up with Apple
-                </Button>
+                </Button>*/}
               </div>
             </form>
           </div>

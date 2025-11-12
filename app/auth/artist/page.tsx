@@ -4,7 +4,7 @@ import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import Input from '@/components/ui/Input';
+import Input, { PasswordInput } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
 import Checkbox from '@/components/ui/Checkbox';
@@ -12,8 +12,9 @@ import PhoneInput from '@/components/ui/PhoneInput';
 import OTPInput from '@/components/ui/OTPInput';
 import DateInput from '@/components/ui/DateInput';
 import { signInWithGoogle } from '@/lib/auth';
+import { signIn } from 'next-auth/react';
 
-type ArtistSignUpStep = 'join' | 'otp' | 'userInfo' | 'terms';
+type ArtistSignUpStep = 'join' | 'otp' | 'password' | 'userInfo' | 'terms';
 type ContactType = 'phone' | 'email';
 
 function ArtistAuthContent() {
@@ -21,7 +22,12 @@ function ArtistAuthContent() {
   const [contactType, setContactType] = useState<ContactType>('phone');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91'); // dynamic country code
   const [otp, setOtp] = useState('');
+
+  // Password step state
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // User info step state
   const [firstName, setFirstName] = useState('');
@@ -77,17 +83,76 @@ function ArtistAuthContent() {
     { value: 'prefer-not-to-say', label: 'Prefer not to say' },
   ];
 
+  // Simple password strength calculation (same as user signup)
+  const getPasswordStrength = (pwd: string) => {
+    if (!pwd) return { strength: 0, label: '', color: '' };
+
+    let score = 0;
+    let label = '';
+    let color = '';
+
+    if (pwd.length >= 8) score += 1;
+    if (pwd.length >= 12) score += 1;
+    if (/[a-z]/.test(pwd)) score += 1;
+    if (/[A-Z]/.test(pwd)) score += 1;
+    if (/[0-9]/.test(pwd)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
+
+    if (score <= 2) {
+      label = 'Weak';
+      color = 'bg-red-400';
+    } else if (score <= 4) {
+      label = 'Medium';
+      color = 'bg-yellow-400';
+    } else {
+      label = 'Strong';
+      color = 'bg-green-400';
+    }
+
+    return { strength: Math.min(score, 6), label, color };
+  };
+
+  // Send OTP (matches user flow — no extra fields)
   const handleJoinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      // Simulate API call for sending OTP
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setStep('otp');
-    } catch {
-      setError('Failed to send verification code. Please try again.');
+      if (contactType === 'phone') {
+        const cleanedPhoneNumber = phone.replace(/\D/g, '');
+        const codeToSend = countryCode.trim();
+
+        if (!codeToSend || !cleanedPhoneNumber) {
+          throw new Error('Please enter a valid phone number and select a country code.');
+        }
+
+        const response = await fetch('/api/users/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ countryCode: codeToSend, phoneNumber: cleanedPhoneNumber }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Failed to send verification code.');
+        setStep('otp');
+      } else {
+        const emailToSend = email.toLowerCase().trim();
+        if (!emailToSend) throw new Error('Please enter a valid email address.');
+
+        const response = await fetch('/api/users/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailToSend }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Failed to send verification email.');
+        setStep('otp');
+      }
+    } catch (err: any) {
+      console.error('Send OTP error:', err);
+      setError(err.message || 'Failed to send verification code. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -99,14 +164,49 @@ function ArtistAuthContent() {
     setIsLoading(true);
 
     try {
-      // Simulate API call for OTP verification
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setStep('userInfo');
-    } catch {
-      setError('Invalid verification code. Please try again.');
+      const identifier =
+        contactType === 'phone'
+          ? `${countryCode.trim()}${phone.replace(/\D/g, '')}`
+          : email.toLowerCase();
+
+      const response = await fetch('/api/users/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, otp }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid verification code.');
+      }
+
+      // move to password step for artist (per requested flow)
+      setStep('password');
+    } catch (err: any) {
+      console.error('Verify OTP error:', err);
+      setError(err.message || 'Invalid verification code. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!password.trim() || !confirmPassword.trim()) {
+      setError('Please enter and confirm your password.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    // Optionally: you could validate strength here; but keep same as user flow
+    setStep('userInfo');
   };
 
   const handleUserInfoSubmit = async (e: React.FormEvent) => {
@@ -115,8 +215,8 @@ function ArtistAuthContent() {
     setIsLoading(true);
 
     try {
-      // Simulate API call for user info
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate API call for user info saving (keeps existing behavior)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       setStep('terms');
     } catch {
       setError('Failed to save user information. Please try again.');
@@ -131,13 +231,74 @@ function ArtistAuthContent() {
     setIsLoading(true);
 
     try {
-      // Simulate API call for final signup
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare artist signup payload (now includes password)
+      const artistData = {
+        email: contactType === 'email' ? email : undefined,
+        phoneNumber: contactType === 'phone' ? phone.replace(/\D/g, '') : undefined,
+        countryCode: contactType === 'phone' ? countryCode : undefined,
+        password: password || undefined,
+        firstName,
+        lastName,
+        dateOfBirth,
+        gender,
+        address,
+        pinCode,
+        state,
+        city,
+        noMarketing,
+        shareData,
+      };
 
-      // Redirect to profile setup
+      console.log('Sending artist signup data:', artistData);
+
+      const response = await fetch('/api/auth/artist/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(artistData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create artist account.');
+      }
+
+      console.log('Artist signup successful:', data);
+
+      // ✅ Store artist data in local/session storage (optional)
+      if (data?.data?.user) {
+        localStorage.setItem('artistUser', JSON.stringify(data.data.user));
+      }
+
+      // Attempt to auto-signin (if credentials provider supports it — keep existing behavior)
+      try {
+        const contactIdentifier = artistData.email || (artistData.phoneNumber ? `${artistData.countryCode}${artistData.phoneNumber}` : undefined);
+
+        if (contactIdentifier && artistData.password) {
+          // signIn via next-auth credentials - keep redirect false
+          const signInResult = await signIn('credentials', {
+            contact: contactIdentifier,
+            password: artistData.password,
+            redirect: false,
+          });
+
+          // If signInResult returns an error, we'll log it but still redirect to profile setup
+          if ((signInResult as any)?.error) {
+            console.warn('Auto-signin failed:', (signInResult as any).error);
+            // show message in UI but still redirect to profile-setup so user can continue setup
+            // setError('Account created, but login failed. Please sign in manually.');
+            // However per your flow earlier, you prefer direct redirect — we will redirect anyway.
+          }
+        }
+      } catch (signinErr) {
+        console.warn('Auto-signin attempt error:', signinErr);
+      }
+
+      // ✅ Redirect directly to setup
       router.push('/artist/profile-setup');
-    } catch {
-      setError('Failed to create account. Please try again.');
+    } catch (err: any) {
+      console.error('Artist signup error:', err);
+      setError(err.message || 'Failed to complete registration. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -148,10 +309,35 @@ function ArtistAuthContent() {
     setIsLoading(true);
 
     try {
-      // Simulate API call for resending OTP
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch {
-      setError('Failed to resend verification code. Please try again.');
+      if (contactType === 'phone') {
+        const cleanedPhone = phone.replace(/\D/g, '');
+        if (!countryCode || !cleanedPhone) throw new Error('Invalid phone number format.');
+
+        const response = await fetch('/api/users/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ countryCode: countryCode.trim(), phoneNumber: cleanedPhone }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Failed to resend verification code.');
+        setError('A new verification code has been sent.');
+        setOtp('');
+      } else {
+        const response = await fetch('/api/users/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.toLowerCase() }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Failed to resend verification email.');
+        setError('A new verification code has been sent to your email.');
+        setOtp('');
+      }
+    } catch (err: any) {
+      console.error('Resend OTP error:', err);
+      setError(err.message || 'Failed to resend verification code. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -160,6 +346,8 @@ function ArtistAuthContent() {
   const handleChangeContact = () => {
     setStep('join');
     setOtp('');
+    setPassword('');
+    setConfirmPassword('');
   };
 
   const handleSocialSignUp = async (provider: 'google') => {
@@ -171,7 +359,6 @@ function ArtistAuthContent() {
         await signInWithGoogle();
       }
 
-      // Redirect to profile setup
       router.push('/artist/profile-setup');
     } catch (err) {
       setError(`${provider} sign-up is not available yet.`);
@@ -199,7 +386,6 @@ function ArtistAuthContent() {
         <div className="mb-8">
           <Image src="/logo.png" alt="ANDACTION Logo" className="h-8 object-contain" width={150} height={32} />
         </div>
-
 
         {/* Error Message */}
         {error && (
@@ -229,6 +415,7 @@ function ArtistAuthContent() {
                     placeholder="Enter mobile number"
                     value={phone}
                     onChange={setPhone}
+                    onCountryChange={(country) => setCountryCode(country.dialCode)}
                     required
                     disabled={isLoading}
                     variant="filled"
@@ -257,17 +444,6 @@ function ArtistAuthContent() {
                 >
                   {isLoading ? 'Sending...' : 'Continue'}
                 </Button>
-
-                {/* Sign In Link */}
-                {/* <p className="text-text-gray text-sm">
-                Already have an account?{' '}
-                <Link
-                  href={`/auth/signin${searchParams.toString() ? `?${searchParams.toString()}` : ''}`}
-                  className="text-white hover:text-primary-pink transition-colors duration-200 font-medium underline"
-                >
-                  Signin
-                </Link>
-              </p> */}
 
                 {/* Divider */}
                 <div className="relative">
@@ -324,7 +500,6 @@ function ArtistAuthContent() {
               </form>
             </div>
           </>
-
         ) : step === 'otp' ? (
           /* OTP Verification Step */
           <div className="space-y-6">
@@ -337,7 +512,7 @@ function ArtistAuthContent() {
                 <div className="flex items-center gap-2">
                   <span className="text-text-gray section-text">
                     {contactType === 'phone'
-                      ? `91******${phone.slice(-3)}`
+                      ? `${countryCode.replace('+', '')}******${phone.slice(-3)}`
                       : `${email.slice(0, 2)}****@${email.split('@')[1]}`
                     }
                   </span>
@@ -353,12 +528,7 @@ function ArtistAuthContent() {
             </div>
 
             <form onSubmit={handleOTPSubmit} className="space-y-6">
-              <OTPInput
-                length={6}
-                value={otp}
-                onChange={setOtp}
-                disabled={isLoading}
-              />
+              <OTPInput length={6} value={otp} onChange={setOtp} disabled={isLoading} />
 
               <div>
                 <span className="text-text-gray section-text">
@@ -382,6 +552,84 @@ function ArtistAuthContent() {
                 disabled={isLoading || otp.length !== 6}
               >
                 {isLoading ? 'Verifying...' : 'Verify'}
+              </Button>
+            </form>
+          </div>
+        ) : step === 'password' ? (
+          /* Password Creation Step (inserted) */
+          <div className="space-y-6">
+            {/* Progress Indicator */}
+            <div className="space-y-3">
+              <div className="w-full bg-[#2D2D2D] rounded-full h-1">
+                <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-1/3"></div>
+              </div>
+              <div className="flex items-center gap-3 my-3">
+                <button
+                  type="button"
+                  onClick={() => setStep('otp')}
+                  className="text-white hover:text-primary-pink transition-colors duration-200"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div>
+                  <p className="text-xs text-text-gray">Step 1 of 3</p>
+                  <h2 className="text-lg font-semibold text-white">Create Password</h2>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <PasswordInput
+                label="Password"
+                placeholder="Enter password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+                variant="filled"
+              />
+
+              {/* Password Strength Indicator */}
+              {password && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-text-gray">Password Strength:</span>
+                    <span className={`text-sm font-medium ${getPasswordStrength(password).label === 'Weak' ? 'text-red-400' :
+                      getPasswordStrength(password).label === 'Medium' ? 'text-yellow-400' :
+                        'text-green-400'
+                      }`}>
+                      {getPasswordStrength(password).label}
+                    </span>
+                  </div>
+                  <div className="w-full bg-[#2D2D2D] rounded-full h-1">
+                    <div
+                      className={`${getPasswordStrength(password).color} h-1 rounded-full transition-all duration-300`}
+                      style={{ width: `${(getPasswordStrength(password).strength / 6) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+              <PasswordInput
+                label="Confirm Password"
+                placeholder="Enter password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                disabled={isLoading}
+                variant="filled"
+              />
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                className="w-full"
+                disabled={isLoading || !password.trim() || !confirmPassword.trim()}
+              >
+                {isLoading ? 'Creating...' : 'Next'}
               </Button>
             </form>
           </div>
