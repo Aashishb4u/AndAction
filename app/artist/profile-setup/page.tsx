@@ -9,6 +9,8 @@ import ContactPricingDetails from '@/components/artist/profile-setup/ContactPric
 import VideosSocialMedia from '@/components/artist/profile-setup/VideosSocialMedia';
 import ProfileReview from '@/components/artist/profile-setup/ProfileReview';
 import SuccessModal from '@/components/artist/profile-setup/SuccessModal';
+import { useSession } from 'next-auth/react';
+
 
 type ProfileSetupStep =
   | 'overview'
@@ -23,6 +25,8 @@ export default function ProfileSetupPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { data: session, update } = useSession();
+
 
   // Form data states
   const [profileData, setProfileData] = useState({
@@ -63,15 +67,13 @@ export default function ProfileSetupPage() {
     instagramAccountId: '',
   });
 
-  // ✅ handle profile save after final review
   const handleSubmitProfile = async () => {
     try {
       setIsSubmitting(true);
-      const userData = JSON.parse(localStorage.getItem('artistUser') || '{}');
-      const userId = userData?.id;
+      const userId = session?.user?.id;
 
       if (!userId) {
-        console.error('⚠️ No userId found in localStorage');
+        console.error('⚠️ No valid userId found in session');
         return;
       }
 
@@ -110,18 +112,36 @@ export default function ProfileSetupPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('❌ Artist Profile Save Error:', data.message);
+        console.error('Artist Profile Save Error:', data.message);
         return;
       }
 
-      console.log('✅ Artist Profile Created Successfully:', data);
+      console.log('Artist Profile Created Successfully:', data);
+
+      if (session?.user?.role === 'artist') {
+        await update({
+          ...session,
+          user: {
+            ...session.user,
+            ...data.data.user,
+            artistProfile: {
+              ...(session.user.artistProfile ?? {}),
+              ...data.data.artistProfile,
+            },
+            isArtistVerified: true,
+          },
+        });
+
+      }
+
       setShowSuccessModal(true);
     } catch (err) {
-      console.error('❌ Unexpected Error Saving Artist Profile:', err);
+      console.error('Unexpected Error Saving Artist Profile:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   const handleNext = async () => {
     switch (currentStep) {
@@ -141,7 +161,6 @@ export default function ProfileSetupPage() {
         setCurrentStep('review');
         break;
       case 'review':
-        // ✅ Call artist profile submit here
         await handleSubmitProfile();
         break;
     }

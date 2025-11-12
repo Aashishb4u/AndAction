@@ -231,7 +231,7 @@ function ArtistAuthContent() {
     setIsLoading(true);
 
     try {
-      // Prepare artist signup payload (now includes password)
+      // ✅ Prepare artist signup payload
       const artistData = {
         email: contactType === 'email' ? email : undefined,
         phoneNumber: contactType === 'phone' ? phone.replace(/\D/g, '') : undefined,
@@ -249,8 +249,9 @@ function ArtistAuthContent() {
         shareData,
       };
 
-      console.log('Sending artist signup data:', artistData);
+      console.log('📤 Sending artist signup data:', artistData);
 
+      // ✅ Call signup API
       const response = await fetch('/api/auth/artist/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -258,51 +259,59 @@ function ArtistAuthContent() {
       });
 
       const data = await response.json();
+      console.log('📥 Signup response:', data);
 
-      if (!response.ok) {
+      if (!response.ok || !data.success) {
         throw new Error(data.message || 'Failed to create artist account.');
       }
 
-      console.log('Artist signup successful:', data);
+      console.log('✅ Artist signup successful');
 
-      // ✅ Store artist data in local/session storage (optional)
-      if (data?.data?.user) {
-        localStorage.setItem('artistUser', JSON.stringify(data.data.user));
+      // ✅ Construct contact identifier for auto-signin
+      let contactIdentifier: string | null = null;
+
+      if (data?.data?.user?.email) {
+        contactIdentifier = data.data.user.email;
+      } else if (data?.data?.user?.phoneNumber) {
+        // ✅ Remove country code — backend will handle phone normalization
+        contactIdentifier = data.data.user.phoneNumber;
+      } else if (artistData.email) {
+        contactIdentifier = artistData.email;
+      } else if (artistData.phoneNumber) {
+        contactIdentifier = artistData.phoneNumber;
       }
 
-      // Attempt to auto-signin (if credentials provider supports it — keep existing behavior)
-      try {
-        const contactIdentifier = artistData.email || (artistData.phoneNumber ? `${artistData.countryCode}${artistData.phoneNumber}` : undefined);
+      console.log('📞 Auto-signin contactIdentifier:', contactIdentifier);
 
-        if (contactIdentifier && artistData.password) {
-          // signIn via next-auth credentials - keep redirect false
-          const signInResult = await signIn('credentials', {
-            contact: contactIdentifier,
-            password: artistData.password,
-            redirect: false,
-          });
+      // ✅ Attempt to auto sign-in via NextAuth
+      if (contactIdentifier && artistData.password) {
+        const signInResult = await signIn('credentials', {
+          contact: contactIdentifier,
+          password: artistData.password,
+          redirect: false,
+        });
 
-          // If signInResult returns an error, we'll log it but still redirect to profile setup
-          if ((signInResult as any)?.error) {
-            console.warn('Auto-signin failed:', (signInResult as any).error);
-            // show message in UI but still redirect to profile-setup so user can continue setup
-            // setError('Account created, but login failed. Please sign in manually.');
-            // However per your flow earlier, you prefer direct redirect — we will redirect anyway.
-          }
+        console.log('🧩 signIn result:', signInResult);
+
+        if (signInResult?.error) {
+          console.error('❌ Auto sign-in failed:', signInResult.error);
+        } else {
+          console.log('✅ Auto sign-in succeeded. Session cookie created.');
         }
-      } catch (signinErr) {
-        console.warn('Auto-signin attempt error:', signinErr);
+      } else {
+        console.warn('⚠️ Missing contactIdentifier or password for auto sign-in.');
       }
 
-      // ✅ Redirect directly to setup
+      // ✅ Redirect to profile setup (session will now exist)
       router.push('/artist/profile-setup');
     } catch (err: any) {
-      console.error('Artist signup error:', err);
+      console.error('❌ Artist signup error:', err);
       setError(err.message || 'Failed to complete registration. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
+
 
   const handleResendOTP = async () => {
     setError('');

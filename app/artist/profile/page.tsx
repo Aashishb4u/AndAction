@@ -4,55 +4,79 @@ import React, { useState } from 'react';
 import ArtistDashboardLayout from '@/components/layout/ArtistDashboardLayout';
 import ArtistProfileCard from '@/components/artist/ArtistProfileCard';
 import ArtistProfileTabs from '@/components/artist/ArtistProfileTabs';
-import type { ArtistProfile } from '@/types';
 import { useRouter } from 'next/navigation';
-
-// Mock artist data - this would come from your API/database
-const mockArtist = {
-  id: '1',
-  name: 'MJ Singer',
-  category: 'Singer',
-  location: 'Surat, Gujarat',
-  duration: '2-4 hours',
-  startingPrice: 25000,
-  languages: ['Hindi', 'Gujarati', 'English'],
-  image: '/artist.png',
-  isBookmarked: false,
-  gender: 'Male',
-  subCategory: 'DJ',
-  bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos',
-  yearsOfExperience: 4,
-  subArtistTypes: ['Example', 'example', 'example'],
-  achievements: ['Award 1', 'Award 2', 'Award 3'],
-  phone: '+91 9876543210',
-  whatsapp: '+91 9876543210',
-  videos: [],
-  shorts: [],
-  performances: [],
-  // Additional fields for compatibility
-  stageName: 'MJ Singer',
-  firstName: 'Jignesh',
-  lastName: 'Mistry',
-  dateOfBirth: '23/Dec/1998',
-  address: '306, Surbhi complex',
-  pinCode: '395004',
-  state: 'Gujarat',
-  city: 'Surat',
-  subArtistType: 'Example, example, example',
-  shortBio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos',
-  tags: ['Musician', 'DJ'],
-};
+import { useSession } from 'next-auth/react';
 
 export default function ArtistProfile() {
   const [activeTab, setActiveTab] = useState('about');
   const router = useRouter();
+  const { data: session } = useSession();
+
+  const user = session?.user;
+  const artistProfile = user?.artistProfile;
+
+  if (!user || !artistProfile) {
+    return (
+      <ArtistDashboardLayout>
+        <div className="flex items-center justify-center h-screen text-white">
+          Loading artist profile...
+        </div>
+      </ArtistDashboardLayout>
+    );
+  }
+
+  const artistData = {
+    id: artistProfile.id || user.id || '',
+    name: artistProfile.stageName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+    category: artistProfile.artistType || 'Artist',
+    location: `${user.city || ''}${user.state ? `, ${user.state}` : ''}`,
+    duration: '2-4 hours',
+    startingPrice: 25000,
+    languages: artistProfile.performingLanguage
+      ? artistProfile.performingLanguage.split(',').map((lang) => lang.trim())
+      : [],
+    image: user.avatar || '/icons/images.jpeg',
+    isBookmarked: false,
+    gender: user.gender || '',
+    subCategory: artistProfile.subArtistType || '',
+    bio: artistProfile.shortBio || '',
+    yearsOfExperience: artistProfile.yearsOfExperience || 0,
+    subArtistTypes: artistProfile.subArtistType
+      ? artistProfile.subArtistType.split(',').map((s) => s.trim())
+      : [],
+    achievements: artistProfile.achievements
+      ? artistProfile.achievements.split(',').map((a) => a.trim())
+      : [],
+    phone: artistProfile.contactNumber || '',
+    whatsapp: artistProfile.whatsappNumber || artistProfile.contactNumber || '',
+    videos: [],
+    shorts: [],
+    performances: [],
+    stageName: artistProfile.stageName || '',
+    firstName: user.firstName || '',
+    lastName: user.lastName || '',
+    dateOfBirth: user.dob
+      ? new Date(user.dob).toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })
+      : '',
+    address: user.address || '',
+    pinCode: user.zip || '',
+    state: user.state || '',
+    city: user.city || '',
+    subArtistType: artistProfile.subArtistType || '',
+    shortBio: artistProfile.shortBio || '',
+    tags: [artistProfile.artistType || '', artistProfile.subArtistType || ''],
+  };
 
   return (
     <ArtistDashboardLayout>
       <div className="flex flex-col lg:flex-row md:gap-5 md:p-6 min-h-screen">
         {/* Left Side - Artist Profile Card */}
         <div className="w-full lg:w-80 flex-shrink-0 max-w-screen overflow-hidden">
-          <ArtistProfileCard onBack={() => router.back()} artist={mockArtist} />
+          <ArtistProfileCard onBack={() => router.back()} artist={artistData} />
         </div>
 
         {/* Right Side - Tabs and Content */}
@@ -60,7 +84,7 @@ export default function ArtistProfile() {
           <ArtistProfileTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            artist={mockArtist}
+            artist={artistData}
           />
         </div>
       </div>
