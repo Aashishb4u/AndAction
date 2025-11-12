@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Input, { PasswordInput } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import { signIn, getRedirectUrl, signInWithGoogle, signInWithApple } from '@/lib/auth';
+import { getRedirectUrl, signInWithGoogle, signInWithApple } from '@/lib/auth';
 import Image from 'next/image';
+import { signIn, useSession } from 'next-auth/react';
 
 type SignInStep = 'email' | 'password';
 
@@ -19,6 +20,17 @@ function SignInContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+
+  // ✅ Redirect if already logged in
+  useEffect(() => {
+    if (!session) return;
+    if (session.user.role === 'artist') {
+      router.push('/artist/dashboard');
+    } else {
+      router.push('/');
+    }
+  }, [session]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,22 +42,41 @@ function SignInContent() {
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.trim()) {
-      setIsLoading(true);
-      setError('');
 
-      try {
-        await signIn(email);
+    if (!password.trim()) return;
 
-        // Redirect to previous page or home
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // Determine if user entered email or phone
+      const contactIdentifier = email.includes('@')
+        ? email.toLowerCase().trim()
+        : email.replace(/\D/g, '').trim(); // normalize phone
+
+      const result = await signIn('credentials', {
+        contact: contactIdentifier,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) throw new Error(result.error);
+
+      // ✅ Wait for session to update
+      setTimeout(() => {
         const redirectUrl = getRedirectUrl(searchParams);
-        router.push(redirectUrl);
-      } catch (err) {
-        setError('Invalid email or password. Please try again.');
-        console.error('Sign in error:', err);
-      } finally {
-        setIsLoading(false);
-      }
+
+        if (session?.user?.role === 'artist') {
+          router.push('/artist/dashboard');
+        } else {
+          router.push(redirectUrl || '/');
+        }
+      }, 500);
+    } catch (err: any) {
+      console.error('Sign in error:', err);
+      setError(err.message || 'Invalid email/phone or password.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -65,13 +96,11 @@ function SignInContent() {
       } else if (provider === 'apple') {
         await signInWithApple();
       } else {
-        // Facebook sign-in placeholder
         throw new Error('Facebook sign-in not implemented yet');
       }
 
-      // Redirect to previous page or home
       const redirectUrl = getRedirectUrl(searchParams);
-      router.push(redirectUrl);
+      router.push(redirectUrl || '/');
     } catch (err) {
       setError(`${provider} sign-in is not available yet.`);
       console.error(`${provider} sign-in error:`, err);
@@ -99,26 +128,18 @@ function SignInContent() {
           <Image src="/logo.png" alt="ANDACTION Logo" className="h-8 object-contain" width={150} height={24} />
         </div>
 
-        {/* Title */}
-        <h1 className="h1 text-white mb-2">
-          Sign in to AndAction
-        </h1>
+        <h1 className="h1 text-white mb-2">Sign in to AndAction</h1>
 
-
-
-        {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
             <p className="text-red-400 text-sm text-center">{error}</p>
           </div>
         )}
 
-        {/* Email Step */}
         {step === 'email' ? (
           <>
-            {/* Subtitle */}
             <p className="text-text-gray mb-8">
-              Enter your email and password to sign in.
+              Enter your email or mobile number to sign in.
             </p>
             <form onSubmit={handleEmailSubmit} className="space-y-6">
               <Input
@@ -141,7 +162,6 @@ function SignInContent() {
                 Continue
               </Button>
 
-              {/* Sign Up Link */}
               <p className="text-text-gray secondary-text">
                 Don&apos;t have an account?{' '}
                 <Link
@@ -152,14 +172,13 @@ function SignInContent() {
                 </Link>
               </p>
 
-              {/* Divider */}
               <div className="flex items-center my-6">
                 <div className="flex-1 border-t border-border-color"></div>
                 <span className="px-4 text-text-gray text-sm">Or</span>
                 <div className="flex-1 border-t border-border-color"></div>
               </div>
 
-              {/* Social Sign In Buttons */}
+              {/* ✅ Social Sign In Buttons (unchanged UI) */}
               <div className="space-y-3">
                 <Button
                   type="button"
@@ -191,27 +210,12 @@ function SignInContent() {
                   </svg>
                   Continue with Facebook
                 </Button>
-
-                <Button
-                  type="button"
-                  onClick={() => handleSocialSignIn('apple')}
-                  disabled={isLoading}
-                  variant="secondary"
-                  size="md"
-                  className="w-full flex gap-3 items-center justify-center"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
-                  </svg>
-                  Continue with Apple
-                </Button>
               </div>
             </form>
           </>
         ) : (
           /* Password Step */
           <form onSubmit={handlePasswordSubmit}>
-            {/* Email Display with Change Link */}
             <div className="flex items-center gap-2 mb-6">
               <span className="text-text-gray secondary-text">{email}</span>
               <button
@@ -232,7 +236,6 @@ function SignInContent() {
               required
             />
 
-            {/* Forgot Password Link */}
             <div className="text-right mb-4 mt-2">
               <Link
                 href="/auth/forgot-password"

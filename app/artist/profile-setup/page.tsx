@@ -10,11 +10,18 @@ import VideosSocialMedia from '@/components/artist/profile-setup/VideosSocialMed
 import ProfileReview from '@/components/artist/profile-setup/ProfileReview';
 import SuccessModal from '@/components/artist/profile-setup/SuccessModal';
 
-type ProfileSetupStep = 'overview' | 'artistDetails' | 'performanceDetails' | 'contactPricing' | 'videosSocial' | 'review';
+type ProfileSetupStep =
+  | 'overview'
+  | 'artistDetails'
+  | 'performanceDetails'
+  | 'contactPricing'
+  | 'videosSocial'
+  | 'review';
 
 export default function ProfileSetupPage() {
   const [currentStep, setCurrentStep] = useState<ProfileSetupStep>('overview');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   // Form data states
@@ -56,7 +63,67 @@ export default function ProfileSetupPage() {
     instagramAccountId: '',
   });
 
-  const handleNext = () => {
+  // ✅ handle profile save after final review
+  const handleSubmitProfile = async () => {
+    try {
+      setIsSubmitting(true);
+      const userData = JSON.parse(localStorage.getItem('artistUser') || '{}');
+      const userId = userData?.id;
+
+      if (!userId) {
+        console.error('⚠️ No userId found in localStorage');
+        return;
+      }
+
+      const response = await fetch('/api/artists/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          stageName: profileData.stageName,
+          artistType: profileData.artistType,
+          subArtistType: profileData.subArtistType,
+          achievements: profileData.achievements,
+          yearsOfExperience: profileData.yearsOfExperience,
+          shortBio: profileData.shortBio,
+          performingLanguages: profileData.performingLanguages,
+          performingEventTypes: profileData.performingEventTypes,
+          performingStates: profileData.performingStates,
+          performingDurationFrom: profileData.performingDurationFrom,
+          performingDurationTo: profileData.performingDurationTo,
+          performingMembers: profileData.performingMembers,
+          offStageMembers: profileData.offStageMembers,
+          contactNumber: profileData.contactNumber,
+          whatsappNumber: profileData.whatsappNumber,
+          contactEmail: profileData.email,
+          soloChargesFrom: profileData.soloChargesFrom,
+          soloChargesTo: profileData.soloChargesTo,
+          soloChargesDescription: profileData.soloDescription,
+          chargesWithBacklineFrom: profileData.backingChargesFrom,
+          chargesWithBacklineTo: profileData.backingChargesTo,
+          chargesWithBacklineDescription: profileData.backingDescription,
+          youtubeChannelId: profileData.youtubeChannelId,
+          instagramId: profileData.instagramAccountId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Artist Profile Save Error:', data.message);
+        return;
+      }
+
+      console.log('✅ Artist Profile Created Successfully:', data);
+      setShowSuccessModal(true);
+    } catch (err) {
+      console.error('❌ Unexpected Error Saving Artist Profile:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleNext = async () => {
     switch (currentStep) {
       case 'overview':
         setCurrentStep('artistDetails');
@@ -74,8 +141,8 @@ export default function ProfileSetupPage() {
         setCurrentStep('review');
         break;
       case 'review':
-        // Show success modal
-        setShowSuccessModal(true);
+        // ✅ Call artist profile submit here
+        await handleSubmitProfile();
         break;
     }
   };
@@ -135,7 +202,6 @@ export default function ProfileSetupPage() {
 
   const handleAddAnotherProfile = () => {
     setShowSuccessModal(false);
-    // Reset form and start over
     setCurrentStep('overview');
     setProfileData({
       profilePhoto: null,
@@ -232,7 +298,9 @@ export default function ProfileSetupPage() {
         return (
           <div className="text-center text-white">
             <h2 className="text-xl font-semibold mb-4">Coming Soon</h2>
-            <p className="text-text-gray mb-6">This step is under development.</p>
+            <p className="text-text-gray mb-6">
+              This step is under development.
+            </p>
             <button
               onClick={handleNext}
               className="px-6 py-2 bg-gradient-to-r from-primary-pink to-primary-orange text-white rounded-lg"
@@ -251,7 +319,6 @@ export default function ProfileSetupPage() {
       {/* Success Modal */}
       <SuccessModal
         isOpen={showSuccessModal}
-        // onClose={() => setShowSuccessModal(false)}
         onGoToDashboard={handleGoToDashboard}
         onAddAnotherProfile={handleAddAnotherProfile}
       />

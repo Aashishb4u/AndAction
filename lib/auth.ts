@@ -65,36 +65,38 @@ export const signIn = async (email: string): Promise<User> => {
  * @param userData The full data payload from the multi-step form.
  * @returns The newly created User object from the backend.
  */
-export const signUp = async (userData: SignUpData): Promise<User> => {
-    const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-    });
+export const signUp = async (userData: SignUpData): Promise<{ user: User; contactIdentifier: string }> => {
+  const response = await fetch('/api/auth/signup', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(userData),
+  });
 
-    if (!response.ok) {
-        const errorBody = await response.json();
-        throw new Error(errorBody.message || 'Registration failed due to a server error.');
-    }
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message || 'Registration failed due to a server error.');
+  }
 
-    const responseData = await response.json();
-    const newUserFromApi = responseData.data?.user; 
-    
-    if (!newUserFromApi) {
-        throw new Error('Registration succeeded but user data was missing from the response.');
-    }
-    // -----------------------------------------------------------
-    
-    const userForReturn: User = {
-        id: newUserFromApi.id,
-        email: newUserFromApi.email,
-        name: newUserFromApi.firstName,
-        role: newUserFromApi.role,
-    };    
-    return userForReturn;
+  const responseData = await response.json();
+  const newUserFromApi = responseData.data?.user;
+  const contactIdentifier = responseData.data?.contactIdentifier;
+
+  if (!newUserFromApi) {
+    throw new Error('Registration succeeded but user data was missing from the response.');
+  }
+
+  const userForReturn: User = {
+    id: newUserFromApi.id,
+    email: newUserFromApi.email,
+    name: newUserFromApi.firstName,
+    role: newUserFromApi.role,
+  };
+
+  return { user: userForReturn, contactIdentifier };
 };
+
 
 export const signOut = async (): Promise<void> => {
     await nextAuthSignOut({ 

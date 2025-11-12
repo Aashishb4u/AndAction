@@ -1,97 +1,103 @@
 /**
  * app/api/auth/artist/signup/route.ts
- *
- * Handles the registration of a new artist user (role: 'artist').
- * Uses a nested Prisma write to atomically create the User record AND the related Artist profile.
+ * Handles new artist account registration (with password).
+ * Creates both User (role: 'artist') and Artist profile atomically.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma'; // Assumed to be correctly configured singleton
-import { hashPassword, validatePasswordStrength } from '@/lib/password'; // Assumed to contain bcrypt logic
-import { ApiErrors, successResponse } from '@/lib/api-response'; // Assumed to contain response helpers
-import { UserRole } from '@/lib/types/database'; // Assumed to contain 'user' | 'artist' | 'admin' type
+import { prisma } from '@/lib/prisma';
+import { hashPassword, validatePasswordStrength } from '@/lib/password';
+import { ApiErrors, successResponse } from '@/lib/api-response';
 
-export async function POST(request: NextRequest): Promise<NextResponse<any>> {
-    let body;
-    try {
-        body = await request.json();
-    } catch (e) {
-        return ApiErrors.badRequest('Invalid JSON body.');
-    }
-
-    const { email, password, firstName, lastName } = body;
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  try {
+    const body = await request.json();
+    const {
+      email,
+      phoneNumber,
+      countryCode,
+      password,
+      firstName,
+      lastName,
+      dateOfBirth,
+      gender,
+      address,
+      pinCode,
+      state,
+      city,
+      noMarketing,
+      shareData,
+    } = body;
 
     if (!email || !password || !firstName || !lastName) {
-        return ApiErrors.badRequest('Email, password, first name, and last name are required for artist registration.');
+      return ApiErrors.badRequest('Email, password, first name and last name are required.');
     }
 
-    const strengthCheck = validatePasswordStrength(password);
-    if (!strengthCheck.isValid) {
-        return ApiErrors.badRequest(strengthCheck.message || 'Password strength requirements not met.');
+    const lowerCaseEmail = email.toLowerCase();
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: lowerCaseEmail }, phoneNumber ? { phoneNumber } : {}],
+      },
+    });
+
+    if (existingUser) {
+      return ApiErrors.conflict('A user with this email or phone number already exists.');
     }
 
-    try {
-        const lowerCaseEmail = email.toLowerCase();
-        
-        const existingUser = await prisma.user.findUnique({
-            where: { email: lowerCaseEmail },
-        });
-
-        if (existingUser) {
-            return ApiErrors.conflict('A user with this email already exists.');
-        }
-        
-        const hashedPassword = await hashPassword(password);
-
-        // --- 4. Atomic Creation (User + Artist Profile) ---
-        // Use a nested write to ensure the User and the associated Artist profile 
-        // are created together as a single database transaction.
-        const newArtistUser = await prisma.user.create({
-            data: {
-                email: lowerCaseEmail,
-                password: hashedPassword,
-                firstName,
-                lastName,
-                role: 'artist' as UserRole, // Set role to 'artist'
-                isAccountVerified: false,
-                isArtistVerified: false,
-                // Nested write: Creates the related Artist record, linking userId automatically
-                artist: {
-                    create: {} 
-                }
-            },
-            // Select only safe fields for the response
-            select: {
-                id: true,
-                email: true,
-                role: true,
-                firstName: true,
-                artist: {
-                    select: {
-                        id: true, // Return the newly created Artist profile ID
-                    }
-                }
-            }
-        });
-
-        // --- 5. Success Response ---
-        return successResponse(
-            { 
-                user: {
-                    id: newArtistUser.id,
-                    email: newArtistUser.email,
-                    role: newArtistUser.role,
-                    firstName: newArtistUser.firstName,
-                },
-                artistProfileId: newArtistUser.artist?.id // Provides the ID needed for subsequent profile setup steps
-            },
-            'Artist account created successfully. Please proceed to profile setup.',
-            201
-        );
-
-    } catch (error) {
-        console.error('Artist Sign-up API Error:', error);
-        // Catch any unexpected Prisma or system errors
-        return ApiErrors.internalError('An unexpected error occurred during artist registration.');
+    const strength = validatePasswordStrength(password);
+    if (!strength.isValid) {
+      return ApiErrors.badRequest(strength.message || 'Weak password.');
     }
+
+    const hashedPassword = await hashPassword(password);
+    const parsedDob = dateOfBirth ? new Date(dateOfBirth) : null;
+
+    const newUser = await prisma.user.create({
+      data: {
+        email: lowerCaseEmail,
+        phoneNumber: phoneNumber || null,
+        countryCode: countryCode || '+91',
+        password: hashedPassword,
+        firstName,
+        lastName,
+        gender: gender || null,
+        dob: parsedDob,
+        address: address || null,
+        zip: pinCode || null,
+        state: state || null,
+        city: city || null,
+        role: 'artist',
+        isMarketingOptIn: !noMarketing,
+        isDataSharingOptIn: shareData,
+        isAccountVerified: true,
+        isArtistVerified: false,
+      },
+    });
+
+    const artistProfile = await prisma.artist.create({
+      data: {
+        userId: newUser.id,
+        stageName: `${firstName} ${lastName}`,
+        contactEmail: lowerCaseEmail,
+        contactNumber: phoneNumber,
+        whatsappNumber: phoneNumber,
+      },
+    });
+
+    return successResponse(
+      {
+        user: newUser,
+        artistProfile,
+      },
+      'Artist account created successfully. Please sign in to continue profile setup.',
+      201
+    );
+  } catch (error: any) {
+    console.error('Artist Sign-up Error:', error);
+    if (error.code === 'P2002') {
+      return ApiErrors.conflict('Email or phone number already exists.');
+    }
+    return ApiErrors.internalError('Unexpected error during artist registration.');
+  }
 }
