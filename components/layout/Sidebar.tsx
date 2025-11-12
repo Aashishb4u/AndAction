@@ -108,7 +108,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   <h3 className="text-white font-medium">
                     {user.firstName} {user.lastName}
                   </h3>
-                  <p className="text-text-gray text-sm truncate">{user.email}</p>
+                  {user?.email ? 
+                  <p className="text-text-gray text-sm truncate">{user.email}</p> 
+                  : 
+                  <p className="text-text-gray text-sm truncate">{user.countryCode}{user.phoneNumber}</p>
+                  }
                 </div>
                 <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
               </button>

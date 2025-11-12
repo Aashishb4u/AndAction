@@ -7,7 +7,7 @@ import Input, { PasswordInput } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { getRedirectUrl, signInWithGoogle, signInWithApple } from '@/lib/auth';
 import Image from 'next/image';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 
 type SignInStep = 'email' | 'password';
 
@@ -20,17 +20,6 @@ function SignInContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
-
-  // ✅ Redirect if already logged in
-  useEffect(() => {
-    if (!session) return;
-    if (session.user.role === 'artist') {
-      router.push('/artist/dashboard');
-    } else {
-      router.push('/');
-    }
-  }, [session]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,36 +31,46 @@ function SignInContent() {
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!password.trim()) return;
 
     setIsLoading(true);
     setError('');
 
     try {
-      // Determine if user entered email or phone
       const contactIdentifier = email.includes('@')
         ? email.toLowerCase().trim()
-        : email.replace(/\D/g, '').trim(); // normalize phone
+        : email.replace(/\D/g, '').trim();
+
+      const res = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          contactIdentifier.includes('@')
+            ? { email: contactIdentifier, password }
+            : { phone: contactIdentifier, countryCode: '+91', password }
+        ),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data?.message || 'Invalid login credentials.');
+      }
 
       const result = await signIn('credentials', {
-        contact: contactIdentifier,
+        contact: data.data.contactIdentifier,
         password,
         redirect: false,
       });
 
       if (result?.error) throw new Error(result.error);
-
-      // ✅ Wait for session to update
-      setTimeout(() => {
-        const redirectUrl = getRedirectUrl(searchParams);
-
-        if (session?.user?.role === 'artist') {
-          router.push('/artist/dashboard');
-        } else {
-          router.push(redirectUrl || '/');
-        }
-      }, 500);
+      const session = await getSession();
+      const userRole = session?.user?.role;
+      console.log('userROle: ', userRole)
+      if (userRole === 'artist') {
+        router.push('/artist/dashboard');
+      } else {
+        router.push('/');
+      }
     } catch (err: any) {
       console.error('Sign in error:', err);
       setError(err.message || 'Invalid email/phone or password.');
@@ -79,6 +78,7 @@ function SignInContent() {
       setIsLoading(false);
     }
   };
+
 
   const handleChangeEmail = () => {
     setStep('email');
