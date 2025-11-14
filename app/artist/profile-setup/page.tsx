@@ -30,8 +30,8 @@ export default function ProfileSetupPage() {
 
   // Form data states
   const [profileData, setProfileData] = useState({
-    // Artist Profile Details
     profilePhoto: null as File | null,
+    avatarUrl: "",
     stageName: '',
     artistType: '',
     subArtistType: '',
@@ -112,27 +112,29 @@ export default function ProfileSetupPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('Artist Profile Save Error:', data.message);
+        console.error('Artist Profile Save Error:', data.message ?? data);
         return;
       }
 
       console.log('Artist Profile Created Successfully:', data);
 
-      if (session?.user?.role === 'artist') {
-        await update({
-          ...session,
-          user: {
-            ...session.user,
-            ...data.data.user,
-            artistProfile: {
-              ...(session.user.artistProfile ?? {}),
-              ...data.data.artistProfile,
-            },
-            isArtistVerified: true,
-          },
-        });
+      const updatedArtistProfile = data?.data?.artistProfile ?? null;
+      const avatarToUse =
+        (profileData as any).avatarUrl && (profileData as any).avatarUrl.trim() !== ""
+          ? (profileData as any).avatarUrl
+          : session.user.avatar;
 
-      }
+
+      await update({
+        update: {
+          avatar: avatarToUse,
+          artistProfile: updatedArtistProfile,
+          isArtistVerified: true,
+        },
+      });
+
+
+
 
       setShowSuccessModal(true);
     } catch (err) {
@@ -141,6 +143,7 @@ export default function ProfileSetupPage() {
       setIsSubmitting(false);
     }
   };
+
 
 
   const handleNext = async () => {
@@ -224,6 +227,7 @@ export default function ProfileSetupPage() {
     setCurrentStep('overview');
     setProfileData({
       profilePhoto: null,
+      avatarUrl: "",
       stageName: '',
       artistType: '',
       subArtistType: '',
@@ -334,8 +338,6 @@ export default function ProfileSetupPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
       {renderCurrentStep()}
-
-      {/* Success Modal */}
       <SuccessModal
         isOpen={showSuccessModal}
         onGoToDashboard={handleGoToDashboard}
