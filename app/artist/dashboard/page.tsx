@@ -12,7 +12,7 @@ import { useSession } from 'next-auth/react';
 export default function ArtistDashboard() {
   const router = useRouter();
   const { data: session, status } = useSession();
-
+  console.log(session)
   // 👇 Redirect to signin if not authenticated or not artist
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/auth/signin');

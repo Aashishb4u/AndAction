@@ -1,12 +1,13 @@
-import { UserRole } from '@/lib/types/database'; // Using alias for consistent path
-
+import { UserRole } from '@/lib/types/database';
+import fs from "fs";
+import path from "path";
 export interface AuthUserPayload {
     id: string;
     role: UserRole; // Now explicitly using the imported type
     email: string;
     firstName: string | null;
     // Making googleId optional to resolve the type error in the OAuth routes
-    googleId?: string | null; 
+    googleId?: string | null;
     facebookId?: string | null; // Added for completeness with Facebook OAuth
     // Add other properties necessary for token creation
 }
@@ -23,9 +24,9 @@ export function createAuthToken(user: AuthUserPayload): string {
         userId: user.id,
         role: user.role,
         // Calculate expiry time (e.g., 7 days from now)
-        exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) 
+        exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60)
     };
-    
+
     // PRODUCTION IMPLEMENTATION: 
     // return jwt.sign(tokenPayload, process.env.JWT_SECRET, { algorithm: 'HS256' });
 
@@ -61,7 +62,7 @@ export async function getAuthUser(token: string): Promise<AuthUserPayload | null
         return null;
     }
     */
-    
+
     // DEVELOPMENT PLACEHOLDER:
     // For development, we'll assume any token starting with 'jwt-token-' is valid 
     // and we'll extract the user role from the payload (or default to admin for testing)
@@ -84,42 +85,68 @@ interface FileUploadResult {
     thumbnailUrl: string; // The URL of the automatically generated thumbnail
 }
 
-// --- Utility Functions ---
+interface FileUploadResult {
+  url: string;
+  thumbnailUrl: string;
+}
 
-/**
- * MOCK FUNCTION: Simulates the process of uploading a file to a cloud storage
- * (e.g., AWS S3, Google Cloud Storage) and generating public URLs.
- *
- * In a production environment, this function would handle:
- * 1. Connecting to the storage client.
- * 2. Uploading the file buffer.
- * 3. Generating a thumbnail (often via a serverless function or external service).
- * 4. Returning the publicly accessible URLs.
- *
- * @param userId The ID of the user uploading the file (used for path organization).
- * @param fileBuffer The binary data of the file.
- * @param fileExtension The determined extension of the file (e.g., 'mp4', 'jpg').
- * @returns An object containing the mock public URLs.
- */
 export function simulateFileUpload(
-    userId: string, 
-    fileBuffer: ArrayBuffer, 
-    fileExtension: string
+  userId: string,
+  fileBuffer: ArrayBuffer,
+  fileExtension: string
 ): FileUploadResult {
-    // Generate a unique identifier for the file
-    const uniqueId = Math.random().toString(36).substring(2, 9);
-    const mockFilename = `${userId}-${uniqueId}.${fileExtension}`;
+  const buffer = Buffer.from(fileBuffer);
 
-    // Mock video file URL (using a placeholder video)
-    const mockFileUrl = `https://storage.mock.com/uploads/${mockFilename}`;
-    
-    // Mock thumbnail URL (using a static placeholder image)
-    const mockThumbnailUrl = `https://placehold.co/400x225/A55EEA/ffffff?text=Thumbnail+for+${uniqueId}`;
-    
-    console.log(`[FILE UPLOAD MOCK] Saved: ${mockFileUrl} | Size: ${fileBuffer.byteLength} bytes`);
+  const uniqueId = Math.random().toString(36).substring(2, 9);
+  const fileName = `${userId}-${uniqueId}.${fileExtension}`;
 
-    return { 
-        url: mockFileUrl, 
-        thumbnailUrl: mockThumbnailUrl 
-    };
+  const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
+    fileExtension.toLowerCase()
+  );
+
+  const uploadFolder = isImage ? "images" : "videos";
+
+  const savePath = path.join(
+    process.cwd(),
+    "public",
+    "uploads",
+    uploadFolder,
+    fileName
+  );
+
+  const dirPath = path.dirname(savePath);
+  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+
+  fs.writeFileSync(savePath, buffer);
+
+  const fileUrl = `/uploads/${uploadFolder}/${fileName}`;
+
+  let thumbnailUrl = "";
+
+  if (isImage) {
+    thumbnailUrl = fileUrl;
+  } else {
+    const thumbName = `${userId}-${uniqueId}-thumb.jpg`;
+    const thumbPath = path.join(
+      process.cwd(),
+      "public",
+      "uploads",
+      "thumbnails",
+      thumbName
+    );
+
+    const thumbDir = path.dirname(thumbPath);
+    if (!fs.existsSync(thumbDir)) fs.mkdirSync(thumbDir, { recursive: true });
+
+    fs.writeFileSync(thumbPath, Buffer.from([]));
+
+    thumbnailUrl = `/uploads/thumbnails/${thumbName}`;
+  }
+
+  console.log(`[LOCAL UPLOAD] Saved: ${fileUrl}`);
+
+  return {
+    url: fileUrl,
+    thumbnailUrl,
+  };
 }

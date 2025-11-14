@@ -17,12 +17,28 @@ interface ArtistProfile {
   performingLanguage?: string | null;
   performingEventType?: string | null;
   performingStates?: string | null;
+
+  performingDurationFrom?: string | null;
+  performingDurationTo?: string | null;
+  performingMembers?: string | null;
+  offStageMembers?: string | null;
+
   contactNumber?: string | null;
   whatsappNumber?: string | null;
   contactEmail?: string | null;
-  instagramId?: string | null;
+
+  soloChargesFrom?: string | number | null;
+  soloChargesTo?: string | number | null;
+  soloChargesDescription?: string | null;
+
+  chargesWithBacklineFrom?: string | number | null;
+  chargesWithBacklineTo?: string | number | null;
+  chargesWithBacklineDescription?: string | null;
+
   youtubeChannelId?: string | null;
+  instagramId?: string | null;
 }
+
 interface ExtendedUser {
   id: string;
   role: 'user' | 'artist' | 'admin';
@@ -168,55 +184,78 @@ export const {
   session: { strategy: 'jwt' },
 
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        const u = user as any;
-        Object.assign(token, u);
-      }
-      if (!user && token?.id && token.role === 'artist' && !token.artistProfile) {
-        try {
-          const artistUser = await prisma.user.findUnique({
-            where: { id: String(token.id) },
-            include: { artist: true },
-          });
+    async jwt({ token, user, trigger, session }) {
+  // 1️⃣ User just logged in → merge user data into token
+  if (user) {
+    Object.assign(token, user);
+  }
 
-          if (artistUser?.artist) {
-            token.artistProfile = {
-              id: artistUser.artist.id,
-              stageName: artistUser.artist.stageName ?? null,
-              artistType: artistUser.artist.artistType ?? null,
-              subArtistType: artistUser.artist.subArtistType ?? null,
-              achievements: artistUser.artist.achievements ?? null,
-              yearsOfExperience: artistUser.artist.yearsOfExperience ?? null,
-              shortBio: artistUser.artist.shortBio ?? null,
-              performingLanguage: artistUser.artist.performingLanguage ?? null,
-              performingEventType: artistUser.artist.performingEventType ?? null,
-              performingStates: artistUser.artist.performingStates ?? null,
-              contactNumber: artistUser.artist.contactNumber ?? null,
-              whatsappNumber: artistUser.artist.whatsappNumber ?? null,
-              contactEmail: artistUser.artist.contactEmail ?? null,
-              instagramId: artistUser.artist.instagramId ?? null,
-              youtubeChannelId: artistUser.artist.youtubeChannelId ?? null,
-              soloChargesFrom: artistUser.artist.soloChargesFrom ?? null,
-              soloChargesTo: artistUser.artist.soloChargesTo ?? null,
-              chargesWithBacklineFrom: artistUser.artist.chargesWithBacklineFrom ?? null,
-              chargesWithBacklineTo: artistUser.artist.chargesWithBacklineTo ?? null,
-              soloChargesDescription: artistUser.artist.soloChargesDescription ?? null,
-              chargesWithBacklineDescription: artistUser.artist.chargesWithBacklineDescription ?? null,
-            };
-          }
-        } catch (err) {
-          console.error('Error refreshing artist JWT:', err);
-        }
-      }
+  // 2️⃣ Session update() was called → merge updated fields into token
+  if (trigger === "update" && session?.update) {
+    Object.assign(token, session.update);
+  }
 
-      return token;
-    },
+  // 3️⃣ Artist: ensure artistProfile is loaded from DB if missing
+  if (!user && token?.id && token.role === "artist" && !token.artistProfile) {
+    try {
+      const artistUser = await prisma.user.findUnique({
+        where: { id: String(token.id) },
+        include: { artist: true },
+      });
+
+      if (artistUser?.artist) {
+        token.artistProfile = {
+          id: artistUser.artist.id,
+          stageName: artistUser.artist.stageName ?? null,
+          artistType: artistUser.artist.artistType ?? null,
+          subArtistType: artistUser.artist.subArtistType ?? null,
+          achievements: artistUser.artist.achievements ?? null,
+          yearsOfExperience: artistUser.artist.yearsOfExperience ?? null,
+          shortBio: artistUser.artist.shortBio ?? null,
+          performingLanguage: artistUser.artist.performingLanguage ?? null,
+          performingEventType: artistUser.artist.performingEventType ?? null,
+          performingStates: artistUser.artist.performingStates ?? null,
+          performingDurationFrom: artistUser.artist.performingDurationFrom ?? null,
+          performingDurationTo: artistUser.artist.performingDurationTo ?? null,
+          performingMembers: artistUser.artist.performingMembers ?? null,
+          offStageMembers: artistUser.artist.offStageMembers ?? null,
+          contactNumber: artistUser.artist.contactNumber ?? null,
+          whatsappNumber: artistUser.artist.whatsappNumber ?? null,
+          contactEmail: artistUser.artist.contactEmail ?? null,
+          soloChargesFrom: artistUser.artist.soloChargesFrom ?? null,
+          soloChargesTo: artistUser.artist.soloChargesTo ?? null,
+          chargesWithBacklineFrom: artistUser.artist.chargesWithBacklineFrom ?? null,
+          chargesWithBacklineTo: artistUser.artist.chargesWithBacklineTo ?? null,
+          soloChargesDescription: artistUser.artist.soloChargesDescription ?? null,
+          chargesWithBacklineDescription: artistUser.artist.chargesWithBacklineDescription ?? null,
+          instagramId: artistUser.artist.instagramId ?? null,
+          youtubeChannelId: artistUser.artist.youtubeChannelId ?? null,
+        };
+      }
+    } catch (err) {
+      console.error("Error refreshing artist JWT:", err);
+    }
+  }
+
+  return token;
+},
+
 
     async session({ session, token }) {
       if (session.user) {
-        Object.assign(session.user, token);
-        if (token.role === 'user' || token.role === 'admin') {
+        session.user = {
+          ...session.user,
+          ...token,
+          email: token.email ?? session.user.email ?? "",
+          artistProfile:
+            token.artistProfile &&
+              typeof token.artistProfile === "object" &&
+              "id" in token.artistProfile
+              ? token.artistProfile as any
+              : session.user.artistProfile ?? null,
+        };
+
+        if (token.role === 'user') {
           delete (session.user as any).artistProfile;
         }
 
@@ -229,7 +268,6 @@ export const {
               : null;
         }
       }
-
       return session;
     },
   },
