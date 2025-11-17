@@ -8,6 +8,8 @@ import Textarea from '@/components/ui/Textarea';
 import Button from '@/components/ui/Button';
 import { Info } from 'lucide-react';
 import { Artist } from '@/types';
+import { useSession } from "next-auth/react";
+import { updateArtistProfile } from '@/lib/helper';
 
 // Extended artist type for profile management
 type ExtendedArtist = Artist & {
@@ -19,6 +21,7 @@ type ExtendedArtist = Artist & {
   state?: string;
   city?: string;
   shortBio?: string;
+  subArtistType: string;
 };
 
 interface AboutTabProps {
@@ -29,38 +32,54 @@ const genderOptions = [
   { value: 'male', label: 'Male' },
   { value: 'female', label: 'Female' },
   { value: 'other', label: 'Other' },
+  { value: 'prefer-not-to-say', label: 'Prefer not to say' },
 ];
 
 const stateOptions = [
-  { value: 'gujarat', label: 'Gujarat' },
   { value: 'maharashtra', label: 'Maharashtra' },
   { value: 'delhi', label: 'Delhi' },
   { value: 'karnataka', label: 'Karnataka' },
   { value: 'tamil-nadu', label: 'Tamil Nadu' },
+  { value: 'gujarat', label: 'Gujarat' },
+  { value: 'rajasthan', label: 'Rajasthan' },
+  { value: 'uttar-pradesh', label: 'Uttar Pradesh' },
+  { value: 'west-bengal', label: 'West Bengal' },
+  { value: 'punjab', label: 'Punjab' },
+  { value: 'haryana', label: 'Haryana' },
 ];
 
 const cityOptions = [
-  { value: 'surat', label: 'Surat' },
+  { value: 'mumbai', label: 'Mumbai' },
+  { value: 'delhi', label: 'Delhi' },
+  { value: 'bangalore', label: 'Bangalore' },
+  { value: 'chennai', label: 'Chennai' },
   { value: 'ahmedabad', label: 'Ahmedabad' },
-  { value: 'vadodara', label: 'Vadodara' },
-  { value: 'rajkot', label: 'Rajkot' },
+  { value: 'jaipur', label: 'Jaipur' },
+  { value: 'lucknow', label: 'Lucknow' },
+  { value: 'kolkata', label: 'Kolkata' },
+  { value: 'chandigarh', label: 'Chandigarh' },
+  { value: 'gurgaon', label: 'Gurgaon' },
 ];
 
 const subArtistTypeOptions = [
-  { value: 'example1', label: 'Example, example, example' },
-  { value: 'example2', label: 'Another example' },
-  { value: 'example3', label: 'Third example' },
+  { value: 'classical', label: 'Classical' },
+  { value: 'contemporary', label: 'Contemporary' },
+  { value: 'folk', label: 'Folk' },
+  { value: 'bollywood', label: 'Bollywood' },
+  { value: 'western', label: 'Western' },
+  { value: 'fusion', label: 'Fusion' }
 ];
 
 const experienceOptions = [
-  { value: '1', label: '1 Year' },
-  { value: '2', label: '2 Years' },
-  { value: '3', label: '3 Years' },
-  { value: '4', label: '4 Years' },
-  { value: '5', label: '5+ Years' },
+  { value: '0-1', label: '0-1 years' },
+  { value: '1-3', label: '1-3 years' },
+  { value: '3-5', label: '3-5 years' },
+  { value: '5-10', label: '5-10 years' },
+  { value: '10+', label: '10+ years' }
 ];
 
 const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
+  const { data: session, update } = useSession();
   const [formData, setFormData] = useState({
     stageName: artist.name,
     firstName: (artist as ExtendedArtist).firstName || '',
@@ -71,7 +90,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
     pinCode: (artist as ExtendedArtist).pinCode || '',
     state: (artist as ExtendedArtist).state?.toLowerCase() || '',
     city: (artist as ExtendedArtist).city?.toLowerCase() || '',
-    subArtistType: 'example1',
+    subArtistType: (artist as ExtendedArtist).subArtistType?.toLowerCase() || '',
     achievements: Array.isArray(artist.achievements) ? artist.achievements.join(', ') : (artist.achievements || ''),
     yearsOfExperience: artist.yearsOfExperience?.toString() || '4',
     shortBio: artist.bio || '',
@@ -84,10 +103,47 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
     }));
   };
 
-  const handleSave = () => {
-    // Here you would typically save the data to your backend
-    console.log('Saving artist data:', formData);
-    // You can add validation and API calls here
+  const handleSave = async () => {
+    try {
+      const payload = {
+        userId: session?.user?.id,
+
+        stageName: formData.stageName,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        gender: formData.gender,
+        dob: formData.dateOfBirth,
+        address: formData.address,
+        pinCode: formData.pinCode,
+        city: formData.city,
+        state: formData.state,
+        shortBio: formData.shortBio,
+        achievements: formData.achievements,
+        yearsOfExperience: formData.yearsOfExperience,
+        subArtistType: formData.subArtistType,
+      };
+
+      await updateArtistProfile(payload);
+
+      // refresh session
+      await update({
+        user: {
+          ...session!.user,
+          ...payload,
+          artistProfile: {
+            ...session!.user.artistProfile,
+            subArtistType: formData.subArtistType,
+            achievements: formData.achievements,
+            yearsOfExperience: formData.yearsOfExperience,
+            shortBio: formData.shortBio,
+          },
+        },
+      });
+      
+      alert("Profile updated!");
+    } catch (error) {
+      alert("Failed to update");
+    }
   };
 
   const handleReset = () => {
@@ -101,7 +157,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       pinCode: (artist as ExtendedArtist).pinCode || '',
       state: (artist as ExtendedArtist).state?.toLowerCase() || '',
       city: (artist as ExtendedArtist).city?.toLowerCase() || '',
-      subArtistType: 'example1',
+      subArtistType: (artist as ExtendedArtist).subArtistType?.toLowerCase() || '',
       achievements: Array.isArray(artist.achievements) ? artist.achievements.join(', ') : (artist.achievements || ''),
       yearsOfExperience: artist.yearsOfExperience?.toString() || '4',
       shortBio: artist.bio || '',

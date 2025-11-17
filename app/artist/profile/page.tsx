@@ -57,10 +57,10 @@ export default function ArtistProfile() {
     lastName: user.lastName || '',
     dateOfBirth: user.dob
       ? new Date(user.dob).toLocaleDateString('en-IN', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        })
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
       : '',
     address: user.address || '',
     pinCode: user.zip || '',
@@ -68,6 +68,13 @@ export default function ArtistProfile() {
     city: user.city || '',
     subArtistType: artistProfile.subArtistType || '',
     shortBio: artistProfile.shortBio || '',
+    performingLanguage: artistProfile.performingLanguage || "",
+    performingEventType: artistProfile.performingEventType || "",
+    performingStates: artistProfile.performingStates || "",
+    performingDurationFrom: artistProfile.performingDurationFrom || "",
+    performingDurationTo: artistProfile.performingDurationTo || "",
+    performingMembers: artistProfile.performingMembers || "",
+    offStageMembers: artistProfile.offStageMembers || "",
     tags: [artistProfile.artistType || '', artistProfile.subArtistType || ''],
   };
 

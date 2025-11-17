@@ -113,7 +113,7 @@ export function simulateFileUpload(
     uploadFolder,
     fileName
   );
-
+  console.log(savePath)
   const dirPath = path.dirname(savePath);
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
 
