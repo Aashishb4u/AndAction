@@ -1,10 +1,10 @@
-import NextAuth from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
-import Google from 'next-auth/providers/google';
-import Facebook from 'next-auth/providers/facebook';
-import { PrismaAdapter } from '@auth/prisma-adapter';
-import { prisma } from '@/lib/prisma';
-import { verifyPassword } from '@/lib/password';
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import Facebook from "next-auth/providers/facebook";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/lib/prisma";
+import { verifyPassword } from "@/lib/password";
 
 interface ArtistProfile {
   id: string;
@@ -41,7 +41,7 @@ interface ArtistProfile {
 
 interface ExtendedUser {
   id: string;
-  role: 'user' | 'artist' | 'admin';
+  role: "user" | "artist" | "admin";
   firstName?: string | null;
   lastName?: string | null;
   email?: string | null;
@@ -60,12 +60,12 @@ interface ExtendedUser {
   isDataSharingOptIn?: boolean;
   artistProfile?: ArtistProfile | null;
 }
-declare module 'next-auth' {
+declare module "next-auth" {
   interface Session {
     user: ExtendedUser;
   }
 
-  interface JWT extends ExtendedUser { }
+  interface JWT extends ExtendedUser {}
 }
 
 export const {
@@ -76,21 +76,40 @@ export const {
 } = NextAuth({
   adapter: PrismaAdapter(prisma),
 
+  pages: {
+    signIn: "/auth/signin",
+  },
+
+  events: {
+    async linkAccount({ user }) {
+      // NOTE: For OAuth users we will update the isAccountVerified field
+      if (!user?.id) return;
+      await prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          isAccountVerified: true,
+        },
+      });
+    },
+  },
+
   providers: [
     Credentials({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        contact: { label: 'Email or Phone', type: 'text' },
-        password: { label: 'Password', type: 'password' },
+        contact: { label: "Email or Phone", type: "text" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials: Record<string, any> | undefined) {
         try {
           if (!credentials?.contact || !credentials?.password) {
-            throw new Error('Missing credentials');
+            throw new Error("Missing credentials");
           }
           const contactRaw = String(credentials.contact).trim();
           const passwordRaw = String(credentials.password);
-          const isEmail = contactRaw.includes('@');
+          const isEmail = contactRaw.includes("@");
           let user: any | null = null;
           if (isEmail) {
             user = await prisma.user.findUnique({
@@ -98,7 +117,7 @@ export const {
               include: { artist: true },
             });
           } else {
-            const digits = contactRaw.replace(/\D/g, '');
+            const digits = contactRaw.replace(/\D/g, "");
             user = await prisma.user.findFirst({
               where: { phoneNumber: digits },
               include: { artist: true },
@@ -106,20 +125,29 @@ export const {
           }
 
           if (!user) {
-            console.error("[Authorize] User not found for contact:", contactRaw);
-            throw new Error('User not found');
+            console.error(
+              "[Authorize] User not found for contact:",
+              contactRaw
+            );
+            throw new Error("User not found");
           }
           if (!user.password) {
-            console.error("[Authorize] User found but password missing:", user.id);
-            throw new Error('No password set');
+            console.error(
+              "[Authorize] User found but password missing:",
+              user.id
+            );
+            throw new Error("No password set");
           }
 
-          const valid = await verifyPassword(passwordRaw, String(user.password));
+          const valid = await verifyPassword(
+            passwordRaw,
+            String(user.password)
+          );
           // if (!valid) throw new Error('Invalid password');
 
           if (!valid) {
             console.error("[Authorize] Password mismatch for user:", user.id);
-            throw new Error('Invalid password');
+            throw new Error("Invalid password");
           }
 
           const safeUser: ExtendedUser = {
@@ -143,7 +171,7 @@ export const {
             isDataSharingOptIn: !!user.isDataSharingOptIn,
           };
 
-          if (user.role === 'artist' && user.artist) {
+          if (user.role === "artist" && user.artist) {
             safeUser.artistProfile = {
               id: user.artist.id,
               stageName: user.artist.stageName ?? null,
@@ -165,7 +193,7 @@ export const {
 
           return safeUser;
         } catch (err: any) {
-          throw new Error('Invalid email / phone or password');
+          throw new Error("Invalid email / phone or password");
         }
       },
     }),
@@ -181,99 +209,137 @@ export const {
     }),
   ],
 
-  session: { strategy: 'jwt' },
-
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
-  // 1️⃣ User just logged in → merge user data into token
-  if (user) {
-    Object.assign(token, user);
-  }
-
-  // 2️⃣ Session update() was called → merge updated fields into token
-  if (trigger === "update" && session?.update) {
-    Object.assign(token, session.update);
-  }
-
-  // 3️⃣ Artist: ensure artistProfile is loaded from DB if missing
-  if (!user && token?.id && token.role === "artist" && !token.artistProfile) {
-    try {
-      const artistUser = await prisma.user.findUnique({
-        where: { id: String(token.id) },
-        include: { artist: true },
-      });
-
-      if (artistUser?.artist) {
-        token.artistProfile = {
-          id: artistUser.artist.id,
-          stageName: artistUser.artist.stageName ?? null,
-          artistType: artistUser.artist.artistType ?? null,
-          subArtistType: artistUser.artist.subArtistType ?? null,
-          achievements: artistUser.artist.achievements ?? null,
-          yearsOfExperience: artistUser.artist.yearsOfExperience ?? null,
-          shortBio: artistUser.artist.shortBio ?? null,
-          performingLanguage: artistUser.artist.performingLanguage ?? null,
-          performingEventType: artistUser.artist.performingEventType ?? null,
-          performingStates: artistUser.artist.performingStates ?? null,
-          performingDurationFrom: artistUser.artist.performingDurationFrom ?? null,
-          performingDurationTo: artistUser.artist.performingDurationTo ?? null,
-          performingMembers: artistUser.artist.performingMembers ?? null,
-          offStageMembers: artistUser.artist.offStageMembers ?? null,
-          contactNumber: artistUser.artist.contactNumber ?? null,
-          whatsappNumber: artistUser.artist.whatsappNumber ?? null,
-          contactEmail: artistUser.artist.contactEmail ?? null,
-          soloChargesFrom: artistUser.artist.soloChargesFrom ?? null,
-          soloChargesTo: artistUser.artist.soloChargesTo ?? null,
-          chargesWithBacklineFrom: artistUser.artist.chargesWithBacklineFrom ?? null,
-          chargesWithBacklineTo: artistUser.artist.chargesWithBacklineTo ?? null,
-          soloChargesDescription: artistUser.artist.soloChargesDescription ?? null,
-          chargesWithBacklineDescription: artistUser.artist.chargesWithBacklineDescription ?? null,
-          instagramId: artistUser.artist.instagramId ?? null,
-          youtubeChannelId: artistUser.artist.youtubeChannelId ?? null,
-        };
-      }
-    } catch (err) {
-      console.error("Error refreshing artist JWT:", err);
-    }
-  }
-
-  return token;
-},
-
-
     async session({ session, token }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
+      }
+
+      if (token.role && session.user) {
+        session.user.role = token.role as "user" | "artist" | "admin";
+      }
+
       if (session.user) {
-        session.user = {
-          ...session.user,
-          ...token,
-          email: token.email ?? session.user.email ?? "",
-          artistProfile:
-            token.artistProfile &&
-              typeof token.artistProfile === "object" &&
-              "id" in token.artistProfile
-              ? token.artistProfile as any
-              : session.user.artistProfile ?? null,
-        };
+        session.user.firstName = token.firstName as string;
+        session.user.lastName = token.lastName as string;
+        session.user.email = token.email ?? session.user.email ?? "";
+        session.user.avatar = (token.image || token.avatar) as string;
+        session.user.phoneNumber = token.phoneNumber as string;
+        session.user.countryCode = token.countryCode as string;
+        session.user.city = token.city as string;
+        session.user.state = token.state as string;
+        session.user.address = token.address as string;
+        session.user.zip = token.zip as string;
+        session.user.gender = token.gender as string;
+        session.user.dob = token.dob as string;
+        session.user.isAccountVerified = token.isAccountVerified as boolean;
+        session.user.isArtistVerified = token.isArtistVerified as boolean;
+        session.user.isMarketingOptIn = token.isMarketingOptIn as boolean;
+        session.user.isDataSharingOptIn = token.isDataSharingOptIn as boolean;
+      }
 
-        if (token.role === 'user') {
-          delete (session.user as any).artistProfile;
-        }
+      // Handle artist profile
+      if (token.role === "artist") {
+        session.user.artistProfile =
+          token.artistProfile &&
+          typeof token.artistProfile === "object" &&
+          "id" in (token.artistProfile as object)
+            ? (token.artistProfile as any)
+            : null;
+      } else {
+        delete (session.user as any).artistProfile;
+      }
 
-        if (token.role === 'artist') {
-          session.user.artistProfile =
-            token.artistProfile &&
-              typeof token.artistProfile === 'object' &&
-              'id' in (token.artistProfile as object)
-              ? (token.artistProfile as any)
-              : null;
+      return session;
+    },
+
+    async jwt({ token, user, trigger, session }) {
+      console.log("JWT callback trigger:", user, session);
+      // User just logged in → merge user data into token
+      if (user) {
+        Object.assign(token, user);
+      }
+
+      // Session update() was called → merge updated fields into token
+      if (trigger === "update" && session?.update) {
+        Object.assign(token, session.update);
+      }
+
+      // Fetch fresh user data from database if token exists
+      if (!user && token?.sub) {
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { id: String(token.sub) },
+            include: { artist: true },
+          });
+
+          if (!existingUser) return token;
+
+          token.role = existingUser.role;
+          token.firstName = existingUser.firstName;
+          token.lastName = existingUser.lastName;
+          token.email = existingUser.email;
+          token.avatar = existingUser.image || existingUser.avatar;
+          token.image = existingUser.image;
+          token.phoneNumber = existingUser.phoneNumber;
+          token.countryCode = existingUser.countryCode;
+          token.city = existingUser.city;
+          token.state = existingUser.state;
+          token.address = existingUser.address;
+          token.zip = existingUser.zip;
+          token.gender = existingUser.gender;
+          token.dob = existingUser.dob ? existingUser.dob.toISOString() : null;
+          token.isAccountVerified = existingUser.isAccountVerified;
+          token.isArtistVerified = existingUser.isArtistVerified;
+          token.isMarketingOptIn = existingUser.isMarketingOptIn;
+          token.isDataSharingOptIn = existingUser.isDataSharingOptIn;
+
+          // Load artist profile if user is an artist
+          if (existingUser.role === "artist" && existingUser.artist) {
+            token.artistProfile = {
+              id: existingUser.artist.id,
+              stageName: existingUser.artist.stageName ?? null,
+              artistType: existingUser.artist.artistType ?? null,
+              subArtistType: existingUser.artist.subArtistType ?? null,
+              achievements: existingUser.artist.achievements ?? null,
+              yearsOfExperience: existingUser.artist.yearsOfExperience ?? null,
+              shortBio: existingUser.artist.shortBio ?? null,
+              performingLanguage:
+                existingUser.artist.performingLanguage ?? null,
+              performingEventType:
+                existingUser.artist.performingEventType ?? null,
+              performingStates: existingUser.artist.performingStates ?? null,
+              performingDurationFrom:
+                existingUser.artist.performingDurationFrom ?? null,
+              performingDurationTo:
+                existingUser.artist.performingDurationTo ?? null,
+              performingMembers: existingUser.artist.performingMembers ?? null,
+              offStageMembers: existingUser.artist.offStageMembers ?? null,
+              contactNumber: existingUser.artist.contactNumber ?? null,
+              whatsappNumber: existingUser.artist.whatsappNumber ?? null,
+              contactEmail: existingUser.artist.contactEmail ?? null,
+              soloChargesFrom: existingUser.artist.soloChargesFrom ?? null,
+              soloChargesTo: existingUser.artist.soloChargesTo ?? null,
+              chargesWithBacklineFrom:
+                existingUser.artist.chargesWithBacklineFrom ?? null,
+              chargesWithBacklineTo:
+                existingUser.artist.chargesWithBacklineTo ?? null,
+              soloChargesDescription:
+                existingUser.artist.soloChargesDescription ?? null,
+              chargesWithBacklineDescription:
+                existingUser.artist.chargesWithBacklineDescription ?? null,
+              instagramId: existingUser.artist.instagramId ?? null,
+              youtubeChannelId: existingUser.artist.youtubeChannelId ?? null,
+            };
+          }
+        } catch (err) {
+          console.error("Error refreshing JWT:", err);
         }
       }
-      return session;
+
+      return token;
     },
   },
 
-
-  pages: {
-    signIn: '/auth/signin',
-  },
+  session: { strategy: "jwt" },
 });
