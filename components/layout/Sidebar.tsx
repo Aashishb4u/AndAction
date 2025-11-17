@@ -91,7 +91,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <button
                 onClick={() => {
                   onClose();
-                  router.push('/profile');
                 }}
                 className="w-full flex items-center gap-3 p-3 bg-card border border-border-color rounded-xl hover:border-primary-pink/30 transition-all duration-300 group"
               >
