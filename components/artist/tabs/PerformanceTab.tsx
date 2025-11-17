@@ -7,7 +7,7 @@ import Button from '@/components/ui/Button';
 import { Info } from 'lucide-react';
 import { Artist } from '@/types';
 import { useSession } from "next-auth/react";
-import { updateArtistProfile } from '@/lib/helper';
+import { mapUserForSession, updateArtistProfile } from '@/lib/helper';
 
 interface PerformanceTabProps {
   artist: Artist;
@@ -85,8 +85,13 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
   const handleSave = async () => {
   try {
+    if (!session?.user?.id) {
+      alert("Not authenticated");
+      return;
+    }
+
     const payload = {
-      userId: session?.user?.id,
+      userId: session.user.id,
 
       performingLanguage: formData.performingLanguage,
       performingEventType: formData.eventType,
@@ -97,24 +102,29 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       offStageMembers: formData.offStageMembers,
     };
 
-    await updateArtistProfile(payload);
+    // 1️⃣ Update DB
+    const res = await updateArtistProfile(payload);
 
-    // refresh session
+    const refreshedUser = res.data.user;
+    const refreshedArtist = res.data.artistProfile;
+
+    // 2️⃣ Build the correct NextAuth structure:
+    const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
+
+    // 3️⃣ Update session
     await update({
-      user: {
-        ...session!.user,
-        artistProfile: {
-          ...session!.user.artistProfile,
-          ...payload,
-        },
-      },
+      update: sessionPayload
     });
 
     alert("Performance details updated!");
+
   } catch (error) {
+    console.error(error);
     alert("Failed to update performance details");
   }
 };
+
+
   const handleReset = () => {
     setFormData({
       performingLanguage: 'english-hindi-gujarati',
