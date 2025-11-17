@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense, useEffect } from "react";
+import React, { useState, Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Input, { PasswordInput } from "@/components/ui/Input";
@@ -25,6 +25,24 @@ function SignInContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Check for OAuth errors from URL
+  const oauthError = useMemo(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "OAuthAccountNotLinked") {
+      return "Email already in use with different sign-in method. Please use your original sign-in method.";
+    } else if (errorParam === "Configuration") {
+      return "There was a problem with the OAuth configuration. Please try again or contact support.";
+    } else if (errorParam) {
+      return "An error occurred during sign-in. Please try again.";
+    }
+    return "";
+  }, [searchParams]);
+
+  // Set error if OAuth error exists
+  if (oauthError && !error) {
+    setError(oauthError);
+  }
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
