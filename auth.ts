@@ -82,14 +82,23 @@ export const {
 
   events: {
     async linkAccount({ user }) {
-      // NOTE: For OAuth users we will update the isAccountVerified field
+      // NOTE: For OAuth users we will update the isAccountVerified field and copy image to avatar
       if (!user?.id) return;
+
+      const existingUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { image: true , name: true },
+      });
+
       await prisma.user.update({
         where: {
           id: user.id,
         },
         data: {
           isAccountVerified: true,
+          avatar: existingUser?.image || undefined,
+          firstName: user.name?.split(" ")[0],
+          lastName: user.name?.split(" ")[1] || "",
         },
       });
     },
