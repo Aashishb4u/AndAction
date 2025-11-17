@@ -62,11 +62,11 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   ];
 
   const experienceYears = [
-    { value: '0-1', label: '0-1 years' },
-    { value: '1-3', label: '1-3 years' },
-    { value: '3-5', label: '3-5 years' },
-    { value: '5-10', label: '5-10 years' },
-    { value: '10+', label: '10+ years' }
+    { value: '1', label: '0-1 years' },
+    { value: '2', label: '1-3 years' },
+    { value: '3', label: '3-5 years' },
+    { value: '4', label: '5-10 years' },
+    { value: '5', label: '10+ years' }
   ];
 
   const handleInputChange = (field: string, value: string) => {

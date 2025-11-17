@@ -1,101 +1,97 @@
 'use client';
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import SiteLayout from '@/components/layout/SiteLayout';
 import ArtistProfileHeader from '@/components/sections/ArtistProfileHeader';
 import ArtistDetailTabs from '@/components/sections/ArtistDetailTabs';
 import { Artist } from '@/types';
 
-// Sample artist data - in real app, this would come from API
-const sampleArtistData: Artist = {
-  id: '1',
-  name: 'MJ Singer',
-  category: 'Singer',
-  location: 'Gujarat',
-  duration: '120 - 160 minutes',
-  startingPrice: 100000,
-  languages: ['English', 'Gujarati', 'Hindi'],
-  image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=500&fit=crop&crop=face',
-  isBookmarked: false,
-  gender: 'male',
-  subCategory: 'bollywood',
-  bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero',
-  yearsOfExperience: 4,
-  subArtistTypes: ['Singer', 'DJ', 'Anker'],
-  achievements: ['Singer', 'DJ', 'Anker'],
-  phone: '+91 9876543210',
-  whatsapp: '+91 9876543210',
-  videos: [
-    {
-      id: 'v1',
-      title: 'Amazing Performance',
-      thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      duration: '3:45',
-      views: 1200
-    }
-  ],
-  shorts: [
-    {
-      id: 's1',
-      title: 'Quick Performance',
-      thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=600&fit=crop',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      views: 850,
-      likes: 120
-    }
-  ],
-  performances: [
-    {
-      id: 'p1',
-      title: 'Wedding Performance',
-      venue: 'Grand Hotel',
-      date: '2024-01-15',
-      description: 'Amazing wedding performance',
-      images: ['https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop']
-    }
-  ]
-};
-
 export default function ArtistDetailPage() {
-  // const params = useParams();
   const router = useRouter();
-  // const artistId = params.id as string;
+  const { id: artistId } = useParams();
 
-  // In real app, fetch artist data based on artistId
-  const artist = sampleArtistData;
+  const [artist, setArtist] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!artistId) return;
 
-  const handleBack = () => {
-    router.back();
-  };
+    const fetchArtist = async () => {
+      try {
+        const res = await fetch(`/api/artists/${artistId}`);
+        const json = await res.json();
 
-  const handleBookmark = () => {
-    // Handle bookmark logic
-    console.log('Bookmark toggled');
-  };
+        if (!json.success || !json.data?.artist) {
+          setArtist(null);
+          return;
+        }
 
-  const handleShare = () => {
-    // Handle share logic
-    console.log('Share artist');
-  };
+        const a = json.data.artist;
+        const mappedArtist: any = {
+          id: a.id,
+          name: a.stageName || `${a.user.firstName} ${a.user.lastName}`.trim(),
+          category: a.artistType,
+          subCategory: [a.subArtistType],
+          location: `${a.user.city || ''}${a.user.state ? ', ' + a.user.state : ''}`,
+          image: a.user.avatar || '/icons/images.jpeg',
+          gender: a.user.gender || 'unknown',
 
-  const handleRequestBooking = () => {
-    // Handle booking request
-    console.log('Request booking');
-  };
+          bio: a.shortBio || '',
+          yearsOfExperience: a.yearsOfExperience || 0,
+          achievements: [a.achievements], // ? a.achievements.split(',').map(x => x.trim()) : [],
+          subArtistTypes: [a.subArtistType], // ? a.subArtistType.split(',').map(x => x.trim()) : [],
+          languages: [a.performingLanguage], // ? a.performingLanguage.split(',').map(x => x.trim()) : [],
 
-  const handleCall = () => {
-    if (artist.phone) {
-      window.open(`tel:${artist.phone}`, '_self');
-    }
-  };
+          soloChargesFrom: a.soloChargesFrom || 0,
+          soloChargesTo: a.soloChargesTo || 0,
+          soloChargesDescription: a.soloChargesDescription || "",
 
-  const handleWhatsApp = () => {
-    if (artist.whatsapp) {
-      window.open(`https://wa.me/${artist.whatsapp.replace(/[^0-9]/g, '')}`, '_blank');
-    }
-  };
+          chargesWithBacklineFrom: a.chargesWithBacklineFrom || 0,
+          chargesWithBacklineTo: a.chargesWithBacklineTo || 0,
+          chargesWithBacklineDescription: a.chargesWithBacklineDescription || "",
+
+          performingDurationFrom: a.performingDurationFrom || "",
+          performingDurationTo: a.performingDurationTo || "",
+          performingMembers: a.performingMembers || "",
+          offStageMembers: a.offStageMembers || "",
+
+          performingEventType: a.performingEventType || "",
+          performingStates: a.performingStates || "",
+
+          duration: `${a.performingDurationFrom || ''} - ${a.performingDurationTo || ''} minutes`,
+          startingPrice: Number(a.soloChargesFrom) || 0,
+
+          phone: a.contactNumber || '',
+          whatsapp: a.whatsappNumber || '',
+          isBookmarked: false,
+
+          // UI expects these
+          videos: [],
+          shorts: [],
+          performances: [],
+        };
+
+
+        setArtist(mappedArtist);
+
+      } catch (err) {
+        console.error('Artist Fetch Error:', err);
+        setArtist(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArtist();
+  }, [artistId]);
+
+  if (loading) {
+    return (
+      <SiteLayout>
+        <div className="min-h-screen flex items-center justify-center text-white">Loading...</div>
+      </SiteLayout>
+    );
+  }
 
   if (!artist) {
     return (
@@ -104,10 +100,10 @@ export default function ArtistDetailPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white mb-4">Artist not found</h1>
             <button
-              onClick={handleBack}
+              onClick={() => router.back()}
               className="text-primary-pink hover:text-primary-orange transition-colors"
             >
-              Go back
+              Go Back
             </button>
           </div>
         </div>
@@ -115,11 +111,65 @@ export default function ArtistDetailPage() {
     );
   }
 
+  const handleBack = () => router.back();
+  const handleBookmark = async () => {
+  if (!artist) return;
+
+  try {
+    // If artist is already bookmarked → remove it
+    if (artist.isBookmarked) {
+      const res = await fetch("/api/bookmarks/remove", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ artistId: artist.id }),
+      });
+
+      const json = await res.json();
+
+      if (json.success) {
+        setArtist((prev: any) => ({
+          ...prev,
+          isBookmarked: false,
+        }));
+      }
+
+      return;
+    }
+
+    // Otherwise → bookmark artist
+    const res = await fetch("/api/bookmarks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ artistId: artist.id }),
+    });
+
+    const json = await res.json();
+
+    if (json.success) {
+      setArtist((prev: any) => ({
+        ...prev,
+        isBookmarked: true,
+      }));
+    }
+  } catch (error) {
+    console.error("Bookmark toggle error:", error);
+  }
+};
+
+  const handleShare = () => console.log('Share artist');
+  const handleRequestBooking = () => console.log('Request booking');
+  const handleCall = () => window.open(`tel:${`+918248621277`}`, '_self');
+  const handleWhatsApp = () =>
+    window.open(`https://wa.me/${`+918248621277`.replace(/[^0-9]/g, '')}`, '_blank');
+
   return (
     <SiteLayout hideNavbar hideBottomBar>
-      {/* Desktop Layout */}
+      {/* Desktop */}
       <div className="hidden max-w-7xl mx-auto lg:flex min-h-screen bg-background py-10 lg:py-14">
-        {/* Left Side - Artist Profile */}
         <div className="w-[400px] flex-shrink-0">
           <ArtistProfileHeader
             artist={artist}
@@ -131,14 +181,12 @@ export default function ArtistDetailPage() {
             onWhatsApp={handleWhatsApp}
           />
         </div>
-
-        {/* Right Side - Artist Details */}
         <div className="flex-1">
           <ArtistDetailTabs artist={artist} />
         </div>
       </div>
 
-      {/* Mobile Layout */}
+      {/* Mobile */}
       <div className="lg:hidden min-h-screen bg-background">
         <ArtistProfileHeader
           artist={artist}

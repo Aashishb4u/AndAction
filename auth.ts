@@ -192,8 +192,12 @@ export const {
 
   // 2️⃣ Session update() was called → merge updated fields into token
   if (trigger === "update" && session?.update) {
-    Object.assign(token, session.update);
+  for (const key in session.update) {
+    if (session.update[key] === undefined) continue;
+    token[key] = session.update[key];
   }
+}
+
 
   // 3️⃣ Artist: ensure artistProfile is loaded from DB if missing
   if (!user && token?.id && token.role === "artist" && !token.artistProfile) {
