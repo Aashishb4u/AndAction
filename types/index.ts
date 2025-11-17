@@ -110,7 +110,7 @@ export interface ArtistProfile {
 }
 
 // Artist Types (for listings and search)
-export interface Artist {
+/*export interface Artist {
   id: string;
   name: string;
   category: string;
@@ -132,7 +132,42 @@ export interface Artist {
   videos?: ArtistVideo[];
   shorts?: ArtistShort[];
   performances?: ArtistPerformance[];
+}*/
+export interface Artist {
+  id: string;
+  name: string;
+  category: string;
+  location: string;
+  duration: string;
+  startingPrice: number;
+  languages: string[];
+  image: string;
+  isBookmarked: boolean;
+
+  // ABOUT TAB
+  gender?: string;
+  bio?: string;
+  yearsOfExperience?: number;
+  achievements?: string[];
+  stageName?: string;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  address?: string;
+  pinCode?: string;
+  state?: string;
+  city?: string;
+
+  // PERFORMANCE TAB — ADD THESE
+  performingLanguage?: string;
+  performingEventType?: string;
+  performingStates?: string;
+  performingDurationFrom?: string;
+  performingDurationTo?: string;
+  performingMembers?: string;
+  offStageMembers?: string;
 }
+
 
 // Artist Video Type
 export interface ArtistVideo {

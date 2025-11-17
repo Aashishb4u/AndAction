@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import ArtistSidebar from './ArtistSidebar';
 import { Menu } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 interface ArtistDashboardLayoutProps {
   children: React.ReactNode;
@@ -25,6 +26,8 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
     setIsSidebarOpen(false);
   };
 
+  const { data: session, status } = useSession();
+
   return (
     <div className={`min-h-screen bg-black ${className}`}>
       {/* Navigation Bar */}
@@ -39,7 +42,7 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
           {/* Profile Icon */}
           <div onClick={toggleSidebar} className="hidden md:block w-10 h-10 rounded-full overflow-hidden border-2 border-border-color cursor-pointer">
             <Image
-              src="/icons/images.jpeg"
+              src={session?.user?.avatar || '/icons/images.jpeg'}
               alt="Profile"
               width={40}
               height={40}
