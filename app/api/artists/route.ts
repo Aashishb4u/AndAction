@@ -1,10 +1,8 @@
 /**
  * app/api/artists/route.ts
  *
- * Handles the public listing and searching of Artist profiles.
- * This API is OPEN and does not require authentication.
- *
- * Priority 10: GET /api/artists
+ * Public artist listing API with search, filtering, verification toggle & pagination.
+ * This endpoint is OPEN – no authentication required.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -12,41 +10,39 @@ import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { Prisma } from "@prisma/client";
 
-// Define pagination defaults
+// Pagination defaults
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
-/**
- * Handles GET requests to retrieve a list of public artist profiles.
- * Supports filtering, searching, and pagination via URL query parameters.
- */
 export async function GET(request: NextRequest): Promise<NextResponse<any>> {
   try {
     const url = new URL(request.url);
     const searchParams = url.searchParams;
-    // --- 1. Pagination Setup ---
-    const page = parseInt(searchParams.get("page") || "1", 10);
+
+    // ----- Pagination -----
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     let limit = parseInt(
       searchParams.get("limit") || DEFAULT_PAGE_SIZE.toString(),
       10
     );
-    // Clamp limit to maximum allowed size
-    if (limit > MAX_PAGE_SIZE) {
-      limit = MAX_PAGE_SIZE;
-    }
+    if (limit > MAX_PAGE_SIZE) limit = MAX_PAGE_SIZE;
+    if (limit < 1) limit = DEFAULT_PAGE_SIZE;
+
     const skip = (page - 1) * limit;
-    // --- 2. Filtering and Search Setup ---
-    // Start building the WHERE clause for Prisma
+
+    // ----- Base WHERE clause -----
     const where: Prisma.ArtistWhereInput = {};
-    // A. Search by stageName or shortBio
+
+    // 1. Full-text search (stageName OR shortBio)
     const search = searchParams.get("search")?.trim();
     if (search) {
-      // Use OR logic for searching multiple fields (requires case-insensitive match for PostgreSQL)
       where.OR = [
-        { stageName: { contains: search, mode: "insensitive" as "default" } },
-        { shortBio: { contains: search, mode: "insensitive" as "default" } },
+        { stageName: { contains: search, mode: "insensitive" } },
+        { shortBio: { contains: search, mode: "insensitive" } },
       ];
     }
+
+    // 2. Simple filters
     const type = searchParams.get("type");
     const subType = searchParams.get("subType");
     const gender = searchParams.get("gender");
@@ -54,6 +50,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const eventType = searchParams.get("eventType");
     const state = searchParams.get("state");
     const budget = searchParams.get("budget");
+
     if (type) where.artistType = { equals: type, mode: "insensitive" };
     if (subType) where.subArtistType = { equals: subType, mode: "insensitive" };
     if (language)
@@ -62,47 +59,65 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       where.performingEventType = { contains: eventType, mode: "insensitive" };
     if (state)
       where.performingStates = { contains: state, mode: "insensitive" };
+
+    // Budget range filter (e.g. "50000-150000")
     if (budget && budget.includes("-")) {
-      const [min, max] = budget.split("-").map(Number);
+      const [minStr, maxStr] = budget.split("-");
+      const min = Number(minStr);
+      const max = Number(maxStr);
+
       if (!isNaN(min) && !isNaN(max)) {
         where.AND = [
-          ...(Array.isArray(where.AND)
-            ? where.AND
-            : where.AND
-            ? [where.AND]
-            : []),
+          ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
           {
             OR: [
-              { soloChargesFrom: { gte: min, lte: max } },
-              { chargesWithBacklineFrom: { gte: min, lte: max } },
+              {
+                AND: [
+                  { soloChargesFrom: { gte: min } },
+                  { soloChargesTo: { lte: max } },
+                ],
+              },
+              {
+                AND: [
+                  { chargesWithBacklineFrom: { gte: min } },
+                  { chargesWithBacklineTo: { lte: max } },
+                ],
+              },
             ],
           },
         ];
       }
     }
-    // --- 3. Only show fully created, verified Artists (Security/Quality Filter) ---
-    // Join with the User model and ensure role is 'artist' and isAccountVerified is true
-    // Merge with any existing user conditions (e.g., gender filter)
-    where.user = {
-      is: {
-        role: "artist",
-        isAccountVerified: true, // Only show verified emails
-        isArtistVerified: true, // Only show profiles approved by admin (or marked as verified by self)
-        ...(gender && { gender: { equals: gender, mode: "insensitive" } }),
-      },
+
+    // 3. Verification & Role filter (with optional ?verified=false to bypass)
+    const verifiedParam = searchParams.get("verified"); // "true" | "false" | null
+
+    const userFilter: Prisma.UserWhereInput = {
+      role: "artist",
     };
-    // --- 4. Database Query ---
-    // Count total results for pagination metadata
+
+    // Default (no param or "true") → only fully verified artists
+    // Only when explicitly ?verified=false we show unverified ones
+    if (verifiedParam !== "false") {
+      userFilter.isAccountVerified = true;
+      userFilter.isArtistVerified = true;
+    }
+
+    // Gender filter (if provided) goes inside the same user.is object
+    if (gender) {
+      userFilter.gender = { equals: gender, mode: "insensitive" };
+    }
+
+    where.user = { is: userFilter };
+
+    // ----- Queries -----
     const totalArtists = await prisma.artist.count({ where });
 
     const artists = await prisma.artist.findMany({
       where,
       skip,
       take: limit,
-      orderBy: {
-        // Default sorting by creation date (newest first)
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         stageName: true,
@@ -115,6 +130,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         yearsOfExperience: true,
         soloChargesFrom: true,
         soloChargesTo: true,
+        chargesWithBacklineFrom: true,
+        chargesWithBacklineTo: true,
         performingDurationFrom: true,
         performingDurationTo: true,
         user: {
@@ -124,18 +141,21 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             lastName: true,
             avatar: true,
             city: true,
+            state: true, // added from incoming code
           },
         },
       },
     });
-    // --- 5. Format Response and Return ---
+
+    // ----- Response -----
     const metadata = {
       total: totalArtists,
-      page: page,
-      limit: limit,
+      page,
+      limit,
       totalPages: Math.ceil(totalArtists / limit),
       hasMore: page * limit < totalArtists,
     };
+
     return successResponse(
       { artists, metadata },
       "Artist list retrieved successfully.",

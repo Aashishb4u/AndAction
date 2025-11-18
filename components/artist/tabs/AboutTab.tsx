@@ -9,7 +9,7 @@ import Button from '@/components/ui/Button';
 import { Info } from 'lucide-react';
 import { Artist } from '@/types';
 import { useSession } from "next-auth/react";
-import { updateArtistProfile } from '@/lib/helper';
+import { mapUserForSession, updateArtistProfile } from '@/lib/helper';
 
 // Extended artist type for profile management
 type ExtendedArtist = Artist & {
@@ -71,11 +71,11 @@ const subArtistTypeOptions = [
 ];
 
 const experienceOptions = [
-  { value: '0-1', label: '0-1 years' },
-  { value: '1-3', label: '1-3 years' },
-  { value: '3-5', label: '3-5 years' },
-  { value: '5-10', label: '5-10 years' },
-  { value: '10+', label: '10+ years' }
+  { value: '1', label: '0-1 years' },
+  { value: '2', label: '1-3 years' },
+  { value: '3', label: '3-5 years' },
+  { value: '4', label: '5-10 years' },
+  { value: '5', label: '10+ years' }
 ];
 
 const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
@@ -104,47 +104,53 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
   };
 
   const handleSave = async () => {
-    try {
-      const payload = {
-        userId: session?.user?.id,
-
-        stageName: formData.stageName,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        gender: formData.gender,
-        dob: formData.dateOfBirth,
-        address: formData.address,
-        pinCode: formData.pinCode,
-        city: formData.city,
-        state: formData.state,
-        shortBio: formData.shortBio,
-        achievements: formData.achievements,
-        yearsOfExperience: formData.yearsOfExperience,
-        subArtistType: formData.subArtistType,
-      };
-
-      await updateArtistProfile(payload);
-
-      // refresh session
-      await update({
-        user: {
-          ...session!.user,
-          ...payload,
-          artistProfile: {
-            ...session!.user.artistProfile,
-            subArtistType: formData.subArtistType,
-            achievements: formData.achievements,
-            yearsOfExperience: formData.yearsOfExperience,
-            shortBio: formData.shortBio,
-          },
-        },
-      });
-      
-      alert("Profile updated!");
-    } catch (error) {
-      alert("Failed to update");
+  try {
+    if (!session?.user?.id) {
+      alert("Not authenticated");
+      return;
     }
-  };
+
+    const payload = {
+      userId: session.user.id,
+
+      stageName: formData.stageName,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      gender: formData.gender,
+      dob: formData.dateOfBirth,
+      address: formData.address,
+      pinCode: formData.pinCode,
+      city: formData.city,
+      state: formData.state,
+      shortBio: formData.shortBio,
+      achievements: formData.achievements,
+      yearsOfExperience: formData.yearsOfExperience,
+      subArtistType: formData.subArtistType,
+    };
+
+    // Update DB
+    const res = await updateArtistProfile(payload);
+
+    const refreshedUser = res.data.user;
+    const refreshedArtist = res.data.artistProfile;
+
+    // 🔥 Build correct NextAuth shape:
+    const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
+
+    // Update session (JWT + session.user)
+    await update({
+      update: sessionPayload
+    });
+
+    alert("Profile updated!");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to update");
+  }
+};
+
+
+
 
   const handleReset = () => {
     setFormData({

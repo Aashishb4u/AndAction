@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import SiteLayout from '@/components/layout/SiteLayout';
 import ArtistGrid from '@/components/sections/ArtistGrid';
 import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
 import { Artist } from '@/types';
 
-// Sample bookmarked data - in real app, this would come from API/localStorage
-const sampleBookmarkedArtists: Artist[] = [
+// Sample bookmarked - in real app, this would come from API/localStorage
+const sampleBookmarkedArtists: any[] = [
   {
     id: '1',
     name: 'MJ Singer',
@@ -194,6 +194,9 @@ const sampleBookmarkedShorts = [
 type TabType = 'Artist' | 'Videos' | 'Shorts';
 
 export default function BookmarksPage() {
+  const [artistBookmarks, setArtistBookmarks] = useState<Artist[]>([]);
+  const [loadingArtistBookmarks, setLoadingArtistBookmarks] = useState(true);
+
   const [activeTab, setActiveTab] = useState<TabType>('Artist');
   const [bookmarkedArtists, setBookmarkedArtists] = useState<Set<string>>(
     new Set(sampleBookmarkedArtists.map(artist => artist.id))
@@ -206,6 +209,44 @@ export default function BookmarksPage() {
   );
 
   const tabs: TabType[] = ['Artist', 'Videos', 'Shorts'];
+  useEffect(() => {
+  const fetchBookmarks = async () => {
+    try {
+      const res = await fetch('/api/bookmarks');
+      const json = await res.json();
+
+      if (json.success) {
+        const mappedArtists = json.data.bookmarks
+          .filter((b: any) => b.artist)
+          .map((b: any) => {
+            const a = b.artist;
+            return {
+              id: a.id,
+              name: a.stageName || `${a.user.firstName} ${a.user.lastName}`,
+              category: a.artistType,
+              subCategory: a.subArtistType,
+              location: `${a.user.city || ''}${a.user.state ? ', ' + a.user.state : ''}`,
+              duration: '120 - 160 minutes', // MOCK FIELD
+              startingPrice: Number(a.soloChargesFrom) || 0,
+              languages: [a.performingLanguage],
+              image: a.user.avatar || '/icons/images.jpeg',
+              isBookmarked: true,
+              gender: a.user.gender || 'unknown',
+            };
+          });
+
+        setArtistBookmarks(mappedArtists);
+      }
+    } catch (err) {
+      console.error('Bookmark fetch failed:', err);
+    } finally {
+      setLoadingArtistBookmarks(false);
+    }
+  };
+
+  fetchBookmarks();
+}, []);
+
 
   const handleArtistBookmark = (artistId: string) => {
     setBookmarkedArtists(prev => {
@@ -290,25 +331,28 @@ export default function BookmarksPage() {
           {/* Tab Content */}
           <div className="pb-8">
             {activeTab === 'Artist' && (
-              <div>
-                {filteredArtists.length > 0 ? (
-                  <ArtistGrid
-                    artists={filteredArtists}
-                    onBookmark={handleArtistBookmark}
-                  />
-                ) : (
-                  <div className="text-center py-16">
-                    <div className="mb-4">
-                      <svg className="w-16 h-16 text-gray-600 mx-auto" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M21.9004 16.09V11.098C21.9004 6.808 21.9004 4.665 20.5824 3.332C19.2644 2 17.1424 2 12.9004 2C8.65839 2 6.53639 2 5.21839 3.332C3.90039 4.664 3.90039 6.81 3.90039 11.098V16.091C3.90039 19.187 3.90039 20.736 4.63439 21.412C4.98439 21.735 5.42639 21.938 5.89739 21.992C6.88439 22.105 8.03739 21.085 10.3424 19.046C11.3624 18.145 11.8714 17.694 12.4604 17.576C12.7504 17.516 13.0504 17.516 13.3404 17.576C13.9304 17.694 14.4394 18.145 15.4584 19.046C17.7634 21.085 18.9164 22.105 19.9034 21.991C20.3734 21.938 20.8164 21.735 21.1664 21.412C21.9004 20.736 21.9004 19.187 21.9004 16.09Z" stroke="currentColor" strokeWidth="1.5" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-semibold text-white mb-2">No Bookmarked Artists</h3>
-                    <p className="text-gray-400">Start exploring and bookmark your favorite artists!</p>
-                  </div>
-                )}
-              </div>
-            )}
+  <div>
+    {loadingArtistBookmarks ? (
+      <div className="text-center py-16 text-white">Loading...</div>
+    ) : artistBookmarks.length > 0 ? (
+      <ArtistGrid
+        artists={artistBookmarks}
+        onBookmark={handleArtistBookmark}
+      />
+    ) : (
+      <div className="text-center py-16">
+        <div className="mb-4">
+          <svg className="w-16 h-16 text-gray-600 mx-auto" viewBox="0 0 24 24" fill="none">
+            <path d="M21.9004 16.09V11.098C21.9004 6.808 21.9004 4.665 20.5824 3.332..." stroke="currentColor" strokeWidth="1.5"/>
+          </svg>
+        </div>
+        <h3 className="text-xl font-semibold text-white mb-2">No Bookmarked Artists</h3>
+        <p className="text-gray-400">Start exploring and bookmark your favorite artists!</p>
+      </div>
+    )}
+  </div>
+)}
+
 
             {activeTab === 'Videos' && (
               <div className='px-4 mt-4'>

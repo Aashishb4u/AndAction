@@ -79,92 +79,105 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   );
 
   const renderPerformanceContent = () => (
-    <div className="space-y-4 max-w-4xl">
-      {/* Solo Charges */}
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
-        <div className="text-white mb-1">₹ 1,00,000 - ₹ 2,00,000</div>
-        <p className="footnote">
-          Gorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.
+  <div className="space-y-4 max-w-4xl">
+
+    {/* Solo Charges */}
+    <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
+      <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
+      <div className="text-white mb-1">
+        ₹ {artist.soloChargesFrom || 0} - ₹ {artist.soloChargesTo || 0}
+      </div>
+      <p className="footnote">
+        {artist.soloChargesDescription?.trim() || "No description provided."}
+      </p>
+    </div>
+
+    {/* Charges with Backline */}
+    <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
+      <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
+      <div className="text-white mb-1">
+        ₹ {artist.chargesWithBacklineFrom || 0} - ₹ {artist.chargesWithBacklineTo || 0}
+      </div>
+      <p className="footnote">
+        {artist.chargesWithBacklineDescription?.trim() || "No description provided."}
+      </p>
+    </div>
+
+    {/* Performance Details Grid */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      {/* Performing duration */}
+      <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
+        <h4 className="text-text-gray secondary-text mb-1">Performing duration</h4>
+        <p className="text-white text-sm">
+          {artist.performingDurationFrom || "N/A"} - {artist.performingDurationTo || "N/A"} mins
         </p>
       </div>
 
-      {/* Charges with backline */}
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
-        <div className="text-white mb-1">₹ 2,00,000 - ₹ 2,50,000</div>
-        <p className="footnote">
-          Gorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.
+      {/* Performing members */}
+      <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
+        <h4 className="text-text-gray secondary-text mb-1">Performing members</h4>
+        <p className="text-white text-sm">
+          {artist.performingMembers || "N/A"} members
         </p>
       </div>
 
-      {/* Performance Details Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Performing duration */}
-        <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
-          <h4 className="text-text-gray secondary-text mb-1">Performing duration</h4>
-          <p className="text-white text-sm">120 - 160 mins</p>
-        </div>
-
-        {/* Performing members */}
-        <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
-          <h4 className="text-text-gray secondary-text mb-1">Performing members</h4>
-          <p className="text-white text-sm">2 - members</p>
-        </div>
-
-        {/* Off stage members */}
-        <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
-          <h4 className="text-text-gray secondary-text mb-1">Off stage members</h4>
-          <p className="text-white text-sm">N/A</p>
-        </div>
+      {/* Off stage members */}
+      <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
+        <h4 className="text-text-gray secondary-text mb-1">Off stage members</h4>
+        <p className="text-white text-sm">
+          {artist.offStageMembers || "N/A"}
+        </p>
       </div>
 
-      {/* Performing language */}
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {['English', 'Gujarati', 'Hindi'].map((language, index) => (
-            <span
-              key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
-            >
-              {language}
-            </span>
-          ))}
-        </div>
-      </div>
+    </div>
 
-      {/* Performing event type */}
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Performing event type</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {['Concert', 'Party', 'Events'].map((eventType, index) => (
-            <span
-              key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
-            >
-              {eventType}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Performing States */}
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Performing States</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {['Gujarat', 'Maharashtra', 'Rajasthan'].map((state, index) => (
-            <span
-              key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
-            >
-              {state}
-            </span>
-          ))}
-        </div>
+    {/* Performing language */}
+    <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
+      <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
+      <div className="flex flex-wrap gap-1.5">
+        {(artist.languages?.length ? artist.languages : ["N/A"]).map((language, index) => (
+          <span
+            key={index}
+            className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
+          >
+            {language}
+          </span>
+        ))}
       </div>
     </div>
-  );
+
+    {/* Performing event type */}
+    <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
+      <h3 className="text-text-gray secondary-text mb-1">Performing event type</h3>
+      <div className="flex flex-wrap gap-1.5">
+        <span className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium">
+          {artist.performingEventType || "N/A"}
+        </span>
+      </div>
+    </div>
+
+    {/* Performing States */}
+    <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
+      <h3 className="text-text-gray secondary-text mb-1">Performing States</h3>
+      <div className="flex flex-wrap gap-1.5">
+        {(artist.performingStates
+          ? artist.performingStates.split(',').map(s => s.trim())
+          : ["N/A"]
+        ).map((state, index) => (
+          <span
+            key={index}
+            className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
+          >
+            {state}
+          </span>
+        ))}
+      </div>
+    </div>
+
+  </div>
+);
+
 
   const renderVideosContent = () => {
     // Sample video data - in real app, this would come from artist.videos
