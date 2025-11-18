@@ -141,7 +141,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             lastName: true,
             avatar: true,
             city: true,
-            state: true, // added from incoming code
+            state: true,
           },
         },
       },
