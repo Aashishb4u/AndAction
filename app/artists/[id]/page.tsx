@@ -1,70 +1,29 @@
 'use client';
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import SiteLayout from '@/components/layout/SiteLayout';
 import ArtistProfileHeader from '@/components/sections/ArtistProfileHeader';
 import ArtistDetailTabs from '@/components/sections/ArtistDetailTabs';
 import { Artist } from '@/types';
+import LoadingSpinner from '@/components/ui/Loading';
+import { transformArtist } from '../transformArtist';
 
-// Sample artist data - in real app, this would come from API
-const sampleArtistData: Artist = {
-  id: '1',
-  name: 'MJ Singer',
-  category: 'Singer',
-  location: 'Gujarat',
-  duration: '120 - 160 minutes',
-  startingPrice: 100000,
-  languages: ['English', 'Gujarati', 'Hindi'],
-  image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=500&fit=crop&crop=face',
-  isBookmarked: false,
-  gender: 'male',
-  subCategory: 'bollywood',
-  bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero',
-  yearsOfExperience: 4,
-  subArtistTypes: ['Singer', 'DJ', 'Anker'],
-  achievements: ['Singer', 'DJ', 'Anker'],
-  phone: '+91 9876543210',
-  whatsapp: '+91 9876543210',
-  videos: [
-    {
-      id: 'v1',
-      title: 'Amazing Performance',
-      thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      duration: '3:45',
-      views: 1200
-    }
-  ],
-  shorts: [
-    {
-      id: 's1',
-      title: 'Quick Performance',
-      thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=600&fit=crop',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      views: 850,
-      likes: 120
-    }
-  ],
-  performances: [
-    {
-      id: 'p1',
-      title: 'Wedding Performance',
-      venue: 'Grand Hotel',
-      date: '2024-01-15',
-      description: 'Amazing wedding performance',
-      images: ['https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop']
-    }
-  ]
-};
+const getArtistById = async (id: string): Promise<Artist | null> => {
+  const res = await fetch(`/api/artists/${id}`, { cache: 'no-store' })
+  if (!res.ok) {
+    return null;
+  }
+  const json = await res.json();
+  return json.data.artist ? transformArtist(json.data.artist) : null;
+}
 
 export default function ArtistDetailPage() {
-  // const params = useParams();
+  const params: { id: string } = useParams();
+  const { id } = params;
   const router = useRouter();
-  // const artistId = params.id as string;
-
-  // In real app, fetch artist data based on artistId
-  const artist = sampleArtistData;
+  const [artist, setArtist] = React.useState<Artist | null>(null);
+  const [loading, setLoading] = React.useState<boolean>(true);
 
   const handleBack = () => {
     router.back();
@@ -86,16 +45,30 @@ export default function ArtistDetailPage() {
   };
 
   const handleCall = () => {
-    if (artist.phone) {
-      window.open(`tel:${artist.phone}`, '_self');
+    if (artist?.phone) {
+      window.open(`tel:${artist?.phone}`, '_self');
     }
   };
 
   const handleWhatsApp = () => {
-    if (artist.whatsapp) {
+    if (artist?.whatsapp) {
       window.open(`https://wa.me/${artist.whatsapp.replace(/[^0-9]/g, '')}`, '_blank');
     }
   };
+
+  useEffect(() => {
+    const fetchArtist = async () => {
+      const artist = await getArtistById(id);
+      setArtist(artist);
+      setLoading(false);
+      return artist;
+    };
+    fetchArtist();
+  }, [id]);
+
+  if (loading) {
+    return <LoadingSpinner fullScreen text='Loading artist...'/>
+  }
 
   if (!artist) {
     return (

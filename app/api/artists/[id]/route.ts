@@ -61,7 +61,7 @@ export async function GET(
                 instagramId: true,
                 createdAt: true,
                 updatedAt: true,
-                
+                whatsappNumber: true,
                 // Include the related User model for basic contact info and verification status
                 user: {
                     select: {
@@ -72,6 +72,7 @@ export async function GET(
                         isArtistVerified: true, // Verification status
                         city: true,
                         state: true,
+                        phoneNumber: true,
                         // NOTE: Email and phone are typically private, so we don't expose them publicly
                     }
                 }

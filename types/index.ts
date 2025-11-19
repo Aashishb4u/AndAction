@@ -148,6 +148,9 @@ export interface Artist {
   gender?: string;
   bio?: string;
   yearsOfExperience?: number;
+  phone?: string;
+  whatsapp?: string;
+  subArtistTypes?: string[];
   achievements?: string[];
   stageName?: string;
   firstName?: string;
@@ -160,12 +163,16 @@ export interface Artist {
 
   // PERFORMANCE TAB — ADD THESE
   performingLanguage?: string;
-  performingEventType?: string;
-  performingStates?: string;
+  performingEventType?: string[];
+  performingStates?: string[];
   performingDurationFrom?: string;
   performingDurationTo?: string;
   performingMembers?: string;
   offStageMembers?: string;
+  soloChargesFrom?: string;
+  soloChargesTo?: string;
+  backlineChargesFrom?: string;
+  backlineChargesTo?: string;
 }
 
 

@@ -31,7 +31,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
         <h3 className="text-text-gray secondary-text mb-1">Bio</h3>
         <p className=" leading-relaxed text-sm">
-          {artist.bio || 'Borem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero Borem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero'}
+          {artist.bio}
           {(!artist.bio || (artist.bio && artist.bio.length > 100)) && (
             <button className="text-blue hover:text-primary-pink transition-colors font-medium ml-1">
                more.
@@ -43,14 +43,14 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       {/* Years of Experience */}
       <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
         <h3 className="text-text-gray secondary-text mb-1">Years of experience</h3>
-        <p className="footnote">{artist.yearsOfExperience || 4} Years</p>
+        <p className="footnote">{artist.yearsOfExperience || 0} Years</p>
       </div>
 
       {/* Sub-Artist Type */}
       <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
         <h3 className="text-text-gray secondary-text mb-1">Sub-Artist Type</h3>
         <div className="flex flex-wrap gap-1.5">
-          {(artist.subArtistTypes || ['Singer', 'DJ', 'Anker']).map((type, index) => (
+          {(artist.subArtistTypes)?.map((type, index) => (
             <span
               key={index}
               className="px-3 py-1.5 text-gray-300 rounded-full border border-border-color text-xs font-medium bg-background"
@@ -65,14 +65,14 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
         <h3 className="text-text-gray secondary-text mb-1">Achievements / Awards</h3>
         <div className="flex flex-wrap gap-1.5">
-          {(artist.achievements || ['Singer', 'DJ', 'Anker']).map((achievement, index) => (
+          {(artist.achievements)?.map((achievement, index) => (
             <span
               key={index}
               className="px-3 py-1.5 text-gray-300 rounded-full border border-border-color text-xs font-medium bg-background"
             >
               {achievement}
             </span>
-          ))}
+          )) ?? 'N/A'}
         </div>
       </div>
     </div>
@@ -83,7 +83,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       {/* Solo Charges */}
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
-        <div className="text-white mb-1">₹ 1,00,000 - ₹ 2,00,000</div>
+        <div className="text-white mb-1">₹ {artist.soloChargesFrom} - ₹ {artist.soloChargesTo}</div>
         <p className="footnote">
           Gorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.
         </p>
@@ -92,7 +92,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       {/* Charges with backline */}
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
-        <div className="text-white mb-1">₹ 2,00,000 - ₹ 2,50,000</div>
+        <div className="text-white mb-1">₹ {artist.backlineChargesFrom} - ₹ {artist.backlineChargesTo}</div>
         <p className="footnote">
           Gorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.
         </p>
@@ -103,19 +103,19 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         {/* Performing duration */}
         <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
           <h4 className="text-text-gray secondary-text mb-1">Performing duration</h4>
-          <p className="text-white text-sm">120 - 160 mins</p>
+          <p className="text-white text-sm">{artist.duration} mins</p>
         </div>
 
         {/* Performing members */}
         <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
           <h4 className="text-text-gray secondary-text mb-1">Performing members</h4>
-          <p className="text-white text-sm">2 - members</p>
+          <p className="text-white text-sm">{artist.performingMembers} - members</p>
         </div>
 
         {/* Off stage members */}
         <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
           <h4 className="text-text-gray secondary-text mb-1">Off stage members</h4>
-          <p className="text-white text-sm">N/A</p>
+          <p className="text-white text-sm">{artist.offStageMembers ?? 'N/A'}</p>
         </div>
       </div>
 
@@ -123,7 +123,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
         <div className="flex flex-wrap gap-1.5">
-          {['English', 'Gujarati', 'Hindi'].map((language, index) => (
+          {artist.languages?.map((language, index) => (
             <span
               key={index}
               className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
@@ -138,7 +138,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Performing event type</h3>
         <div className="flex flex-wrap gap-1.5">
-          {['Concert', 'Party', 'Events'].map((eventType, index) => (
+          {artist.performingEventType?.map((eventType, index) => (
             <span
               key={index}
               className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
@@ -153,7 +153,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Performing States</h3>
         <div className="flex flex-wrap gap-1.5">
-          {['Gujarat', 'Maharashtra', 'Rajasthan'].map((state, index) => (
+          {artist.performingStates?.map((state, index) => (
             <span
               key={index}
               className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"

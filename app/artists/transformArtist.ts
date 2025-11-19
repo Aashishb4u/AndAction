@@ -10,8 +10,8 @@ type RawArtistFromAPI = {
   performingEventType: string | null;
   performingStates: string | null;
   yearsOfExperience: number | null;
-  soloChargesFrom: number | null;
-  soloChargesTo: number | null;
+  soloChargesFrom: string | null;
+  soloChargesTo: string | null;
   performingDurationFrom: number | null;
   performingDurationTo: number | null;
   user: {
@@ -20,7 +20,14 @@ type RawArtistFromAPI = {
     lastName: string | null;
     avatar: string | null;
     city: string | null;
+    phoneNumber: string | null;
   };
+  whatsappNumber: string | null
+  achievements: string[] | null;
+  performingMembers: string | null;
+  offStageMembers: string | null;
+  chargesWithBacklineFrom: string | null;
+  chargesWithBacklineTo: string | null;
 };
 
 export function transformArtist(raw: RawArtistFromAPI): Artist {
@@ -36,14 +43,26 @@ export function transformArtist(raw: RawArtistFromAPI): Artist {
     category: capitalize(raw.artistType || "Artist"),
     location: capitalize(raw.user.city || "") || "Location not set",
     duration: `${raw.performingDurationFrom} - ${raw.performingDurationTo} mins`,
-    startingPrice: raw.soloChargesFrom || 0,
+    startingPrice: Number(raw.soloChargesFrom) || 0,
     languages:
       raw.performingLanguage?.split(",").map((s) => capitalize(s.trim())) || [],
     image: raw.user.avatar || "",
+    phone: raw.user.phoneNumber || undefined,
+    whatsapp: raw.whatsappNumber || undefined,
     // TODO: Implement bookmark logic
     isBookmarked: false,
-    performingStates: raw.performingStates || undefined,
+    performingStates: raw.performingStates?.split(",").map((s) => capitalize(s.trim())) || undefined,
     yearsOfExperience: raw.yearsOfExperience || undefined,
+    bio: raw.shortBio || undefined,
+    subArtistTypes: raw.subArtistType?.split(',').map((s) => capitalize(s.trim())) || undefined,
+    achievements: raw.achievements || undefined,
+    performingMembers: Number(raw.performingMembers).toLocaleString() || undefined,
+    soloChargesFrom: Number(raw.soloChargesFrom).toLocaleString() || undefined,
+    soloChargesTo: Number(raw.soloChargesTo).toLocaleString() || undefined,
+    backlineChargesFrom: Number(raw.chargesWithBacklineFrom).toLocaleString() || undefined,
+    backlineChargesTo: Number(raw.chargesWithBacklineTo).toLocaleString() || undefined,
+    offStageMembers: Number(raw.offStageMembers).toLocaleString() || undefined,
+    performingEventType: raw.performingEventType?.split(',').map((s) => capitalize(s.trim())) || undefined,
   };
 }
 
