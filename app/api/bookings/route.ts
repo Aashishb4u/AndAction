@@ -12,6 +12,7 @@ import { prisma } from '@/lib/prisma';
 import { ApiErrors, successResponse } from '@/lib/api-response';
 import { auth } from '@/auth';
 import { Prisma, BookingStatus } from '@prisma/client';
+import { localDateToUTC } from '@/lib/utils';
 
 const VALID_STATUSES = ['PENDING', 'APPROVED', 'DECLINED', 'CANCELLED', 'COMPLETED'];
 
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
             return ApiErrors.badRequest('Missing required fields: artistId, eventDate, eventType, eventLocation, totalPrice.');
         }
 
-        const parsedEventDate = new Date(eventDate);
+        const parsedEventDate = localDateToUTC(eventDate);
         if (isNaN(parsedEventDate.getTime())) {
             return ApiErrors.badRequest('Invalid eventDate format. Must be a valid date string.');
         }
@@ -203,10 +204,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             select: {
                 id: true,
                 eventDate: true,
+                notes: true,
                 eventType: true,
                 totalPrice: true,
                 status: true,
                 createdAt: true,
+                eventLocation: true,
                 // Include details of the other party for context
                 client: { select: { firstName: true, lastName: true, email: true } },
                 artist: { select: { stageName: true } },
