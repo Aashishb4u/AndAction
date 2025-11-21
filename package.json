@@ -18,12 +18,14 @@
     "@auth/prisma-adapter": "^2.11.0",
     "@prisma/client": "^6.17.0",
     "bcryptjs": "^3.0.2",
+    "date-fns": "^4.1.0",
     "google-auth-library": "^10.4.1",
     "lucide-react": "^0.542.0",
     "next": "15.5.2",
     "next-auth": "^5.0.0-beta.29",
     "prisma": "^6.17.0",
     "react": "19.1.0",
+    "react-datepicker": "^8.9.0",
     "react-dom": "19.1.0"
   },
   "devDependencies": {
