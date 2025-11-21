@@ -6,6 +6,64 @@ import SiteLayout from '@/components/layout/SiteLayout';
 import ArtistProfileHeader from '@/components/sections/ArtistProfileHeader';
 import ArtistDetailTabs from '@/components/sections/ArtistDetailTabs';
 import { Artist } from '@/types';
+import { BookingStatus } from '@prisma/client';
+
+export const createBooking = async (artistId: string, formData: any) => {
+  try {
+    const response = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        artistId,
+        eventDate: formData.eventDate,
+        eventType: formData.eventType,
+        eventLocation: `${formData.city}, ${formData.state}`,
+        totalPrice: formData.totalPrice,
+        notes: formData.note,
+      }),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    throw error;
+  }
+}
+
+export const updateBookingState = async (bookingId: string, status: BookingStatus) => {
+  try {
+    const response = await fetch(`/api/bookings/${bookingId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        newStatus: status,
+      }),
+    });
+    
+    const data = await response.json();
+    console.log('updated booking status:', data);
+    return data;
+  } catch (error) {
+    console.error('Error updating booking status:', error);
+    throw error;
+  }
+}
+
+export const getBookingsByStatus = async (artistId: string) => {
+  try {
+    const response = await fetch(`/api/bookings/slots/?artistId=${artistId}`);
+    const json = await response.json();
+    return json.data.bookings;
+  } catch (error) {
+    console.error('Error fetching bookings by status:', error);
+    throw error;
+  }
+}
 
 export default function ArtistDetailPage() {
   const router = useRouter();
@@ -13,6 +71,8 @@ export default function ArtistDetailPage() {
 
   const [artist, setArtist] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [disabledDates, setDisabledDates] = useState<Date[]>([]);
+
   useEffect(() => {
     if (!artistId) return;
 
@@ -72,8 +132,7 @@ export default function ArtistDetailPage() {
         };
 
 
-        setArtist(mappedArtist);
-
+        return mappedArtist;
       } catch (err) {
         console.error('Artist Fetch Error:', err);
         setArtist(null);
@@ -82,7 +141,13 @@ export default function ArtistDetailPage() {
       }
     };
 
-    fetchArtist();
+    const fetchData = async () => {
+      const [ fetchedArtist, approvedBookings ] = await Promise.all([fetchArtist(), getBookingsByStatus(artistId as string, BookingStatus.APPROVED)]);
+      setArtist(fetchedArtist);
+      setDisabledDates(approvedBookings.map((b: any) => new Date(b.eventDate)));
+    };
+
+    fetchData();
   }, [artistId]);
 
   if (loading) {
@@ -173,6 +238,7 @@ export default function ArtistDetailPage() {
         <div className="w-[400px] flex-shrink-0">
           <ArtistProfileHeader
             artist={artist}
+            disabledDates={disabledDates}
             onBack={handleBack}
             onBookmark={handleBookmark}
             onShare={handleShare}
@@ -190,6 +256,7 @@ export default function ArtistDetailPage() {
       <div className="lg:hidden min-h-screen bg-background">
         <ArtistProfileHeader
           artist={artist}
+          disabledDates={disabledDates}
           onBack={handleBack}
           onBookmark={handleBookmark}
           onShare={handleShare}
