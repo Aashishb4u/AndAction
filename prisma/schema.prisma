@@ -136,6 +136,8 @@ model Booking {
   id            String        @id @default(cuid())
   clientId      String
   artistId      String
+  state         String?
+  city          String?
   eventDate     DateTime
   eventType     String?
   eventLocation String?
@@ -151,6 +153,8 @@ model Booking {
   @@index([clientId])
   @@index([artistId])
   @@index([status])
+  @@unique([artistId, eventDate])
+
   @@map("bookings")
 }
 

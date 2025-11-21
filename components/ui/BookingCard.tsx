@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Button from '@/components/ui/Button';
-import { Calendar, MapPin, Clock, Phone, X } from 'lucide-react';
+import { Calendar, MapPin, Clock, Phone, X, Check } from 'lucide-react';
 import Image from 'next/image';
 
 interface BookingCardProps {
@@ -12,6 +12,7 @@ interface BookingCardProps {
   eventType: string;
   description: string;
   onReject: () => void;
+  onAccept: () => void;
   onCall: () => void;
   className?: string;
 }
@@ -23,6 +24,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
   eventType,
   description,
   onReject,
+  onAccept,
   onCall,
   className = '',
 }) => {
@@ -64,6 +66,15 @@ const BookingCard: React.FC<BookingCardProps> = ({
 
       {/* Action Buttons */}
       <div className="flex gap-3 mt-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onAccept}
+          className="flex-1 border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+        >
+          <Check className="w-4 h-4 mr-2" />
+          Accept
+        </Button>
         <Button
           variant="outline"
           size="sm"
