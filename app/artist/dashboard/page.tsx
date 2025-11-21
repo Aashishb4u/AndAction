@@ -1,26 +1,116 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import ArtistDashboardLayout from '@/components/layout/ArtistDashboardLayout';
-import BookingCard from '@/components/ui/BookingCard';
-import Button from '@/components/ui/Button';
-import { Pencil } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import ArtistDashboardLayout from "@/components/layout/ArtistDashboardLayout";
+import BookingCard from "@/components/ui/BookingCard";
+import Button from "@/components/ui/Button";
+import { Pencil } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { updateBookingState } from "@/app/artists/[id]/page";
+import { BookingStatus } from "@prisma/client";
+
+/**
+ * Formats a date into the pattern: `DD, Mon, YYYY`
+ *
+ * Example:
+ *   Input:  "2025-12-06T00:00:00.000Z"
+ *   Output: "06, Dec, 2025"
+ *
+ * - Uses Intl.DateTimeFormat for localization.
+ * - Reorders the default US format ("Dec 06, 2025") into the required format.
+ *
+ */
+export function formatDate(input: string | Date) {
+  const date = input instanceof Date ? input : new Date(input);
+
+  return new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  })
+    .format(date)
+    .replace(/(\w+)\s(\d+),\s(\d+)/, "$2, $1, $3");
+}
+
+type Booking = {
+  id: string;
+  eventDate: string;
+  eventType: string;
+  totalPrice: string;
+  status: BookingStatus; // "PENDING" | "APPROVED" | "DECLINED" | "CANCELLED" | "COMPLETED"
+  createdAt: string;
+  eventLocation: string;
+  client: {
+    firstName: string;
+    lastName: string;
+    email: string | null;
+  };
+  artist: {
+    stageName: string;
+  };
+  notes: string;
+};
+
+type BookingStatusMap = {
+  [key in BookingStatus]: Booking[];
+};
+
+const defaultBookingsState: BookingStatusMap = {
+  PENDING: [],
+  APPROVED: [],
+  DECLINED: [],
+  CANCELLED: [],
+  COMPLETED: [],
+};
 
 export default function ArtistDashboard() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  console.log(session)
+  const [loading, setLoading] = useState(true);
+  const [bookings, setBookings] =
+    useState<BookingStatusMap>(defaultBookingsState);
+  console.log(session);
+
+  const getBookings = async () => {
+    try {
+      const response = await fetch("/api/bookings");
+      const json = await response.json();
+      console.log("Got bookings: ", json.data.bookings);
+      const bookings = json.data.bookings.reduce(
+        (acc: any, booking: Booking) => {
+          if (!acc[booking.status]) {
+            acc[booking.status] = [];
+          }
+          acc[booking.status].push(booking);
+          return acc;
+        },
+        defaultBookingsState
+      );
+
+      setBookings(bookings);
+    } catch (error) {
+      console.error("Unable to get bookings");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 👇 Redirect to signin if not authenticated or not artist
   useEffect(() => {
-    if (status === 'unauthenticated') router.push('/auth/signin');
-    else if (status === 'authenticated' && session?.user?.role !== 'artist')
-      router.push('/');
+    if (status === "unauthenticated") router.push("/auth/signin");
+    else if (status === "authenticated" && session?.user?.role !== "artist")
+      router.push("/");
   }, [status, session, router]);
 
-  if (status === 'loading') {
+  useEffect(() => {
+    getBookings();
+  }, []);
+
+  if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center h-screen text-white">
         Loading your dashboard...
@@ -29,20 +119,9 @@ export default function ArtistDashboard() {
   }
 
   const artist = session?.user?.artistProfile;
-  const fullName = `${session?.user?.firstName ?? ''} ${session?.user?.lastName ?? ''}`.trim();
-
-  // Mock bookings (replace with real API later)
-  const mockBookings = [
-    {
-      id: 1,
-      clientName: 'Vivek Shah',
-      location: 'Surat, Gujarat',
-      date: '20, Sep, 2025',
-      eventType: 'Party',
-      description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.',
-    },
-  ];
+  const fullName = `${session?.user?.firstName ?? ""} ${
+    session?.user?.lastName ?? ""
+  }`.trim();
 
   return (
     <ArtistDashboardLayout>
@@ -53,8 +132,8 @@ export default function ArtistDashboard() {
           <div className="relative rounded-2xl overflow-hidden mb-3 bg-card border border-border-color">
             <div className="relative aspect-[4/5]">
               <Image
-                src={session?.user?.avatar || '/icons/images.jpeg'}
-                alt={artist?.stageName || fullName || 'Artist'}
+                src={session?.user?.avatar || "/icons/images.jpeg"}
+                alt={artist?.stageName || fullName || "Artist"}
                 fill
                 className="object-cover transition-all duration-500 ease-in-out"
               />
@@ -64,9 +143,9 @@ export default function ArtistDashboard() {
               {/* Artist Info */}
               <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                 <h2 className="text-xl font-bold mb-1">
-                  {artist?.stageName || fullName || 'Your Artist Name'}{' '}
+                  {artist?.stageName || fullName || "Your Artist Name"}{" "}
                   <span className="text-sm font-medium">
-                    ({artist?.artistType || 'Performer'})
+                    ({artist?.artistType || "Performer"})
                   </span>
                 </h2>
 
@@ -78,12 +157,14 @@ export default function ArtistDashboard() {
                     height={16}
                   />
                   <p className="text-xs text-white">
-                    {`+91` +artist?.contactNumber || session?.user?.phoneNumber || '-'}
+                    {`+91` + artist?.contactNumber ||
+                      session?.user?.phoneNumber ||
+                      "-"}
                   </p>
                 </div>
 
                 <Button
-                  onClick={() => router.push('/artist/profile')}
+                  onClick={() => router.push("/artist/profile")}
                   variant="secondary"
                   size="sm"
                   className="w-full flex items-center justify-center border-[1.5px] border-border-color"
@@ -159,19 +240,62 @@ export default function ArtistDashboard() {
           </div>
 
           {/* Booking Cards Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 md:gap-6 gap-5 md:overflow-y-auto md:max-h-[calc(100vh-100px)] [-webkit-scrollbar-width:none] [scrollbar-width:none] [-ms-overflow-style:none]">
-            {mockBookings.map((booking) => (
-              <BookingCard
-                key={booking.id}
-                clientName={booking.clientName}
-                location={booking.location}
-                date={booking.date}
-                eventType={booking.eventType}
-                description={booking.description}
-                onReject={() => console.log('Reject', booking.id)}
-                onCall={() => console.log('Call', booking.id)}
-              />
-            ))}
+          <div className="space-y-10">
+            {" "}
+            {/* Main vertical spacing between status sections */}
+            {(
+              [
+                "APPROVED",
+                "PENDING",
+                "COMPLETED",
+                "CANCELLED",
+                "DECLINED",
+              ] as const
+            ).map((status) => {
+              const bookingsList = bookings[status];
+              if (bookingsList.length === 0) return null;
+
+              const sectionTitle =
+                status.charAt(0) + status.slice(1).toLowerCase();
+
+              return (
+                <section key={status} className="space-y-6">
+                  {/* Section Header */}
+                  <h2 className="text-2xl font-semibold text-white">
+                    {sectionTitle}
+                    {/* Optional: show count badge */}
+                    <span className="ml-3 text-sm font-normal text-gray-400">
+                      ({bookingsList.length})
+                    </span>
+                  </h2>
+
+                  {/* Cards Grid - Full width, proper flow from left */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {bookingsList.map((booking) => (
+                      <BookingCard
+                        key={booking.id}
+                        clientName={`${booking.client.firstName} ${booking.client.lastName}`}
+                        location={booking.eventLocation}
+                        date={formatDate(booking.eventDate)}
+                        eventType={booking.eventType}
+                        description={booking.notes}
+                        onReject={() =>
+                          status === "PENDING"
+                            ? updateBookingState(booking.id, "DECLINED")
+                            : console.log("Cannot reject in this state")
+                        }
+                        onAccept={() =>
+                          status === "PENDING"
+                            ? updateBookingState(booking.id, "APPROVED")
+                            : console.log("Cannot accept in this state")
+                        }
+                        onCall={() => console.log("Call", booking.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         </div>
       </div>
