@@ -7,6 +7,7 @@ import BookingRequestModal from '@/components/modals/BookingRequestModal';
 import BookingSuccessModal from '@/components/modals/BookingSuccessModal';
 import { BookingFormData } from '@/components/modals/BookingRequestModal';
 import Bookmark from '../icons/bookmark';
+import { createBooking } from '@/app/artists/[id]/page';
 
 interface ArtistProfileHeaderProps {
   artist: Artist;
@@ -17,6 +18,7 @@ interface ArtistProfileHeaderProps {
   onCall: () => void;
   onWhatsApp: () => void;
   isMobile?: boolean;
+  disabledDates?: Date[];
 }
 
 const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
@@ -28,6 +30,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
   onCall,
   onWhatsApp,
   isMobile = false,
+  disabledDates,
 }) => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -44,6 +47,11 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
   const handleBookingSubmit = (formData: BookingFormData) => {
     // Here you would typically send the data to your API
     console.log('Booking request submitted:', formData);
+    createBooking(artist.id, formData).then(data => {
+      console.log('Booking creation response:', data);
+    }).catch(error => {
+      console.error('Error creating booking:', error);
+    });
 
     // Close booking modal and show success modal
     setShowBookingModal(false);
@@ -66,6 +74,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
           isOpen={showBookingModal}
           onClose={() => setShowBookingModal(false)}
           onSubmit={handleBookingSubmit}
+          disabledDates={disabledDates}
         // artistName={artist.name}
         />
 
