@@ -77,7 +77,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify the user session matches the state
     const session = await auth();
     if (!session?.user?.id || session.user.id !== stateData.userId) {
       return NextResponse.redirect(
@@ -88,7 +87,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Exchange code for tokens
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
