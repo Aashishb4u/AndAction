@@ -148,13 +148,20 @@ model Artist {
 
 model Video {
   id                String     @id @default(cuid())
+  
+  youtubeVideoId    String?    @unique 
+  
   userId            String
   title             String
   description       String?
   url               String
   thumbnailUrl      String?
-  duration          Int
+  duration          Int        @default(0)
+  durationFormatted String?   
   views             Int        @default(0)
+  publishedAt       DateTime?
+  isShort           Boolean    @default(false) 
+  source            String     @default("youtube")
   isApproved        Boolean    @default(false)
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
@@ -163,6 +170,8 @@ model Video {
 
   @@index([userId])
   @@index([isApproved])
+  @@index([youtubeVideoId])
+  @@index([isShort])
   @@map("videos")
 }
 
