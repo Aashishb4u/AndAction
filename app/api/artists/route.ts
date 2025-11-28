@@ -1,12 +1,14 @@
 /**
  * app/api/artists/route.ts
- * Public artist listing API with search, filtering & pagination.
+ *
+ * Public artist listing API with search, filtering, verification toggle & pagination.
+ * This endpoint is OPEN – no authentication required.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { ApiErrors, successResponse } from '@/lib/api-response';
-import { Prisma } from '@prisma/client';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { ApiErrors, successResponse } from "@/lib/api-response";
+import { Prisma } from "@prisma/client";
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
@@ -17,58 +19,95 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const searchParams = url.searchParams;
 
     // ----- Pagination -----
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    let limit = parseInt(searchParams.get('limit') || DEFAULT_PAGE_SIZE.toString(), 10);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    let limit = parseInt(
+      searchParams.get("limit") || DEFAULT_PAGE_SIZE.toString(),
+      10
+    );
     if (limit > MAX_PAGE_SIZE) limit = MAX_PAGE_SIZE;
+    if (limit < 1) limit = DEFAULT_PAGE_SIZE;
 
     const skip = (page - 1) * limit;
 
-    // ----- Filtering -----
+    // ----- Base WHERE clause -----
     const where: Prisma.ArtistWhereInput = {};
 
-    // Search by stageName or shortBio
-    const search = searchParams.get('search')?.trim();
+    // 1. Full-text search (stageName OR shortBio)
+    const search = searchParams.get("search")?.trim();
     if (search) {
       where.OR = [
-        { stageName: { contains: search, mode: 'insensitive' } },
-        { shortBio: { contains: search, mode: 'insensitive' } },
+        { stageName: { contains: search, mode: "insensitive" } },
+        { shortBio: { contains: search, mode: "insensitive" } },
       ];
     }
 
-    // Filter by artist type
-    const artistType = searchParams.get('type');
-    if (artistType) {
-      where.artistType = artistType;
+    // 2. Simple filters
+    const type = searchParams.get("type");
+    const subType = searchParams.get("subType");
+    const gender = searchParams.get("gender");
+    const language = searchParams.get("language");
+    const eventType = searchParams.get("eventType");
+    const state = searchParams.get("state");
+    const budget = searchParams.get("budget");
+
+    if (type) where.artistType = { equals: type, mode: "insensitive" };
+    if (subType) where.subArtistType = { equals: subType, mode: "insensitive" };
+    if (language)
+      where.performingLanguage = { contains: language, mode: "insensitive" };
+    if (eventType)
+      where.performingEventType = { contains: eventType, mode: "insensitive" };
+    if (state)
+      where.performingStates = { contains: state, mode: "insensitive" };
+
+    // Budget range filter (e.g. "50000-150000")
+    if (budget && budget.includes("-")) {
+      const [minStr, maxStr] = budget.split("-");
+      const min = Number(minStr);
+      const max = Number(maxStr);
+
+      if (!isNaN(min) && !isNaN(max)) {
+        where.AND = [
+          ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+          {
+            OR: [
+              {
+                AND: [
+                  { soloChargesFrom: { gte: min } },
+                  { soloChargesTo: { lte: max } },
+                ],
+              },
+              {
+                AND: [
+                  { chargesWithBacklineFrom: { gte: min } },
+                  { chargesWithBacklineTo: { lte: max } },
+                ],
+              },
+            ],
+          },
+        ];
+      }
     }
 
-    // Filter by performing states
-    const stateFilter = searchParams.get('state');
-    if (stateFilter) {
-      where.performingStates = { contains: stateFilter, mode: 'insensitive' };
-    }
+    // 3. Verification & Role filter (with optional ?verified=false to bypass)
+    const verifiedParam = searchParams.get("verified"); // "true" | "false" | null
 
-    // ----- Verification Logic -----
-    const verifiedParam = searchParams.get('verified'); // "true", "false", null
+    const userFilter: Prisma.UserWhereInput = {
+      role: "artist",
+    };
 
-    // Base user filter
-    const userFilter: any = { role: 'artist' };
-
-    if (verifiedParam === 'true') {
-      // Only fully verified artists
-      userFilter.isArtistVerified = true;
+    // Default (no param or "true") → only fully verified artists
+    // Only when explicitly ?verified=false we show unverified ones
+    if (verifiedParam !== "false") {
       userFilter.isAccountVerified = true;
-    } 
-    else if (verifiedParam === 'false') {
-      // Show ALL artists (no verification filter)
-      // Only require role=artist
-    } 
-    else {
-      // Default safe mode → only show verified artists
       userFilter.isArtistVerified = true;
-      userFilter.isAccountVerified = true;
     }
 
-    where.user = userFilter;
+    // Gender filter (if provided) goes inside the same user.is object
+    if (gender) {
+      userFilter.gender = { equals: gender, mode: "insensitive" };
+    }
+
+    where.user = { is: userFilter };
 
     // ----- Database Query -----
     const totalArtists = await prisma.artist.count({ where });
@@ -88,6 +127,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         performingEventType: true,
         performingStates: true,
         yearsOfExperience: true,
+        soloChargesFrom: true,
+        soloChargesTo: true,
+        chargesWithBacklineFrom: true,
+        chargesWithBacklineTo: true,
+        performingDurationFrom: true,
+        performingDurationTo: true,
         user: {
           select: {
             id: true,
