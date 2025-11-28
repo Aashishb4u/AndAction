@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Artist } from "@/types";
 import ShortsCard from "@/components/ui/ShortsCard";
 import Button from "@/components/ui/Button";
@@ -9,140 +9,65 @@ import { Loader2, Youtube, RefreshCw, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import {
-  syncYouTubeVideos,
-  getSyncedVideos,
-} from "@/app/actions/youtube/sync-videos";
-import { deleteVideo } from "@/app/actions/youtube/delete-video";
+  useSyncedVideos,
+  useSyncYouTubeVideos,
+  useDeleteVideo,
+} from "@/hooks/use-youtube-videos";
 
 interface ShortsTabProps {
   artist: Artist;
 }
 
-interface StoredShort {
-  id: string;
-  youtubeVideoId: string;
-  title: string;
-  description: string | null;
-  thumbnail: string | null;
-  videoUrl: string;
-  duration: string | null;
-  durationSeconds: number | null;
-  viewCount: number | null;
-  publishedAt: Date | null;
-  isShort: boolean;
-  isHidden: boolean;
-}
-
 const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
-  const [shorts, setShorts] = useState<StoredShort[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isYouTubeConnected, setIsYouTubeConnected] = useState(true);
+  const router = useRouter();
   const [bookmarkedShorts, setBookmarkedShorts] = useState<Set<string>>(
     new Set()
   );
-  const [deletingShorts, setDeletingShorts] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shortToDelete, setShortToDelete] = useState<string | null>(null);
-  const router = useRouter();
 
-  const fetchStoredShorts = async () => {
-    setIsLoading(true);
-    setError(null);
+  const {
+    data: shortsData,
+    isLoading,
+    error,
+    refetch,
+  } = useSyncedVideos("shorts");
 
-    try {
-      // Pass true to get only shorts
-      const result = await getSyncedVideos("shorts");
+  const syncMutation = useSyncYouTubeVideos();
+  const deleteMutation = useDeleteVideo();
 
-      if (!result.success) {
-        setError(result.message || "Failed to fetch shorts");
-        return;
-      }
+  const shorts =
+    shortsData?.map((v) => ({
+      id: v.id,
+      youtubeVideoId: v.youtubeVideoId || "",
+      title: v.title,
+      description: v.description,
+      thumbnail: v.thumbnailUrl,
+      videoUrl: v.url,
+      duration: v.durationFormatted,
+      viewCount: v.views,
+      publishedAt: v.publishedAt,
+      isShort: v.isShort,
+    })) || [];
 
-      setIsYouTubeConnected(true);
-      // Map the data to our expected format
-      const shortsData =
-        result.data?.map((v) => ({
-          id: v.id,
-          youtubeVideoId: v.youtubeVideoId || "",
-          title: v.title,
-          description: v.description,
-          thumbnail: v.thumbnailUrl,
-          videoUrl: v.url,
-          duration: v.durationFormatted,
-          durationSeconds: null,
-          viewCount: v.views,
-          publishedAt: v.publishedAt,
-          isShort: v.isShort,
-          isHidden: false,
-        })) || [];
-      setShorts(shortsData);
-    } catch (err) {
-      console.error("Error fetching shorts:", err);
-      setError("Failed to fetch shorts. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSync = () => {
+    syncMutation.mutate();
   };
 
-  useEffect(() => {
-    fetchStoredShorts();
-  }, []);
-
-  const handleSync = async () => {
-    setIsSyncing(true);
-    try {
-      const result = await syncYouTubeVideos();
-
-      if (result.success) {
-        toast.success(
-          `Synced ${result.synced} new videos! (${result.skipped} already existed)`
-        );
-        await fetchStoredShorts();
-      } else {
-        toast.error(result.message);
-      }
-    } catch (err) {
-      console.error("Error syncing shorts:", err);
-      toast.error("Failed to sync shorts. Please try again.");
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const handleDelete = async (shortId: string) => {
-    if (deletingShorts.has(shortId)) return;
+  const handleDelete = (shortId: string) => {
+    if (deleteMutation.isPending) return;
     setShortToDelete(shortId);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!shortToDelete) return;
-
-    setDeletingShorts((prev) => new Set(prev).add(shortToDelete));
     setDeleteDialogOpen(false);
-
-    try {
-      const result = await deleteVideo(shortToDelete);
-
-      if (result.success) {
-        toast.success("Short removed from your profile");
-        setShorts((prev) => prev.filter((s) => s.id !== shortToDelete));
-      } else {
-        toast.error(result.message);
-      }
-    } catch (err) {
-      console.error("Error deleting short:", err);
-      toast.error("Failed to delete short. Please try again.");
-    } finally {
-      setDeletingShorts((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(shortToDelete);
-        return newSet;
-      });
-      setShortToDelete(null);
-    }
+    deleteMutation.mutate(shortToDelete, {
+      onSettled: () => {
+        setShortToDelete(null);
+      },
+    });
   };
 
   const handleBookmark = (shortId: string) => {
@@ -166,7 +91,6 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
           url: short.videoUrl,
         });
       } catch {
-        // Fallback: copy to clipboard
         await navigator.clipboard.writeText(short.videoUrl);
         toast.success("Link copied to clipboard!");
       }
@@ -183,28 +107,6 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
       <div className="flex flex-col items-center justify-center py-16">
         <Loader2 className="w-8 h-8 text-primary-pink animate-spin mb-4" />
         <p className="text-text-gray">Loading shorts...</p>
-      </div>
-    );
-  }
-
-  // YouTube not connected state
-  if (!isYouTubeConnected) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mb-4">
-          <Youtube className="w-8 h-8 text-white" />
-        </div>
-        <h3 className="text-xl font-semibold text-white mb-2">
-          Connect Your YouTube
-        </h3>
-        <p className="text-text-gray mb-6 max-w-md">
-          Connect your YouTube account to automatically sync your shorts and
-          display them on your profile.
-        </p>
-        <Button variant="primary" onClick={handleConnectYouTube}>
-          <Youtube className="w-4 h-4 mr-2" />
-          Connect YouTube
-        </Button>
       </div>
     );
   }
@@ -228,8 +130,10 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
             />
           </svg>
         </div>
-        <p className="text-red-400 mb-4">{error}</p>
-        <Button variant="outline" onClick={fetchStoredShorts}>
+        <p className="text-red-400 mb-4">
+          {error instanceof Error ? error.message : "Failed to load shorts"}
+        </p>
+        <Button variant="outline" onClick={() => refetch()}>
           <RefreshCw className="w-4 h-4 mr-2" />
           Try Again
         </Button>
@@ -251,8 +155,12 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
           Click the sync button to import your YouTube Shorts and display them
           on your profile.
         </p>
-        <Button variant="primary" onClick={handleSync} disabled={isSyncing}>
-          {isSyncing ? (
+        <Button
+          variant="primary"
+          onClick={handleSync}
+          disabled={syncMutation.isPending}
+        >
+          {syncMutation.isPending ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Syncing...
@@ -280,9 +188,9 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
             variant="primary"
             size="sm"
             onClick={handleSync}
-            disabled={isSyncing}
+            disabled={syncMutation.isPending}
           >
-            {isSyncing ? (
+            {syncMutation.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Syncing...
@@ -294,7 +202,7 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
               </>
             )}
           </Button>
-          <Button variant="ghost" size="sm" onClick={fetchStoredShorts}>
+          <Button variant="ghost" size="sm" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
@@ -329,7 +237,7 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
-        isLoading={shortToDelete ? deletingShorts.has(shortToDelete) : false}
+        isLoading={deleteMutation.isPending}
         onConfirm={confirmDelete}
         onCancel={() => setShortToDelete(null)}
       />

@@ -68,9 +68,6 @@ function parseDurationToSeconds(isoDuration: string): number {
   return hours * 3600 + minutes * 60 + seconds;
 }
 
-/**
- * Format duration to readable string
- */
 function formatDuration(isoDuration: string): string {
   const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!match) return "0:00";
@@ -87,10 +84,6 @@ function formatDuration(isoDuration: string): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-/**
- * Sync YouTube videos to database
- * Fetches videos from YouTube and stores them with uniqueness check
- */
 export async function syncYouTubeVideos(): Promise<SyncResult> {
   try {
     const session = await auth();
@@ -257,16 +250,16 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
   }
 }
 
-/**
- * Get synced videos from database
- */
-export async function getSyncedVideos(isShort: boolean = false) {
+export async function getSyncedVideos(type: "all" | "shorts" | "videos") {
   try {
     const session = await auth();
 
     if (!session?.user?.id) {
       return { success: false, message: "Unauthorized", data: null };
     }
+
+    const isShort =
+      type === "shorts" ? true : type === "videos" ? false : undefined;
 
     const videos = await prisma.video.findMany({
       where: {

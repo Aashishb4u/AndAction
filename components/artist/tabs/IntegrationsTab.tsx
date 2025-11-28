@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Button from "@/components/ui/Button";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { Artist } from "@/types";
 import {
   Youtube,
@@ -9,119 +10,50 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
-  ExternalLink,
 } from "lucide-react";
+import {
+  useIntegrationStatus,
+  useYouTubeConnect,
+  useYouTubeDisconnect,
+} from "@/hooks/use-integrations";
+import { toast } from "react-toastify";
 
 interface IntegrationsTabProps {
   artist: Artist;
 }
 
-interface IntegrationStatus {
-  youtube: {
-    connected: boolean;
-    channelName?: string;
-    channelId?: string;
-    connectedAt?: string;
-  };
-  instagram: {
-    connected: boolean;
-    username?: string;
-    connectedAt?: string;
-  };
-}
-
 const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus>(
-    {
-      youtube: { connected: false },
-      instagram: { connected: false },
-    }
-  );
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
 
-  // Fetch integration status on mount
-  useEffect(() => {
-    fetchIntegrationStatus();
-  }, []);
+  const { data: integrationStatus, isLoading: isLoadingStatus } =
+    useIntegrationStatus();
 
-  const fetchIntegrationStatus = async () => {
-    try {
-      const response = await fetch("/api/artists/integrations/status");
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setIntegrationStatus(data.data);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch integration status:", err);
-    }
+  const connectMutation = useYouTubeConnect();
+  const disconnectMutation = useYouTubeDisconnect();
+
+  const handleYouTubeConnect = () => {
+    connectMutation.mutate();
   };
 
-  const handleYouTubeConnect = async () => {
-    setIsLoading(true);
-    setError("");
-
-    try {
-      // Get the YouTube OAuth URL from our API
-      const response = await fetch(
-        "/api/artists/integrations/youtube/auth-url"
-      );
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to get authorization URL");
-      }
-
-      // Redirect to YouTube OAuth
-      window.location.href = data.authUrl;
-    } catch (err: any) {
-      setError(err.message || "Failed to connect YouTube");
-      setIsLoading(false);
-    }
+  const handleYouTubeDisconnect = () => {
+    setDisconnectDialogOpen(true);
   };
 
-  const handleYouTubeDisconnect = async () => {
-    if (!confirm("Are you sure you want to disconnect your YouTube account?")) {
-      return;
-    }
-
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const response = await fetch(
-        "/api/artists/integrations/youtube/disconnect",
-        {
-          method: "POST",
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to disconnect YouTube");
-      }
-
-      setIntegrationStatus((prev) => ({
-        ...prev,
-        youtube: { connected: false },
-      }));
-      setSuccessMessage("YouTube account disconnected successfully");
-      setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (err: any) {
-      setError(err.message || "Failed to disconnect YouTube");
-    } finally {
-      setIsLoading(false);
-    }
+  const confirmDisconnect = () => {
+    setDisconnectDialogOpen(false);
+    disconnectMutation.mutate();
   };
 
-  const handleInstagramConnect = async () => {
-    // Instagram integration - coming soon
-    setError("Instagram integration coming soon!");
-    setTimeout(() => setError(""), 3000);
+  const handleInstagramConnect = () => {
+    toast.info("Instagram integration coming soon!");
+  };
+
+  const isLoading = connectMutation.isPending || disconnectMutation.isPending;
+
+  // Default status while loading
+  const status = integrationStatus || {
+    youtube: { connected: false },
+    instagram: { connected: false },
   };
 
   return (
@@ -136,18 +68,6 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
           and content.
         </p>
       </div>
-
-      {/* Error/Success Messages */}
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
-          <p className="text-red-400 text-sm">{error}</p>
-        </div>
-      )}
-      {successMessage && (
-        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-4">
-          <p className="text-green-400 text-sm">{successMessage}</p>
-        </div>
-      )}
 
       {/* Integrations Table */}
       <div className="bg-card border border-border-color rounded-xl overflow-hidden">
@@ -185,7 +105,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                 </div>
               </td>
               <td className="py-4 px-6">
-                {integrationStatus.youtube.connected ? (
+                {status.youtube.connected ? (
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
                     <span className="text-green-500 text-sm font-medium">
@@ -202,16 +122,16 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                 )}
               </td>
               <td className="py-4 px-6">
-                {integrationStatus.youtube.connected ? (
+                {status.youtube.connected ? (
                   <div>
                     <p className="text-white text-sm">
-                      {integrationStatus.youtube.channelName}
+                      {status.youtube.channelName}
                     </p>
-                    {integrationStatus.youtube.connectedAt && (
+                    {status.youtube.connectedAt && (
                       <p className="text-xs text-text-gray">
                         Connected{" "}
                         {new Date(
-                          integrationStatus.youtube.connectedAt
+                          status.youtube.connectedAt
                         ).toLocaleDateString()}
                       </p>
                     )}
@@ -221,7 +141,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                 )}
               </td>
               <td className="py-4 px-6 text-right">
-                {integrationStatus.youtube.connected ? (
+                {status.youtube.connected ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -270,7 +190,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                 </div>
               </td>
               <td className="py-4 px-6">
-                {integrationStatus.instagram.connected ? (
+                {status.instagram.connected ? (
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
                     <span className="text-green-500 text-sm font-medium">
@@ -287,16 +207,16 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                 )}
               </td>
               <td className="py-4 px-6">
-                {integrationStatus.instagram.connected ? (
+                {status.instagram.connected ? (
                   <div>
                     <p className="text-white text-sm">
-                      @{integrationStatus.instagram.username}
+                      @{status.instagram.username}
                     </p>
-                    {integrationStatus.instagram.connectedAt && (
+                    {status.instagram.connectedAt && (
                       <p className="text-xs text-text-gray">
                         Connected{" "}
                         {new Date(
-                          integrationStatus.instagram.connectedAt
+                          status.instagram.connectedAt
                         ).toLocaleDateString()}
                       </p>
                     )}
@@ -335,6 +255,19 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
           </li>
         </ul>
       </div>
+
+      {/* Disconnect Confirmation Dialog */}
+      <ConfirmDialog
+        open={disconnectDialogOpen}
+        onOpenChange={setDisconnectDialogOpen}
+        title="Disconnect YouTube"
+        description="Are you sure you want to disconnect your YouTube account? Your synced videos will remain on your profile."
+        confirmText="Disconnect"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={disconnectMutation.isPending}
+        onConfirm={confirmDisconnect}
+      />
     </div>
   );
 };
