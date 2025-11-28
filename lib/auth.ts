@@ -138,14 +138,54 @@ export const getCurrentUser = async (): Promise<User | null> => {
   }
 };
 
-export const signInWithGoogle = async (): Promise<void> => {
-  await nextAuthSignIn("google", { callbackUrl: getRedirectUrl() });
+export const signInWithGoogle = async (
+  role?: "user" | "artist"
+): Promise<void> => {
+  const baseUrl = getRedirectUrl();
+  const callbackUrl =
+    role === "artist"
+      ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
+          baseUrl
+        )}`
+      : baseUrl;
+  await nextAuthSignIn("google", { callbackUrl });
 };
 
-export const signInWithFacebook = async (): Promise<void> => {
-  await nextAuthSignIn("facebook", { callbackUrl: getRedirectUrl() });
+export const signInWithFacebook = async (
+  role?: "user" | "artist"
+): Promise<void> => {
+  const baseUrl = getRedirectUrl();
+  const callbackUrl =
+    role === "artist"
+      ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
+          baseUrl
+        )}`
+      : baseUrl;
+  await nextAuthSignIn("facebook", { callbackUrl });
 };
 
-export const signInWithApple = async (): Promise<void> => {
-  await nextAuthSignIn("apple", { callbackUrl: getRedirectUrl() });
+export const signInWithApple = async (
+  role?: "user" | "artist"
+): Promise<void> => {
+  const baseUrl = getRedirectUrl();
+  const callbackUrl =
+    role === "artist"
+      ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
+          baseUrl
+        )}`
+      : baseUrl;
+  await nextAuthSignIn("apple", { callbackUrl });
+};
+
+// Artist-specific OAuth functions for convenience
+export const signInWithGoogleAsArtist = async (): Promise<void> => {
+  await signInWithGoogle("artist");
+};
+
+export const signInWithFacebookAsArtist = async (): Promise<void> => {
+  await signInWithFacebook("artist");
+};
+
+export const signInWithAppleAsArtist = async (): Promise<void> => {
+  await signInWithApple("artist");
 };
