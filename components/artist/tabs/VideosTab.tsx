@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Artist } from "@/types";
 import VideoCard from "@/components/ui/VideoCard";
 import Button from "@/components/ui/Button";
@@ -9,138 +9,65 @@ import { Loader2, Youtube, RefreshCw, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import {
-  syncYouTubeVideos,
-  getSyncedVideos,
-} from "@/app/actions/youtube/sync-videos";
-import { deleteVideo } from "@/app/actions/youtube/delete-video";
+  useSyncedVideos,
+  useSyncYouTubeVideos,
+  useDeleteVideo,
+} from "@/hooks/use-youtube-videos";
 
 interface VideosTabProps {
   artist: Artist;
 }
 
-interface StoredVideo {
-  id: string;
-  youtubeVideoId: string;
-  title: string;
-  description: string | null;
-  thumbnail: string | null;
-  videoUrl: string;
-  duration: string | null;
-  durationSeconds: number | null;
-  viewCount: number | null;
-  publishedAt: Date | null;
-  isShort: boolean;
-  isHidden: boolean;
-}
-
 const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
-  const [videos, setVideos] = useState<StoredVideo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isYouTubeConnected, setIsYouTubeConnected] = useState(true);
+  const router = useRouter();
   const [bookmarkedVideos, setBookmarkedVideos] = useState<Set<string>>(
     new Set()
   );
-  const [deletingVideos, setDeletingVideos] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
-  const router = useRouter();
 
-  const fetchStoredVideos = async () => {
-    setIsLoading(true);
-    setError(null);
+  const {
+    data: videosData,
+    isLoading,
+    error,
+    refetch,
+  } = useSyncedVideos("videos");
 
-    try {
-      const result = await getSyncedVideos("videos");
+  const syncMutation = useSyncYouTubeVideos();
+  const deleteMutation = useDeleteVideo();
 
-      if (!result.success) {
-        setError(result.message || "Failed to fetch videos");
-        return;
-      }
+  const videos =
+    videosData?.map((v) => ({
+      id: v.id,
+      youtubeVideoId: v.youtubeVideoId || "",
+      title: v.title,
+      description: v.description,
+      thumbnail: v.thumbnailUrl,
+      videoUrl: v.url,
+      duration: v.durationFormatted,
+      viewCount: v.views,
+      publishedAt: v.publishedAt,
+      isShort: v.isShort,
+    })) || [];
 
-      setIsYouTubeConnected(true);
-      const videosData =
-        result.data?.map((v) => ({
-          id: v.id,
-          youtubeVideoId: v.youtubeVideoId || "",
-          title: v.title,
-          description: v.description,
-          thumbnail: v.thumbnailUrl,
-          videoUrl: v.url,
-          duration: v.durationFormatted,
-          durationSeconds: null,
-          viewCount: v.views,
-          publishedAt: v.publishedAt,
-          isShort: v.isShort,
-          isHidden: false,
-        })) || [];
-      setVideos(videosData);
-    } catch (err) {
-      console.error("Error fetching videos:", err);
-      setError("Failed to fetch videos. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSync = () => {
+    syncMutation.mutate();
   };
 
-  useEffect(() => {
-    fetchStoredVideos();
-  }, []);
-
-  const handleSync = async () => {
-    setIsSyncing(true);
-    try {
-      const result = await syncYouTubeVideos();
-
-      if (result.success) {
-        toast.success(
-          `Synced ${result.synced} new videos! (${result.skipped} already existed)`
-        );
-        await fetchStoredVideos();
-      } else {
-        toast.error(result.message);
-      }
-    } catch (err) {
-      console.error("Error syncing videos:", err);
-      toast.error("Failed to sync videos. Please try again.");
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const handleDelete = async (videoId: string) => {
-    if (deletingVideos.has(videoId)) return;
+  const handleDelete = (videoId: string) => {
+    if (deleteMutation.isPending) return;
     setVideoToDelete(videoId);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!videoToDelete) return;
-
-    setDeletingVideos((prev) => new Set(prev).add(videoToDelete));
     setDeleteDialogOpen(false);
-
-    try {
-      const result = await deleteVideo(videoToDelete);
-
-      if (result.success) {
-        toast.success("Video removed from your profile");
-        setVideos((prev) => prev.filter((v) => v.id !== videoToDelete));
-      } else {
-        toast.error(result.message);
-      }
-    } catch (err) {
-      console.error("Error deleting video:", err);
-      toast.error("Failed to delete video. Please try again.");
-    } finally {
-      setDeletingVideos((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(videoToDelete);
-        return newSet;
-      });
-      setVideoToDelete(null);
-    }
+    deleteMutation.mutate(videoToDelete, {
+      onSettled: () => {
+        setVideoToDelete(null);
+      },
+    });
   };
 
   const handleBookmark = (videoId: string) => {
@@ -164,7 +91,6 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
           url: video.videoUrl,
         });
       } catch {
-        // Fallback: copy to clipboard
         await navigator.clipboard.writeText(video.videoUrl);
         toast.success("Link copied to clipboard!");
       }
@@ -181,28 +107,6 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
       <div className="flex flex-col items-center justify-center py-16">
         <Loader2 className="w-8 h-8 text-primary-pink animate-spin mb-4" />
         <p className="text-text-gray">Loading videos...</p>
-      </div>
-    );
-  }
-
-  // YouTube not connected state
-  if (!isYouTubeConnected) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mb-4">
-          <Youtube className="w-8 h-8 text-white" />
-        </div>
-        <h3 className="text-xl font-semibold text-white mb-2">
-          Connect Your YouTube
-        </h3>
-        <p className="text-text-gray mb-6 max-w-md">
-          Connect your YouTube account to automatically sync your videos and
-          display them on your profile.
-        </p>
-        <Button variant="primary" onClick={handleConnectYouTube}>
-          <Youtube className="w-4 h-4 mr-2" />
-          Connect YouTube
-        </Button>
       </div>
     );
   }
@@ -226,8 +130,10 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
             />
           </svg>
         </div>
-        <p className="text-red-400 mb-4">{error}</p>
-        <Button variant="outline" onClick={fetchStoredVideos}>
+        <p className="text-red-400 mb-4">
+          {error instanceof Error ? error.message : "Failed to load videos"}
+        </p>
+        <Button variant="outline" onClick={() => refetch()}>
           <RefreshCw className="w-4 h-4 mr-2" />
           Try Again
         </Button>
@@ -249,8 +155,12 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
           Click the sync button to import your YouTube videos and display them
           on your profile.
         </p>
-        <Button variant="primary" onClick={handleSync} disabled={isSyncing}>
-          {isSyncing ? (
+        <Button
+          variant="primary"
+          onClick={handleSync}
+          disabled={syncMutation.isPending}
+        >
+          {syncMutation.isPending ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Syncing...
@@ -278,9 +188,9 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
             variant="primary"
             size="sm"
             onClick={handleSync}
-            disabled={isSyncing}
+            disabled={syncMutation.isPending}
           >
-            {isSyncing ? (
+            {syncMutation.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Syncing...
@@ -292,7 +202,7 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
               </>
             )}
           </Button>
-          <Button variant="ghost" size="sm" onClick={fetchStoredVideos}>
+          <Button variant="ghost" size="sm" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
@@ -327,7 +237,7 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
-        isLoading={videoToDelete ? deletingVideos.has(videoToDelete) : false}
+        isLoading={deleteMutation.isPending}
         onConfirm={confirmDelete}
         onCancel={() => setVideoToDelete(null)}
       />
