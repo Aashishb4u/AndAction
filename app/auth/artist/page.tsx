@@ -11,7 +11,10 @@ import Checkbox from "@/components/ui/Checkbox";
 import PhoneInput from "@/components/ui/PhoneInput";
 import OTPInput from "@/components/ui/OTPInput";
 import DateInput from "@/components/ui/DateInput";
-import { signInWithGoogle, signInWithFacebook } from "@/lib/auth";
+import {
+  signInWithGoogleAsArtist,
+  signInWithFacebookAsArtist,
+} from "@/lib/auth";
 import { signIn } from "next-auth/react";
 
 type ArtistSignUpStep = "join" | "otp" | "password" | "userInfo" | "terms";
@@ -409,9 +412,9 @@ function ArtistAuthContent() {
 
     try {
       if (provider === "google") {
-        await signInWithGoogle();
+        await signInWithGoogleAsArtist();
       } else if (provider === "facebook") {
-        await signInWithFacebook();
+        await signInWithFacebookAsArtist();
       }
 
       router.push("/artist/profile-setup");
@@ -825,8 +828,10 @@ function ArtistAuthContent() {
                 <DateInput
                   label="Date of birth*"
                   placeholder="DD / MM / YYYY"
-                  value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  value={dateOfBirth ? new Date(dateOfBirth) : undefined}
+                  onChange={(date) =>
+                    setDateOfBirth(date ? date.toISOString() : "")
+                  }
                   required
                   disabled={isLoading}
                   variant="filled"
