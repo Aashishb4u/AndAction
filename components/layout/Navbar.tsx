@@ -1,20 +1,23 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import Button from '@/components/ui/Button';
-import { NavbarProps, NavItem } from '@/types';
-import { createAuthRedirectUrl } from '@/lib/auth';
-import Search from '../icons/search';
-import { useSession, signOut } from 'next-auth/react'; // ✅ added
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
+import { NavbarProps, NavItem } from "@/types";
+import { createAuthRedirectUrl } from "@/lib/auth";
+import Search from "../icons/search";
+import { useSession, signOut } from "next-auth/react"; // ✅ added
 
 interface NavbarWithSidebarProps extends NavbarProps {
   onToggleSidebar?: () => void;
 }
 
-const Navbar: React.FC<NavbarWithSidebarProps> = ({ className = '', onToggleSidebar }) => {
+const Navbar: React.FC<NavbarWithSidebarProps> = ({
+  className = "",
+  onToggleSidebar,
+}) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -36,18 +39,22 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({ className = '', onToggleSide
       }, 10);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
       clearTimeout(timeoutId);
     };
   }, [lastScrollY]);
 
   const navItems: NavItem[] = [
-    { label: 'Home', href: '/', isActive: pathname === '/' },
-    { label: 'Videos', href: '/videos', isActive: pathname === '/videos' },
-    { label: 'Shorts', href: '/shorts', isActive: pathname === '/shorts' },
-    { label: 'Bookmarks', href: '/bookmarks', isActive: pathname === '/bookmarks' },
+    { label: "Home", href: "/", isActive: pathname === "/" },
+    { label: "Videos", href: "/videos", isActive: pathname === "/videos" },
+    { label: "Shorts", href: "/shorts", isActive: pathname === "/shorts" },
+    {
+      label: "Bookmarks",
+      href: "/bookmarks",
+      isActive: pathname === "/bookmarks",
+    },
   ];
 
   const handleToggleSidebar = () => {
@@ -58,16 +65,23 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({ className = '', onToggleSide
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
         isScrolled
-          ? 'bg-background/95 backdrop-blur-md border-b border-background-light'
-          : 'bg-transparent border-b border-transparent'
-      } ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'} ${className}`}
+          ? "bg-background/95 backdrop-blur-md border-b border-background-light"
+          : "bg-transparent border-b border-transparent"
+      } ${
+        isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
+      } ${className}`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
-              <Image src="/logo.png" alt="ANDACTION Logo" width={180} height={20} />
+              <Image
+                src="/logo.png"
+                alt="ANDACTION Logo"
+                width={180}
+                height={20}
+              />
             </Link>
           </div>
 
@@ -80,8 +94,8 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({ className = '', onToggleSide
                   href={item.href}
                   className={`px-3 py-2 text-sm font-medium transition-colors duration-200 relative ${
                     item.isActive
-                      ? 'gradient-text nav-active-underline'
-                      : 'text-text-light-gray hover:text-white'
+                      ? "gradient-text nav-active-underline"
+                      : "text-text-light-gray hover:text-white"
                   }`}
                 >
                   {item.label}
@@ -94,18 +108,20 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({ className = '', onToggleSide
           <div className="hidden lg:flex items-center space-x-4">
             {/* Search Icon */}
             <button
-              onClick={() => router.push('/artists')}
+              onClick={() => router.push("/artists")}
               className="p-2 text-text-light-gray hover:text-white transition-colors duration-200"
             >
               <Search className="size-5" />
             </button>
 
             {/* Sign-In (only show when logged out) */}
-            {!user && status !== 'loading' && (
+            {!user && status !== "loading" && (
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => router.push(createAuthRedirectUrl('/auth/signin', pathname))}
+                onClick={() =>
+                  router.push(createAuthRedirectUrl("/auth/signin", pathname))
+                }
                 className="btn2"
               >
                 Sign-In
@@ -116,20 +132,24 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({ className = '', onToggleSide
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => router.push(createAuthRedirectUrl('/auth/artist', pathname))}
+              onClick={() =>
+                router.push(createAuthRedirectUrl("/auth/artist", pathname))
+              }
             >
               <span className="gradient-text btn2">Join as a artist</span>
             </Button>
 
-            {/* ✅ Avatar replaces Hamburger when logged in */}
             {user ? (
               <button
                 onClick={handleToggleSidebar}
                 className="flex items-center justify-center rounded-full border border-transparent hover:border-primary-pink transition"
               >
                 <Image
-                  src={`/avatars/${user.avatar || 1}.png`}
-                  alt={user.firstName || 'User'}
+                  src={
+                    user.avatar ??
+                    `https://api.dicebear.com/9.x/initials/svg?seed=${user.firstName}+${user.lastName}`
+                  }
+                  alt={user.firstName || "User"}
                   width={40}
                   height={40}
                   className="rounded-full"
@@ -146,7 +166,12 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({ className = '', onToggleSide
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 </svg>
               </button>
             )}
@@ -164,7 +189,12 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({ className = '', onToggleSide
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             </button>
           </div>
