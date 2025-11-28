@@ -7,7 +7,7 @@ import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
 import { Artist } from '@/types';
 
-// Sample bookmarked data - in real app, this would come from API/localStorage
+// Sample bookmarked - in real app, this would come from API/localStorage
 const sampleBookmarkedArtists: any[] = [
   {
     id: '1',
