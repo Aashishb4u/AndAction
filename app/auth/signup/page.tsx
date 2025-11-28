@@ -1,79 +1,106 @@
-'use client';
+"use client";
 
-import React, { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import Input, { PasswordInput } from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
-import Select from '@/components/ui/Select';
-import Checkbox from '@/components/ui/Checkbox';
-import PhoneInput from '@/components/ui/PhoneInput';
-import OTPInput from '@/components/ui/OTPInput';
-import { signUp, getRedirectUrl, signInWithGoogle, signInWithApple } from '@/lib/auth';
-import Image from 'next/image';
-import { signIn } from 'next-auth/react';
+import React, { useState, Suspense, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import Input, { PasswordInput } from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
+import Checkbox from "@/components/ui/Checkbox";
+import PhoneInput from "@/components/ui/PhoneInput";
+import OTPInput from "@/components/ui/OTPInput";
+import {
+  signUp,
+  getRedirectUrl,
+  signInWithGoogle,
+  signInWithFacebook,
+  signInWithApple,
+} from "@/lib/auth";
+import Image from "next/image";
+import { signIn } from "next-auth/react";
 
-type SignUpStep = 'contact' | 'otp' | 'password' | 'profile' | 'terms';
-type ContactType = 'phone' | 'email';
+type SignUpStep = "contact" | "otp" | "password" | "profile" | "terms";
+type ContactType = "phone" | "email";
 
 function SignUpContent() {
-  const [step, setStep] = useState<SignUpStep>('contact');
-  const [contactType, setContactType] = useState<ContactType>('phone');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('+91');
-  const [otp, setOtp] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [step, setStep] = useState<SignUpStep>("contact");
+  const [contactType, setContactType] = useState<ContactType>("phone");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+91");
+  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Profile step state
   const [selectedAvatar, setSelectedAvatar] = useState<number>(3);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [state, setState] = useState('');
-  const [city, setCity] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [state, setState] = useState("");
+  const [city, setCity] = useState("");
 
   // Terms step state
   const [noMarketing, setNoMarketing] = useState(false);
   const [shareData, setShareData] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Check for OAuth errors from URL
+  const oauthError = useMemo(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "OAuthAccountNotLinked") {
+      return "Email already in use with different sign-in method. Please sign in with your original method or use a different email.";
+    } else if (errorParam === "Configuration") {
+      return "There was a problem with the OAuth configuration. Please try again or contact support.";
+    } else if (errorParam) {
+      return "An error occurred during sign-up. Please try again.";
+    }
+    return "";
+  }, [searchParams]);
+
+  // Set error if OAuth error exists
+  if (oauthError && !error) {
+    setError(oauthError);
+  }
+
   // Avatar and location data
-  const avatars = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24];
+  const avatars = [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24,
+  ];
   const states = [
-    { value: 'maharashtra', label: 'Maharashtra' },
-    { value: 'delhi', label: 'Delhi' },
-    { value: 'karnataka', label: 'Karnataka' },
-    { value: 'tamil-nadu', label: 'Tamil Nadu' },
-    { value: 'gujarat', label: 'Gujarat' },
-    { value: 'rajasthan', label: 'Rajasthan' },
-    { value: 'west-bengal', label: 'West Bengal' },
-    { value: 'uttar-pradesh', label: 'Uttar Pradesh' },
+    { value: "maharashtra", label: "Maharashtra" },
+    { value: "delhi", label: "Delhi" },
+    { value: "karnataka", label: "Karnataka" },
+    { value: "tamil-nadu", label: "Tamil Nadu" },
+    { value: "gujarat", label: "Gujarat" },
+    { value: "rajasthan", label: "Rajasthan" },
+    { value: "west-bengal", label: "West Bengal" },
+    { value: "uttar-pradesh", label: "Uttar Pradesh" },
   ];
 
   const cities = [
-    { value: 'mumbai', label: 'Mumbai' },
-    { value: 'delhi', label: 'Delhi' },
-    { value: 'bangalore', label: 'Bangalore' },
-    { value: 'hyderabad', label: 'Hyderabad' },
-    { value: 'ahmedabad', label: 'Ahmedabad' },
-    { value: 'chennai', label: 'Chennai' },
-    { value: 'kolkata', label: 'Kolkata' },
-    { value: 'pune', label: 'Pune' },
+    { value: "mumbai", label: "Mumbai" },
+    { value: "delhi", label: "Delhi" },
+    { value: "bangalore", label: "Bangalore" },
+    { value: "hyderabad", label: "Hyderabad" },
+    { value: "ahmedabad", label: "Ahmedabad" },
+    { value: "chennai", label: "Chennai" },
+    { value: "kolkata", label: "Kolkata" },
+    { value: "pune", label: "Pune" },
   ];
 
   // Simple password strength calculation
   const getPasswordStrength = (password: string) => {
-    if (!password) return { strength: 0, label: '', color: '' };
+    if (!password) return { strength: 0, label: "", color: "" };
 
     let score = 0;
-    let label = '';
-    let color = '';
+    let label = "";
+    let color = "";
 
     // Length check
     if (password.length >= 8) score += 1;
@@ -87,194 +114,219 @@ function SignUpContent() {
 
     // Determine strength level
     if (score <= 2) {
-      label = 'Weak';
-      color = 'bg-red-400';
+      label = "Weak";
+      color = "bg-red-400";
     } else if (score <= 4) {
-      label = 'Medium';
-      color = 'bg-yellow-400';
+      label = "Medium";
+      color = "bg-yellow-400";
     } else {
-      label = 'Strong';
-      color = 'bg-green-400';
+      label = "Strong";
+      color = "bg-green-400";
     }
 
     return { strength: Math.min(score, 6), label, color };
   };
 
   const getPhoneComponents = (fullNumber: string) => {
-    if (!fullNumber.startsWith('+')) {
-      return { countryCode: '', phoneNumber: fullNumber };
+    if (!fullNumber.startsWith("+")) {
+      return { countryCode: "", phoneNumber: fullNumber };
     }
     const match = fullNumber.match(/^(\+\d{1,4})(\d+)/);
     if (match) {
       return { countryCode: match[1], phoneNumber: match[2] };
     }
     // Fallback if the regex fails
-    return { countryCode: fullNumber.substring(0, 3), phoneNumber: fullNumber.substring(3) };
+    return {
+      countryCode: fullNumber.substring(0, 3),
+      phoneNumber: fullNumber.substring(3),
+    };
   };
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const contactValue = contactType === 'phone' ? phone : email;
+    const contactValue = contactType === "phone" ? phone : email;
 
     if (!contactValue.trim()) {
-      setError('Please enter your contact information.');
+      setError("Please enter your contact information.");
       return;
     }
 
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
-      if (contactType === 'phone') {
-        const cleanedPhoneNumber = phone.replace(/\D/g, '');
+      if (contactType === "phone") {
+        const cleanedPhoneNumber = phone.replace(/\D/g, "");
         const countryCodeToSend = countryCode.trim();
         if (!countryCodeToSend || !cleanedPhoneNumber) {
-          throw new Error('Please enter a valid phone number and select a country code.');
+          throw new Error(
+            "Please enter a valid phone number and select a country code."
+          );
         }
-        console.log(`Sending OTP to: ${countryCodeToSend}${cleanedPhoneNumber}`);
-        const response = await fetch('/api/users/send-otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ countryCode: countryCodeToSend, phoneNumber: cleanedPhoneNumber }),
+        console.log(
+          `Sending OTP to: ${countryCodeToSend}${cleanedPhoneNumber}`
+        );
+        const response = await fetch("/api/users/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            countryCode: countryCodeToSend,
+            phoneNumber: cleanedPhoneNumber,
+          }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Failed to send verification code (Server Error).');
-        setStep('otp');
+        if (!response.ok)
+          throw new Error(
+            data.message || "Failed to send verification code (Server Error)."
+          );
+        setStep("otp");
       } else {
         console.log(`Sending OTP to email: ${email}`);
-        const response = await fetch('/api/users/send-otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/users/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: email.toLowerCase() }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Failed to send verification email.');
-        setStep('otp');
+        if (!response.ok)
+          throw new Error(data.message || "Failed to send verification email.");
+        setStep("otp");
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected network error occurred.');
-      console.error('Send OTP error:', err);
+      setError(err.message || "An unexpected network error occurred.");
+      console.error("Send OTP error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-
-
   const handleOTPSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otp.length !== 6) {
-      setError('Please enter the 6-digit code.');
+      setError("Please enter the 6-digit code.");
       return;
     }
 
     setIsLoading(true);
-    setError('');
+    setError("");
 
     // IMPORTANT: identifier must match the one stored by send-otp
     const identifier =
-      contactType === 'phone'
-        ? `${countryCode.trim()}${phone.replace(/\D/g, '')}`   // include country code + raw digits
+      contactType === "phone"
+        ? `${countryCode.trim()}${phone.replace(/\D/g, "")}` // include country code + raw digits
         : email.toLowerCase();
 
     try {
-      const response = await fetch('/api/users/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/users/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier, otp }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Verification failed.');
+        throw new Error(data.message || "Verification failed.");
       }
 
       // verified — move to create password
-      setStep('password');
+      setStep("password");
     } catch (err: any) {
-      setError(err.message || 'Invalid verification code. Please try again.');
-      console.error('OTP verification error:', err);
+      setError(err.message || "Invalid verification code. Please try again.");
+      console.error("OTP verification error:", err);
     } finally {
       setIsLoading(false);
     }
   };
-
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.trim() && confirmPassword.trim()) {
       if (password !== confirmPassword) {
-        setError('Passwords do not match.');
+        setError("Passwords do not match.");
         return;
       }
 
-      setError('');
-      setStep('profile');
+      setError("");
+      setStep("profile");
     }
   };
 
   const handleChangeContact = () => {
-    setStep('contact');
-    setOtp('');
-    setPassword('');
-    setConfirmPassword('');
-    setError('');
+    setStep("contact");
+    setOtp("");
+    setPassword("");
+    setConfirmPassword("");
+    setError("");
   };
   const handleResendOTP = async () => {
     setIsLoading(true);
-    setError('');
+    setError("");
     try {
-      if (contactType === 'phone') {
-        const phoneNumber = phone.replace(/\D/g, '');
-        if (!countryCode || !phoneNumber) throw new Error('Invalid phone number format.');
+      if (contactType === "phone") {
+        const phoneNumber = phone.replace(/\D/g, "");
+        if (!countryCode || !phoneNumber)
+          throw new Error("Invalid phone number format.");
 
-        const response = await fetch('/api/users/send-otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ countryCode: countryCode.trim(), phoneNumber }),
+        const response = await fetch("/api/users/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            countryCode: countryCode.trim(),
+            phoneNumber,
+          }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Failed to resend verification code.');
-        setError('A new verification code has been sent.');
-        setOtp('');
+        if (!response.ok)
+          throw new Error(
+            data.message || "Failed to resend verification code."
+          );
+        setError("A new verification code has been sent.");
+        setOtp("");
       } else {
-        const response = await fetch('/api/users/send-otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/users/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: email.toLowerCase() }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Failed to resend verification email.');
-        setError('A new verification code has been sent to your email.');
-        setOtp('');
+        if (!response.ok)
+          throw new Error(
+            data.message || "Failed to resend verification email."
+          );
+        setError("A new verification code has been sent to your email.");
+        setOtp("");
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to resend verification code. Please try again.');
-      console.error('Resend OTP error:', err);
+      setError(
+        err.message || "Failed to resend verification code. Please try again."
+      );
+      console.error("Resend OTP error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (firstName.trim() && lastName.trim() && state.trim() && city.trim()) {
-      setError('');
-      setStep('terms');
+      setError("");
+      setStep("terms");
     }
   };
 
   const handleTermsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     const userData = {
-      email: contactType === 'email' ? email : undefined,
-      phone: contactType === 'phone' ? getPhoneComponents(phone).phoneNumber : undefined, // Ensure only the raw number is sent
-      countryCode: contactType === 'phone' ? countryCode.trim() : undefined, // Include country code for phone registration
+      email: contactType === "email" ? email : undefined,
+      phone:
+        contactType === "phone"
+          ? getPhoneComponents(phone).phoneNumber
+          : undefined, // Ensure only the raw number is sent
+      countryCode: contactType === "phone" ? countryCode.trim() : undefined, // Include country code for phone registration
       password: password,
       firstName: firstName,
       lastName: lastName,
@@ -286,19 +338,19 @@ function SignUpContent() {
     };
 
     try {
-      const result = await signUp(userData);          // calls /api/auth/signup
-      await signIn('credentials', {
+      const result = await signUp(userData); // calls /api/auth/signup
+      await signIn("credentials", {
         contact: result.contactIdentifier,
         password: userData.password,
-        redirect: false
+        redirect: false,
       });
       const redirectUrl = getRedirectUrl(searchParams);
       router.push(redirectUrl);
-
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to create account. Please check your inputs.';
+      const errorMessage =
+        err.message || "Failed to create account. Please check your inputs.";
       setError(errorMessage);
-      console.error('Sign up error:', err);
+      console.error("Sign up error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -308,19 +360,35 @@ function SignUpContent() {
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
       {/* Close Button */}
       <button
-        onClick={() => router.push('/')}
+        onClick={() => router.push("/")}
         className="absolute top-6 right-6 p-2 text-text-gray hover:text-white transition-colors duration-200"
         aria-label="Close"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M6 18L18 6M6 6l12 12"
+          />
         </svg>
       </button>
 
       <div className="md:p-8 p-5">
         {/* Logo */}
         <div className="mb-8">
-          <Image src="/logo.png" alt="ANDACTION Logo" className="h-8 object-contain" width={150} height={24} />
+          <Image
+            src="/logo.png"
+            alt="ANDACTION Logo"
+            className="h-8 object-contain"
+            width={150}
+            height={24}
+          />
         </div>
 
         {/* Title */}
@@ -340,17 +408,19 @@ function SignUpContent() {
           </div>
         )}
 
-        {step === 'contact' ? (
+        {step === "contact" ? (
           /* Contact Step - Phone or Email */
           <div className="space-y-6">
             <form onSubmit={handleContactSubmit} className="space-y-6">
-              {contactType === 'phone' ? (
+              {contactType === "phone" ? (
                 <PhoneInput
                   label="Mobile number"
                   placeholder="Enter mobile number"
                   value={phone}
                   onChange={setPhone}
-                  onCountryChange={(country) => setCountryCode(country.dialCode)}
+                  onCountryChange={(country) =>
+                    setCountryCode(country.dialCode)
+                  }
                   required
                   disabled={isLoading}
                   variant="filled"
@@ -373,14 +443,17 @@ function SignUpContent() {
                 variant="primary"
                 size="lg"
                 className="w-full"
-                disabled={isLoading || (contactType === 'phone' ? !phone.trim() : !email.trim())}
+                disabled={
+                  isLoading ||
+                  (contactType === "phone" ? !phone.trim() : !email.trim())
+                }
               >
-                {isLoading ? 'Sending...' : 'Continue'}
+                {isLoading ? "Sending..." : "Continue"}
               </Button>
 
               <div>
                 <span className="text-text-gray">
-                  Already have an account?{' '}
+                  Already have an account?{" "}
                 </span>
                 <Link
                   href="/auth/signin"
@@ -402,10 +475,12 @@ function SignUpContent() {
                   variant="secondary"
                   size="md"
                   className="w-full"
-                  onClick={() => setContactType(contactType === 'phone' ? 'email' : 'phone')}
+                  onClick={() =>
+                    setContactType(contactType === "phone" ? "email" : "phone")
+                  }
                   disabled={isLoading}
                 >
-                  Sign up with {contactType === 'phone' ? 'Email' : 'Phone'}
+                  Sign up with {contactType === "phone" ? "Email" : "Phone"}
                 </Button>
 
                 <Button
@@ -442,7 +517,7 @@ function SignUpContent() {
                   variant="secondary"
                   size="md"
                   className="w-full flex items-center justify-center gap-3"
-                  onClick={() => signInWithApple()}
+                  onClick={() => signInWithFacebook()}
                   disabled={isLoading}
                 >
                   <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
@@ -467,19 +542,23 @@ function SignUpContent() {
               </div>
             </form>
           </div>
-        ) : step === 'otp' ? (
+        ) : step === "otp" ? (
           /* OTP Verification Step */
           <div className="space-y-6">
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-white">OTP Verification</h2>
-              <div className=' flex flex-col gap-2'>
+              <h2 className="text-xl font-semibold text-white">
+                OTP Verification
+              </h2>
+              <div className=" flex flex-col gap-2">
                 <p className="text-text-gray text-sm">
-                  Enter the 6-digit code sent to you at{' '}
+                  Enter the 6-digit code sent to you at{" "}
                 </p>
-                <div className='flex items-center gap-2'>
+                <div className="flex items-center gap-2">
                   <span className="text-white">
-                    {contactType === 'phone' ? `${phone.slice(0, 2)}******${phone.slice(-3)}` : `${email.slice(0, 2)}****@${email.split('@')[1]}`}
-                  </span>{' '}
+                    {contactType === "phone"
+                      ? `${phone.slice(0, 2)}******${phone.slice(-3)}`
+                      : `${email.slice(0, 2)}****@${email.split("@")[1]}`}
+                  </span>{" "}
                   <button
                     type="button"
                     onClick={handleChangeContact}
@@ -501,7 +580,7 @@ function SignUpContent() {
 
               <div>
                 <span className="text-text-gray text-sm">
-                  Haven&apos;t received the OTP?{' '}
+                  Haven&apos;t received the OTP?{" "}
                 </span>
                 <button
                   type="button"
@@ -520,11 +599,11 @@ function SignUpContent() {
                 className="w-full"
                 disabled={isLoading || otp.length !== 6}
               >
-                {isLoading ? 'Verifying...' : 'Verify'}
+                {isLoading ? "Verifying..." : "Verify"}
               </Button>
             </form>
           </div>
-        ) : step === 'password' ? (
+        ) : step === "password" ? (
           /* Password Creation Step */
           <div className="space-y-6">
             {/* Progress Indicator */}
@@ -535,16 +614,28 @@ function SignUpContent() {
               <div className="flex items-center gap-3 my-3">
                 <button
                   type="button"
-                  onClick={() => setStep('otp')}
+                  onClick={() => setStep("otp")}
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
                   </svg>
                 </button>
                 <div>
                   <p className="text-xs text-text-gray">Step 1 of 3</p>
-                  <h2 className="text-lg font-semibold text-white">Create Password</h2>
+                  <h2 className="text-lg font-semibold text-white">
+                    Create Password
+                  </h2>
                 </div>
               </div>
             </div>
@@ -564,18 +655,31 @@ function SignUpContent() {
               {password && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-text-gray">Password Strength:</span>
-                    <span className={`text-sm font-medium ${getPasswordStrength(password).label === 'Weak' ? 'text-red-400' :
-                      getPasswordStrength(password).label === 'Medium' ? 'text-yellow-400' :
-                        'text-green-400'
-                      }`}>
+                    <span className="text-sm text-text-gray">
+                      Password Strength:
+                    </span>
+                    <span
+                      className={`text-sm font-medium ${
+                        getPasswordStrength(password).label === "Weak"
+                          ? "text-red-400"
+                          : getPasswordStrength(password).label === "Medium"
+                          ? "text-yellow-400"
+                          : "text-green-400"
+                      }`}
+                    >
                       {getPasswordStrength(password).label}
                     </span>
                   </div>
                   <div className="w-full bg-[#2D2D2D] rounded-full h-1">
                     <div
-                      className={`${getPasswordStrength(password).color} h-1 rounded-full transition-all duration-300`}
-                      style={{ width: `${(getPasswordStrength(password).strength / 6) * 100}%` }}
+                      className={`${
+                        getPasswordStrength(password).color
+                      } h-1 rounded-full transition-all duration-300`}
+                      style={{
+                        width: `${
+                          (getPasswordStrength(password).strength / 6) * 100
+                        }%`,
+                      }}
                     ></div>
                   </div>
                 </div>
@@ -596,13 +700,15 @@ function SignUpContent() {
                 variant="primary"
                 size="lg"
                 className="w-full"
-                disabled={isLoading || !password.trim() || !confirmPassword.trim()}
+                disabled={
+                  isLoading || !password.trim() || !confirmPassword.trim()
+                }
               >
-                {isLoading ? 'Creating...' : 'Next'}
+                {isLoading ? "Creating..." : "Next"}
               </Button>
             </form>
           </div>
-        ) : step === 'profile' ? (
+        ) : step === "profile" ? (
           /* Profile Setup Step */
           <div className="space-y-6">
             {/* Progress Indicator */}
@@ -613,16 +719,28 @@ function SignUpContent() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setStep('password')}
+                  onClick={() => setStep("password")}
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
                   </svg>
                 </button>
                 <div>
                   <p className="text-xs text-text-gray">Step 2 of 3</p>
-                  <h2 className="text-lg font-semibold text-white">Tell us about yourself</h2>
+                  <h2 className="text-lg font-semibold text-white">
+                    Tell us about yourself
+                  </h2>
                 </div>
               </div>
             </div>
@@ -630,15 +748,31 @@ function SignUpContent() {
             <form onSubmit={handleProfileSubmit} className="space-y-6">
               {/* Avatar Selection */}
               <div className="space-y-4">
-                <h3 className="text-white text-center text-lg font-medium">Choose avatar</h3>
+                <h3 className="text-white text-center text-lg font-medium">
+                  Choose avatar
+                </h3>
                 <div className="flex items-center justify-center md:gap-2 gap-1">
                   <button
                     type="button"
                     className="text-white hover:text-primary-pink transition-colors duration-200 p-2 hover:bg-white/5 rounded-full"
-                    onClick={() => setSelectedAvatar(selectedAvatar > 1 ? selectedAvatar - 1 : avatars.length)}
+                    onClick={() =>
+                      setSelectedAvatar(
+                        selectedAvatar > 1 ? selectedAvatar - 1 : avatars.length
+                      )
+                    }
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
                     </svg>
                   </button>
 
@@ -664,7 +798,7 @@ function SignUpContent() {
                           visibleAvatars.push({
                             id: avatarIndex,
                             position: i,
-                            isCenter: i === 0
+                            isCenter: i === 0,
                           });
                         }
 
@@ -676,10 +810,11 @@ function SignUpContent() {
                           key={`${avatar.id}-${avatar.position}`}
                           type="button"
                           onClick={() => setSelectedAvatar(avatar.id)}
-                          className={`relative shrink-0 rounded-full border-2 transition-all duration-300 ease-out ${avatar.isCenter
-                            ? 'md:size-20 size-14 border-primary-pink scale-110'
-                            : 'md:size-16 size-10 border-transparent hover:border-[#404040] opacity-60 hover:opacity-80'
-                            }`}
+                          className={`relative shrink-0 rounded-full border-2 transition-all duration-300 ease-out ${
+                            avatar.isCenter
+                              ? "md:size-20 size-14 border-primary-pink scale-110"
+                              : "md:size-16 size-10 border-transparent hover:border-[#404040] opacity-60 hover:opacity-80"
+                          }`}
                         >
                           <Image
                             src={`/avatars/${avatar.id}.png`}
@@ -690,8 +825,18 @@ function SignUpContent() {
                           />
                           {avatar.isCenter && (
                             <div className="absolute -bottom-1 -right-1 md:size-6 size-5 bg-primary-pink rounded-full flex items-center justify-center border-2 border-background">
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              <svg
+                                className="w-3 h-3 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={3}
+                                  d="M5 13l4 4L19 7"
+                                />
                               </svg>
                             </div>
                           )}
@@ -703,10 +848,24 @@ function SignUpContent() {
                   <button
                     type="button"
                     className="text-white hover:text-primary-pink transition-colors duration-200 p-2 hover:bg-white/5 rounded-full"
-                    onClick={() => setSelectedAvatar(selectedAvatar < avatars.length ? selectedAvatar + 1 : 1)}
+                    onClick={() =>
+                      setSelectedAvatar(
+                        selectedAvatar < avatars.length ? selectedAvatar + 1 : 1
+                      )
+                    }
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -766,7 +925,13 @@ function SignUpContent() {
                 variant="primary"
                 size="lg"
                 className="w-full"
-                disabled={isLoading || !firstName.trim() || !lastName.trim() || !state || !city}
+                disabled={
+                  isLoading ||
+                  !firstName.trim() ||
+                  !lastName.trim() ||
+                  !state ||
+                  !city
+                }
               >
                 Next
               </Button>
@@ -783,16 +948,28 @@ function SignUpContent() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setStep('profile')}
+                  onClick={() => setStep("profile")}
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
                   </svg>
                 </button>
                 <div>
                   <p className="text-xs text-text-gray">Step 3 of 3</p>
-                  <h2 className="text-lg font-semibold text-white">Terms & Conditions</h2>
+                  <h2 className="text-lg font-semibold text-white">
+                    Terms & Conditions
+                  </h2>
                 </div>
               </div>
             </div>
@@ -818,16 +995,23 @@ function SignUpContent() {
               {/* Terms Text */}
               <div className="space-y-4 text-sm text-text-gray">
                 <p>
-                  By clicking on sign-up, you agree to AndAction&apos;s{' '}
-                  <Link href="/terms" className="text-primary-pink hover:text-primary-orange underline">
+                  By clicking on sign-up, you agree to AndAction&apos;s{" "}
+                  <Link
+                    href="/terms"
+                    className="text-primary-pink hover:text-primary-orange underline"
+                  >
                     Terms and Conditions of use
                   </Link>
                   .
                 </p>
 
                 <p>
-                  To learn more about how AndAction collects, users, shares and protects your personal data, please see{' '}
-                  <Link href="/privacy" className="text-primary-pink hover:text-primary-orange underline">
+                  To learn more about how AndAction collects, users, shares and
+                  protects your personal data, please see{" "}
+                  <Link
+                    href="/privacy"
+                    className="text-primary-pink hover:text-primary-orange underline"
+                  >
                     AndAction&apos;s Privacy Policy
                   </Link>
                 </p>
@@ -840,7 +1024,7 @@ function SignUpContent() {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? 'Creating Account...' : 'Sign up'}
+                {isLoading ? "Creating Account..." : "Sign up"}
               </Button>
             </form>
           </div>
