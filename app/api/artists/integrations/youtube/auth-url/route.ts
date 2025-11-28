@@ -42,7 +42,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Generate a state parameter for security (includes artist ID for verification)
     const state = Buffer.from(
       JSON.stringify({
         artistId: artist.id,
@@ -51,7 +50,6 @@ export async function GET(request: NextRequest) {
       })
     ).toString("base64");
 
-    // Build the YouTube OAuth URL
     const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     authUrl.searchParams.set("client_id", YOUTUBE_CLIENT_ID);
     authUrl.searchParams.set("redirect_uri", YOUTUBE_REDIRECT_URI);
