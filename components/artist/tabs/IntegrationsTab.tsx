@@ -15,8 +15,9 @@ import {
   useIntegrationStatus,
   useYouTubeConnect,
   useYouTubeDisconnect,
+  useInstagramConnect,
+  useInstagramDisconnect,
 } from "@/hooks/use-integrations";
-import { toast } from "react-toastify";
 
 interface IntegrationsTabProps {
   artist: Artist;
@@ -24,31 +25,49 @@ interface IntegrationsTabProps {
 
 const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+  const [disconnectType, setDisconnectType] = useState<"youtube" | "instagram">(
+    "youtube"
+  );
 
   const { data: integrationStatus, isLoading: isLoadingStatus } =
     useIntegrationStatus();
 
-  const connectMutation = useYouTubeConnect();
-  const disconnectMutation = useYouTubeDisconnect();
+  const youtubeConnectMutation = useYouTubeConnect();
+  const youtubeDisconnectMutation = useYouTubeDisconnect();
+  const instagramConnectMutation = useInstagramConnect();
+  const instagramDisconnectMutation = useInstagramDisconnect();
 
   const handleYouTubeConnect = () => {
-    connectMutation.mutate();
+    youtubeConnectMutation.mutate();
   };
 
   const handleYouTubeDisconnect = () => {
+    setDisconnectType("youtube");
+    setDisconnectDialogOpen(true);
+  };
+
+  const handleInstagramConnect = () => {
+    instagramConnectMutation.mutate();
+  };
+
+  const handleInstagramDisconnect = () => {
+    setDisconnectType("instagram");
     setDisconnectDialogOpen(true);
   };
 
   const confirmDisconnect = () => {
     setDisconnectDialogOpen(false);
-    disconnectMutation.mutate();
+    if (disconnectType === "youtube") {
+      youtubeDisconnectMutation.mutate();
+    } else {
+      instagramDisconnectMutation.mutate();
+    }
   };
 
-  const handleInstagramConnect = () => {
-    toast.info("Instagram integration coming soon!");
-  };
-
-  const isLoading = connectMutation.isPending || disconnectMutation.isPending;
+  const isYouTubeLoading =
+    youtubeConnectMutation.isPending || youtubeDisconnectMutation.isPending;
+  const isInstagramLoading =
+    instagramConnectMutation.isPending || instagramDisconnectMutation.isPending;
 
   // Default status while loading
   const status = integrationStatus || {
@@ -146,10 +165,10 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                     variant="outline"
                     size="sm"
                     onClick={handleYouTubeDisconnect}
-                    disabled={isLoading}
+                    disabled={isYouTubeLoading}
                     className="text-red-400 border-red-400/30 hover:bg-red-400/10"
                   >
-                    {isLoading ? (
+                    {isYouTubeLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       "Disconnect"
@@ -160,10 +179,10 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                     variant="primary"
                     size="sm"
                     onClick={handleYouTubeConnect}
-                    disabled={isLoading}
+                    disabled={isYouTubeLoading}
                     className="bg-red-600 hover:bg-red-700"
                   >
-                    {isLoading ? (
+                    {isYouTubeLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     ) : (
                       <Youtube className="w-4 h-4 mr-2" />
@@ -226,46 +245,60 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                 )}
               </td>
               <td className="py-4 px-6 text-right">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleInstagramConnect}
-                  disabled={true}
-                  className="opacity-50 cursor-not-allowed"
-                >
-                  <Instagram className="w-4 h-4 mr-2" />
-                  Coming Soon
-                </Button>
+                {status.instagram.connected ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleInstagramDisconnect}
+                    disabled={isInstagramLoading}
+                    className="text-red-400 border-red-400/30 hover:bg-red-400/10"
+                  >
+                    {isInstagramLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Disconnect"
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleInstagramConnect}
+                    disabled={isInstagramLoading}
+                    className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 hover:opacity-90"
+                  >
+                    {isInstagramLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Instagram className="w-4 h-4 mr-2" />
+                    )}
+                    Connect Instagram
+                  </Button>
+                )}
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      {/* Info Box */}
-      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-        <h4 className="text-blue-400 font-medium mb-2">
-          Why connect your accounts?
-        </h4>
-        <ul className="text-sm text-text-gray space-y-1">
-          <li>• Automatically import your videos and shorts to your profile</li>
-          <li>• Keep your content synced with your latest uploads</li>
-          <li>
-            • Show potential clients your best work without manual uploads
-          </li>
-        </ul>
-      </div>
-
       {/* Disconnect Confirmation Dialog */}
       <ConfirmDialog
         open={disconnectDialogOpen}
         onOpenChange={setDisconnectDialogOpen}
-        title="Disconnect YouTube"
-        description="Are you sure you want to disconnect your YouTube account? Your synced videos will remain on your profile."
+        title={`Disconnect ${
+          disconnectType === "youtube" ? "YouTube" : "Instagram"
+        }`}
+        description={`Are you sure you want to disconnect your ${
+          disconnectType === "youtube" ? "YouTube" : "Instagram"
+        } account? Your synced content will remain on your profile.`}
         confirmText="Disconnect"
         cancelText="Cancel"
         variant="danger"
-        isLoading={disconnectMutation.isPending}
+        isLoading={
+          disconnectType === "youtube"
+            ? youtubeDisconnectMutation.isPending
+            : instagramDisconnectMutation.isPending
+        }
         onConfirm={confirmDisconnect}
       />
     </div>
