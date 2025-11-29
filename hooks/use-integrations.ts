@@ -53,6 +53,35 @@ async function disconnectYouTube(): Promise<void> {
   }
 }
 
+async function getInstagramAuthUrl(returnUrl?: string): Promise<string> {
+  const url = new URL(
+    "/api/artists/integrations/instagram/auth-url",
+    window.location.origin
+  );
+  if (returnUrl) {
+    url.searchParams.set("returnUrl", returnUrl);
+  }
+  const response = await fetch(url.toString());
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to get authorization URL");
+  }
+  return data.authUrl;
+}
+
+async function disconnectInstagram(): Promise<void> {
+  const response = await fetch(
+    "/api/artists/integrations/instagram/disconnect",
+    {
+      method: "POST",
+    }
+  );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to disconnect Instagram");
+  }
+}
+
 export function useIntegrationStatus() {
   return useQuery({
     queryKey: integrationKeys.status(),
@@ -99,6 +128,44 @@ export function useYouTubeDisconnect() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to disconnect YouTube");
+    },
+  });
+}
+
+export function useInstagramConnect(returnUrl?: string) {
+  return useMutation({
+    mutationFn: () => getInstagramAuthUrl(returnUrl),
+    onSuccess: (authUrl) => {
+      // Redirect to Instagram OAuth
+      window.location.href = authUrl;
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to connect Instagram");
+    },
+  });
+}
+
+export function useInstagramDisconnect() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: disconnectInstagram,
+    onSuccess: () => {
+      // Update the integration status in cache
+      queryClient.setQueryData(
+        integrationKeys.status(),
+        (oldData: IntegrationStatus | undefined) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            instagram: { connected: false },
+          };
+        }
+      );
+      toast.success("Instagram account disconnected successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to disconnect Instagram");
     },
   });
 }
