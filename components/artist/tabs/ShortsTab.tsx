@@ -5,14 +5,21 @@ import { Artist } from "@/types";
 import ShortsCard from "@/components/ui/ShortsCard";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import SyncSelectionModal, {
+  SyncPlatform,
+} from "@/components/modals/SyncSelectionModal";
 import { Loader2, Youtube, RefreshCw, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import {
   useSyncedVideos,
-  useSyncYouTubeVideos,
+  useSyncYouTubeShorts,
   useDeleteVideo,
 } from "@/hooks/use-youtube-videos";
+import {
+  useSyncInstagramReels,
+  useDeleteInstagramReel,
+} from "@/hooks/use-instagram-videos";
 
 interface ShortsTabProps {
   artist: Artist;
@@ -25,6 +32,7 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shortToDelete, setShortToDelete] = useState<string | null>(null);
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
 
   const {
     data: shortsData,
@@ -33,8 +41,13 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
     refetch,
   } = useSyncedVideos("shorts");
 
-  const syncMutation = useSyncYouTubeVideos();
+  const syncYouTubeMutation = useSyncYouTubeShorts();
+  const syncInstagramMutation = useSyncInstagramReels();
   const deleteMutation = useDeleteVideo();
+  const deleteInstagramMutation = useDeleteInstagramReel();
+
+  const isSyncing =
+    syncYouTubeMutation.isPending || syncInstagramMutation.isPending;
 
   const shorts =
     shortsData?.map((v) => ({
@@ -48,14 +61,43 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
       viewCount: v.views,
       publishedAt: v.publishedAt,
       isShort: v.isShort,
+      source: v.source,
     })) || [];
 
-  const handleSync = () => {
-    syncMutation.mutate();
+  const handleOpenSyncModal = () => {
+    setSyncModalOpen(true);
+  };
+
+  const handleSyncPlatforms = async (platforms: SyncPlatform[]) => {
+    const syncPromises: Promise<unknown>[] = [];
+
+    if (platforms.includes("youtube")) {
+      syncPromises.push(
+        new Promise((resolve, reject) => {
+          syncYouTubeMutation.mutate(undefined, {
+            onSuccess: resolve,
+            onError: reject,
+          });
+        })
+      );
+    }
+
+    if (platforms.includes("instagram")) {
+      syncPromises.push(
+        new Promise((resolve, reject) => {
+          syncInstagramMutation.mutate(undefined, {
+            onSuccess: resolve,
+            onError: reject,
+          });
+        })
+      );
+    }
+
+    await Promise.allSettled(syncPromises);
   };
 
   const handleDelete = (shortId: string) => {
-    if (deleteMutation.isPending) return;
+    if (deleteMutation.isPending || deleteInstagramMutation.isPending) return;
     setShortToDelete(shortId);
     setDeleteDialogOpen(true);
   };
@@ -63,7 +105,13 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
   const confirmDelete = () => {
     if (!shortToDelete) return;
     setDeleteDialogOpen(false);
-    deleteMutation.mutate(shortToDelete, {
+
+    // Find the short to determine which mutation to use
+    const short = shortsData?.find((v) => v.id === shortToDelete);
+    const mutation =
+      short?.source === "instagram" ? deleteInstagramMutation : deleteMutation;
+
+    mutation.mutate(shortToDelete, {
       onSettled: () => {
         setShortToDelete(null);
       },
@@ -144,35 +192,45 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
   // Empty state
   if (shorts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center mb-4 border border-border-color">
-          <Youtube className="w-8 h-8 text-text-gray" />
+      <>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center mb-4 border border-border-color">
+            <Youtube className="w-8 h-8 text-text-gray" />
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">
+            No Shorts Synced
+          </h3>
+          <p className="text-text-gray mb-4 max-w-md">
+            Click the sync button to import shorts from YouTube or Instagram
+            Reels.
+          </p>
+          <Button
+            variant="primary"
+            onClick={handleOpenSyncModal}
+            disabled={isSyncing}
+          >
+            {isSyncing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Sync Shorts
+              </>
+            )}
+          </Button>
         </div>
-        <h3 className="text-lg font-medium text-white mb-2">
-          No Shorts Synced
-        </h3>
-        <p className="text-text-gray mb-4 max-w-md">
-          Click the sync button to import your YouTube Shorts and display them
-          on your profile.
-        </p>
-        <Button
-          variant="primary"
-          onClick={handleSync}
-          disabled={syncMutation.isPending}
-        >
-          {syncMutation.isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Syncing...
-            </>
-          ) : (
-            <>
-              <Download className="w-4 h-4 mr-2" />
-              Sync from YouTube
-            </>
-          )}
-        </Button>
-      </div>
+        <SyncSelectionModal
+          open={syncModalOpen}
+          onOpenChange={setSyncModalOpen}
+          onSync={handleSyncPlatforms}
+          title="Sync Shorts"
+          description="Select which platforms you want to sync shorts from."
+          contentType="shorts"
+        />
+      </>
     );
   }
 
@@ -187,10 +245,10 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
           <Button
             variant="primary"
             size="sm"
-            onClick={handleSync}
-            disabled={syncMutation.isPending}
+            onClick={handleOpenSyncModal}
+            disabled={isSyncing}
           >
-            {syncMutation.isPending ? (
+            {isSyncing ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Syncing...
@@ -198,7 +256,7 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
             ) : (
               <>
                 <Download className="w-4 h-4 mr-2" />
-                Sync Videos
+                Sync Shorts
               </>
             )}
           </Button>
@@ -233,13 +291,25 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         title="Delete Short"
-        description="Are you sure you want to delete this short? This will only remove it from your profile, not from YouTube."
+        description="Are you sure you want to delete this short? This will only remove it from your profile, not from the source platform."
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
-        isLoading={deleteMutation.isPending}
+        isLoading={
+          deleteMutation.isPending || deleteInstagramMutation.isPending
+        }
         onConfirm={confirmDelete}
         onCancel={() => setShortToDelete(null)}
+      />
+
+      {/* Sync Selection Modal */}
+      <SyncSelectionModal
+        open={syncModalOpen}
+        onOpenChange={setSyncModalOpen}
+        onSync={handleSyncPlatforms}
+        title="Sync Shorts"
+        description="Select which platforms you want to sync shorts from."
+        contentType="shorts"
       />
     </div>
   );
