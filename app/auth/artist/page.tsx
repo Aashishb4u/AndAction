@@ -416,8 +416,6 @@ function ArtistAuthContent() {
       } else if (provider === "facebook") {
         await signInWithFacebookAsArtist();
       }
-
-      router.push("/artist/profile-setup");
     } catch (err) {
       setError(`${provider} sign-up is not available yet.`);
       console.error(`${provider} sign-up error:`, err);
