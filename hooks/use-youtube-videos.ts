@@ -52,6 +52,30 @@ export function useSyncYouTubeVideos() {
   });
 }
 
+// Alias for shorts - same sync action, different toast message
+export function useSyncYouTubeShorts() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: syncYouTubeVideos,
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success(
+          `Synced ${result.synced} new shorts! (${result.skipped} already existed)`
+        );
+        // Invalidate both videos and shorts queries to refetch
+        queryClient.invalidateQueries({ queryKey: videoKeys.all });
+      } else {
+        toast.error(result.message);
+      }
+    },
+    onError: (error) => {
+      console.error("Error syncing shorts:", error);
+      toast.error("Failed to sync shorts. Please try again.");
+    },
+  });
+}
+
 export function useDeleteVideo() {
   const queryClient = useQueryClient();
 
