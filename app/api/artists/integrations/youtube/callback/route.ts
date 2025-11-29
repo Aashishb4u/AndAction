@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { syncYouTubeVideos } from "@/app/actions/youtube/sync-videos";
 
 const YOUTUBE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const YOUTUBE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
