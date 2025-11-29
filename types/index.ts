@@ -10,7 +10,7 @@ export interface SidebarItem {
   label: string;
   href?: string;
   onClick?: () => void;
-  variant?: 'default' | 'highlight';
+  variant?: "default" | "highlight";
 }
 
 // Component Props Types
@@ -32,12 +32,12 @@ export interface HeroProps {
 // Button Types
 export interface ButtonProps {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'xs' | 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary" | "outline" | "ghost";
+  size?: "xs" | "sm" | "md" | "lg";
   className?: string;
   onClick?: () => void;
   disabled?: boolean;
-  type?: 'button' | 'submit' | 'reset';
+  type?: "button" | "submit" | "reset";
 }
 
 // Modal Types
@@ -49,7 +49,7 @@ export interface ModalProps {
   className?: string;
   showCloseButton?: boolean;
   closeOnBackdropClick?: boolean;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  size?: "sm" | "md" | "lg" | "xl" | "full";
 }
 
 // Form Component Types
@@ -59,11 +59,12 @@ export interface SelectOption {
   disabled?: boolean;
 }
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
-  variant?: 'default' | 'filled';
+  variant?: "default" | "filled";
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
@@ -81,11 +82,12 @@ export interface SelectProps {
   className?: string;
 }
 
-export interface DateInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+export interface DateInputProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
   label?: string;
   error?: string;
   helperText?: string;
-  variant?: 'default' | 'filled';
+  variant?: "default" | "filled";
 }
 
 // Artist Profile Types (for profile management)
@@ -168,7 +170,6 @@ export interface Artist {
   offStageMembers?: string;
 }
 
-
 // Artist Video Type
 export interface ArtistVideo {
   id: string;
@@ -240,10 +241,4 @@ export interface ArtistProfileSetupData {
   backingChargesFrom: string;
   backingChargesTo: string;
   backingDescription: string;
-
-  // Videos & Social Media
-  youtubeConnected: boolean;
-  instagramConnected: boolean;
-  youtubeChannelId: string;
-  instagramAccountId: string;
 }
