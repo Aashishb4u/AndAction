@@ -48,6 +48,7 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
       viewCount: v.views,
       publishedAt: v.publishedAt,
       isShort: v.isShort,
+      source: v.source,
     })) || [];
 
   const handleSync = () => {
@@ -152,8 +153,7 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
           No Videos Synced
         </h3>
         <p className="text-text-gray mb-4 max-w-md">
-          Click the sync button to import your YouTube videos and display them
-          on your profile.
+          Click the sync button to import your YouTube videos.
         </p>
         <Button
           variant="primary"
