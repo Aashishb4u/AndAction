@@ -99,6 +99,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
             fill
             className="object-cover"
             priority
+            unoptimized
           />
 
           {/* Status Bar Spacer */}

@@ -114,7 +114,7 @@ export const signUp = async (
 
 export const signOut = async (): Promise<void> => {
   await nextAuthSignOut({
-    redirect: false, // Prevents automatic redirect to the sign-in page
+    redirect: false
   });
 };
 

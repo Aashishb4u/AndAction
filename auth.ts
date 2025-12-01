@@ -85,18 +85,12 @@ export const {
       // NOTE: For OAuth users we will update the isAccountVerified field and copy image to avatar
       if (!user?.id) return;
 
-      const existingUser = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { image: true , name: true },
-      });
-
       await prisma.user.update({
         where: {
           id: user.id,
         },
         data: {
           isAccountVerified: true,
-          avatar: existingUser?.image || undefined,
           firstName: user.name?.split(" ")[0],
           lastName: user.name?.split(" ")[1] || "",
         },
@@ -288,8 +282,7 @@ export const {
           token.firstName = existingUser.firstName;
           token.lastName = existingUser.lastName;
           token.email = existingUser.email;
-          token.avatar = existingUser.image || existingUser.avatar;
-          token.image = existingUser.image;
+          token.avatar = existingUser.avatar;
           token.phoneNumber = existingUser.phoneNumber;
           token.countryCode = existingUser.countryCode;
           token.city = existingUser.city;

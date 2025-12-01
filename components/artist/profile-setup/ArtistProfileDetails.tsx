@@ -49,6 +49,9 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     { value: 'comedian', label: 'Comedian' },
     { value: 'magician', label: 'Magician' },
     { value: 'actor', label: 'Actor' },
+    { value: 'anchor', label: 'Anchor'},
+    { value: 'band', label: 'Live Band'},
+    { value: 'dj', label: 'DJ'},
     { value: 'other', label: 'Other' }
   ];
 
@@ -185,6 +188,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                       className="w-full h-full rounded-full object-cover"
                       width={100}
                       height={100}
+                      unoptimized
                     />
                   ) : (
                     <Image src={`/icons/user-icon.svg`} alt="Profile" width={50} height={50} />

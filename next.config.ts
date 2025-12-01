@@ -33,6 +33,11 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "and-action-media.s3.ap-south-1.amazonaws.com",
+        pathname: "/**",
+      },
     ],
   },
 };

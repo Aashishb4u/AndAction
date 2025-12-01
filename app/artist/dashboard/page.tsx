@@ -135,6 +135,7 @@ export default function ArtistDashboard() {
                 src={session?.user?.avatar || "/icons/images.jpeg"}
                 alt={artist?.stageName || fullName || "Artist"}
                 fill
+                unoptimized
                 className="object-cover transition-all duration-500 ease-in-out"
               />
 
