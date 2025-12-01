@@ -23,9 +23,6 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   const { update } = useSession();
   const [uploading, setUploading] = useState(false);
 
-  /** -------------------------
-   *  Upload API
-   * ------------------------- **/
   const handleProfilePhotoUpload = async (file: File) => {
     try {
       setUploading(true);
@@ -90,6 +87,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
           }
           alt={artist.name}
           fill
+          unoptimized
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />

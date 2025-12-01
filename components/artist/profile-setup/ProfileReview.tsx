@@ -83,6 +83,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                       className="w-full h-full object-cover object-center"
                       width={350}
                       height={650}
+                      unoptimized
                     />
                   ) : (
                     <Image src="/user.png" alt="Artist Profile" width={96} height={96} className="rounded-xl" />

@@ -326,9 +326,9 @@ function ArtistAuthContent() {
         console.log("🧩 signIn result:", signInResult);
 
         if (signInResult?.error) {
-          console.error("❌ Auto sign-in failed:", signInResult.error);
+          console.error("Auto sign-in failed:", signInResult.error);
         } else {
-          console.log("✅ Auto sign-in succeeded. Session cookie created.");
+          console.log("Auto sign-in succeeded. Session cookie created.");
         }
       } else {
         console.warn(
@@ -610,8 +610,8 @@ function ArtistAuthContent() {
                   <span className="text-text-gray section-text">
                     {contactType === "phone"
                       ? `${countryCode.replace("+", "")}******${phone.slice(
-                          -3
-                        )}`
+                        -3
+                      )}`
                       : `${email.slice(0, 2)}****@${email.split("@")[1]}`}
                   </span>
                   <button
@@ -714,26 +714,23 @@ function ArtistAuthContent() {
                       Password Strength:
                     </span>
                     <span
-                      className={`text-sm font-medium ${
-                        getPasswordStrength(password).label === "Weak"
+                      className={`text-sm font-medium ${getPasswordStrength(password).label === "Weak"
                           ? "text-red-400"
                           : getPasswordStrength(password).label === "Medium"
-                          ? "text-yellow-400"
-                          : "text-green-400"
-                      }`}
+                            ? "text-yellow-400"
+                            : "text-green-400"
+                        }`}
                     >
                       {getPasswordStrength(password).label}
                     </span>
                   </div>
                   <div className="w-full bg-[#2D2D2D] rounded-full h-1">
                     <div
-                      className={`${
-                        getPasswordStrength(password).color
-                      } h-1 rounded-full transition-all duration-300`}
+                      className={`${getPasswordStrength(password).color
+                        } h-1 rounded-full transition-all duration-300`}
                       style={{
-                        width: `${
-                          (getPasswordStrength(password).strength / 6) * 100
-                        }%`,
+                        width: `${(getPasswordStrength(password).strength / 6) * 100
+                          }%`,
                       }}
                     ></div>
                   </div>
@@ -826,14 +823,13 @@ function ArtistAuthContent() {
                 <DateInput
                   label="Date of birth*"
                   placeholder="DD / MM / YYYY"
-                  value={dateOfBirth ? new Date(dateOfBirth) : undefined}
-                  onChange={(date) =>
-                    setDateOfBirth(date ? date.toISOString() : "")
-                  }
+                  value={dateOfBirth}
+                  onChange={setDateOfBirth}
                   required
                   disabled={isLoading}
                   variant="filled"
                 />
+
                 <Select
                   label="Gender*"
                   placeholder="Select gender"

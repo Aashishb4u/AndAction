@@ -58,6 +58,7 @@ const ArtistInfo: React.FC<ArtistInfoProps> = ({
                 alt={artist.name}
                 width={48}
                 height={48}
+                unoptimized
                 className="rounded-full object-cover lg:w-[60px] lg:h-[60px]"
               />
             </div>
