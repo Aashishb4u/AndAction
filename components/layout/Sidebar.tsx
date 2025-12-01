@@ -66,9 +66,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-background border-l border-background-light z-[99999] transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed top-0 right-0 h-full w-80 bg-background border-l border-background-light z-[99999] transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         <div className="flex flex-col h-full">
           {/* Header Close */}
@@ -110,8 +109,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                   <Image
                     src={
-                      user.avatar ??
-                      `https://api.dicebear.com/9.x/initials/svg?seed=${user.firstName}+${user.lastName}`
+                      user.role === "user"
+                        ? `/avatars/${user.avatar}.png`
+                        : `https://api.dicebear.com/9.x/initials/svg?seed=${user.firstName}+${user.lastName}`
                     }
                     alt={user.firstName || "User"}
                     width={48}
@@ -178,9 +178,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   key={item.label}
                   href={item.href}
                   onClick={handleItemClick}
-                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${
-                    item.isActive ? "gradient-text" : "text-white"
-                  }`}
+                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${item.isActive ? "gradient-text" : "text-white"
+                    }`}
                 >
                   {item.label}
                 </Link>

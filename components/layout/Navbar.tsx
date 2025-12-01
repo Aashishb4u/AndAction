@@ -8,7 +8,7 @@ import Button from "@/components/ui/Button";
 import { NavbarProps, NavItem } from "@/types";
 import { createAuthRedirectUrl } from "@/lib/auth";
 import Search from "../icons/search";
-import { useSession, signOut } from "next-auth/react"; // ✅ added
+import { useSession, signOut } from "next-auth/react";
 
 interface NavbarWithSidebarProps extends NavbarProps {
   onToggleSidebar?: () => void;
@@ -23,7 +23,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   const [lastScrollY, setLastScrollY] = useState(0);
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session, status } = useSession(); // ✅ session hook
+  const { data: session, status } = useSession(); 
   const user = session?.user;
 
   useEffect(() => {
@@ -146,9 +146,10 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
               >
                 <Image
                   src={
-                    user.avatar ??
-                    `https://api.dicebear.com/9.x/initials/svg?seed=${user.firstName}+${user.lastName}`
-                  }
+                      user.role === "user"
+                        ? `/avatars/${user.avatar}.png`
+                        : `https://api.dicebear.com/9.x/initials/svg?seed=${user.firstName}+${user.lastName}`
+                    }
                   alt={user.firstName || "User"}
                   width={40}
                   height={40}
