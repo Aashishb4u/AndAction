@@ -18,6 +18,29 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const url = new URL(request.url);
     const searchParams = url.searchParams;
 
+    // ----- NEW: Optional location params -----
+    const lat = parseFloat(searchParams.get("lat") || "");
+    const lng = parseFloat(searchParams.get("lng") || "");
+
+    // Helper: Reverse geocode lat/lng → state
+    async function getStateFromLatLng(lat: number, lng: number) {
+      if (!lat || !lng) return null;
+
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+        const res = await fetch(url, {
+          headers: { "User-Agent": "Artist-App" },
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+        return data?.address?.state || null;
+      } catch (err) {
+        console.error("Reverse geocode failed:", err);
+        return null;
+      }
+    }
+
     // ----- Pagination -----
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     let limit = parseInt(
@@ -47,7 +70,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const gender = searchParams.get("gender");
     const language = searchParams.get("language");
     const eventType = searchParams.get("eventType");
-    const state = searchParams.get("state");
+
+    // state from query (user may override location)
+    let state = searchParams.get("state");
+
     const budget = searchParams.get("budget");
 
     if (type) where.artistType = { equals: type, mode: "insensitive" };
@@ -56,8 +82,17 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       where.performingLanguage = { contains: language, mode: "insensitive" };
     if (eventType)
       where.performingEventType = { contains: eventType, mode: "insensitive" };
-    if (state)
+
+    // ----- NEW: Auto-detect state from lat/lng if state filter NOT provided -----
+    if (!state && lat && lng) {
+      state = await getStateFromLatLng(lat, lng);
+      console.log("Auto-detected state from location:", state);
+    }
+
+    // Apply state filter ONLY if we have a state
+    if (state) {
       where.performingStates = { contains: state, mode: "insensitive" };
+    }
 
     // Budget range filter (e.g. "50000-150000")
     if (budget && budget.includes("-")) {
@@ -88,21 +123,19 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       }
     }
 
-    // 3. Verification & Role filter (with optional ?verified=false to bypass)
-    const verifiedParam = searchParams.get("verified"); // "true" | "false" | null
+    // 3. Verification & Role filter
+    const verifiedParam = searchParams.get("verified");
 
     const userFilter: Prisma.UserWhereInput = {
       role: "artist",
     };
 
-    // Default (no param or "true") → only fully verified artists
-    // Only when explicitly ?verified=false we show unverified ones
+    // Default: Only verified artists
     if (verifiedParam !== "false") {
       userFilter.isAccountVerified = true;
       userFilter.isArtistVerified = true;
     }
 
-    // Gender filter (if provided) goes inside the same user.is object
     if (gender) {
       userFilter.gender = { equals: gender, mode: "insensitive" };
     }
@@ -116,7 +149,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         stageName: true,
@@ -155,14 +188,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
     return successResponse(
       { artists, metadata },
-      'Artist list retrieved successfully.',
+      "Artist list retrieved successfully.",
       200
     );
-
   } catch (error) {
-    console.error('GET Artists API Error:', error);
+    console.error("GET Artists API Error:", error);
     return ApiErrors.internalError(
-      'An unexpected error occurred while fetching the artist list.'
+      "An unexpected error occurred while fetching the artist list."
     );
   }
 }

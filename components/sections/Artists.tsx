@@ -6,33 +6,43 @@ import ArtistSection from './ArtistSection';
 const mockVideoUrl =
   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
 
-export default function Artists() {
+export default function Artists({ location }: { location: { lat: number; lng: number } | null }) {
   const [singers, setSingers] = useState<any[]>([]);
 
   useEffect(() => {
-    async function fetchSingers() {
-      try {
-        const res = await fetch('/api/artists?type=singer&verified=false');
-        const json = await res.json();
+  async function fetchSingers() {
+    try {
+      // Base API URL (original behavior)
+      let url = `/api/artists?type=singer&verified=false`;
 
-        const apiArtists = json?.data?.artists || [];
-
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name: artist.stageName || `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || 'Unknown',
-          thumbnail: artist.user.avatar || '/icons/images.jpeg',
-          videoUrl: mockVideoUrl,
-        }));
-
-        setSingers(mapped);
-      } catch (err) {
-        console.error('Failed to load singers:', err);
+      // If location is available, append lat/lng
+      if (location?.lat && location?.lng) {
+        url += `&lat=${location.lat}&lng=${location.lng}`;
       }
-    }
 
-    fetchSingers();
-  }, []);
+      const res = await fetch(url);
+      const json = await res.json();
+
+      const apiArtists = json?.data?.artists || [];
+
+      const mapped = apiArtists.map((artist: any) => ({
+        id: artist.id,
+        name:
+          artist.stageName ||
+          `${artist.user.firstName} ${artist.user.lastName}`.trim(),
+        location: artist.user.city || "Unknown",
+        thumbnail: artist.user.avatar || "/icons/images.jpeg",
+        videoUrl: mockVideoUrl,
+      }));
+
+      setSingers(mapped);
+    } catch (err) {
+      console.error("Failed to load singers:", err);
+    }
+  }
+  fetchSingers();
+}, [location]);
+
 
   const sampleArtists = {
     singers, 
