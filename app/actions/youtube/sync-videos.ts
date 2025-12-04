@@ -190,13 +190,23 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
 
       // Check if video already exists
       const existingVideo = await prisma.video.findUnique({
-        where: { youtubeVideoId: videoId },
+        where: {
+          youtubeVideoId_userId: {
+            youtubeVideoId: videoId,
+            userId: session.user.id,
+          }
+        },
       });
 
       if (existingVideo) {
         // Update existing video
         await prisma.video.update({
-          where: { youtubeVideoId: videoId },
+          where: {
+            youtubeVideoId_userId: {
+              youtubeVideoId: videoId,
+              userId: session.user.id
+            }
+          },
           data: {
             title: item.snippet.title,
             description: item.snippet.description,

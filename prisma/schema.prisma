@@ -149,7 +149,7 @@ model Artist {
 model Video {
   id                String     @id @default(cuid())
   
-  youtubeVideoId    String?    @unique 
+  youtubeVideoId    String?    
   
   userId            String
   title             String
@@ -172,6 +172,7 @@ model Video {
   @@index([isApproved])
   @@index([youtubeVideoId])
   @@index([isShort])
+  @@unique([youtubeVideoId, userId])
   @@map("videos")
 }
 

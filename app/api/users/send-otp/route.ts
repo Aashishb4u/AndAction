@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors, ApiResponse, successResponse } from '@/lib/api-response';
 import { sendOtpSms } from '@/lib/sms';
+import { sendOtpEmail } from "@/lib/email";
 
 interface SendOtpRequestBody {
   countryCode?: string;
@@ -65,30 +66,40 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse>>
       },
     });
 
-    // --- Simulate sending ---
+    // --- Send via SMS or Email ---
     if (isPhone) {
       const fullPhoneNumber = `${countryCode}${phoneNumber}`;
+
       const smsResult = await sendOtpSms(countryCode!, fullPhoneNumber, otp);
 
+      // CORRECTED CHECK: Now only fails if transactionId missing or HTTP failure
       if (!smsResult.success) {
-        console.error('SMS Send Failure:', smsResult.error);
+        console.error("SMS Send Failure:", smsResult);
         await prisma.verificationToken.deleteMany({ where: { identifier } });
-        return ApiErrors.internalError('Failed to send verification SMS. Please try again.');
+        return ApiErrors.internalError("Failed to send verification SMS. Please try again.");
       }
 
       console.log(`📱 OTP sent to phone ${fullPhoneNumber}: ${otp}`);
+
     } else {
-      // For now, we just log email OTPs
-      console.log(`📩 OTP for email ${email}: ${otp}`);
+      const emailResult = await sendOtpEmail(email!, otp);
+
+      if (!emailResult.success) {
+        console.error("Email Send Failure:", emailResult.error);
+        await prisma.verificationToken.deleteMany({ where: { identifier } });
+        return ApiErrors.internalError("Failed to send verification email. Please try again.");
+      }
+
+      console.log(`📩 OTP sent to email ${email}: ${otp}`);
     }
 
     return successResponse(
       { identifier },
-      `Verification code sent successfully to ${isPhone ? 'phone' : 'email'}.`,
+      `Verification code sent successfully to ${isPhone ? "phone" : "email"}.`,
       200
     );
   } catch (error) {
-    console.error('Error sending OTP:', error);
-    return ApiErrors.internalError('An unexpected error occurred while sending the OTP.');
+    console.error("Error sending OTP:", error);
+    return ApiErrors.internalError("An unexpected error occurred while sending the OTP.");
   }
 }
