@@ -46,7 +46,6 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
         : null;
 
     const handleChangeRaw = (e: any) => {
-      // Ignore events from the calendar UI (day clicks, month nav)
       if (!e?.target || typeof e.target.value !== "string") return;
 
       let val = e.target.value.replace(/\D/g, "");
