@@ -80,11 +80,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       {/* Full Background Image */}
       <div className="absolute inset-0">
         <Image
-          src={
-            artist.image?.startsWith('/uploads')
-              ? artist.image
-              : `/uploads/${artist.image?.replace('/uploads/', '')}`
-          }
+          src={artist.image}
           alt={artist.name}
           fill
           unoptimized

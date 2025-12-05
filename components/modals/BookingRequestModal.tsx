@@ -225,12 +225,13 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
             <DateInput
               label="Event date"
               placeholder="DD/MM/YYYY"
-              value={formData.eventDate ? new Date(formData.eventDate) : null}
-              onChange={(value) => handleInputChange("eventDate", value instanceof Date ? format(value, 'yyyy-MM-dd') : "")}
+              value={formData.eventDate || null}
+              onChange={(value) => handleInputChange("eventDate", value)}
               error={errors.eventDate}
               disabledDates={disabledDates}
               required
             />
+
             <Select
               label="Time"
               placeholder="Select slot"

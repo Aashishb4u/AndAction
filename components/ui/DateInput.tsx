@@ -17,6 +17,7 @@ export interface DateInputProps {
   className?: string;
   id?: string;
   required?: boolean;
+  disabledDates?: Date[];
 }
 
 const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
@@ -39,10 +40,16 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
   ) => {
     const inputId = id || `date-input-${Math.random().toString(36).substr(2, 9)}`;
 
-    const selectedDate = value ? new Date(value) : null;
+    const selectedDate =
+      value && !isNaN(Date.parse(value))
+        ? new Date(value + "T00:00:00")
+        : null;
 
     const handleChangeRaw = (e: any) => {
-      let val = e.target.value.replace(/\D/g, ""); 
+      // Ignore events from the calendar UI (day clicks, month nav)
+      if (!e?.target || typeof e.target.value !== "string") return;
+
+      let val = e.target.value.replace(/\D/g, "");
 
       if (val.length >= 3 && val.length <= 4) {
         val = val.slice(0, 2) + "/" + val.slice(2);
@@ -50,14 +57,15 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
         val = val.slice(0, 2) + "/" + val.slice(2, 4) + "/" + val.slice(4, 8);
       }
 
-      e.target.value = val;      
+      e.target.value = val;
 
       if (val.length === 10) {
         const [dd, mm, yyyy] = val.split("/");
-        const formatted = `${yyyy}-${mm}-${dd}`;
-        onChange?.(formatted);
+        onChange?.(`${yyyy}-${mm}-${dd}`);
       }
     };
+
+
 
 
     const handlePickerChange = (date: Date | null) => {
@@ -98,8 +106,8 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
         <div className="relative">
           <DatePicker
             selected={selectedDate}
-            onChange={handlePickerChange}     
-            onChangeRaw={handleChangeRaw}   
+            onChange={handlePickerChange}
+            onChangeRaw={handleChangeRaw}
             placeholderText={placeholder}
             disabled={disabled}
             id={inputId}
