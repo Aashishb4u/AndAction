@@ -83,10 +83,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     if (eventType)
       where.performingEventType = { contains: eventType, mode: "insensitive" };
 
-    // ----- NEW: Auto-detect state from lat/lng if state filter NOT provided -----
     if (!state && lat && lng) {
       state = await getStateFromLatLng(lat, lng);
-      console.log("Auto-detected state from location:", state);
     }
 
     // Apply state filter ONLY if we have a state

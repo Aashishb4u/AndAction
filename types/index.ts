@@ -145,6 +145,7 @@ export interface Artist {
   languages: string[];
   image: string;
   isBookmarked: boolean;
+  bookmarkId?: string;
 
   // ABOUT TAB
   gender?: string;
@@ -160,7 +161,7 @@ export interface Artist {
   state?: string;
   city?: string;
 
-  // PERFORMANCE TAB — ADD THESE
+  // PERFORMANCE TAB — already existed
   performingLanguage?: string;
   performingEventType?: string;
   performingStates?: string;
@@ -168,7 +169,19 @@ export interface Artist {
   performingDurationTo?: string;
   performingMembers?: string;
   offStageMembers?: string;
+
+  // ✅ NEW FIELDS (added without touching anything else)
+  subArtistTypes?: string[];
+
+  soloChargesFrom?: number;
+  soloChargesTo?: number;
+  soloChargesDescription?: string;
+
+  chargesWithBacklineFrom?: number;
+  chargesWithBacklineTo?: number;
+  chargesWithBacklineDescription?: string;
 }
+
 
 // Artist Video Type
 export interface ArtistVideo {

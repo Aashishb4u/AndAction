@@ -60,13 +60,21 @@ interface ExtendedUser {
   isDataSharingOptIn?: boolean;
   artistProfile?: ArtistProfile | null;
 }
+
+// ---- Correct module augmentation for Auth.js v5 ----
 declare module "next-auth" {
   interface Session {
     user: ExtendedUser;
   }
 
-  interface JWT extends ExtendedUser {}
+  interface JWT extends ExtendedUser {
+    sub?: string;
+  }
 }
+
+// Helper: make sure we only ever put JSON-serializable stuff into the token
+const toPlain = <T>(obj: T): T =>
+  obj ? (JSON.parse(JSON.stringify(obj)) as T) : obj;
 
 export const {
   handlers: { GET, POST },
@@ -82,13 +90,10 @@ export const {
 
   events: {
     async linkAccount({ user }) {
-      // NOTE: For OAuth users we will update the isAccountVerified field and copy image to avatar
       if (!user?.id) return;
 
       await prisma.user.update({
-        where: {
-          id: user.id,
-        },
+        where: { id: user.id },
         data: {
           isAccountVerified: true,
           firstName: user.name?.split(" ")[0],
@@ -110,10 +115,13 @@ export const {
           if (!credentials?.contact || !credentials?.password) {
             throw new Error("Missing credentials");
           }
+
           const contactRaw = String(credentials.contact).trim();
           const passwordRaw = String(credentials.password);
           const isEmail = contactRaw.includes("@");
+
           let user: any | null = null;
+
           if (isEmail) {
             user = await prisma.user.findUnique({
               where: { email: contactRaw.toLowerCase() },
@@ -127,31 +135,11 @@ export const {
             });
           }
 
-          if (!user) {
-            console.error(
-              "[Authorize] User not found for contact:",
-              contactRaw
-            );
-            throw new Error("User not found");
-          }
-          if (!user.password) {
-            console.error(
-              "[Authorize] User found but password missing:",
-              user.id
-            );
-            throw new Error("No password set");
-          }
+          if (!user) throw new Error("User not found");
+          if (!user.password) throw new Error("No password set");
 
-          const valid = await verifyPassword(
-            passwordRaw,
-            String(user.password)
-          );
-          // if (!valid) throw new Error('Invalid password');
-
-          if (!valid) {
-            console.error("[Authorize] Password mismatch for user:", user.id);
-            throw new Error("Invalid password");
-          }
+          const valid = await verifyPassword(passwordRaw, String(user.password));
+          if (!valid) throw new Error("Invalid password");
 
           const safeUser: ExtendedUser = {
             id: user.id,
@@ -195,7 +183,7 @@ export const {
           }
 
           return safeUser;
-        } catch (err: any) {
+        } catch (err) {
           throw new Error("Invalid email / phone or password");
         }
       },
@@ -214,125 +202,188 @@ export const {
 
   callbacks: {
     async session({ session, token }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub;
+      // FIX: satisfy AdapterUser typing
+      if (!session.user) {
+        session.user = {
+          id: "",
+          email: null,
+          emailVerified: null,
+          image: null,
+        } as any;
       }
 
-      if (token.role && session.user) {
-        session.user.role = token.role as "user" | "artist" | "admin";
-      }
+      const user = session.user;
 
-      if (session.user) {
-        session.user.firstName = token.firstName as string;
-        session.user.lastName = token.lastName as string;
-        session.user.email = token.email ?? session.user.email ?? "";
-        session.user.avatar = (token.image || token.avatar) as string;
-        session.user.phoneNumber = token.phoneNumber as string;
-        session.user.countryCode = token.countryCode as string;
-        session.user.city = token.city as string;
-        session.user.state = token.state as string;
-        session.user.address = token.address as string;
-        session.user.zip = token.zip as string;
-        session.user.gender = token.gender as string;
-        session.user.dob = token.dob as string;
-        session.user.isAccountVerified = token.isAccountVerified as boolean;
-        session.user.isArtistVerified = token.isArtistVerified as boolean;
-        session.user.isMarketingOptIn = token.isMarketingOptIn as boolean;
-        session.user.isDataSharingOptIn = token.isDataSharingOptIn as boolean;
-      }
+      user.id = (token.sub as string) ?? (token.id as string);
+      user.role = (token.role as ExtendedUser["role"]) ?? "user";
 
-      // Handle artist profile
-      if (token.role === "artist") {
-        session.user.artistProfile =
-          token.artistProfile &&
-          typeof token.artistProfile === "object" &&
-          "id" in (token.artistProfile as object)
-            ? (token.artistProfile as any)
-            : null;
+      user.email = (token.email as string) ?? null;
+      user.firstName = (token.firstName as string) ?? null;
+      user.lastName = (token.lastName as string) ?? null;
+      user.avatar = (token.avatar as string) ?? null;
+      user.phoneNumber = (token.phoneNumber as string) ?? null;
+      user.countryCode = (token.countryCode as string) ?? null;
+      user.city = (token.city as string) ?? null;
+      user.state = (token.state as string) ?? null;
+      user.address = (token.address as string) ?? null;
+      user.zip = (token.zip as string) ?? null;
+      user.gender = (token.gender as string) ?? null;
+      user.dob = (token.dob as string) ?? null;
+      user.isAccountVerified = !!token.isAccountVerified;
+      user.isArtistVerified = !!token.isArtistVerified;
+      user.isMarketingOptIn = !!token.isMarketingOptIn;
+      user.isDataSharingOptIn = !!token.isDataSharingOptIn;
+
+      if (token.role === "artist" && token.artistProfile) {
+        user.artistProfile = toPlain(token.artistProfile as ArtistProfile);
       } else {
-        delete (session.user as any).artistProfile;
+        user.artistProfile = null;
       }
 
       return session;
     },
 
     async jwt({ token, user, trigger, session }) {
-      console.log("JWT callback trigger:", user, session);
-      // User just logged in → merge user data into token
       if (user) {
-        Object.assign(token, user);
+        const u = user as ExtendedUser;
+
+        token.id = u.id;
+        token.role = u.role;
+        token.email = u.email;
+        token.firstName = u.firstName;
+        token.lastName = u.lastName;
+        token.avatar = u.avatar;
+        token.phoneNumber = u.phoneNumber;
+        token.countryCode = u.countryCode;
+        token.city = u.city;
+        token.state = u.state;
+        token.address = u.address;
+        token.zip = u.zip;
+        token.gender = u.gender;
+        token.dob = u.dob;
+        token.isAccountVerified = u.isAccountVerified;
+        token.isArtistVerified = u.isArtistVerified;
+        token.isMarketingOptIn = u.isMarketingOptIn;
+        token.isDataSharingOptIn = u.isDataSharingOptIn;
+
+        if (u.artistProfile) token.artistProfile = toPlain(u.artistProfile);
       }
 
-      // Session update() was called → merge updated fields into token
-      if (trigger === "update" && session?.update) {
-        Object.assign(token, session.update);
+      if (trigger === "update" && session) {
+        const rawUpdate: any = (session as any).update ?? session;
+        const update = toPlain(rawUpdate) as Partial<ExtendedUser>;
+
+        const scalarKeys: (keyof ExtendedUser)[] = [
+          "firstName",
+          "lastName",
+          "avatar",
+          "phoneNumber",
+          "countryCode",
+          "city",
+          "state",
+          "address",
+          "zip",
+          "gender",
+          "dob",
+          "isAccountVerified",
+          "isArtistVerified",
+          "isMarketingOptIn",
+          "isDataSharingOptIn",
+          "email",
+        ];
+
+        scalarKeys.forEach((key) => {
+          if (key in update && typeof update[key] !== "undefined") {
+            (token as any)[key] = update[key];
+          }
+        });
+
+        if (typeof update.artistProfile !== "undefined") {
+          token.artistProfile = update.artistProfile
+            ? toPlain(update.artistProfile)
+            : null;
+        }
       }
 
-      // Fetch fresh user data from database if token exists
-      if (!user && token?.sub) {
+      // 3) Refresh token from DB if needed
+      if (!user && token?.sub && !token.role) {
         try {
           const existingUser = await prisma.user.findUnique({
             where: { id: String(token.sub) },
             include: { artist: true },
           });
 
-          if (!existingUser) return token;
+          if (existingUser) {
+            token.role = existingUser.role;
+            token.firstName = existingUser.firstName;
+            token.lastName = existingUser.lastName;
+            token.email = existingUser.email;
+            token.avatar = existingUser.avatar;
+            token.phoneNumber = existingUser.phoneNumber;
+            token.countryCode = existingUser.countryCode;
+            token.city = existingUser.city;
+            token.state = existingUser.state;
+            token.address = existingUser.address;
+            token.zip = existingUser.zip;
+            token.gender = existingUser.gender;
+            token.dob = existingUser.dob
+              ? existingUser.dob.toISOString()
+              : null;
+            token.isAccountVerified = existingUser.isAccountVerified;
+            token.isArtistVerified = existingUser.isArtistVerified;
+            token.isMarketingOptIn = existingUser.isMarketingOptIn;
+            token.isDataSharingOptIn = existingUser.isDataSharingOptIn;
 
-          token.role = existingUser.role;
-          token.firstName = existingUser.firstName;
-          token.lastName = existingUser.lastName;
-          token.email = existingUser.email;
-          token.avatar = existingUser.avatar;
-          token.phoneNumber = existingUser.phoneNumber;
-          token.countryCode = existingUser.countryCode;
-          token.city = existingUser.city;
-          token.state = existingUser.state;
-          token.address = existingUser.address;
-          token.zip = existingUser.zip;
-          token.gender = existingUser.gender;
-          token.dob = existingUser.dob ? existingUser.dob.toISOString() : null;
-          token.isAccountVerified = existingUser.isAccountVerified;
-          token.isArtistVerified = existingUser.isArtistVerified;
-          token.isMarketingOptIn = existingUser.isMarketingOptIn;
-          token.isDataSharingOptIn = existingUser.isDataSharingOptIn;
+            if (existingUser.role === "artist" && existingUser.artist) {
+              token.artistProfile = toPlain({
+                id: existingUser.artist.id,
+                stageName: existingUser.artist.stageName ?? null,
+                artistType: existingUser.artist.artistType ?? null,
+                subArtistType: existingUser.artist.subArtistType ?? null,
+                achievements: existingUser.artist.achievements ?? null,
+                yearsOfExperience:
+                  existingUser.artist.yearsOfExperience ?? null,
+                shortBio: existingUser.artist.shortBio ?? null,
+                performingLanguage:
+                  existingUser.artist.performingLanguage ?? null,
+                performingEventType:
+                  existingUser.artist.performingEventType ?? null,
+                performingStates: existingUser.artist.performingStates ?? null,
+                performingDurationFrom:
+                  existingUser.artist.performingDurationFrom ?? null,
+                performingDurationTo:
+                  existingUser.artist.performingDurationTo ?? null,
+                performingMembers:
+                  existingUser.artist.performingMembers ?? null,
+                offStageMembers: existingUser.artist.offStageMembers ?? null,
+                contactNumber: existingUser.artist.contactNumber ?? null,
+                whatsappNumber: existingUser.artist.whatsappNumber ?? null,
+                contactEmail: existingUser.artist.contactEmail ?? null,
 
-          // Load artist profile if user is an artist
-          if (existingUser.role === "artist" && existingUser.artist) {
-            token.artistProfile = {
-              id: existingUser.artist.id,
-              stageName: existingUser.artist.stageName ?? null,
-              artistType: existingUser.artist.artistType ?? null,
-              subArtistType: existingUser.artist.subArtistType ?? null,
-              achievements: existingUser.artist.achievements ?? null,
-              yearsOfExperience: existingUser.artist.yearsOfExperience ?? null,
-              shortBio: existingUser.artist.shortBio ?? null,
-              performingLanguage:
-                existingUser.artist.performingLanguage ?? null,
-              performingEventType:
-                existingUser.artist.performingEventType ?? null,
-              performingStates: existingUser.artist.performingStates ?? null,
-              performingDurationFrom:
-                existingUser.artist.performingDurationFrom ?? null,
-              performingDurationTo:
-                existingUser.artist.performingDurationTo ?? null,
-              performingMembers: existingUser.artist.performingMembers ?? null,
-              offStageMembers: existingUser.artist.offStageMembers ?? null,
-              contactNumber: existingUser.artist.contactNumber ?? null,
-              whatsappNumber: existingUser.artist.whatsappNumber ?? null,
-              contactEmail: existingUser.artist.contactEmail ?? null,
-              soloChargesFrom: existingUser.artist.soloChargesFrom ?? null,
-              soloChargesTo: existingUser.artist.soloChargesTo ?? null,
-              chargesWithBacklineFrom:
-                existingUser.artist.chargesWithBacklineFrom ?? null,
-              chargesWithBacklineTo:
-                existingUser.artist.chargesWithBacklineTo ?? null,
-              soloChargesDescription:
-                existingUser.artist.soloChargesDescription ?? null,
-              chargesWithBacklineDescription:
-                existingUser.artist.chargesWithBacklineDescription ?? null,
-              instagramId: existingUser.artist.instagramId ?? null,
-              youtubeChannelId: existingUser.artist.youtubeChannelId ?? null,
-            };
+                // ✅ FIXED DECIMAL FIELDS
+                soloChargesFrom:
+                  existingUser.artist.soloChargesFrom?.toString() ?? null,
+                soloChargesTo:
+                  existingUser.artist.soloChargesTo?.toString() ?? null,
+                chargesWithBacklineFrom:
+                  existingUser.artist.chargesWithBacklineFrom?.toString() ??
+                  null,
+                chargesWithBacklineTo:
+                  existingUser.artist.chargesWithBacklineTo?.toString() ??
+                  null,
+
+                soloChargesDescription:
+                  existingUser.artist.soloChargesDescription ?? null,
+                chargesWithBacklineDescription:
+                  existingUser.artist.chargesWithBacklineDescription ?? null,
+
+                instagramId: existingUser.artist.instagramId ?? null,
+                youtubeChannelId:
+                  existingUser.artist.youtubeChannelId ?? null,
+              } satisfies ArtistProfile);
+            } else {
+              token.artistProfile = null;
+            }
           }
         } catch (err) {
           console.error("Error refreshing JWT:", err);

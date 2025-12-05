@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Artist } from '@/types';
 import BookingRequestModal from '@/components/modals/BookingRequestModal';
 import BookingSuccessModal from '@/components/modals/BookingSuccessModal';
@@ -34,15 +36,24 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
 }) => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const { data: session } = useSession();
+  const router = useRouter();
+
 
   const formatPrice = (price: number) => {
     return `₹ ${price.toLocaleString()}`;
   };
 
   const handleRequestBooking = () => {
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
+    }
 
+    // User is logged in → open modal
     setShowBookingModal(true);
   };
+
 
   const handleBookingSubmit = (formData: BookingFormData) => {
     // Here you would typically send the data to your API
@@ -94,13 +105,13 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
         {/* Mobile Header Image */}
         <div className="relative h-[80vh] w-full">
           <Image
-            src={artist.image}
-            alt={artist.name}
+            src={artist.image || "/icons/images.jpeg"}
+            alt={artist.name || "artist"}
             fill
             className="object-cover"
             priority
-            unoptimized
           />
+
 
           {/* Status Bar Spacer */}
           <div className="h-12" />
@@ -121,7 +132,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
                 onClick={onBookmark}
                 className="w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center"
               >
-                <Bookmark className="w-5 h-5" />
+                 <Bookmark className="w-5 h-5" active={artist.isBookmarked} />
               </button>
 
               <button
@@ -220,7 +231,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
                 onClick={onBookmark}
                 className="w-10 h-10 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/60 transition-colors"
               >
-                <Bookmark className="w-5 h-5" />
+                <Bookmark className="w-5 h-5" active={artist.isBookmarked} />
               </button>
 
               <button

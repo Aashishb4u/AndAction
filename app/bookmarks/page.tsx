@@ -210,55 +210,68 @@ export default function BookmarksPage() {
 
   const tabs: TabType[] = ['Artist', 'Videos', 'Shorts'];
   useEffect(() => {
-  const fetchBookmarks = async () => {
+    const fetchBookmarks = async () => {
+      try {
+        const res = await fetch('/api/bookmarks');
+        const json = await res.json();
+
+        if (json.success) {
+          const mappedArtists = json.data.bookmarks
+            .filter((b: any) => b.artist)
+            .map((b: any) => {
+              const a = b.artist;
+              return {
+                id: a.id,
+                bookmarkId: b.id,
+                name: a.stageName || `${a.user.firstName} ${a.user.lastName}`,
+                category: a.artistType,
+                subCategory: a.subArtistType,
+                location: `${a.user.city || ''}${a.user.state ? ', ' + a.user.state : ''}`,
+                duration: '120 - 160 minutes', // MOCK FIELD
+                startingPrice: Number(a.soloChargesFrom) || 0,
+                languages: [a.performingLanguage],
+                image: a.user.avatar || '/icons/images.jpeg',
+                isBookmarked: true,
+                gender: a.user.gender || 'unknown',
+              };
+            });
+
+          setArtistBookmarks(mappedArtists);
+        }
+      } catch (err) {
+        console.error('Bookmark fetch failed:', err);
+      } finally {
+        setLoadingArtistBookmarks(false);
+      }
+    };
+
+    fetchBookmarks();
+  }, []);
+
+
+  const handleArtistBookmark = async (artistId: string) => {
+  const artist = artistBookmarks.find(a => a.id === artistId);
+  if (!artist) {
+    console.warn("Artist NOT found in artistBookmarks — this is the bug.");
+    return;
+  }
+
+  if (artist.isBookmarked && artist.bookmarkId) {
     try {
-      const res = await fetch('/api/bookmarks');
+      const res = await fetch(`/api/bookmarks/${artist.bookmarkId}`, {
+        method: "DELETE",
+      });
       const json = await res.json();
-
       if (json.success) {
-        const mappedArtists = json.data.bookmarks
-          .filter((b: any) => b.artist)
-          .map((b: any) => {
-            const a = b.artist;
-            return {
-              id: a.id,
-              name: a.stageName || `${a.user.firstName} ${a.user.lastName}`,
-              category: a.artistType,
-              subCategory: a.subArtistType,
-              location: `${a.user.city || ''}${a.user.state ? ', ' + a.user.state : ''}`,
-              duration: '120 - 160 minutes', // MOCK FIELD
-              startingPrice: Number(a.soloChargesFrom) || 0,
-              languages: [a.performingLanguage],
-              image: a.user.avatar || '/icons/images.jpeg',
-              isBookmarked: true,
-              gender: a.user.gender || 'unknown',
-            };
-          });
-
-        setArtistBookmarks(mappedArtists);
+        setArtistBookmarks(prev => prev.filter(a => a.id !== artistId));
       }
     } catch (err) {
-      console.error('Bookmark fetch failed:', err);
-    } finally {
-      setLoadingArtistBookmarks(false);
+      console.error("Remove bookmark ERROR: ", err);
     }
-  };
 
-  fetchBookmarks();
-}, []);
-
-
-  const handleArtistBookmark = (artistId: string) => {
-    setBookmarkedArtists(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(artistId)) {
-        newSet.delete(artistId);
-      } else {
-        newSet.add(artistId);
-      }
-      return newSet;
-    });
-  };
+    return;
+  }
+};
 
   const handleVideoBookmark = (videoId: string) => {
     setBookmarkedVideos(prev => {
@@ -331,27 +344,27 @@ export default function BookmarksPage() {
           {/* Tab Content */}
           <div className="pb-8">
             {activeTab === 'Artist' && (
-  <div>
-    {loadingArtistBookmarks ? (
-      <div className="text-center py-16 text-white">Loading...</div>
-    ) : artistBookmarks.length > 0 ? (
-      <ArtistGrid
-        artists={artistBookmarks}
-        onBookmark={handleArtistBookmark}
-      />
-    ) : (
-      <div className="text-center py-16">
-        <div className="mb-4">
-          <svg className="w-16 h-16 text-gray-600 mx-auto" viewBox="0 0 24 24" fill="none">
-            <path d="M21.9004 16.09V11.098C21.9004 6.808 21.9004 4.665 20.5824 3.332..." stroke="currentColor" strokeWidth="1.5"/>
-          </svg>
-        </div>
-        <h3 className="text-xl font-semibold text-white mb-2">No Bookmarked Artists</h3>
-        <p className="text-gray-400">Start exploring and bookmark your favorite artists!</p>
-      </div>
-    )}
-  </div>
-)}
+              <div>
+                {loadingArtistBookmarks ? (
+                  <div className="text-center py-16 text-white">Loading...</div>
+                ) : artistBookmarks.length > 0 ? (
+                  <ArtistGrid
+                    artists={artistBookmarks}
+                    onBookmark={handleArtistBookmark}
+                  />
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="mb-4">
+                      <svg className="w-16 h-16 text-gray-600 mx-auto" viewBox="0 0 24 24" fill="none">
+                        <path d="M21.9004 16.09V11.098C21.9004 6.808 21.9004 4.665 20.5824 3.332..." stroke="currentColor" strokeWidth="1.5" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-white mb-2">No Bookmarked Artists</h3>
+                    <p className="text-gray-400">Start exploring and bookmark your favorite artists!</p>
+                  </div>
+                )}
+              </div>
+            )}
 
 
             {activeTab === 'Videos' && (
