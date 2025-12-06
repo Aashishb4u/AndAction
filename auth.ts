@@ -244,6 +244,7 @@ export const {
     },
 
     async jwt({ token, user, trigger, session }) {
+      // 1️⃣ On initial login (credentials or OAuth) – copy from `user` into token
       if (user) {
         const u = user as ExtendedUser;
 
@@ -266,9 +267,12 @@ export const {
         token.isMarketingOptIn = u.isMarketingOptIn;
         token.isDataSharingOptIn = u.isDataSharingOptIn;
 
-        if (u.artistProfile) token.artistProfile = toPlain(u.artistProfile);
+        if (u.artistProfile) {
+          token.artistProfile = toPlain(u.artistProfile);
+        }
       }
 
+      // 2️⃣ When you explicitly call `session.update(...)` on client
       if (trigger === "update" && session) {
         const rawUpdate: any = (session as any).update ?? session;
         const update = toPlain(rawUpdate) as Partial<ExtendedUser>;
@@ -290,7 +294,7 @@ export const {
           "isMarketingOptIn",
           "isDataSharingOptIn",
           "email",
-          "role"
+          "role",
         ];
 
         scalarKeys.forEach((key) => {
@@ -306,81 +310,65 @@ export const {
         }
       }
 
-      // 3) Refresh token from DB if needed
-      if (!user && token?.sub && !token.role) {
+      // 3️⃣ 🔥 ALWAYS sync role from DB when there is no `user` object (normal requests)
+      if (!user && token.sub) {
         try {
-          const existingUser = await prisma.user.findUnique({
+          const dbUser = await prisma.user.findUnique({
             where: { id: String(token.sub) },
             include: { artist: true },
           });
 
-          if (existingUser) {
-            token.role = existingUser.role;
-            token.firstName = existingUser.firstName;
-            token.lastName = existingUser.lastName;
-            token.email = existingUser.email;
-            token.avatar = existingUser.avatar;
-            token.phoneNumber = existingUser.phoneNumber;
-            token.countryCode = existingUser.countryCode;
-            token.city = existingUser.city;
-            token.state = existingUser.state;
-            token.address = existingUser.address;
-            token.zip = existingUser.zip;
-            token.gender = existingUser.gender;
-            token.dob = existingUser.dob
-              ? existingUser.dob.toISOString()
-              : null;
-            token.isAccountVerified = existingUser.isAccountVerified;
-            token.isArtistVerified = existingUser.isArtistVerified;
-            token.isMarketingOptIn = existingUser.isMarketingOptIn;
-            token.isDataSharingOptIn = existingUser.isDataSharingOptIn;
+          if (dbUser) {
+            token.role = dbUser.role;
+            token.firstName = dbUser.firstName;
+            token.lastName = dbUser.lastName;
+            token.email = dbUser.email;
+            token.avatar = dbUser.avatar;
+            token.phoneNumber = dbUser.phoneNumber;
+            token.countryCode = dbUser.countryCode;
+            token.city = dbUser.city;
+            token.state = dbUser.state;
+            token.address = dbUser.address;
+            token.zip = dbUser.zip;
+            token.gender = dbUser.gender;
+            token.dob = dbUser.dob ? dbUser.dob.toISOString() : null;
+            token.isAccountVerified = dbUser.isAccountVerified;
+            token.isArtistVerified = dbUser.isArtistVerified;
+            token.isMarketingOptIn = dbUser.isMarketingOptIn;
+            token.isDataSharingOptIn = dbUser.isDataSharingOptIn;
 
-            if (existingUser.role === "artist" && existingUser.artist) {
+            if (dbUser.role === "artist" && dbUser.artist) {
               token.artistProfile = toPlain({
-                id: existingUser.artist.id,
-                stageName: existingUser.artist.stageName ?? null,
-                artistType: existingUser.artist.artistType ?? null,
-                subArtistType: existingUser.artist.subArtistType ?? null,
-                achievements: existingUser.artist.achievements ?? null,
-                yearsOfExperience:
-                  existingUser.artist.yearsOfExperience ?? null,
-                shortBio: existingUser.artist.shortBio ?? null,
-                performingLanguage:
-                  existingUser.artist.performingLanguage ?? null,
-                performingEventType:
-                  existingUser.artist.performingEventType ?? null,
-                performingStates: existingUser.artist.performingStates ?? null,
-                performingDurationFrom:
-                  existingUser.artist.performingDurationFrom ?? null,
-                performingDurationTo:
-                  existingUser.artist.performingDurationTo ?? null,
-                performingMembers:
-                  existingUser.artist.performingMembers ?? null,
-                offStageMembers: existingUser.artist.offStageMembers ?? null,
-                contactNumber: existingUser.artist.contactNumber ?? null,
-                whatsappNumber: existingUser.artist.whatsappNumber ?? null,
-                contactEmail: existingUser.artist.contactEmail ?? null,
-
-                // ✅ FIXED DECIMAL FIELDS
+                id: dbUser.artist.id,
+                stageName: dbUser.artist.stageName ?? null,
+                artistType: dbUser.artist.artistType ?? null,
+                subArtistType: dbUser.artist.subArtistType ?? null,
+                achievements: dbUser.artist.achievements ?? null,
+                yearsOfExperience: dbUser.artist.yearsOfExperience ?? null,
+                shortBio: dbUser.artist.shortBio ?? null,
+                performingLanguage: dbUser.artist.performingLanguage ?? null,
+                performingEventType: dbUser.artist.performingEventType ?? null,
+                performingStates: dbUser.artist.performingStates ?? null,
+                performingDurationFrom: dbUser.artist.performingDurationFrom ?? null,
+                performingDurationTo: dbUser.artist.performingDurationTo ?? null,
+                performingMembers: dbUser.artist.performingMembers ?? null,
+                offStageMembers: dbUser.artist.offStageMembers ?? null,
+                contactNumber: dbUser.artist.contactNumber ?? null,
+                whatsappNumber: dbUser.artist.whatsappNumber ?? null,
+                contactEmail: dbUser.artist.contactEmail ?? null,
                 soloChargesFrom:
-                  existingUser.artist.soloChargesFrom?.toString() ?? null,
-                soloChargesTo:
-                  existingUser.artist.soloChargesTo?.toString() ?? null,
+                  dbUser.artist.soloChargesFrom?.toString() ?? null,
+                soloChargesTo: dbUser.artist.soloChargesTo?.toString() ?? null,
                 chargesWithBacklineFrom:
-                  existingUser.artist.chargesWithBacklineFrom?.toString() ??
-                  null,
+                  dbUser.artist.chargesWithBacklineFrom?.toString() ?? null,
                 chargesWithBacklineTo:
-                  existingUser.artist.chargesWithBacklineTo?.toString() ??
-                  null,
-
+                  dbUser.artist.chargesWithBacklineTo?.toString() ?? null,
                 soloChargesDescription:
-                  existingUser.artist.soloChargesDescription ?? null,
+                  dbUser.artist.soloChargesDescription ?? null,
                 chargesWithBacklineDescription:
-                  existingUser.artist.chargesWithBacklineDescription ?? null,
-
-                instagramId: existingUser.artist.instagramId ?? null,
-                youtubeChannelId:
-                  existingUser.artist.youtubeChannelId ?? null,
+                  dbUser.artist.chargesWithBacklineDescription ?? null,
+                instagramId: dbUser.artist.instagramId ?? null,
+                youtubeChannelId: dbUser.artist.youtubeChannelId ?? null,
               } satisfies ArtistProfile);
             } else {
               token.artistProfile = null;
@@ -392,7 +380,8 @@ export const {
       }
 
       return token;
-    },
+    }
+    ,
   },
 
   session: { strategy: "jwt" },
