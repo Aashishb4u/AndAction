@@ -56,6 +56,9 @@ export default function ArtistProfile() {
   const user = session?.user;
   const artistProfile = user?.artistProfile;
 
+  console.log(JSON.stringify(user));
+  console.log(`Artist: ${JSON.stringify(artistProfile)}`)
+
   if (!user || !artistProfile) {
     return (
       <ArtistDashboardLayout>
