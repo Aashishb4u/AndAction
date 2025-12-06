@@ -215,7 +215,7 @@ export const {
       const user = session.user;
 
       user.id = (token.sub as string) ?? (token.id as string);
-      user.role = (token.role as ExtendedUser["role"]) ?? "user";
+      user.role = (token.role as ExtendedUser["role"]) || user.role || "user";
 
       user.email = (token.email as string) ?? null;
       user.firstName = (token.firstName as string) ?? null;
@@ -290,6 +290,7 @@ export const {
           "isMarketingOptIn",
           "isDataSharingOptIn",
           "email",
+          "role"
         ];
 
         scalarKeys.forEach((key) => {
