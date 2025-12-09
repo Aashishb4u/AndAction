@@ -46,6 +46,7 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
               alt="Profile"
               width={40}
               height={40}
+              unoptimized
               className="object-cover object-center"
             />
           </div>

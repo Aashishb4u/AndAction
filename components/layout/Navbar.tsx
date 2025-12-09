@@ -148,11 +148,12 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                   src={
                       user.role === "user"
                         ? `/avatars/${user.avatar}.png`
-                        : `https://api.dicebear.com/9.x/initials/svg?seed=${user.firstName}+${user.lastName}`
+                        : user.avatar ?? "/default-avatar.png"
                     }
                   alt={user.firstName || "User"}
                   width={40}
                   height={40}
+                  unoptimized
                   className="rounded-full"
                 />
               </button>

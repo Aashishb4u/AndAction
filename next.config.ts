@@ -35,6 +35,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "and-action-media.s3.ap-south-1.amazonaws.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "api.dicebear.com",
         port: "",
         pathname: "/**",

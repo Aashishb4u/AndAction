@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const role = searchParams.get("role");
+  console.log(`Role: ${role}`);
   const redirect = searchParams.get("redirect") || "/";
 
   try {

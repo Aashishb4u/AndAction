@@ -13,14 +13,6 @@ import { BookingStatus } from "@prisma/client";
 
 /**
  * Formats a date into the pattern: `DD, Mon, YYYY`
- *
- * Example:
- *   Input:  "2025-12-06T00:00:00.000Z"
- *   Output: "06, Dec, 2025"
- *
- * - Uses Intl.DateTimeFormat for localization.
- * - Reorders the default US format ("Dec 06, 2025") into the required format.
- *
  */
 export function formatDate(input: string | Date) {
   const date = input instanceof Date ? input : new Date(input);
@@ -40,7 +32,7 @@ type Booking = {
   eventDate: string;
   eventType: string;
   totalPrice: string;
-  status: BookingStatus; // "PENDING" | "APPROVED" | "DECLINED" | "CANCELLED" | "COMPLETED"
+  status: BookingStatus;
   createdAt: string;
   eventLocation: string;
   client: {
@@ -99,7 +91,7 @@ export default function ArtistDashboard() {
     }
   };
 
-  // 👇 Redirect to signin if not authenticated or not artist
+  // Redirect unauthenticated or non-artist users
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/signin");
     else if (status === "authenticated" && session?.user?.role !== "artist")
@@ -123,6 +115,9 @@ export default function ArtistDashboard() {
     session?.user?.lastName ?? ""
   }`.trim();
 
+  // ✅ ADDED: Count all bookings across statuses
+  const totalBookings = Object.values(bookings).flat().length;
+
   return (
     <ArtistDashboardLayout>
       <div className="md:flex w-full">
@@ -135,12 +130,12 @@ export default function ArtistDashboard() {
                 src={session?.user?.avatar || "/icons/images.jpeg"}
                 alt={artist?.stageName || fullName || "Artist"}
                 fill
+                unoptimized
                 className="object-cover transition-all duration-500 ease-in-out"
               />
 
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
 
-              {/* Artist Info */}
               <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                 <h2 className="text-xl font-bold mb-1">
                   {artist?.stageName || fullName || "Your Artist Name"}{" "}
@@ -239,10 +234,20 @@ export default function ArtistDashboard() {
             </button>
           </div>
 
+          {/* ✅ EMPTY STATE */}
+          {totalBookings === 0 && (
+            <div className="flex flex-col items-center justify-center text-center mt-10 text-gray-400">
+              <h2 className="text-xl font-semibold text-white mb-2">
+                No Bookings Yet!
+              </h2>
+              <p className="text-gray-400">
+                Your leads and bookings will appear here.
+              </p>
+            </div>
+          )}
+
           {/* Booking Cards Grid */}
           <div className="space-y-10">
-            {" "}
-            {/* Main vertical spacing between status sections */}
             {(
               [
                 "APPROVED",
@@ -260,16 +265,13 @@ export default function ArtistDashboard() {
 
               return (
                 <section key={status} className="space-y-6">
-                  {/* Section Header */}
                   <h2 className="text-2xl font-semibold text-white">
                     {sectionTitle}
-                    {/* Optional: show count badge */}
                     <span className="ml-3 text-sm font-normal text-gray-400">
                       ({bookingsList.length})
                     </span>
                   </h2>
 
-                  {/* Cards Grid - Full width, proper flow from left */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {bookingsList.map((booking) => (
                       <BookingCard
