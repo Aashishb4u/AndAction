@@ -821,6 +821,7 @@ function SignUpContent() {
                             alt={`Avatar ${avatar.id}`}
                             width={80}
                             height={80}
+                            unoptimized
                             className="w-full h-full object-cover rounded-full"
                           />
                           {avatar.isCenter && (

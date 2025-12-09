@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
-import { simulateFileUpload } from "@/lib/utils";
+import { uploadToS3 } from "@/lib/s3";
 
 export const config = {
   api: {
@@ -12,9 +12,7 @@ export const config = {
 
 export async function POST(request: NextRequest): Promise<NextResponse<any>> {
   const session = await auth();
-  if (!session || !session.user || !session.user.id) {
-    return ApiErrors.unauthorized();
-  }
+  if (!session?.user?.id) return ApiErrors.unauthorized();
 
   const userId = session.user.id;
 
@@ -26,26 +24,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
       return ApiErrors.badRequest("No file uploaded or invalid file.");
     }
 
-    const mimeType = file.type; // e.g. image/jpeg or video/mp4
+    const mimeType = file.type;
     const fileExtension = mimeType.split("/")[1] || "bin";
 
     const arrayBuffer = await file.arrayBuffer();
-    if (mimeType.startsWith("image/")) {
-      const { url: imageUrl } = simulateFileUpload(
-        userId,
-        arrayBuffer,
-        fileExtension
-      );
+    const buffer = Buffer.from(arrayBuffer);
 
+    const key = `${userId}/${Date.now()}.${fileExtension}`;
+    const fileUrl = await uploadToS3({buffer, key, mimeType});
+    if (mimeType.startsWith("image/")) {
       await prisma.user.update({
         where: { id: userId },
-        data: { avatar: imageUrl },
+        data: { avatar: fileUrl },
       });
 
       return successResponse(
-        { imageUrl },
-        "Profile photo uploaded successfully.",
-        200
+        { imageUrl: fileUrl },
+        "Profile photo uploaded successfully."
       );
     }
     if (!mimeType.startsWith("video/")) {
@@ -55,8 +50,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     const title = formData.get("title") as string | null;
     const description = formData.get("description") as string | null;
     const duration = formData.get("duration") as string | null;
-    const isShort = formData.get("isShort") === "true";
-
     if (!title || !duration) {
       return ApiErrors.badRequest("Title and duration are required.");
     }
@@ -66,13 +59,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     });
 
     if (!artistCheck) return ApiErrors.forbidden();
-
-    const { url: fileUrl, thumbnailUrl } = simulateFileUpload(
-      userId,
-      arrayBuffer,
-      fileExtension
-    );
-
+    const thumbnailUrl = null;
     const newVideo = await prisma.video.create({
       data: {
         userId,

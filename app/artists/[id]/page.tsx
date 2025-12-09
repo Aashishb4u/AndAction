@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import SiteLayout from "@/components/layout/SiteLayout";
 import ArtistProfileHeader from "@/components/sections/ArtistProfileHeader";
 import ArtistDetailTabs from "@/components/sections/ArtistDetailTabs";
-import { Artist } from "@/types";
 import { BookingStatus } from "@prisma/client";
 
 export const createBooking = async (artistId: string, formData: any) => {
@@ -71,7 +71,7 @@ export const getBookingsByStatus = async (artistId: string) => {
 export default function ArtistDetailPage() {
   const router = useRouter();
   const { id: artistId } = useParams();
-
+  const { data: session } = useSession();
   const [artist, setArtist] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
@@ -192,38 +192,20 @@ export default function ArtistDetailPage() {
 
   const handleBack = () => router.back();
   const handleBookmark = async () => {
-    if (!artist) return;
+  if (!session?.user) {
+    router.push("/auth/signin");
+    return;
+  }
 
-    try {
-      // If artist is already bookmarked → remove it
-      if (artist.isBookmarked) {
-        const res = await fetch("/api/bookmarks/remove", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ artistId: artist.id }),
-        });
+  if (!artist) return;
 
-        const json = await res.json();
-
-        if (json.success) {
-          setArtist((prev: any) => ({
-            ...prev,
-            isBookmarked: false,
-          }));
-        }
-
-        return;
-      }
-
-      // Otherwise → bookmark artist
-      const res = await fetch("/api/bookmarks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ artistId: artist.id }),
+  try {
+    // -------------------------------
+    // REMOVE BOOKMARK
+    // -------------------------------
+    if (artist.isBookmarked && artist.bookmarkId) {
+      const res = await fetch(`/api/bookmarks/${artist.bookmarkId}`, {
+        method: "DELETE",
       });
 
       const json = await res.json();
@@ -231,13 +213,39 @@ export default function ArtistDetailPage() {
       if (json.success) {
         setArtist((prev: any) => ({
           ...prev,
-          isBookmarked: true,
+          isBookmarked: false,
+          bookmarkId: null,
         }));
       }
-    } catch (error) {
-      console.error("Bookmark toggle error:", error);
+
+      return;
     }
-  };
+
+    // -------------------------------
+    // CREATE BOOKMARK
+    // -------------------------------
+    const res = await fetch("/api/bookmarks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ artistId: artist.id }),
+    });
+
+    const json = await res.json();
+
+    if (json.success) {
+      setArtist((prev: any) => ({
+        ...prev,
+        isBookmarked: true,
+        bookmarkId: json.data.bookmark.id, // store ID
+      }));
+    }
+  } catch (error) {
+    console.error("Bookmark toggle error:", error);
+  }
+};
+
 
   const handleShare = () => console.log("Share artist");
   const handleRequestBooking = () => console.log("Request booking");

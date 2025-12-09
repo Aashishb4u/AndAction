@@ -115,8 +115,22 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
   };
 
   const handleViewResults = () => {
-    router.push('/artists');
-  };
+  const params = new URLSearchParams();
+
+  if (formData.artistCategory) params.set("type", formData.artistCategory);
+  if (formData.subCategory) params.set("subType", formData.subCategory);
+  if (formData.artistGender) params.set("gender", formData.artistGender);
+  if (formData.budget) params.set("budget", formData.budget);
+  if (formData.eventState) params.set("state", formData.eventState);
+  if (formData.eventType) params.set("eventType", formData.eventType);
+  if (formData.performingLanguage) params.set("language", formData.performingLanguage);
+
+  // eventDate not used in API but we still pass it
+  if (formData.eventDate) params.set("eventDate", formData.eventDate);
+
+  router.push(`/artists?${params.toString()}`);
+};
+
 
   const isFormValid = formData.artistCategory && formData.eventDate;
 
@@ -129,7 +143,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
       className="max-w-2xl"
       headerClassName="md:px-8 md:py-6 px-4! py-4!"
     >
-      <div className="md:px-8 px-4 md:pb-8 pb-4 md:pt-4 pt-4 md:space-y-6 space-y-4 relative">
+      <div className="md:px-8 px-4 md:pb-8 pb-4 md:pt-4 pt-4 md:space-y-6 space-y-4">
         {/* Artist Category */}
         <Select
           label="Artist Category"
@@ -181,8 +195,8 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
           <DateInput
             label="Event date"
             placeholder="DD/MM/YYYY"
-            value={formData.eventDate}
-            onChange={(e) => handleInputChange('eventDate', e.target.value)}
+            value={formData.eventDate || null}
+            onChange={(value) => handleInputChange("eventDate", value)}
             required
           />
         </div>
@@ -223,7 +237,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
             disabled={!isFormValid}
             className="md:flex-1"
           >
-            View result (125)
+            View result
           </Button>
         </div>
         <div className="flex whitespace-nowrap md:hidden gap-4 pt-4 sticky bottom-4 bg-background py-4">
@@ -243,7 +257,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
             disabled={!isFormValid}
             className="flex-1"
           >
-            View result (125)
+            View result
           </Button>
         </div>
       </div>
