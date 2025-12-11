@@ -131,6 +131,7 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
     }
 
     const channelData = await channelResponse.json();
+    console.log(`shorts data : ${JSON.stringify(channelData)}`)
     const uploadsPlaylistId =
       channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
 

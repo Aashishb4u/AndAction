@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SiteLayout from "@/components/layout/SiteLayout";
 import ArtistFilters from "@/components/sections/ArtistFilters";
@@ -59,7 +58,7 @@ const getArtists = async (
   }
 };
 
-export default function ArtistsPage() {
+function ArtistsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -210,5 +209,14 @@ export default function ArtistsPage() {
         </div>
       </div>
     </SiteLayout>
+  );
+}
+
+
+export default function ArtistsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ArtistsPageContent />
+    </Suspense>
   );
 }

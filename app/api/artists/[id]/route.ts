@@ -20,9 +20,10 @@ interface ArtistRouteContext {
 /**
  * Handles GET requests to retrieve a public artist profile.
  */
+
 export async function GET(
     request: NextRequest,
-    context: ArtistRouteContext
+    context: { params: { id: string } }
 ): Promise<NextResponse<any>> {
     const artistId = context.params.id;
 
