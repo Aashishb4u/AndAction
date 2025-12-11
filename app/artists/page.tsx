@@ -130,15 +130,67 @@ function ArtistsPageContent() {
     setArtists([]);
   };
 
-  const handleBookmark = (artistId: string) => {
-    setArtists((prev) =>
-      prev.map((artist) =>
-        artist.id === artistId
-          ? { ...artist, isBookmarked: !artist.isBookmarked }
-          : artist
+  // -----------------------------
+  // BOOKMARK TOGGLE LOGIC
+  // -----------------------------
+  const handleBookmark = async (artistId: string) => {
+    // Instant UI feedback
+    setArtists(prev =>
+      prev.map(a =>
+        a.id === artistId ? { ...a, isBookmarked: !a.isBookmarked } : a
       )
     );
+
+    const artist = artists.find(a => a.id === artistId);
+    if (!artist) return;
+
+    try {
+      // REMOVE BOOKMARK
+      if (artist.isBookmarked) {
+        if (!artist.bookmarkId) return;
+
+        const res = await fetch(`/api/bookmarks/${artist.bookmarkId}`, {
+          method: "DELETE",
+        });
+
+        const json = await res.json();
+        if (!json.success) return;
+
+        // Remove bookmarkId in state
+        setArtists(prev =>
+          prev.map(a =>
+            a.id === artistId
+              ? { ...a, bookmarkId: undefined }
+              : a
+          )
+        );
+      }
+
+      // ADD BOOKMARK
+      else {
+        const res = await fetch(`/api/bookmarks`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ artistId }),
+        });
+
+        const json = await res.json();
+        if (!json.success) return;
+
+        // Save the new bookmarkId so we can delete later
+        setArtists(prev =>
+          prev.map(a =>
+            a.id === artistId
+              ? { ...a, bookmarkId: json.data.id }
+              : a
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Bookmark toggle failed:", err);
+    }
   };
+
 
   return (
     <SiteLayout showPreloader={false}>
