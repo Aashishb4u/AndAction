@@ -19,9 +19,6 @@ export default function BookmarksPage() {
 
   const tabs: TabType[] = ['Artist', 'Videos', 'Shorts'];
 
-  // ------------------------------------------------------
-  // FETCH USER BOOKMARKS (ARTISTS + VIDEOS + SHORTS)
-  // ------------------------------------------------------
   useEffect(() => {
     async function fetchBookmarks() {
       try {
