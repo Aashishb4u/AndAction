@@ -153,7 +153,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
           <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
             <h1 className="t1">{artist.name}</h1>
             <p className="mb-1">
-              {artist.category} | {artist.gender} | {artist.location}
+              {artist.category} | {artist.location}
             </p>
             <div className="flex items-center justify-between">
               <p className="secondary-text font-normal text-text-gray mb-1">Starting Price</p>
@@ -249,7 +249,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
           <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
             <h1 className="t1 mb-1">{artist.name}</h1>
             <p className="mb-1 text-white">
-              {artist.category} | {artist.gender} | {artist.location}
+              {artist.category} | {artist.location}
             </p>
 
             <div className="mb-3 flex justify-between items-center gap-3">

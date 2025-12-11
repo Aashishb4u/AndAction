@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import ArtistDashboardLayout from "@/components/layout/ArtistDashboardLayout";
 import ArtistProfileCard from "@/components/artist/ArtistProfileCard";
 import ArtistProfileTabs from "@/components/artist/ArtistProfileTabs";
@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 
-export default function ArtistProfile() {
+function ArtistProfileContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const successParam = searchParams.get("success");
@@ -142,5 +142,14 @@ export default function ArtistProfile() {
         </div>
       </div>
     </ArtistDashboardLayout>
+  );
+}
+
+
+export default function ArtistProfile() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ArtistProfileContent />
+    </Suspense>
   );
 }

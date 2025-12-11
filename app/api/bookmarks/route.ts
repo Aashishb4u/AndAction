@@ -1,97 +1,110 @@
 /**
  * app/api/bookmarks/route.ts
  *
- * Handles creating a bookmark for an Artist.
- * (Video bookmarks will be added later)
+ * Unified bookmarking for:
+ * - Artist
+ * - Video / Short (same model field: videoId)
  */
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 
+// --------------------------------------------------
+// POST /api/bookmarks  (artist OR video/short)
+// --------------------------------------------------
 export async function POST(request: NextRequest): Promise<NextResponse<any>> {
-  // 1. Validate session
   const session = await auth();
-  if (!session || !session.user || !session.user.id) {
-    return ApiErrors.unauthorized();
-  }
+  if (!session?.user?.id) return ApiErrors.unauthorized();
+
   const userId = session.user.id;
 
-  // 2. Parse request body
   let body;
   try {
     body = await request.json();
-  } catch (e) {
+  } catch {
     return ApiErrors.badRequest("Invalid JSON body.");
   }
 
-  const { artistId } = body;
+  const { artistId, videoId } = body;
 
-  // 3. Input validation
-  if (!artistId) {
-    return ApiErrors.badRequest("artistId is required.");
+  // Require one of them
+  if (!artistId && !videoId) {
+    return ApiErrors.badRequest("artistId or videoId is required.");
   }
 
-  // 4. Check if artist exists
-  const artistExists = await prisma.artist.findUnique({
-    where: { id: artistId },
-    select: { id: true },
-  });
+  // --------------------------------------------------
+  // Artist bookmark
+  // --------------------------------------------------
+  if (artistId) {
+    const exists = await prisma.artist.findUnique({
+      where: { id: artistId },
+      select: { id: true },
+    });
 
-  if (!artistExists) {
-    return ApiErrors.notFound("Artist not found.");
+    if (!exists) return ApiErrors.notFound("Artist not found.");
+
+    const already = await prisma.bookmark.findFirst({
+      where: { userId, artistId },
+    });
+
+    if (already) return ApiErrors.conflict("Already bookmarked.");
+
+    const bookmark = await prisma.bookmark.create({
+      data: { userId, artistId },
+      select: { id: true, artistId: true, createdAt: true },
+    });
+
+    return successResponse({ bookmark }, "Artist bookmarked.", 201);
   }
 
-  // 5. Check if already bookmarked
-  const existingBookmark = await prisma.bookmark.findFirst({
-    where: {
-      userId,
-      artistId,
-    },
-  });
+  // --------------------------------------------------
+  // Video bookmark (includes shorts → isShort=true)
+  // --------------------------------------------------
+  if (videoId) {
+    const exists = await prisma.video.findUnique({
+      where: { id: videoId },
+      select: { id: true },
+    });
 
-  if (existingBookmark) {
-    return ApiErrors.conflict("Artist already bookmarked.");
+    if (!exists) return ApiErrors.notFound("Video not found.");
+
+    const already = await prisma.bookmark.findFirst({
+      where: { userId, videoId },
+    });
+
+    if (already) return ApiErrors.conflict("Already bookmarked.");
+
+    const bookmark = await prisma.bookmark.create({
+      data: { userId, videoId },
+      select: { id: true, videoId: true, createdAt: true },
+    });
+
+    return successResponse({ bookmark }, "Video bookmarked.", 201);
   }
 
-  // 6. Create bookmark
-  const bookmark = await prisma.bookmark.create({
-    data: {
-      userId,
-      artistId,
-    },
-    select: {
-      id: true,
-      artistId: true,
-      createdAt: true,
-    },
-  });
-
-  // 7. Response
-  return successResponse(
-    { bookmark },
-    "Artist successfully bookmarked.",
-    201
-  );
+  return ApiErrors.badRequest("Invalid request.");
 }
-// GET /api/bookmarks
+
+// --------------------------------------------------
+// GET /api/bookmarks  (all bookmarks for logged user)
+// --------------------------------------------------
 export async function GET(): Promise<NextResponse<any>> {
   const session = await auth();
-  if (!session || !session.user?.id) {
-    return ApiErrors.unauthorized();
-  }
+  if (!session?.user?.id) return ApiErrors.unauthorized();
 
   const userId = session.user.id;
 
   const bookmarks = await prisma.bookmark.findMany({
     where: { userId },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     select: {
       id: true,
+      artistId: true,
+      videoId: true,
       createdAt: true,
 
-      // JOIN ARTIST
+      // artist bookmark detail
       artist: {
         select: {
           id: true,
@@ -101,21 +114,33 @@ export async function GET(): Promise<NextResponse<any>> {
           achievements: true,
           yearsOfExperience: true,
           shortBio: true,
-          performingLanguage: true,
-          performingEventType: true,
-          performingStates: true,
           soloChargesFrom: true,
           soloChargesTo: true,
-
           user: {
             select: {
-              id: true,
               firstName: true,
               lastName: true,
               avatar: true,
               city: true,
               state: true,
-              gender: true,
+            },
+          },
+        },
+      },
+
+      // video + shorts bookmark detail
+      video: {
+        select: {
+          id: true,
+          title: true,
+          url: true,
+          thumbnailUrl: true,
+          isShort: true,
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+              avatar: true,
             },
           },
         },
@@ -123,8 +148,5 @@ export async function GET(): Promise<NextResponse<any>> {
     },
   });
 
-  return successResponse(
-    { bookmarks },
-    "Bookmarked artists retrieved successfully."
-  );
+  return successResponse({ bookmarks }, "Bookmarks fetched.");
 }
