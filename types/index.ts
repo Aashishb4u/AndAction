@@ -180,6 +180,7 @@ export interface Artist {
   chargesWithBacklineFrom?: number;
   chargesWithBacklineTo?: number;
   chargesWithBacklineDescription?: string;
+  userId: string
 }
 
 

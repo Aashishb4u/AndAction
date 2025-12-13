@@ -76,6 +76,29 @@ export default function ArtistDetailPage() {
   const [loading, setLoading] = useState(true);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
 
+  const fetchBookmarkStatus = async (artistId: string) => {
+  if (!session?.user) return { isBookmarked: false, bookmarkId: null };
+
+  try {
+    const res = await fetch(`/api/bookmarks/check?artistId=${artistId}`);
+
+    if (!res.ok) return { isBookmarked: false, bookmarkId: null };
+
+    const json = await res.json();
+
+    const bookmark = json?.data?.bookmark;
+
+    return {
+      isBookmarked: !!bookmark,
+      bookmarkId: bookmark?.id || null,
+    };
+  } catch (err) {
+    console.error("Bookmark check error:", err);
+    return { isBookmarked: false, bookmarkId: null };
+  }
+};
+
+
   useEffect(() => {
     if (!artistId) return;
 
@@ -90,22 +113,22 @@ export default function ArtistDetailPage() {
         }
 
         const a = json.data.artist;
+
+        const bookmarkState = await fetchBookmarkStatus(a.id);
+
         const mappedArtist: any = {
           id: a.id,
           name: a.stageName || `${a.user.firstName} ${a.user.lastName}`.trim(),
           category: a.artistType,
           subCategory: [a.subArtistType],
-          location: `${a.user.city || ""}${
-            a.user.state ? ", " + a.user.state : ""
-          }`,
+          location: `${a.user.city || ""}${a.user.state ? ", " + a.user.state : ""}`,
           image: a.user.avatar || "/icons/images.jpeg",
-          gender: a.user.gender || "unknown",
 
           bio: a.shortBio || "",
           yearsOfExperience: a.yearsOfExperience || 0,
-          achievements: [a.achievements], // ? a.achievements.split(',').map(x => x.trim()) : [],
-          subArtistTypes: [a.subArtistType], // ? a.subArtistType.split(',').map(x => x.trim()) : [],
-          languages: [a.performingLanguage], // ? a.performingLanguage.split(',').map(x => x.trim()) : [],
+          achievements: [a.achievements],
+          subArtistTypes: [a.subArtistType],
+          languages: [a.performingLanguage],
 
           soloChargesFrom: a.soloChargesFrom || 0,
           soloChargesTo: a.soloChargesTo || 0,
@@ -113,8 +136,7 @@ export default function ArtistDetailPage() {
 
           chargesWithBacklineFrom: a.chargesWithBacklineFrom || 0,
           chargesWithBacklineTo: a.chargesWithBacklineTo || 0,
-          chargesWithBacklineDescription:
-            a.chargesWithBacklineDescription || "",
+          chargesWithBacklineDescription: a.chargesWithBacklineDescription || "",
 
           performingDurationFrom: a.performingDurationFrom || "",
           performingDurationTo: a.performingDurationTo || "",
@@ -124,16 +146,17 @@ export default function ArtistDetailPage() {
           performingEventType: a.performingEventType || "",
           performingStates: a.performingStates || "",
 
-          duration: `${a.performingDurationFrom || ""} - ${
-            a.performingDurationTo || ""
-          } minutes`,
+          duration: `${a.performingDurationFrom || ""} - ${a.performingDurationTo || ""} minutes`,
           startingPrice: Number(a.soloChargesFrom) || 0,
 
           phone: a.contactNumber || "",
           whatsapp: a.whatsappNumber || "",
-          isBookmarked: false,
+          userId: a.user.id,
 
-          // UI expects these
+          // 🔥 bookmark state restored on reload
+          isBookmarked: bookmarkState.isBookmarked,
+          bookmarkId: bookmarkState.bookmarkId,
+
           videos: [],
           shorts: [],
           performances: [],
@@ -153,12 +176,13 @@ export default function ArtistDetailPage() {
         fetchArtist(),
         getBookingsByStatus(artistId as string),
       ]);
+
       setArtist(fetchedArtist);
       setDisabledDates(approvedBookings.map((b: any) => new Date(b.eventDate)));
     };
 
     fetchData();
-  }, [artistId]);
+  }, [artistId, session?.user]);
 
   if (loading) {
     return (
@@ -191,21 +215,40 @@ export default function ArtistDetailPage() {
   }
 
   const handleBack = () => router.back();
+
   const handleBookmark = async () => {
-  if (!session?.user) {
-    router.push("/auth/signin");
-    return;
-  }
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
+    }
 
-  if (!artist) return;
+    if (!artist) return;
 
-  try {
-    // -------------------------------
-    // REMOVE BOOKMARK
-    // -------------------------------
-    if (artist.isBookmarked && artist.bookmarkId) {
-      const res = await fetch(`/api/bookmarks/${artist.bookmarkId}`, {
-        method: "DELETE",
+    try {
+      if (artist.isBookmarked && artist.bookmarkId) {
+        const res = await fetch(`/api/bookmarks/${artist.bookmarkId}`, {
+          method: "DELETE",
+        });
+
+        const json = await res.json();
+
+        if (json.success) {
+          setArtist((prev: any) => ({
+            ...prev,
+            isBookmarked: false,
+            bookmarkId: null,
+          }));
+        }
+
+        return;
+      }
+
+      const res = await fetch("/api/bookmarks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ artistId: artist.id }),
       });
 
       const json = await res.json();
@@ -213,41 +256,21 @@ export default function ArtistDetailPage() {
       if (json.success) {
         setArtist((prev: any) => ({
           ...prev,
-          isBookmarked: false,
-          bookmarkId: null,
+          isBookmarked: true,
+          bookmarkId: json.data.bookmark.id,
         }));
       }
-
-      return;
+    } catch (error) {
+      console.error("Bookmark toggle error:", error);
     }
+  };
 
-    // -------------------------------
-    // CREATE BOOKMARK
-    // -------------------------------
-    const res = await fetch("/api/bookmarks", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ artistId: artist.id }),
-    });
+  const handleShare = async () => {
+    const url = `${window.location.origin}/artists/${artist.id}`;
+    await navigator.clipboard.writeText(url);
+    alert("Profile link copied!");
+  };
 
-    const json = await res.json();
-
-    if (json.success) {
-      setArtist((prev: any) => ({
-        ...prev,
-        isBookmarked: true,
-        bookmarkId: json.data.bookmark.id, // store ID
-      }));
-    }
-  } catch (error) {
-    console.error("Bookmark toggle error:", error);
-  }
-};
-
-
-  const handleShare = () => console.log("Share artist");
   const handleRequestBooking = () => console.log("Request booking");
   const handleCall = () => window.open(`tel:${`+918248621277`}`, "_self");
   const handleWhatsApp = () =>
@@ -258,7 +281,6 @@ export default function ArtistDetailPage() {
 
   return (
     <SiteLayout hideNavbar hideBottomBar>
-      {/* Desktop */}
       <div className="hidden max-w-7xl mx-auto lg:flex min-h-screen bg-background py-10 lg:py-14">
         <div className="w-[400px] flex-shrink-0">
           <ArtistProfileHeader
@@ -272,12 +294,12 @@ export default function ArtistDetailPage() {
             onWhatsApp={handleWhatsApp}
           />
         </div>
+
         <div className="flex-1">
           <ArtistDetailTabs artist={artist} />
         </div>
       </div>
 
-      {/* Mobile */}
       <div className="lg:hidden min-h-screen bg-background">
         <ArtistProfileHeader
           artist={artist}
