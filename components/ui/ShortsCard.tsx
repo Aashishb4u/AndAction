@@ -15,9 +15,16 @@ interface ShortsCardProps {
   thumbnail: string;
   videoUrl: string;
   className?: string;
-  onBookmark?: (id: string) => void;
+
+  // ⭐ NEW
+  bookmarkId?: string | null;
+
+  // NEW object format
+  onBookmark?: (data: { id: string; bookmarkId?: string | null; isBookmarked: boolean }) => void;
+
   onShare?: (id: string) => void;
   onDelete?: (id: string) => void;
+
   isBookmarked?: boolean;
   showDeleteButton?: boolean;
 }
@@ -29,6 +36,7 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
   thumbnail,
   videoUrl,
   className = '',
+  bookmarkId,        // ⭐ NEW
   onBookmark,
   onShare,
   onDelete,
@@ -38,40 +46,13 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    if (videoRef.current) {
-      videoRef.current.play().catch(() => {
-        // Handle play error silently
-      });
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    setShowMenu(false);
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
-  };
-
-  const handleVideoLoad = () => {
-    setIsVideoLoaded(true);
-  };
-
-  const handleMenuToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setShowMenu(!showMenu);
-  };
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    onBookmark?.(id);
+    onBookmark?.({ id, bookmarkId, isBookmarked }); // ⭐ UPDATED
     setShowMenu(false);
   };
 
@@ -91,89 +72,90 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
   return (
     <Link href={`/videos/${id}`} className="block">
       <div
-        className={`relative group cursor-pointer transition-all duration-300 ease-out hover:scale-105 ${className}`}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        className={`relative group cursor-pointer transition-all duration-300 hover:scale-105 ${className}`}
+        onMouseEnter={() => {
+          setIsHovered(true);
+          videoRef.current?.play().catch(() => {});
+        }}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setShowMenu(false);
+          if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+          }
+        }}
       >
-        {/* Video Container - Vertical aspect ratio for shorts */}
-        <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-card">
-          {/* Background Image */}
-          <div className="absolute inset-0 transition-opacity duration-300 select-none">
-            <Image
-              src={thumbnail}
-              alt={title + ' ' + creator}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-110"
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-              priority={false}
-            />
-          </div>
 
-          {/* Video Overlay */}
-          <div
-            className={`absolute inset-0 transition-opacity duration-500 ${isHovered && isVideoLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-          >
+        <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-card">
+          <Image
+            src={thumbnail}
+            alt={`${title} ${creator}`}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+
+          <div className={`absolute inset-0 transition-opacity duration-500 ${isHovered && isVideoLoaded ? "opacity-100" : "opacity-0"}`}>
             <video
               ref={videoRef}
-              className="w-full h-full object-cover"
               muted
               loop
               playsInline
               preload="metadata"
-              onLoadedData={handleVideoLoad}
+              className="w-full h-full object-cover"
+              onLoadedData={() => setIsVideoLoaded(true)}
             >
               <source src={videoUrl} type="video/mp4" />
             </video>
           </div>
 
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-          {/* Delete Button - Top Right */}
+          {/* Delete Button */}
           {showDeleteButton && (
             <button
               onClick={handleDelete}
-              className="p-2 rounded-full absolute top-2 right-2 bg-card backdrop-blur-sm text-red-500 transition-all duration-300 hover:scale-110 z-10"
-              title="Delete short"
+              className="absolute top-2 right-2 p-2 bg-card rounded-full text-red-500 hover:scale-110 z-10"
             >
               <Trash2 className="w-4 h-4" />
             </button>
-          ) || (
-              <>
-                {/* Three Dots Menu */}
-                <div className={`absolute top-3 right-3`}>
+          )}
+
+          {/* Menu */}
+          {!showDeleteButton && (
+            <div className="absolute top-3 right-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setShowMenu(!showMenu);
+                }}
+                className="p-2 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {showMenu && (
+                <div className="absolute top-full right-0 mt-2 w-40 bg-card/95 rounded-lg shadow-xl border border-background-light z-10">
                   <button
-                    onClick={handleMenuToggle}
-                    className="p-2 rounded-full bg-black/50 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-black/70"
+                    onClick={handleBookmark}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-card ${
+                      isBookmarked ? "text-primary-pink" : "text-white"
+                    }`}
                   >
-                    <MoreVertical className="w-4 h-4" />
+                    <Bookmark className="w-4 h-4" />
+                    {isBookmarked ? "Remove Bookmark" : "Bookmark"}
                   </button>
 
-                  {/* Dropdown Menu */}
-                  {showMenu && (
-                    <div className="absolute top-full right-0 mt-2 w-40 bg-card/95 backdrop-blur-md rounded-lg shadow-xl border border-background-light z-10">
-                      <button
-                        onClick={handleBookmark}
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-card ${isBookmarked ? 'text-primary-pink' : 'text-white'
-                          }`}
-                      >
-                        <Bookmark className="w-4 h-4" />
-                        {isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
-                      </button>
-                      <button
-                        onClick={handleShare}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white transition-colors hover:bg-card"
-                      >
-                        <Share className="w-4 h-4" />
-                        Share
-                      </button>
-                    </div>
-                  )}
+                  <button
+                    onClick={handleShare}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-card"
+                  >
+                    <Share className="w-4 h-4" />
+                    Share
+                  </button>
                 </div>
-              </>
-            )}
-
+              )}
+            </div>
+          )}
 
         </div>
 
