@@ -79,8 +79,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             isArtistVerified: true,
           },
         },
-
-        // 🔥 Add bookmark join only when requested
         ...(withBookmarks && userId
           ? {
               bookmarks: {

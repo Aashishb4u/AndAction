@@ -31,6 +31,14 @@ interface InstagramMediaResponse {
   };
 }
 
+function removeEmojis(text: string) {
+  return text.replace(
+    /[\p{Extended_Pictographic}]/gu,
+    ""
+  );
+}
+
+
 export async function syncInstagramReels(): Promise<SyncResult> {
   try {
     const session = await auth();
@@ -135,12 +143,14 @@ export async function syncInstagramReels(): Promise<SyncResult> {
       };
     }
 
+    console.log(`Reels: ${JSON.stringify(newReels)}`)
+
     // Insert new reels
     await prisma.video.createMany({
       data: newReels.map((reel) => ({
         userId: session.user.id,
-        title: reel.title,
-        description: reel.description,
+        title: removeEmojis(reel.description),// removeEmojis(reel.title),
+        description: removeEmojis(reel.description),
         url: reel.videoUrl,
         thumbnailUrl: reel.thumbnail,
         duration: 0,
@@ -149,7 +159,7 @@ export async function syncInstagramReels(): Promise<SyncResult> {
         publishedAt: new Date(reel.publishedAt),
         isShort: true,
         source: "instagram",
-        isApproved: false,
+        isApproved: true,
       })),
       skipDuplicates: true,
     });
