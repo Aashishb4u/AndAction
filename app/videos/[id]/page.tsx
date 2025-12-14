@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import SiteLayout from '@/components/layout/SiteLayout';
 import VideoPlayer from '@/components/ui/VideoPlayer';
 import ArtistInfo from '@/components/sections/ArtistInfo';
 import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
 import Image from 'next/image';
+import { toast } from 'react-toastify';
+import { useSession } from 'next-auth/react';
 
 export default function VideoDetailsPage() {
   const params = useParams();
@@ -18,72 +20,173 @@ export default function VideoDetailsPage() {
   const [shorts, setShorts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [bookmarkedItems, setBookmarkedItems] = useState<Set<string>>(new Set());
+  const { data: session } = useSession();
+  const router = useRouter();
 
+  // ---------- FETCH DATA WITH BOOKMARK INFO ----------
   useEffect(() => {
-  async function fetchData() {
-    try {
-      const res = await fetch(`/api/videos/related?videoId=${videoId}`);
-      const json = await res.json();
+    async function fetchData() {
+      try {
+        const res = await fetch(
+          `/api/videos/related?videoId=${videoId}&withBookmarks=true`
+        );
+        const json = await res.json();
 
-      if (!json.success || !json.data?.video) {
+        if (!json.success || !json.data?.video) {
+          setLoading(false);
+          return;
+        }
+
+        const v = json.data.video;
+
+        // MAIN VIDEO
+        setVideoData({
+          id: v.id,
+          title: v.title,
+          description: v.description ?? '',
+          videoUrl: v.url,
+          poster: v.thumbnailUrl,
+          views: v.views,
+          uploadDate: v.createdAt,
+          isBookmarked: v.isBookmarked,
+          bookmarkId: v.bookmarkId,
+          artist: {
+            id: v.user.id,
+            name: `${v.user.firstName} ${v.user.lastName}`,
+            avatar: v.user.avatar,
+            verified: v.user.isArtistVerified,
+          },
+        });
+
+        // RELATED VIDEOS
+        setRelatedVideos(
+          json.data.related.map((rv: any) => ({
+            id: rv.id,
+            title: rv.title,
+            creator: `${rv.user.firstName} ${rv.user.lastName}`,
+            thumbnail: rv.thumbnailUrl,
+            videoUrl: rv.url,
+            isBookmarked: rv.isBookmarked,
+            bookmarkId: rv.bookmarkId,
+          }))
+        );
+
+        // SHORTS
+        setShorts(
+          json.data.shorts.map((sv: any) => ({
+            id: sv.id,
+            title: sv.title,
+            creator: `${sv.user.firstName} ${sv.user.lastName}`,
+            thumbnail: sv.thumbnailUrl,
+            videoUrl: sv.url,
+            isBookmarked: sv.isBookmarked,
+            bookmarkId: sv.bookmarkId,
+          }))
+        );
+      } catch (error) {
+        console.error('Error fetching video details:', error);
+      } finally {
         setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [videoId]);
+
+  // ---------- BOOKMARK TOGGLE (GLOBAL) ----------
+  const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
+    try {
+      // REMOVE
+
+      if (!session?.user) {
+        router.push("/auth/signin");
         return;
       }
 
-      const apiVideo = json.data.video;
+      if (isBookmarked && bookmarkId) {
+        await fetch(`/api/bookmarks/${bookmarkId}`, { method: 'DELETE' });
 
-      setVideoData({
-        id: apiVideo.id,
-        title: apiVideo.title,
-        description: apiVideo.description ?? "",
-        videoUrl: apiVideo.url,
-        poster: apiVideo.thumbnailUrl,
-        views: apiVideo.views,
-        uploadDate: apiVideo.createdAt,
-        artist: {
-          id: apiVideo.user.id,
-          name: `${apiVideo.user.firstName} ${apiVideo.user.lastName}`,
-          avatar: apiVideo.user.avatar,
-          verified: apiVideo.user.isArtistVerified,
-        },
+        if (videoData?.id === id) {
+          setVideoData((prev: any) => ({
+            ...prev,
+            isBookmarked: false,
+            bookmarkId: null,
+          }));
+        }
+
+        setRelatedVideos(prev =>
+          prev.map(v =>
+            v.id === id ? { ...v, isBookmarked: false, bookmarkId: null } : v
+          )
+        );
+
+        setShorts(prev =>
+          prev.map(s =>
+            s.id === id ? { ...s, isBookmarked: false, bookmarkId: null } : s
+          )
+        );
+
+        return;
+      }
+
+      // CREATE
+      const res = await fetch(`/api/bookmarks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId: id }),
       });
 
-      // Related Videos
-      setRelatedVideos(
-        json.data.related.map((v: any) => ({
-          id: v.id,
-          title: v.title,
-          creator: `${v.user.firstName} ${v.user.lastName}`,
-          thumbnail: v.thumbnailUrl,
-          videoUrl: v.url,
-        }))
+      const json = await res.json();
+      const newBookmarkId = json?.data?.bookmark?.id;
+
+      if (videoData?.id === id) {
+        setVideoData((prev: any) => ({
+          ...prev,
+          isBookmarked: true,
+          bookmarkId: newBookmarkId,
+        }));
+      }
+
+      setRelatedVideos(prev =>
+        prev.map(v =>
+          v.id === id
+            ? { ...v, isBookmarked: true, bookmarkId: newBookmarkId }
+            : v
+        )
       );
 
-      // Shorts
-      setShorts(
-        json.data.shorts.map((v: any) => ({
-          id: v.id,
-          title: v.title,
-          creator: `${v.user.firstName} ${v.user.lastName}`,
-          thumbnail: v.thumbnailUrl,
-          videoUrl: v.url,
-        }))
+      setShorts(prev =>
+        prev.map(s =>
+          s.id === id
+            ? { ...s, isBookmarked: true, bookmarkId: newBookmarkId }
+            : s
+        )
       );
-
-    } catch (error) {
-      console.error("Error fetching video details:", error);
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error('Bookmark error:', err);
     }
-  }
+  };
 
-  fetchData();
-}, [videoId]);
+  // ---------- SHARE ----------
+  const handleShare = async (videoId: string) => {
+    try {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_NEXTAUTH_URL ||
+        window.location.origin;
 
+      const shareUrl = `${baseUrl}/videos/${videoId}`;
 
+      await navigator.clipboard.writeText(shareUrl);
 
+      // 🔔 Toast success
+      toast.success('Link copied to clipboard');
+    } catch (err) {
+      console.error('Share error:', err);
+      toast.error('Failed to copy link');
+    }
+  };
+
+  // ---------- STATES ----------
   if (loading) {
     return (
       <SiteLayout>
@@ -99,34 +202,6 @@ export default function VideoDetailsPage() {
       </SiteLayout>
     );
   }
-
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: videoData.title,
-        text: `Check out this video by ${videoData.artist.name}`,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-    }
-  };
-
-  const handleItemBookmark = (itemId: string) => {
-    setBookmarkedItems((prev) => {
-      const next = new Set(prev);
-      next.has(itemId) ? next.delete(itemId) : next.add(itemId);
-      return next;
-    });
-  };
-
-  const handleItemShare = (itemId: string) => {
-    console.log("Share item:", itemId);
-  };
 
   return (
     <SiteLayout showPreloader={false}>
@@ -152,17 +227,28 @@ export default function VideoDetailsPage() {
                   views: videoData.views,
                   uploadDate: videoData.uploadDate,
                 }}
-                isBookmarked={isBookmarked}
-                onBookmark={handleBookmark}
-                onShare={handleShare}
+                isBookmarked={videoData.isBookmarked}
+                bookmarkId={videoData.bookmarkId}
+                onBookmark={() =>
+                  toggleBookmark({
+                    id: videoData.id,
+                    isBookmarked: videoData.isBookmarked,
+                    bookmarkId: videoData.bookmarkId,
+                  })
+                }
+                onShare={() => handleShare(videoData.id)}
               />
             </div>
           </div>
 
+          {/* RELATED VIDEOS */}
           <section className="mb-8 px-4 sm:px-6 lg:px-8">
-            <h2 className="text-xl font-bold text-white mb-4">More from this artist</h2>
+            <h2 className="text-xl font-bold text-white mb-4">
+              More from this artist
+            </h2>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {relatedVideos.map((video) => (
+              {relatedVideos.map(video => (
                 <VideoCard
                   key={video.id}
                   id={video.id}
@@ -170,14 +256,16 @@ export default function VideoDetailsPage() {
                   creator={video.creator}
                   thumbnail={video.thumbnail}
                   videoUrl={video.videoUrl}
-                  onBookmark={handleItemBookmark}
-                  onShare={handleItemShare}
-                  isBookmarked={bookmarkedItems.has(video.id)}
+                  isBookmarked={video.isBookmarked}
+                  bookmarkId={video.bookmarkId}
+                  onBookmark={(data) => toggleBookmark(data)}
+                  onShare={() => handleShare(video.id)}
                 />
               ))}
             </div>
           </section>
 
+          {/* SHORTS */}
           <section className="mb-8 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3 mb-4">
               <Image src="/shorts.svg" alt="Shorts" width={24} height={24} />
@@ -185,7 +273,7 @@ export default function VideoDetailsPage() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-              {shorts.map((short) => (
+              {shorts.map(short => (
                 <ShortsCard
                   key={short.id}
                   id={short.id}
@@ -193,9 +281,10 @@ export default function VideoDetailsPage() {
                   creator={short.creator}
                   thumbnail={short.thumbnail}
                   videoUrl={short.videoUrl}
-                  onBookmark={handleItemBookmark}
-                  onShare={handleItemShare}
-                  isBookmarked={bookmarkedItems.has(short.id)}
+                  isBookmarked={short.isBookmarked}
+                  bookmarkId={short.bookmarkId}
+                  onBookmark={(data) => toggleBookmark(data)}
+                  onShare={() => handleShare(short.id)}
                 />
               ))}
             </div>
