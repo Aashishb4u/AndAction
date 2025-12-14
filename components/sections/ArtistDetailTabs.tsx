@@ -22,85 +22,85 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const [artistShorts, setArtistShorts] = useState<any[]>([]);
 
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
-  try {
-    if (isBookmarked && bookmarkId) {
-      // DELETE bookmark
-      await fetch(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
+    try {
+      if (isBookmarked && bookmarkId) {
+        // DELETE bookmark
+        await fetch(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
+
+        setArtistVideos(prev =>
+          prev.map(v =>
+            v.id === id ? { ...v, isBookmarked: false, bookmarkId: null } : v
+          )
+        );
+
+        setArtistShorts(prev =>
+          prev.map(s =>
+            s.id === id ? { ...s, isBookmarked: false, bookmarkId: null } : s
+          )
+        );
+
+        return;
+      }
+
+      // CREATE bookmark
+      const res = await fetch(`/api/bookmarks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoId: id }),
+      });
+
+      const json = await res.json();
+      const newBookmarkId = json?.data?.bookmark?.id;
 
       setArtistVideos(prev =>
         prev.map(v =>
-          v.id === id ? { ...v, isBookmarked: false, bookmarkId: null } : v
+          v.id === id ? { ...v, isBookmarked: true, bookmarkId: newBookmarkId } : v
         )
       );
 
       setArtistShorts(prev =>
         prev.map(s =>
-          s.id === id ? { ...s, isBookmarked: false, bookmarkId: null } : s
+          s.id === id ? { ...s, isBookmarked: true, bookmarkId: newBookmarkId } : s
         )
       );
 
-      return;
+    } catch (err) {
+      console.error("Bookmark error:", err);
     }
-
-    // CREATE bookmark
-    const res = await fetch(`/api/bookmarks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ videoId: id }),
-    });
-
-    const json = await res.json();
-    const newBookmarkId = json?.data?.bookmark?.id;
-
-    setArtistVideos(prev =>
-      prev.map(v =>
-        v.id === id ? { ...v, isBookmarked: true, bookmarkId: newBookmarkId } : v
-      )
-    );
-
-    setArtistShorts(prev =>
-      prev.map(s =>
-        s.id === id ? { ...s, isBookmarked: true, bookmarkId: newBookmarkId } : s
-      )
-    );
-
-  } catch (err) {
-    console.error("Bookmark error:", err);
-  }
-};
+  };
 
 
 
   useEffect(() => {
-  if (!artist?.userId) return;
+    if (!artist?.userId) return;
 
-  async function fetchMedia() {
-    try {
-      console.log(`Artist id : ${artist.id}`);
+    async function fetchMedia() {
+      try {
+        console.log(`Artist id : ${artist.id}`);
 
-      // 🔥 Fetch VIDEOS with bookmark info
-      const videosRes = await fetch(
-        `/api/videos?type=videos&artistId=${artist.userId}&withBookmarks=true`
-      );
-      const videosJson = await videosRes.json();
+        // 🔥 Fetch VIDEOS with bookmark info
+        const videosRes = await fetch(
+          `/api/videos?type=videos&artistId=${artist.userId}&withBookmarks=true`
+        );
+        const videosJson = await videosRes.json();
 
-      setArtistVideos(videosJson?.data?.videos || []);
+        setArtistVideos(videosJson?.data?.videos || []);
 
-      // 🔥 Fetch SHORTS with bookmark info
-      const shortsRes = await fetch(
-        `/api/videos?type=shorts&artistId=${artist.userId}&withBookmarks=true`
-      );
-      const shortsJson = await shortsRes.json();
+        // 🔥 Fetch SHORTS with bookmark info
+        const shortsRes = await fetch(
+          `/api/videos?type=shorts&artistId=${artist.userId}&withBookmarks=true`
+        );
+        const shortsJson = await shortsRes.json();
 
-      setArtistShorts(shortsJson?.data?.videos || []);
+        setArtistShorts(shortsJson?.data?.videos || []);
 
-    } catch (err) {
-      console.error("Media fetch error:", err);
+      } catch (err) {
+        console.error("Media fetch error:", err);
+      }
     }
-  }
 
-  fetchMedia();
-}, [artist?.id]);
+    fetchMedia();
+  }, [artist?.id]);
 
 
   const tabs = [
@@ -260,19 +260,19 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {artistVideos.map((video) => (
           <VideoCard
-  key={video.id}
-  id={video.id}
-  title={video.title}
-  creator={`${video.user.firstName} ${video.user.lastName}`}
-  thumbnail={video.thumbnailUrl}
-  videoUrl={video.url}
+            key={video.id}
+            id={video.id}
+            title={video.title}
+            creator={`${video.user.firstName} ${video.user.lastName}`}
+            thumbnail={video.thumbnailUrl}
+            videoUrl={video.url}
 
-  isBookmarked={video.isBookmarked}         // 🔥 NEW
-  bookmarkId={video.bookmarkId}             // 🔥 NEW
+            isBookmarked={video.isBookmarked}         // 🔥 NEW
+            bookmarkId={video.bookmarkId}             // 🔥 NEW
 
-  onBookmark={(data) => toggleBookmark(data)} 
-  onShare={() => {}}
-/>
+            onBookmark={(data) => toggleBookmark(data)}
+            onShare={() => { }}
+          />
 
         ))}
       </div>
@@ -293,19 +293,17 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {artistShorts.map((short) => (
           <ShortsCard
-  key={short.id}
-  id={short.id}
-  title={short.title}
-  creator={`${short.user.firstName} ${short.user.lastName}`}
-  thumbnail={short.thumbnailUrl}
-  videoUrl={short.url}
-
-  isBookmarked={short.isBookmarked}       // 🔥 NEW
-  bookmarkId={short.bookmarkId}           // 🔥 NEW
-
-  onBookmark={(data) => toggleBookmark(data)}
-  onShare={() => {}}
-/>
+            key={short.id}
+            id={short.id}
+            title={short.title}
+            creator={`${short.user.firstName} ${short.user.lastName}`}
+            thumbnail={short.thumbnailUrl}
+            videoUrl={short.url}
+            isBookmarked={short.isBookmarked}       
+            bookmarkId={short.bookmarkId}   
+            onBookmark={(data) => toggleBookmark(data)}
+            onShare={() => { }}
+          />
 
         ))}
       </div>

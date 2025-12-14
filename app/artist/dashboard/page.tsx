@@ -79,14 +79,17 @@ export default function ArtistDashboard() {
       const response = await fetch("/api/bookings");
       const json = await response.json();
 
-      const bookingsGrouped = json.data.bookings.reduce(
-        (acc: any, booking: Booking) => {
-          if (!acc[booking.status]) acc[booking.status] = [];
-          acc[booking.status].push(booking);
-          return acc;
-        },
-        { ...defaultBookingsState }
-      );
+      const bookingsGrouped: BookingStatusMap = {
+        PENDING: [],
+        APPROVED: [],
+        DECLINED: [],
+        CANCELLED: [],
+        COMPLETED: [],
+      };
+
+      json.data.bookings.forEach((booking: Booking) => {
+        bookingsGrouped[booking.status].push(booking);
+      });
 
       setBookings(bookingsGrouped);
     } catch (err) {
@@ -95,6 +98,7 @@ export default function ArtistDashboard() {
       setLoading(false);
     }
   };
+
 
   /* ----------------------------------------------------
      UPDATE BOOKING STATUS (LOCAL)
@@ -145,9 +149,8 @@ export default function ArtistDashboard() {
   }
 
   const artist = session?.user?.artistProfile;
-  const fullName = `${session?.user?.firstName ?? ""} ${
-    session?.user?.lastName ?? ""
-  }`.trim();
+  const fullName = `${session?.user?.firstName ?? ""} ${session?.user?.lastName ?? ""
+    }`.trim();
 
   const totalBookings = Object.values(bookings).flat().length;
 

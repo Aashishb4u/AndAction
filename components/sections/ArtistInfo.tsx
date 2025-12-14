@@ -25,6 +25,7 @@ interface ArtistInfoProps {
     uploadDate?: string;
   };
   isBookmarked?: boolean;
+  bookmarkId?: string;
   onBookmark?: () => void;
   onShare?: () => void;
   className?: string;
