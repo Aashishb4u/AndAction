@@ -217,9 +217,9 @@ function ArtistsPageContent() {
                   />
                 </svg>
               </button>
-              <h1 className="text-xl lg:text-2xl font-bold text-white">
+              {/*<h1 className="text-xl lg:text-2xl font-bold text-white">
                 Singer
-              </h1>
+              </h1>*/}
             </div>
             <span className="text-sm text-gray-400">
               {loading ? "Loading..." : `${totalResults} Results`}

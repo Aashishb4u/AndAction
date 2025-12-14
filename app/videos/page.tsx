@@ -72,14 +72,14 @@ export default function VideosPage() {
     <SiteLayout showPreloader={false}>
       <div className="min-h-screen pt-20 lg:pt-24 pb-28">
         
-        {/* Filter Buttons */}
+        {/* Filter Buttons 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-card py-3 mb-8">
           <FilterButtons
             options={filterOptions}
             activeFilter={activeFilter}
             onFilterChange={setActiveFilter}
           />
-        </div>
+        </div>*/}
 
         {/* Videos Grid */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
