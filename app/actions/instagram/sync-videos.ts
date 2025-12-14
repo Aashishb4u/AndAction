@@ -116,7 +116,7 @@ export async function syncInstagramReels(): Promise<SyncResult> {
       title: item.caption?.slice(0, 100) || "Instagram Reel",
       description: item.caption || "",
       thumbnail: item.thumbnail_url || item.media_url || "",
-      videoUrl: item.permalink,
+      videoUrl: item.media_url || "",
       publishedAt: item.timestamp,
     }));
 
