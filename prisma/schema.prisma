@@ -150,6 +150,7 @@ model Video {
   id                String     @id @default(cuid())
   
   youtubeVideoId    String?    
+  instagramReelId   String?
   
   userId            String
   title             String

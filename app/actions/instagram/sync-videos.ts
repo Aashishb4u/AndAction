@@ -32,12 +32,8 @@ interface InstagramMediaResponse {
 }
 
 function removeEmojis(text: string) {
-  return text.replace(
-    /[\p{Extended_Pictographic}]/gu,
-    ""
-  );
+  return text.replace(/[\p{Extended_Pictographic}]/gu, "");
 }
-
 
 export async function syncInstagramReels(): Promise<SyncResult> {
   try {
@@ -113,14 +109,14 @@ export async function syncInstagramReels(): Promise<SyncResult> {
         source: "instagram",
         isShort: true,
       },
-      select: { url: true },
+      select: { instagramReelId: true },
     });
 
-    const existingUrls = new Set(existingReels.map((v) => v.url));
+    const existingUrls = new Set(existingReels.map((v) => v.instagramReelId));
 
     // Prepare reels for database
     const reelsToSync = reels.map((item) => ({
-      id: item.id,
+      instagramReelId: item.id,
       title: item.caption?.slice(0, 100) || "Instagram Reel",
       description: item.caption || "",
       thumbnail: item.thumbnail_url || item.media_url || "",
@@ -128,9 +124,14 @@ export async function syncInstagramReels(): Promise<SyncResult> {
       publishedAt: item.timestamp,
     }));
 
+    console.log(
+      `Total reels fetched: ${reels.length}, Reels to sync: ${reelsToSync.length}`
+    );
+    console.log(`Existing URLs: ${JSON.stringify(Array.from(existingUrls))}`);
+
     // Filter out already synced reels
     const newReels = reelsToSync.filter(
-      (reel) => !existingUrls.has(reel.videoUrl)
+      (reel) => !existingUrls.has(reel.instagramReelId)
     );
 
     if (newReels.length === 0) {
@@ -143,13 +144,11 @@ export async function syncInstagramReels(): Promise<SyncResult> {
       };
     }
 
-    console.log(`Reels: ${JSON.stringify(newReels)}`)
-
     // Insert new reels
     await prisma.video.createMany({
       data: newReels.map((reel) => ({
         userId: session.user.id,
-        title: removeEmojis(reel.description),// removeEmojis(reel.title),
+        title: removeEmojis(reel.description), // removeEmojis(reel.title),
         description: removeEmojis(reel.description),
         url: reel.videoUrl,
         thumbnailUrl: reel.thumbnail,
@@ -160,6 +159,7 @@ export async function syncInstagramReels(): Promise<SyncResult> {
         isShort: true,
         source: "instagram",
         isApproved: true,
+        instagramReelId: reel.instagramReelId,
       })),
       skipDuplicates: true,
     });
