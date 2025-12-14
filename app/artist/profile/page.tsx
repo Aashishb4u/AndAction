@@ -122,6 +122,7 @@ function ArtistProfileContent() {
     performingMembers: artistProfile.performingMembers || "",
     offStageMembers: artistProfile.offStageMembers || "",
     tags: [artistProfile.artistType || "", artistProfile.subArtistType || ""],
+    userId: user.id
   };
 
   return (
