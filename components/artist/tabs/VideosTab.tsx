@@ -1,65 +1,78 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Artist } from '@/types';
-import VideoCard from '@/components/ui/VideoCard';
+import React, { useState } from "react";
+import { Artist } from "@/types";
+import VideoCard from "@/components/ui/VideoCard";
+import Button from "@/components/ui/Button";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { Loader2, Youtube, RefreshCw, Download } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import {
+  useSyncedVideos,
+  useSyncYouTubeVideos,
+  useDeleteVideo,
+} from "@/hooks/use-youtube-videos";
 
 interface VideosTabProps {
   artist: Artist;
 }
 
-// Mock data for videos
-const mockVideos = [
-  {
-    id: '1',
-    title: 'Video Heading',
-    creator: 'Jignesh Mistry',
-    thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=450&fit=crop',
-    videoUrl: '/videos/sample1.mp4',
-  },
-  {
-    id: '2',
-    title: 'Video Heading',
-    creator: 'Jignesh Mistry',
-    thumbnail: 'https://images.unsplash.com/photo-1518834107812-67b0b7c58434?w=800&h=450&fit=crop',
-    videoUrl: '/videos/sample2.mp4',
-  },
-  {
-    id: '3',
-    title: 'Video Heading',
-    creator: 'Jignesh Mistry',
-    thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&h=450&fit=crop',
-    videoUrl: '/videos/sample3.mp4',
-  },
-  {
-    id: '4',
-    title: 'Video Heading',
-    creator: 'Jignesh Mistry',
-    thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=450&fit=crop',
-    videoUrl: '/videos/sample4.mp4',
-  },
-  {
-    id: '5',
-    title: 'Video Heading',
-    creator: 'Jignesh Mistry',
-    thumbnail: 'https://images.unsplash.com/photo-1518834107812-67b0b7c58434?w=800&h=450&fit=crop',
-    videoUrl: '/videos/sample5.mp4',
-  },
-  {
-    id: '6',
-    title: 'Video Heading',
-    creator: 'Jignesh Mistry',
-    thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&h=450&fit=crop',
-    videoUrl: '/videos/sample6.mp4',
-  },
-];
+const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
+  const router = useRouter();
+  const [bookmarkedVideos, setBookmarkedVideos] = useState<Set<string>>(
+    new Set()
+  );
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
 
-const VideosTab: React.FC<VideosTabProps> = () => {
-  const [videos, setVideos] = useState(mockVideos);
-  const [bookmarkedVideos, setBookmarkedVideos] = useState<Set<string>>(new Set());
+  const {
+    data: videosData,
+    isLoading,
+    error,
+    refetch,
+  } = useSyncedVideos("videos");
+
+  const syncMutation = useSyncYouTubeVideos();
+  const deleteMutation = useDeleteVideo();
+
+  const videos =
+    videosData?.map((v) => ({
+      id: v.id,
+      youtubeVideoId: v.youtubeVideoId || "",
+      title: v.title,
+      description: v.description,
+      thumbnail: v.thumbnailUrl,
+      videoUrl: v.url,
+      duration: v.durationFormatted,
+      viewCount: v.views,
+      publishedAt: v.publishedAt,
+      isShort: v.isShort,
+      source: v.source,
+    })) || [];
+
+  const handleSync = () => {
+    syncMutation.mutate();
+  };
+
+  const handleDelete = (videoId: string) => {
+    if (deleteMutation.isPending) return;
+    setVideoToDelete(videoId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!videoToDelete) return;
+    setDeleteDialogOpen(false);
+    deleteMutation.mutate(videoToDelete, {
+      onSettled: () => {
+        setVideoToDelete(null);
+      },
+    });
+  };
 
   const handleBookmark = (videoId: string) => {
-    setBookmarkedVideos(prev => {
+    setBookmarkedVideos((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(videoId)) {
         newSet.delete(videoId);
@@ -70,24 +83,132 @@ const VideosTab: React.FC<VideosTabProps> = () => {
     });
   };
 
-  const handleShare = (videoId: string) => {
-    // Handle share functionality
-    console.log('Sharing video:', videoId);
-    // You can implement actual share functionality here
+  const handleShare = async (videoId: string) => {
+    const video = videos.find((v) => v.id === videoId);
+    if (video) {
+      try {
+        await navigator.share({
+          title: video.title,
+          url: video.videoUrl,
+        });
+      } catch {
+        await navigator.clipboard.writeText(video.videoUrl);
+        toast.success("Link copied to clipboard!");
+      }
+    }
   };
 
-  const handleDelete = (videoId: string) => {
-    // Handle delete functionality
-    setVideos(prev => prev.filter(video => video.id !== videoId));
-    setBookmarkedVideos(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(videoId);
-      return newSet;
-    });
+  const handleConnectYouTube = () => {
+    router.push("/artist/profile?tab=integrations");
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <Loader2 className="w-8 h-8 text-primary-pink animate-spin mb-4" />
+        <p className="text-text-gray">Loading videos...</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="text-red-400 mb-4">
+          <svg
+            className="w-12 h-12 mx-auto"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <p className="text-red-400 mb-4">
+          {error instanceof Error ? error.message : "Failed to load videos"}
+        </p>
+        <Button variant="outline" onClick={() => refetch()}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  // Empty state
+  if (videos.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center mb-4 border border-border-color">
+          <Youtube className="w-8 h-8 text-text-gray" />
+        </div>
+        <h3 className="text-lg font-medium text-white mb-2">
+          No Videos Synced
+        </h3>
+        <p className="text-text-gray mb-4 max-w-md">
+          Click the sync button to import your YouTube videos.
+        </p>
+        <Button
+          variant="primary"
+          onClick={handleSync}
+          disabled={syncMutation.isPending}
+        >
+          {syncMutation.isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Syncing...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4 mr-2" />
+              Sync from YouTube
+            </>
+          )}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header with sync and refresh buttons */}
+      <div className="flex items-center justify-between">
+        <p className="text-text-gray text-sm">
+          {videos.length} video{videos.length !== 1 ? "s" : ""} synced
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSync}
+            disabled={syncMutation.isPending}
+          >
+            {syncMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Sync Videos
+              </>
+            )}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
       {/* Videos Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {videos.map((video) => (
@@ -95,8 +216,8 @@ const VideosTab: React.FC<VideosTabProps> = () => {
             key={video.id}
             id={video.id}
             title={video.title}
-            creator={video.creator}
-            thumbnail={video.thumbnail}
+            creator={artist.name}
+            thumbnail={video.thumbnail || "/images/video-placeholder.png"}
             videoUrl={video.videoUrl}
             onBookmark={handleBookmark}
             onShare={handleShare}
@@ -107,13 +228,19 @@ const VideosTab: React.FC<VideosTabProps> = () => {
         ))}
       </div>
 
-      {/* Empty State */}
-      {videos.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-lg mb-2">No videos found</div>
-          <div className="text-gray-500 text-sm">Upload your first video to get started</div>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Video"
+        description="Are you sure you want to delete this video? This will only remove it from your profile, not from YouTube."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+        onConfirm={confirmDelete}
+        onCancel={() => setVideoToDelete(null)}
+      />
     </div>
   );
 };

@@ -1,7 +1,6 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import SiteLayout from "@/components/layout/SiteLayout";
 import ArtistFilters from "@/components/sections/ArtistFilters";
 import ArtistGrid from "@/components/sections/ArtistGrid";
@@ -59,8 +58,10 @@ const getArtists = async (
   }
 };
 
-export default function ArtistsPage() {
+function ArtistsPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [artists, setArtists] = useState<Artist[]>([]);
   const [filters, setFilters] = useState<Filters>({
     category: "",
@@ -76,11 +77,30 @@ export default function ArtistsPage() {
   const [totalResults, setTotalResults] = useState(0);
   const [page, setPage] = useState(1);
 
+  // ✅ Load filter values from URL on first load
+  useEffect(() => {
+    const initialFilters: Filters = {
+      category: searchParams.get("type") || "",
+      subCategory: searchParams.get("subType") || "",
+      gender: searchParams.get("gender") || "",
+      budget: searchParams.get("budget") || "",
+      eventState: searchParams.get("state") || "",
+      eventType: searchParams.get("eventType") || "",
+      language: searchParams.get("language") || "",
+    };
+
+    setFilters(initialFilters);
+    setQuery(searchParams.get("search") || "");
+    setPage(1);
+    setArtists([]);
+
+  }, []); // runs only once
+
+  // 🔄 Fetch artists whenever filters/query/page change
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       const { artists, total } = await getArtists(query, filters, page);
-      console.log(artists)
       setArtists((prev) => (page === 1 ? artists : [...prev, ...artists]));
       setTotalResults(total);
       setLoading(false);
@@ -110,20 +130,72 @@ export default function ArtistsPage() {
     setArtists([]);
   };
 
-  const handleBookmark = (artistId: string) => {
-    setArtists((prev) =>
-      prev.map((artist) =>
-        artist.id === artistId
-          ? { ...artist, isBookmarked: !artist.isBookmarked }
-          : artist
+  // -----------------------------
+  // BOOKMARK TOGGLE LOGIC
+  // -----------------------------
+  const handleBookmark = async (artistId: string) => {
+    // Instant UI feedback
+    setArtists(prev =>
+      prev.map(a =>
+        a.id === artistId ? { ...a, isBookmarked: !a.isBookmarked } : a
       )
     );
+
+    const artist = artists.find(a => a.id === artistId);
+    if (!artist) return;
+
+    try {
+      // REMOVE BOOKMARK
+      if (artist.isBookmarked) {
+        if (!artist.bookmarkId) return;
+
+        const res = await fetch(`/api/bookmarks/${artist.bookmarkId}`, {
+          method: "DELETE",
+        });
+
+        const json = await res.json();
+        if (!json.success) return;
+
+        // Remove bookmarkId in state
+        setArtists(prev =>
+          prev.map(a =>
+            a.id === artistId
+              ? { ...a, bookmarkId: undefined }
+              : a
+          )
+        );
+      }
+
+      // ADD BOOKMARK
+      else {
+        const res = await fetch(`/api/bookmarks`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ artistId }),
+        });
+
+        const json = await res.json();
+        if (!json.success) return;
+
+        // Save the new bookmarkId so we can delete later
+        setArtists(prev =>
+          prev.map(a =>
+            a.id === artistId
+              ? { ...a, bookmarkId: json.data.id }
+              : a
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Bookmark toggle failed:", err);
+    }
   };
+
 
   return (
     <SiteLayout showPreloader={false}>
       <div className="min-h-screen pt-20 lg:pt-24">
-        {/* Header - Full Width */}
+        {/* Header */}
         <div className="w-full px-4 lg:px-8 py-4 border-b border-gray-800">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -145,9 +217,9 @@ export default function ArtistsPage() {
                   />
                 </svg>
               </button>
-              <h1 className="text-xl lg:text-2xl font-bold text-white">
+              {/*<h1 className="text-xl lg:text-2xl font-bold text-white">
                 Singer
-              </h1>
+              </h1>*/}
             </div>
             <span className="text-sm text-gray-400">
               {loading ? "Loading..." : `${totalResults} Results`}
@@ -164,14 +236,13 @@ export default function ArtistsPage() {
           />
         </div>
 
-        {/* Main Content Layout */}
+        {/* Main Layout */}
         <div className="max-w-7xl mx-auto md:px-4 lg:px-8 md:py-6 flex gap-8">
           {loading ? (
             <LoadingSpinner fullScreen={false} text="Loading artists..." />
           ) : (
             <>
-              {" "}
-              {/* Desktop Sidebar Filters */}
+              {/* Desktop Filters */}
               <div className="hidden lg:block w-80 flex-shrink-0">
                 <ArtistFilters
                   filters={filters}
@@ -180,14 +251,24 @@ export default function ArtistsPage() {
                   resultCount={totalResults}
                 />
               </div>
+
               {/* Artists Grid */}
               <div className="flex-1">
                 <ArtistGrid artists={artists} onBookmark={handleBookmark} />
               </div>
             </>
-          )}{" "}
+          )}
         </div>
       </div>
     </SiteLayout>
+  );
+}
+
+
+export default function ArtistsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ArtistsPageContent />
+    </Suspense>
   );
 }

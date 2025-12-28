@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation';
-import { ChevronRight, LogOut } from 'lucide-react';
-import { createAuthRedirectUrl } from '@/lib/auth';
-import Download from '../icons/download';
-import Support from '../icons/support';
-import { useSession, signOut } from 'next-auth/react';
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter, usePathname } from "next/navigation";
+import { ChevronRight, LogOut } from "lucide-react";
+import { createAuthRedirectUrl } from "@/lib/auth";
+import Download from "../icons/download";
+import Support from "../icons/support";
+import { useSession, signOut } from "next-auth/react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,28 +22,37 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const user = session?.user;
 
   const navigationItems = [
-    { label: 'About us', href: '/about', isActive: pathname === '/about' },
-    { label: 'FAQs', href: '/faqs', isActive: pathname === '/faqs' },
-    { label: 'Terms & Conditions', href: '/terms', isActive: pathname === '/terms' },
-    { label: 'Privacy Policy', href: '/privacy', isActive: pathname === '/privacy' },
+    { label: "About us", href: "/about", isActive: pathname === "/about" },
+    { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
+    {
+      label: "Terms & Conditions",
+      href: "/terms",
+      isActive: pathname === "/terms",
+    },
+    {
+      label: "Privacy Policy",
+      href: "/privacy",
+      isActive: pathname === "/privacy",
+    },
   ];
 
   const handleItemClick = () => onClose();
 
   const handleJoinArtist = () => {
-    router.push(createAuthRedirectUrl('/auth/artist', pathname));
+    router.push(createAuthRedirectUrl("/auth/artist", pathname));
     onClose();
   };
 
   const handleInstallApp = () => {
-    console.log('Install app clicked');
+    console.log("Install app clicked");
     onClose();
   };
 
   const handleSignOut = async () => {
+    console.log('idk being triggered')
     await signOut({ redirect: false });
     onClose();
-    router.push('/');
+    router.push("/");
   };
 
   return (
@@ -58,9 +67,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-background border-l border-background-light z-[99999] transform transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`fixed top-0 right-0 h-full w-80 bg-background border-l border-background-light z-[99999] transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         <div className="flex flex-col h-full">
           {/* Header Close */}
@@ -91,15 +99,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <button
                 onClick={() => {
                   onClose();
+                  if (user.role === "artist") {
+                    router.push("/artist/profile");
+                  } else {
+                    router.push("/user/profile");
+                  }
                 }}
                 className="w-full flex items-center gap-3 p-3 bg-card border border-border-color rounded-xl hover:border-primary-pink/30 transition-all duration-300 group"
               >
                 <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                   <Image
-                    src={`/avatars/${user.avatar || 1}.png`}
-                    alt={user.firstName || 'User'}
+                    src={
+                      user.role === "user"
+                        ? `/avatars/${user.avatar}.png`
+                        : user.avatar ?? "/default-avatar.png"
+                    }
+                    alt={user.firstName || "User"}
                     width={48}
                     height={48}
+                    unoptimized
                     className="object-cover w-full h-full"
                   />
                 </div>
@@ -107,11 +125,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   <h3 className="text-white font-medium">
                     {user.firstName} {user.lastName}
                   </h3>
-                  {user?.email ? 
-                  <p className="text-text-gray text-sm truncate">{user.email}</p> 
-                  : 
-                  <p className="text-text-gray text-sm truncate">{user.countryCode}{user.phoneNumber}</p>
-                  }
+                  {user?.email ? (
+                    <p className="text-text-gray text-sm truncate">
+                      {user.email}
+                    </p>
+                  ) : (
+                    <p className="text-text-gray text-sm truncate">
+                      {user.countryCode}
+                      {user.phoneNumber}
+                    </p>
+                  )}
                 </div>
                 <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
               </button>
@@ -129,7 +152,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <div className="px-6 pt-2 pb-3">
               <button
                 onClick={() => {
-                  router.push(createAuthRedirectUrl('/auth/signin', pathname));
+                  router.push(createAuthRedirectUrl("/auth/signin", pathname));
                   onClose();
                 }}
                 className="block text-white hover:text-primary-pink transition-colors duration-200 h1"
@@ -157,9 +180,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   key={item.label}
                   href={item.href}
                   onClick={handleItemClick}
-                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${
-                    item.isActive ? 'gradient-text' : 'text-white'
-                  }`}
+                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${item.isActive ? "gradient-text" : "text-white"
+                    }`}
                 >
                   {item.label}
                 </Link>
@@ -173,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <span className="text-text-gray text-sm">For any query</span>
               </div>
               <p className="text-white text-sm">
-                Contact Us:{' '}
+                Contact Us:{" "}
                 <Link href="tel:+918860014889" className="hover:underline">
                   +91 8860014889
                 </Link>
@@ -197,7 +219,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
               >
                 <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
-                <span className="gradient-text">Install our web application</span>
+                <span className="gradient-text">
+                  Install our web application
+                </span>
               </button>
             </div>
           )}

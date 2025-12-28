@@ -64,7 +64,7 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({ onNext, onSkip, onBac
           {/* Title */}
           <div className="space-y-4">
             <h1 className="text-2xl font-semibold text-white hidden md:block">Profile setup</h1>
-            <p className="h1">Hello, Harsh Arora are you ready to Setup your profile
+            <p className="h1">Hello are you ready to Setup your profile
             </p>
           </div>
 

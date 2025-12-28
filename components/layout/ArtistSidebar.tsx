@@ -26,6 +26,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   ];
 
   const handleSignOut = async () => {
+    console.log('being triggered');
     await signOut({ redirect: false });
     onClose();
     router.push('/');
@@ -100,6 +101,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
                   alt={displayName}
                   width={48}
                   height={48}
+                  unoptimized
                   className="object-cover w-full h-full"
                 />
               </div>

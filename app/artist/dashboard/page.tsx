@@ -8,20 +8,11 @@ import BookingCard from "@/components/ui/BookingCard";
 import Button from "@/components/ui/Button";
 import { Pencil } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { updateBookingState } from "@/app/artists/[id]/page";
 import { BookingStatus } from "@prisma/client";
 
-/**
- * Formats a date into the pattern: `DD, Mon, YYYY`
- *
- * Example:
- *   Input:  "2025-12-06T00:00:00.000Z"
- *   Output: "06, Dec, 2025"
- *
- * - Uses Intl.DateTimeFormat for localization.
- * - Reorders the default US format ("Dec 06, 2025") into the required format.
- *
- */
+/* ----------------------------------------------------
+   FORMAT DATE
+---------------------------------------------------- */
 export function formatDate(input: string | Date) {
   const date = input instanceof Date ? input : new Date(input);
 
@@ -35,23 +26,29 @@ export function formatDate(input: string | Date) {
     .replace(/(\w+)\s(\d+),\s(\d+)/, "$2, $1, $3");
 }
 
+/* ----------------------------------------------------
+   TYPES
+---------------------------------------------------- */
 type Booking = {
   id: string;
   eventDate: string;
   eventType: string;
   totalPrice: string;
-  status: BookingStatus; // "PENDING" | "APPROVED" | "DECLINED" | "CANCELLED" | "COMPLETED"
+  status: BookingStatus;
   createdAt: string;
   eventLocation: string;
+  notes: string;
+
   client: {
     firstName: string;
     lastName: string;
     email: string | null;
+    phoneNumber?: string | null;
   };
+
   artist: {
     stageName: string;
   };
-  notes: string;
 };
 
 type BookingStatusMap = {
@@ -69,43 +66,76 @@ const defaultBookingsState: BookingStatusMap = {
 export default function ArtistDashboard() {
   const router = useRouter();
   const { data: session, status } = useSession();
+
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] =
     useState<BookingStatusMap>(defaultBookingsState);
-  console.log(session);
 
+  /* ----------------------------------------------------
+     FETCH BOOKINGS
+  ---------------------------------------------------- */
   const getBookings = async () => {
-    try {
-      const response = await fetch("/api/bookings");
-      const json = await response.json();
-      console.log("Got bookings: ", json.data.bookings);
-      const bookings = json.data.bookings.reduce(
-        (acc: any, booking: Booking) => {
-          if (!acc[booking.status]) {
-            acc[booking.status] = [];
-          }
-          acc[booking.status].push(booking);
-          return acc;
-        },
-        defaultBookingsState
-      );
+  try {
+    const response = await fetch("/api/bookings");
+    const json = await response.json();
 
-      setBookings(bookings);
-    } catch (error) {
-      console.error("Unable to get bookings");
-      console.error(error);
-    } finally {
-      setLoading(false);
+    const bookingsGrouped: BookingStatusMap = {
+      PENDING: [],
+      APPROVED: [],
+      DECLINED: [],
+      CANCELLED: [],
+      COMPLETED: [],
+    };
+
+    json.data.bookings.forEach((booking: Booking) => {
+      bookingsGrouped[booking.status].push(booking);
+    });
+
+    setBookings(bookingsGrouped);
+  } catch (err) {
+    console.error("Unable to fetch bookings", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  /* ----------------------------------------------------
+     UPDATE BOOKING STATUS (LOCAL)
+  ---------------------------------------------------- */
+  const updateBookingStateLocal = async (
+    bookingId: string,
+    newStatus: BookingStatus
+  ) => {
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newStatus }),
+      });
+
+      const json = await res.json();
+      if (!json.success) return;
+
+      // Refresh UI instantly
+      getBookings();
+    } catch (err) {
+      console.error("Error updating booking:", err);
     }
   };
 
-  // 👇 Redirect to signin if not authenticated or not artist
+  /* ----------------------------------------------------
+     AUTH REDIRECTS
+  ---------------------------------------------------- */
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/signin");
     else if (status === "authenticated" && session?.user?.role !== "artist")
       router.push("/");
   }, [status, session, router]);
 
+  /* ----------------------------------------------------
+     INITIAL LOAD
+  ---------------------------------------------------- */
   useEffect(() => {
     getBookings();
   }, []);
@@ -123,41 +153,43 @@ export default function ArtistDashboard() {
     session?.user?.lastName ?? ""
   }`.trim();
 
+  const totalBookings = Object.values(bookings).flat().length;
+
+  /* ----------------------------------------------------
+     PAGE JSX
+  ---------------------------------------------------- */
   return (
     <ArtistDashboardLayout>
       <div className="md:flex w-full">
-        {/* Left Sidebar - Artist Profile */}
+        {/* ----------------------------------------------------
+             LEFT SIDEBAR
+        ---------------------------------------------------- */}
         <div className="md:w-80 p-5">
-          {/* Artist Profile Card */}
           <div className="relative rounded-2xl overflow-hidden mb-3 bg-card border border-border-color">
             <div className="relative aspect-[4/5]">
               <Image
                 src={session?.user?.avatar || "/icons/images.jpeg"}
                 alt={artist?.stageName || fullName || "Artist"}
                 fill
-                className="object-cover transition-all duration-500 ease-in-out"
+                unoptimized
+                className="object-cover"
               />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
 
-              {/* Artist Info */}
               <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                 <h2 className="text-xl font-bold mb-1">
-                  {artist?.stageName || fullName || "Your Artist Name"}{" "}
-                  <span className="text-sm font-medium">
+                  {artist?.stageName || fullName}
+                  <span className="text-sm font-medium ml-1">
                     ({artist?.artistType || "Performer"})
                   </span>
                 </h2>
 
                 <div className="flex items-center gap-2 mb-3">
-                  <Image
-                    src="/icons/phone.svg"
-                    alt="Phone"
-                    width={16}
-                    height={16}
-                  />
-                  <p className="text-xs text-white">
-                    {`+91` + artist?.contactNumber ||
+                  <Image src="/icons/phone.svg" width={16} height={16} alt="" />
+                  <p className="text-xs">
+                    +91
+                    {artist?.contactNumber ||
                       session?.user?.phoneNumber ||
                       "-"}
                   </p>
@@ -176,7 +208,7 @@ export default function ArtistDashboard() {
             </div>
           </div>
 
-          {/* Profile Progress */}
+          {/* Profile Progress Box (unchanged) */}
           <div className="bg-card border border-border-color rounded-xl p-4 text-center">
             <div className="relative w-28 h-28 mx-auto mb-4">
               <svg
@@ -184,23 +216,18 @@ export default function ArtistDashboard() {
                 viewBox="0 0 36 36"
               >
                 <defs>
-                  <linearGradient
-                    id="progressGradient"
-                    x1="0%"
-                    y1="0%"
-                    x2="100%"
-                    y2="0%"
-                  >
+                  <linearGradient id="progressGradient">
                     <stop offset="0%" stopColor="#E8047E" />
                     <stop offset="100%" stopColor="#ED4B22" />
                   </linearGradient>
                 </defs>
+
                 <path
                   className="text-[#404040]"
-                  stroke="currentColor"
                   strokeWidth="3"
+                  stroke="currentColor"
                   fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32"
                 />
                 <path
                   stroke="url(#progressGradient)"
@@ -208,49 +235,50 @@ export default function ArtistDashboard() {
                   strokeDasharray="80, 100"
                   strokeLinecap="round"
                   fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32"
                 />
               </svg>
+
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-2xl font-bold text-white">80%</span>
                 <span className="text-[10px] text-text-gray">Completed</span>
               </div>
             </div>
-            <h3 className="text-white font-semibold mb-2">Profile Progress</h3>
+
+            <h3 className="text-white font-semibold mb-2">
+              Profile Progress
+            </h3>
             <p className="text-text-gray text-sm">
               Your overall profile progress is showing here.
             </p>
           </div>
         </div>
 
-        {/* Right Content - Leads/Booking */}
+        {/* ----------------------------------------------------
+             RIGHT CONTENT - BOOKINGS
+        ---------------------------------------------------- */}
         <div className="flex-1 p-5">
-          {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-white h1">Leads / Bookings</h1>
-            <button className="flex items-center gap-1 bg-[#262626]! py-2 px-4 border-[1.5px] border-border-color rounded-full btn2">
+
+            <button className="flex items-center gap-1 bg-[#262626] py-2 px-4 border-[1.5px] border-border-color rounded-full btn2">
               <span className="gradient-text">Sort by</span>
-              <Image
-                src="/icons/up-down.svg"
-                alt="Sort"
-                width={18}
-                height={18}
-              />
+              <Image src="/icons/up-down.svg" width={18} height={18} alt="" />
             </button>
           </div>
 
-          {/* Booking Cards Grid */}
+          {/* EMPTY STATE */}
+          {totalBookings === 0 && (
+            <div className="flex flex-col items-center mt-10 text-gray-400">
+              <h2 className="text-xl text-white mb-2">No Bookings Yet!</h2>
+              <p>Your leads and bookings will appear here.</p>
+            </div>
+          )}
+
+          {/* SECTIONS */}
           <div className="space-y-10">
-            {" "}
-            {/* Main vertical spacing between status sections */}
             {(
-              [
-                "APPROVED",
-                "PENDING",
-                "COMPLETED",
-                "CANCELLED",
-                "DECLINED",
-              ] as const
+              ["APPROVED", "PENDING", "COMPLETED", "CANCELLED", "DECLINED"] as const
             ).map((status) => {
               const bookingsList = bookings[status];
               if (bookingsList.length === 0) return null;
@@ -260,36 +288,35 @@ export default function ArtistDashboard() {
 
               return (
                 <section key={status} className="space-y-6">
-                  {/* Section Header */}
                   <h2 className="text-2xl font-semibold text-white">
                     {sectionTitle}
-                    {/* Optional: show count badge */}
-                    <span className="ml-3 text-sm font-normal text-gray-400">
+                    <span className="ml-3 text-sm text-gray-400">
                       ({bookingsList.length})
                     </span>
                   </h2>
 
-                  {/* Cards Grid - Full width, proper flow from left */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {bookingsList.map((booking) => (
                       <BookingCard
                         key={booking.id}
+                        status={booking.status}
                         clientName={`${booking.client.firstName} ${booking.client.lastName}`}
+                        clientEmail={booking.client.email}
+                        clientPhone={booking.client.phoneNumber}
                         location={booking.eventLocation}
                         date={formatDate(booking.eventDate)}
                         eventType={booking.eventType}
                         description={booking.notes}
                         onReject={() =>
                           status === "PENDING"
-                            ? updateBookingState(booking.id, "DECLINED")
-                            : console.log("Cannot reject in this state")
+                            ? updateBookingStateLocal(booking.id, "DECLINED")
+                            : null
                         }
                         onAccept={() =>
                           status === "PENDING"
-                            ? updateBookingState(booking.id, "APPROVED")
-                            : console.log("Cannot accept in this state")
+                            ? updateBookingStateLocal(booking.id, "APPROVED")
+                            : null
                         }
-                        onCall={() => console.log("Call", booking.id)}
                       />
                     ))}
                   </div>

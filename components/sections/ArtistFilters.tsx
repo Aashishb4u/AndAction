@@ -19,7 +19,6 @@ interface ArtistFiltersProps {
 }
 
 const categoryOptions: FilterOption[] = [
-  { value: '', label: 'Select Category' },
   { value: 'singer', label: 'Singer' },
   { value: 'anchor', label: 'Anchor/emcee' },
   { value: 'band', label: 'Live Band' },
@@ -29,7 +28,6 @@ const categoryOptions: FilterOption[] = [
 ];
 
 const subCategoryOptions: FilterOption[] = [
-  { value: '', label: 'Select sub-category' },
   { value: 'bollywood', label: 'Bollywood' },
   { value: 'classical', label: 'Classical' },
   { value: 'folk', label: 'Folk' },
@@ -38,14 +36,12 @@ const subCategoryOptions: FilterOption[] = [
 ];
 
 const genderOptions: FilterOption[] = [
-  { value: '', label: 'Select gender' },
   { value: 'male', label: 'Male' },
   { value: 'female', label: 'Female' },
   { value: 'other', label: 'Other' },
 ];
 
 const budgetOptions: FilterOption[] = [
-  { value: '', label: 'Select budget' },
   { value: '0-50000', label: '₹0 - ₹50,000' },
   { value: '50000-100000', label: '₹50,000 - ₹1,00,000' },
   { value: '100000-200000', label: '₹1,00,000 - ₹2,00,000' },
@@ -54,7 +50,6 @@ const budgetOptions: FilterOption[] = [
 ];
 
 const eventStateOptions: FilterOption[] = [
-  { value: '', label: 'Select State' },
   { value: 'maharashtra', label: 'Maharashtra' },
   { value: 'gujarat', label: 'Gujarat' },
   { value: 'delhi', label: 'Delhi' },
@@ -63,7 +58,6 @@ const eventStateOptions: FilterOption[] = [
 ];
 
 const eventTypeOptions: FilterOption[] = [
-  { value: '', label: 'Select event type' },
   { value: 'wedding', label: 'Wedding' },
   { value: 'corporate', label: 'Corporate' },
   { value: 'birthday', label: 'Birthday' },
@@ -72,7 +66,6 @@ const eventTypeOptions: FilterOption[] = [
 ];
 
 const languageOptions: FilterOption[] = [
-  { value: '', label: 'Select language' },
   { value: 'hindi', label: 'Hindi' },
   { value: 'english', label: 'English' },
   { value: 'gujarati', label: 'Gujarati' },
@@ -94,7 +87,7 @@ const FilterSelect: React.FC<{
       options={options}
       onChange={onChange}
       required={required}
-      placeholder={options[0]?.label || 'Select an option'}
+      placeholder={`Select ${label}`}
     />
   </div>
 );
