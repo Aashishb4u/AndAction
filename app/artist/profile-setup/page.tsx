@@ -1,104 +1,170 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import ProfileOverview from '@/components/artist/profile-setup/ProfileOverview';
-import ArtistProfileDetails from '@/components/artist/profile-setup/ArtistProfileDetails';
-import PerformanceDetails from '@/components/artist/profile-setup/PerformanceDetails';
-import ContactPricingDetails from '@/components/artist/profile-setup/ContactPricingDetails';
-import VideosSocialMedia from '@/components/artist/profile-setup/VideosSocialMedia';
-import ProfileReview from '@/components/artist/profile-setup/ProfileReview';
-import SuccessModal from '@/components/artist/profile-setup/SuccessModal';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import ProfileOverview from "@/components/artist/profile-setup/ProfileOverview";
+import ArtistProfileDetails from "@/components/artist/profile-setup/ArtistProfileDetails";
+import PerformanceDetails from "@/components/artist/profile-setup/PerformanceDetails";
+import ContactPricingDetails from "@/components/artist/profile-setup/ContactPricingDetails";
+import ProfileReview from "@/components/artist/profile-setup/ProfileReview";
+import SuccessModal from "@/components/artist/profile-setup/SuccessModal";
+import { useSession } from "next-auth/react";
 
-type ProfileSetupStep = 'overview' | 'artistDetails' | 'performanceDetails' | 'contactPricing' | 'videosSocial' | 'review';
+type ProfileSetupStep =
+  | "overview"
+  | "artistDetails"
+  | "performanceDetails"
+  | "contactPricing"
+  | "review";
 
 export default function ProfileSetupPage() {
-  const [currentStep, setCurrentStep] = useState<ProfileSetupStep>('overview');
+  const [currentStep, setCurrentStep] = useState<ProfileSetupStep>("overview");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { data: session, update } = useSession();
 
   // Form data states
   const [profileData, setProfileData] = useState({
-    // Artist Profile Details
     profilePhoto: null as File | null,
-    stageName: '',
-    artistType: '',
-    subArtistType: '',
-    achievements: '',
-    yearsOfExperience: '',
-    shortBio: '',
+    avatarUrl: "",
+    stageName: "",
+    artistType: "",
+    subArtistType: "",
+    achievements: "",
+    yearsOfExperience: "",
+    shortBio: "",
 
     // Performance Details
     performingLanguages: [] as string[],
     performingEventTypes: [] as string[],
     performingStates: [] as string[],
-    performingDurationFrom: '',
-    performingDurationTo: '',
-    performingMembers: '',
-    offStageMembers: '',
+    performingDurationFrom: "",
+    performingDurationTo: "",
+    performingMembers: "",
+    offStageMembers: "",
 
     // Contact & Pricing Details
-    contactNumber: '',
-    whatsappNumber: '',
+    contactNumber: "",
+    whatsappNumber: "",
     sameAsContact: false,
-    email: '',
-    soloChargesFrom: '',
-    soloChargesTo: '',
-    soloDescription: '',
-    backingChargesFrom: '',
-    backingChargesTo: '',
-    backingDescription: '',
-
-    // Videos & Social Media
-    youtubeConnected: false,
-    instagramConnected: false,
-    youtubeChannelId: '',
-    instagramAccountId: '',
+    email: "",
+    soloChargesFrom: "",
+    soloChargesTo: "",
+    soloDescription: "",
+    backingChargesFrom: "",
+    backingChargesTo: "",
+    backingDescription: "",
   });
 
-  const handleNext = () => {
+  const handleSubmitProfile = async () => {
+    try {
+      setIsSubmitting(true);
+      const userId = session?.user?.id;
+
+      if (!userId) {
+        console.error("⚠️ No valid userId found in session");
+        return;
+      }
+
+      const response = await fetch("/api/artists/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          stageName: profileData.stageName,
+          artistType: profileData.artistType,
+          subArtistType: profileData.subArtistType,
+          achievements: profileData.achievements,
+          yearsOfExperience: profileData.yearsOfExperience,
+          shortBio: profileData.shortBio,
+          performingLanguages: profileData.performingLanguages,
+          performingEventTypes: profileData.performingEventTypes,
+          performingStates: profileData.performingStates,
+          performingDurationFrom: profileData.performingDurationFrom,
+          performingDurationTo: profileData.performingDurationTo,
+          performingMembers: profileData.performingMembers,
+          offStageMembers: profileData.offStageMembers,
+          contactNumber: profileData.contactNumber,
+          whatsappNumber: profileData.whatsappNumber,
+          contactEmail: profileData.email,
+          soloChargesFrom: profileData.soloChargesFrom,
+          soloChargesTo: profileData.soloChargesTo,
+          soloChargesDescription: profileData.soloDescription,
+          chargesWithBacklineFrom: profileData.backingChargesFrom,
+          chargesWithBacklineTo: profileData.backingChargesTo,
+          chargesWithBacklineDescription: profileData.backingDescription,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Artist Profile Save Error:", data.message ?? data);
+        return;
+      }
+
+      console.log("Artist Profile Created Successfully:", data);
+
+      const updatedArtistProfile = data?.data?.artistProfile ?? null;
+      const avatarToUse =
+        (profileData as any).avatarUrl &&
+        (profileData as any).avatarUrl.trim() !== ""
+          ? (profileData as any).avatarUrl
+          : session.user.avatar;
+
+      await update({
+        update: {
+          avatar: avatarToUse,
+          artistProfile: updatedArtistProfile,
+          isArtistVerified: true,
+        },
+      });
+
+      setShowSuccessModal(true);
+    } catch (err) {
+      console.error("Unexpected Error Saving Artist Profile:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleNext = async () => {
     switch (currentStep) {
-      case 'overview':
-        setCurrentStep('artistDetails');
+      case "overview":
+        setCurrentStep("artistDetails");
         break;
-      case 'artistDetails':
-        setCurrentStep('performanceDetails');
+      case "artistDetails":
+        setCurrentStep("performanceDetails");
         break;
-      case 'performanceDetails':
-        setCurrentStep('contactPricing');
+      case "performanceDetails":
+        setCurrentStep("contactPricing");
         break;
-      case 'contactPricing':
-        setCurrentStep('videosSocial');
+      case "contactPricing":
+        setCurrentStep("review");
         break;
-      case 'videosSocial':
-        setCurrentStep('review');
-        break;
-      case 'review':
-        // Show success modal
-        setShowSuccessModal(true);
+      case "review":
+        await handleSubmitProfile();
         break;
     }
   };
 
   const handleBack = () => {
     switch (currentStep) {
-      case 'artistDetails':
-        setCurrentStep('overview');
+      case "artistDetails":
+        setCurrentStep("overview");
         break;
-      case 'performanceDetails':
-        setCurrentStep('artistDetails');
+      case "performanceDetails":
+        setCurrentStep("artistDetails");
         break;
-      case 'contactPricing':
-        setCurrentStep('performanceDetails');
+      case "contactPricing":
+        setCurrentStep("performanceDetails");
         break;
-      case 'videosSocial':
-        setCurrentStep('contactPricing');
+      case "review":
+        setCurrentStep("contactPricing");
         break;
-      case 'review':
-        setCurrentStep('videosSocial');
-        break;
-      case 'overview':
-        router.push('/artist/dashboard');
+      case "overview":
+        router.push("/artist/dashboard");
         break;
     }
   };
@@ -108,70 +174,64 @@ export default function ProfileSetupPage() {
   };
 
   const updateProfileData = (data: Partial<typeof profileData>) => {
-    setProfileData(prev => ({ ...prev, ...data }));
+    setProfileData((prev) => ({ ...prev, ...data }));
   };
 
   const handleEdit = (step: string) => {
     switch (step) {
-      case 'artistDetails':
-        setCurrentStep('artistDetails');
+      case "artistDetails":
+        setCurrentStep("artistDetails");
         break;
-      case 'performanceDetails':
-        setCurrentStep('performanceDetails');
+      case "performanceDetails":
+        setCurrentStep("performanceDetails");
         break;
-      case 'contactPricing':
-        setCurrentStep('contactPricing');
-        break;
-      case 'videosSocial':
-        setCurrentStep('videosSocial');
+      case "contactPricing":
+        setCurrentStep("contactPricing");
         break;
     }
   };
 
   const handleGoToDashboard = () => {
     setShowSuccessModal(false);
-    router.push('/artist/dashboard');
+    // Redirect to integrations tab to connect YouTube/Instagram
+    router.push("/artist/profile?tab=integrations");
   };
 
   const handleAddAnotherProfile = () => {
     setShowSuccessModal(false);
-    // Reset form and start over
-    setCurrentStep('overview');
+    setCurrentStep("overview");
     setProfileData({
       profilePhoto: null,
-      stageName: '',
-      artistType: '',
-      subArtistType: '',
-      achievements: '',
-      yearsOfExperience: '',
-      shortBio: '',
+      avatarUrl: "",
+      stageName: "",
+      artistType: "",
+      subArtistType: "",
+      achievements: "",
+      yearsOfExperience: "",
+      shortBio: "",
       performingLanguages: [],
       performingEventTypes: [],
       performingStates: [],
-      performingDurationFrom: '',
-      performingDurationTo: '',
-      performingMembers: '',
-      offStageMembers: '',
-      contactNumber: '',
-      whatsappNumber: '',
+      performingDurationFrom: "",
+      performingDurationTo: "",
+      performingMembers: "",
+      offStageMembers: "",
+      contactNumber: "",
+      whatsappNumber: "",
       sameAsContact: false,
-      email: '',
-      soloChargesFrom: '',
-      soloChargesTo: '',
-      soloDescription: '',
-      backingChargesFrom: '',
-      backingChargesTo: '',
-      backingDescription: '',
-      youtubeConnected: false,
-      instagramConnected: false,
-      youtubeChannelId: '',
-      instagramAccountId: '',
+      email: "",
+      soloChargesFrom: "",
+      soloChargesTo: "",
+      soloDescription: "",
+      backingChargesFrom: "",
+      backingChargesTo: "",
+      backingDescription: "",
     });
   };
 
   const renderCurrentStep = () => {
     switch (currentStep) {
-      case 'overview':
+      case "overview":
         return (
           <ProfileOverview
             onNext={handleNext}
@@ -179,7 +239,7 @@ export default function ProfileSetupPage() {
             onBack={handleBack}
           />
         );
-      case 'artistDetails':
+      case "artistDetails":
         return (
           <ArtistProfileDetails
             data={profileData}
@@ -189,7 +249,7 @@ export default function ProfileSetupPage() {
             onUpdateData={updateProfileData}
           />
         );
-      case 'performanceDetails':
+      case "performanceDetails":
         return (
           <PerformanceDetails
             data={profileData}
@@ -199,7 +259,7 @@ export default function ProfileSetupPage() {
             onUpdateData={updateProfileData}
           />
         );
-      case 'contactPricing':
+      case "contactPricing":
         return (
           <ContactPricingDetails
             data={profileData}
@@ -209,17 +269,7 @@ export default function ProfileSetupPage() {
             onUpdateData={updateProfileData}
           />
         );
-      case 'videosSocial':
-        return (
-          <VideosSocialMedia
-            data={profileData}
-            onNext={handleNext}
-            onSkip={handleSkip}
-            onBack={handleBack}
-            onUpdateData={updateProfileData}
-          />
-        );
-      case 'review':
+      case "review":
         return (
           <ProfileReview
             data={profileData}
@@ -232,7 +282,9 @@ export default function ProfileSetupPage() {
         return (
           <div className="text-center text-white">
             <h2 className="text-xl font-semibold mb-4">Coming Soon</h2>
-            <p className="text-text-gray mb-6">This step is under development.</p>
+            <p className="text-text-gray mb-6">
+              This step is under development.
+            </p>
             <button
               onClick={handleNext}
               className="px-6 py-2 bg-gradient-to-r from-primary-pink to-primary-orange text-white rounded-lg"
@@ -247,11 +299,8 @@ export default function ProfileSetupPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
       {renderCurrentStep()}
-
-      {/* Success Modal */}
       <SuccessModal
         isOpen={showSuccessModal}
-        // onClose={() => setShowSuccessModal(false)}
         onGoToDashboard={handleGoToDashboard}
         onAddAnotherProfile={handleAddAnotherProfile}
       />

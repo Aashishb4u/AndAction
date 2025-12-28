@@ -2,8 +2,9 @@
 
 import React from 'react';
 import Button from '@/components/ui/Button';
-import { Calendar, MapPin, Clock, Phone, X } from 'lucide-react';
+import { Calendar, MapPin, Phone, X, Check, Mail } from 'lucide-react';
 import Image from 'next/image';
+import { BookingStatus } from "@prisma/client";
 
 interface BookingCardProps {
   clientName: string;
@@ -11,8 +12,14 @@ interface BookingCardProps {
   date: string;
   eventType: string;
   description: string;
+
+  status: BookingStatus;         // <-- NEW
+  clientEmail?: string | null;   // <-- NEW
+  clientPhone?: string | null;   // <-- NEW
+
   onReject: () => void;
-  onCall: () => void;
+  onAccept: () => void;
+
   className?: string;
 }
 
@@ -22,12 +29,22 @@ const BookingCard: React.FC<BookingCardProps> = ({
   date,
   eventType,
   description,
+
+  status,          // <-- NEW
+  clientEmail,     // <-- NEW
+  clientPhone,     // <-- NEW
+
   onReject,
-  onCall,
+  onAccept,
   className = '',
 }) => {
+  
+  const isPending = status === "PENDING";
+  const isApproved = status === "APPROVED";
+
   return (
     <div className={`bg-card border border-border-color rounded-xl p-4 ${className}`}>
+      
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div>
@@ -37,12 +54,10 @@ const BookingCard: React.FC<BookingCardProps> = ({
             <span>{location}</span>
           </div>
         </div>
-        <div className="text-right text-text-gray secondary-text">
-          {date}
-        </div>
+        <div className="text-right text-text-gray secondary-text">{date}</div>
       </div>
 
-      {/* Event Details */}
+      {/* Event Info */}
       <div className="flex items-center gap-4 mb-3 text-card">
         <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full">
           <Image src="/icons/calander.svg" alt="Calendar" width={16} height={16} />
@@ -57,31 +72,66 @@ const BookingCard: React.FC<BookingCardProps> = ({
       {/* Description */}
       <p className="text-white secondary-text mb-3 line-clamp-2">
         {description}
-        <button className="text-blue hover:text-primary-pink/80 ml-1">
-          more...
-        </button>
+        <button className="text-blue hover:text-primary-pink/80 ml-1">more...</button>
       </p>
 
-      {/* Action Buttons */}
+      {/* ---------------------------------------------------
+          CONDITIONAL ACTION BUTTONS
+      --------------------------------------------------- */}
       <div className="flex gap-3 mt-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onReject}
-          className="flex-1 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-        >
-          <X className="w-4 h-4 mr-2" />
-          Reject
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={onCall}
-          className="flex-1"
-        >
-          <Phone className="w-4 h-4 mr-2" />
-          Call
-        </Button>
+
+        {isPending && (
+          <>
+            {/* ACCEPT */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onAccept}
+              className="flex-1 border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+            >
+              <Check className="w-4 h-4 mr-2" />
+              Accept
+            </Button>
+
+            {/* REJECT */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onReject}
+              className="flex-1 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Reject
+            </Button>
+          </>
+        )}
+
+        {/* CALL BUTTON (allowed for all statuses IF phone exists) */}
+        {clientPhone && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => window.open(`tel:${clientPhone}`, "_self")}
+            className="flex-1"
+          >
+            <Phone className="w-4 h-4 mr-2" />
+            Call
+          </Button>
+        )}
+
+        {/* EMAIL BUTTON (if approved or declined or completed, OR if pending too, you decide) */}
+        {clientEmail && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => window.open(`mailto:${clientEmail}`, "_self")}
+            className="flex-1"
+          >
+            <Mail className="w-4 h-4 mr-2" />
+            Email
+          </Button>
+        )}
+
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ interface FilterOption {
 
 interface MobileFiltersProps {
   filters: Filters;
-  onFilterChange: (filterType: string, value: string) => void;
+  onFilterChange: (filterType: keyof Filters, value: string) => void;
   onReset: () => void;
   className?: string;
 }

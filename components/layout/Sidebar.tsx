@@ -1,68 +1,58 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation';
-import { ChevronRight, LogOut } from 'lucide-react';
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter, usePathname } from "next/navigation";
+import { ChevronRight, LogOut } from "lucide-react";
+import { createAuthRedirectUrl } from "@/lib/auth";
+import Download from "../icons/download";
+import Support from "../icons/support";
+import { useSession, signOut } from "next-auth/react";
 
-import { createAuthRedirectUrl } from '@/lib/auth';
-import Download from '../icons/download';
-import Support from '../icons/support';
-
-interface SidebarWithoutAuthProps {
+interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-// Mock data for artists - this would come from your auth/user context
-const mockArtists = [
-  {
-    id: 1,
-    name: 'MJ Singer',
-    role: 'Singer',
-    image: '/avatars/2.png',
-  }
-];
-
-
-
-const Sidebar: React.FC<SidebarWithoutAuthProps> = ({ isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
   const pathname = usePathname();
-  // Main navigation items (excluding Sign-In and Join as artist)
+  const { data: session } = useSession();
+  const user = session?.user;
+
   const navigationItems = [
-    { label: 'About us', href: '/about', isActive: pathname === '/about' },
-    { label: 'FAQs', href: '/faqs', isActive: pathname === '/faqs' },
-    { label: 'Terms & Conditions', href: '/terms', isActive: pathname === '/terms' },
-    { label: 'Privacy Policy', href: '/privacy', isActive: pathname === '/privacy' },
+    { label: "About us", href: "/about", isActive: pathname === "/about" },
+    { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
+    {
+      label: "Terms & Conditions",
+      href: "/terms",
+      isActive: pathname === "/terms",
+    },
+    {
+      label: "Privacy Policy",
+      href: "/privacy",
+      isActive: pathname === "/privacy",
+    },
   ];
 
-  const handleItemClick = () => {
+  const handleItemClick = () => onClose();
+
+  const handleJoinArtist = () => {
+    router.push(createAuthRedirectUrl("/auth/artist", pathname));
     onClose();
   };
 
   const handleInstallApp = () => {
-    // PWA install logic would go here
-    console.log('Install app clicked');
+    console.log("Install app clicked");
     onClose();
   };
 
-  const handleSignInClick = () => {
-    router.push(createAuthRedirectUrl('/auth/signin', pathname));
+  const handleSignOut = async () => {
+    console.log('idk being triggered')
+    await signOut({ redirect: false });
     onClose();
-  };
-
-  const handleSignUpClick = () => {
-    router.push(createAuthRedirectUrl('/auth/artist', pathname));
-    onClose();
-  };
-
-  const handleArtistSelect = (artistId: number) => {
-    // Switch artist logic would go here
-    console.log('Switch to artist:', artistId);
-    onClose();
-    router.push('/artist/dashboard');
+    router.push("/");
   };
 
   return (
@@ -77,11 +67,11 @@ const Sidebar: React.FC<SidebarWithoutAuthProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-background border-l border-background-light z-[99999] transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-0 right-0 h-full w-80 bg-background border-l border-background-light z-[99999] transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
           }`}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
+          {/* Header Close */}
           <div className="flex items-center justify-end px-6 pt-4">
             <button
               onClick={onClose}
@@ -103,60 +93,86 @@ const Sidebar: React.FC<SidebarWithoutAuthProps> = ({ isOpen, onClose }) => {
             </button>
           </div>
 
-          {/* Auth Section */}
-          <div className="px-6 pt-2 pb-3">
-            {/* Artist Profiles Section */}
-            <div className="space-y-3">
-              {mockArtists.map((artist) => (
-                <button
-                  key={artist.id}
-                  onClick={() => handleArtistSelect(artist.id)}
-                  className="w-full flex items-center gap-3 p-3 bg-card border border-border-color rounded-xl hover:border-primary-pink/30 transition-all duration-300 group"
-                >
-                  {/* Artist Image */}
-                  <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                    <Image
-                      src={artist.image}
-                      alt={artist.name}
-                      width={48}
-                      height={48}
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
+          {/* Logged-in user section */}
+          {user ? (
+            <div className="px-6 pt-2 pb-3">
+              <button
+                onClick={() => {
+                  onClose();
+                  if (user.role === "artist") {
+                    router.push("/artist/profile");
+                  } else {
+                    router.push("/user/profile");
+                  }
+                }}
+                className="w-full flex items-center gap-3 p-3 bg-card border border-border-color rounded-xl hover:border-primary-pink/30 transition-all duration-300 group"
+              >
+                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                  <Image
+                    src={
+                      user.role === "user"
+                        ? `/avatars/${user.avatar}.png`
+                        : user.avatar ?? "/default-avatar.png"
+                    }
+                    alt={user.firstName || "User"}
+                    width={48}
+                    height={48}
+                    unoptimized
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+                <div className="flex-1 text-left">
+                  <h3 className="text-white font-medium">
+                    {user.firstName} {user.lastName}
+                  </h3>
+                  {user?.email ? (
+                    <p className="text-text-gray text-sm truncate">
+                      {user.email}
+                    </p>
+                  ) : (
+                    <p className="text-text-gray text-sm truncate">
+                      {user.countryCode}
+                      {user.phoneNumber}
+                    </p>
+                  )}
+                </div>
+                <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
+              </button>
 
-                  {/* Artist Info */}
-                  <div className="flex-1 text-left">
-                    <h3 className="text-white h2">{artist.name}</h3>
-                    <p className="text-text-gray secondary-text">{artist.role}</p>
-                  </div>
-
-                  {/* Arrow Icon */}
-                  <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
-                </button>
-              ))}
+              {/* Join as artist */}
+              <button
+                onClick={handleJoinArtist}
+                className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
+              >
+                Join as a artist
+              </button>
             </div>
-            {/* Sign-In */}
-            {/* <button
-              onClick={handleSignInClick}
-              className="block py-2 text-white hover:text-primary-pink transition-colors duration-200 h1"
-            >
-              Sign-In
-            </button> */}
+          ) : (
+            // Guest state
+            <div className="px-6 pt-2 pb-3">
+              <button
+                onClick={() => {
+                  router.push(createAuthRedirectUrl("/auth/signin", pathname));
+                  onClose();
+                }}
+                className="block text-white hover:text-primary-pink transition-colors duration-200 h1"
+              >
+                Sign-In
+              </button>
 
-            {/* Join as artist with gradient text */}
-            <button
-              onClick={handleSignUpClick}
-              className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
-            >
-              Join as a artist
-            </button>
+              <button
+                onClick={handleJoinArtist}
+                className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
+              >
+                Join as a artist
+              </button>
+            </div>
+          )}
 
-
-          </div>
-          {/* Separator */}
+          {/* Divider */}
           <div className="h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent" />
 
-          {/* Navigation Items */}
+          {/* Navigation Links */}
           <div className="flex-1 px-6 md:py-5 mt-3">
             <div className="space-y-3">
               {navigationItems.map((item) => (
@@ -164,33 +180,51 @@ const Sidebar: React.FC<SidebarWithoutAuthProps> = ({ isOpen, onClose }) => {
                   key={item.label}
                   href={item.href}
                   onClick={handleItemClick}
-                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${item.isActive ? 'gradient-text' : 'text-white'}`}
+                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${item.isActive ? "gradient-text" : "text-white"
+                    }`}
                 >
                   {item.label}
                 </Link>
               ))}
             </div>
 
-            {/* Contact Information - Simple box */}
-            <div className="mt-5">
-              <div className="flex items-center space-x-3 mb-2">
+            {/* Contact */}
+            <div className="mt-5 border border-border-color rounded-xl p-3 bg-card">
+              <div className="flex items-center space-x-3 mb-1">
                 <Support className="size-5 text-text-gray" />
-                <span className="secondary-text text-text-gray">For any query</span>
+                <span className="text-text-gray text-sm">For any query</span>
               </div>
-              <p className="text-white">Contact Us: <Link href="tel:+918860014889" className="hover:underline">+91 8860014889</Link></p>
+              <p className="text-white text-sm">
+                Contact Us:{" "}
+                <Link href="tel:+918860014889" className="hover:underline">
+                  +91 8860014889
+                </Link>
+              </p>
             </div>
           </div>
 
-          {/* Install App Button */}
-          <div className="p-6 border-t border-background-light">
-            <button
-              onClick={handleInstallApp}
-              className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group btn1"
-            >
-              <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
-              <span className="gradient-text">Install our web application</span>
-            </button>
-          </div>
+          {/* Signout + Install App */}
+          {user && (
+            <div className="p-6 border-t border-background-light space-y-3">
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Signout</span>
+              </button>
+
+              <button
+                onClick={handleInstallApp}
+                className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
+              >
+                <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
+                <span className="gradient-text">
+                  Install our web application
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>

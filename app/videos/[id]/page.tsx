@@ -1,164 +1,214 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import SiteLayout from '@/components/layout/SiteLayout';
 import VideoPlayer from '@/components/ui/VideoPlayer';
 import ArtistInfo from '@/components/sections/ArtistInfo';
 import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
 import Image from 'next/image';
-
-// Sample data - replace with your actual data fetching
-const sampleVideoData = {
-  '1': {
-    id: '1',
-    title: 'Bonam ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit...',
-    description: 'Experience an incredible live performance featuring original compositions and crowd favorites. This intimate concert showcases the raw talent and emotional depth of our featured artist.',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    poster: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=450&fit=crop',
-    views: 125000,
-    uploadDate: '2024-01-15',
-    artist: {
-      id: 'artist-1',
-      name: 'Jagesh Henry',
-      location: 'Mumbai, India',
-      avatar: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop&crop=face',
-      bio: 'Jagesh is a versatile musician with over 10 years of experience in live performances. Known for his soulful voice and engaging stage presence.',
-      category: 'musician',
-      followers: 45000,
-      verified: true,
-    },
-  },
-  // Add more sample data as needed
-};
-
-const sampleRelatedVideos = [
-  {
-    id: '2',
-    title: 'Incredible Dance Moves',
-    creator: 'Sarah Johnson',
-    thumbnail: 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=400&h=300&fit=crop',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-  },
-  {
-    id: '3',
-    title: 'DJ Set at Sunset',
-    creator: 'Mike Chen',
-    thumbnail: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-  },
-  {
-    id: '4',
-    title: 'Motivational Speaking Event',
-    creator: 'Dr. Amanda Smith',
-    thumbnail: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=300&fit=crop',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-  },
-  {
-    id: '5',
-    title: 'Live Band Performance',
-    creator: 'The Rock Stars',
-    thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
-  },
-];
-
-const sampleShorts = [
-  {
-    id: 'short-1',
-    title: 'Quick Guitar Riff',
-    creator: 'Harsh Arora',
-    thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=500&fit=crop',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-  },
-  {
-    id: 'short-2',
-    title: 'Behind the Scenes',
-    creator: 'Harsh Arora',
-    thumbnail: 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=300&h=500&fit=crop',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-  },
-  {
-    id: 'short-3',
-    title: 'Studio Session',
-    creator: 'Harsh Arora',
-    thumbnail: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=500&fit=crop',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-  },
-  {
-    id: 'short-4',
-    title: 'Live Performance',
-    creator: 'Harsh Arora',
-    thumbnail: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=300&h=500&fit=crop',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-  },
-  {
-    id: 'short-5',
-    title: 'Motivational Speaking',
-    creator: 'Harsh Arora',
-    thumbnail: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=300&h=500&fit=crop',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
-  },
-  {
-    id: 'short-6',
-    title: 'Dance Moves',
-    creator: 'Harsh Arora',
-    thumbnail: 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=300&h=500&fit=crop',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4',
-  },
-];
+import { toast } from 'react-toastify';
+import { useSession } from 'next-auth/react';
 
 export default function VideoDetailsPage() {
   const params = useParams();
   const videoId = params.id as string;
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [bookmarkedItems, setBookmarkedItems] = useState<Set<string>>(new Set());
 
-  // Get video data (in real app, this would be fetched from API)
-  const videoData = sampleVideoData[videoId as keyof typeof sampleVideoData] || sampleVideoData['1'];
+  const [videoData, setVideoData] = useState<any>(null);
+  const [relatedVideos, setRelatedVideos] = useState<any[]>([]);
+  const [shorts, setShorts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-  };
+  const { data: session } = useSession();
+  const router = useRouter();
 
-  const handleShare = () => {
-    // Implement share functionality
-    if (navigator.share) {
-      navigator.share({
-        title: videoData.title,
-        text: `Check out this amazing video by ${videoData.artist.name}`,
-        url: window.location.href,
+  // ---------- FETCH DATA WITH BOOKMARK INFO ----------
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch(
+          `/api/videos/related?videoId=${videoId}&withBookmarks=true`
+        );
+        const json = await res.json();
+
+        if (!json.success || !json.data?.video) {
+          setLoading(false);
+          return;
+        }
+
+        const v = json.data.video;
+
+        // MAIN VIDEO
+        setVideoData({
+          id: v.id,
+          title: v.title,
+          description: v.description ?? '',
+          videoUrl: v.url,
+          poster: v.thumbnailUrl,
+          views: v.views,
+          uploadDate: v.createdAt,
+          isBookmarked: v.isBookmarked,
+          bookmarkId: v.bookmarkId,
+          artist: {
+            id: v.user.id,
+            name: `${v.user.firstName} ${v.user.lastName}`,
+            avatar: v.user.avatar,
+            verified: v.user.isArtistVerified,
+          },
+        });
+
+        // RELATED VIDEOS
+        setRelatedVideos(
+          json.data.related.map((rv: any) => ({
+            id: rv.id,
+            title: rv.title,
+            creator: `${rv.user.firstName} ${rv.user.lastName}`,
+            thumbnail: rv.thumbnailUrl,
+            videoUrl: rv.url,
+            isBookmarked: rv.isBookmarked,
+            bookmarkId: rv.bookmarkId,
+          }))
+        );
+
+        // SHORTS
+        setShorts(
+          json.data.shorts.map((sv: any) => ({
+            id: sv.id,
+            title: sv.title,
+            creator: `${sv.user.firstName} ${sv.user.lastName}`,
+            thumbnail: sv.thumbnailUrl,
+            videoUrl: sv.url,
+            isBookmarked: sv.isBookmarked,
+            bookmarkId: sv.bookmarkId,
+          }))
+        );
+      } catch (error) {
+        console.error('Error fetching video details:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [videoId]);
+
+  // ---------- BOOKMARK TOGGLE (GLOBAL) ----------
+  const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
+    try {
+      // REMOVE
+
+      if (!session?.user) {
+        router.push("/auth/signin");
+        return;
+      }
+
+      if (isBookmarked && bookmarkId) {
+        await fetch(`/api/bookmarks/${bookmarkId}`, { method: 'DELETE' });
+
+        if (videoData?.id === id) {
+          setVideoData((prev: any) => ({
+            ...prev,
+            isBookmarked: false,
+            bookmarkId: null,
+          }));
+        }
+
+        setRelatedVideos(prev =>
+          prev.map(v =>
+            v.id === id ? { ...v, isBookmarked: false, bookmarkId: null } : v
+          )
+        );
+
+        setShorts(prev =>
+          prev.map(s =>
+            s.id === id ? { ...s, isBookmarked: false, bookmarkId: null } : s
+          )
+        );
+
+        return;
+      }
+
+      // CREATE
+      const res = await fetch(`/api/bookmarks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId: id }),
       });
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      // You could show a toast notification here
+
+      const json = await res.json();
+      const newBookmarkId = json?.data?.bookmark?.id;
+
+      if (videoData?.id === id) {
+        setVideoData((prev: any) => ({
+          ...prev,
+          isBookmarked: true,
+          bookmarkId: newBookmarkId,
+        }));
+      }
+
+      setRelatedVideos(prev =>
+        prev.map(v =>
+          v.id === id
+            ? { ...v, isBookmarked: true, bookmarkId: newBookmarkId }
+            : v
+        )
+      );
+
+      setShorts(prev =>
+        prev.map(s =>
+          s.id === id
+            ? { ...s, isBookmarked: true, bookmarkId: newBookmarkId }
+            : s
+        )
+      );
+    } catch (err) {
+      console.error('Bookmark error:', err);
     }
   };
 
-  const handleItemBookmark = (itemId: string) => {
-    setBookmarkedItems(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
-      return newSet;
-    });
+  // ---------- SHARE ----------
+  const handleShare = async (videoId: string) => {
+    try {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_NEXTAUTH_URL ||
+        window.location.origin;
+
+      const shareUrl = `${baseUrl}/videos/${videoId}`;
+
+      await navigator.clipboard.writeText(shareUrl);
+
+      // 🔔 Toast success
+      toast.success('Link copied to clipboard');
+    } catch (err) {
+      console.error('Share error:', err);
+      toast.error('Failed to copy link');
+    }
   };
 
-  const handleItemShare = (itemId: string) => {
-    console.log('Share item:', itemId);
-  };
+  // ---------- STATES ----------
+  if (loading) {
+    return (
+      <SiteLayout>
+        <div className="text-center py-20 text-gray-400">Loading...</div>
+      </SiteLayout>
+    );
+  }
+
+  if (!videoData) {
+    return (
+      <SiteLayout>
+        <div className="text-center py-20 text-gray-400">Video not found.</div>
+      </SiteLayout>
+    );
+  }
 
   return (
     <SiteLayout showPreloader={false}>
       <div className="min-h-screen pt-16 lg:pt-20 pb-28">
         <div className="max-w-7xl mx-auto lg:px-8">
-          {/* Main Content */}
-          {/* Video Player */}
+
+          {/* MAIN VIDEO */}
           <div className="mb-8">
             <VideoPlayer
               videoUrl={videoData.videoUrl}
@@ -166,8 +216,8 @@ export default function VideoDetailsPage() {
               poster={videoData.poster}
               className="mb-4"
             />
-            <div className='px-4 sm:px-6 lg:px-8'>
-              {/* Artist Info */}
+
+            <div className="px-4 sm:px-6 lg:px-8">
               <ArtistInfo
                 artist={videoData.artist}
                 video={{
@@ -177,64 +227,68 @@ export default function VideoDetailsPage() {
                   views: videoData.views,
                   uploadDate: videoData.uploadDate,
                 }}
-                isBookmarked={isBookmarked}
-                onBookmark={handleBookmark}
-                onShare={handleShare}
+                isBookmarked={videoData.isBookmarked}
+                bookmarkId={videoData.bookmarkId}
+                onBookmark={() =>
+                  toggleBookmark({
+                    id: videoData.id,
+                    isBookmarked: videoData.isBookmarked,
+                    bookmarkId: videoData.bookmarkId,
+                  })
+                }
+                onShare={() => handleShare(videoData.id)}
               />
             </div>
           </div>
 
-          <div className='px-4 sm:px-6 lg:px-8'>
-            {/* Related Artist Videos */}
-            <section className="mb-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {sampleRelatedVideos.map((video) => (
-                  <VideoCard
-                    key={video.id}
-                    id={video.id}
-                    title={video.title}
-                    creator={video.creator}
-                    thumbnail={video.thumbnail}
-                    videoUrl={video.videoUrl}
-                    onBookmark={handleItemBookmark}
-                    onShare={handleItemShare}
-                    isBookmarked={bookmarkedItems.has(video.id)}
-                  />
-                ))}
-              </div>
-            </section>
+          {/* RELATED VIDEOS */}
+          <section className="mb-8 px-4 sm:px-6 lg:px-8">
+            <h2 className="text-xl font-bold text-white mb-4">
+              More from this artist
+            </h2>
 
-            {/* Shorts Section */}
-            <section className="mb-8">
-              <div className='flex items-center gap-3 mb-4'>
-                <Image
-                  src="/shorts.svg"
-                  alt="Shorts"
-                  width={24}
-                  height={24}
-                  className="size-6"
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {relatedVideos.map(video => (
+                <VideoCard
+                  key={video.id}
+                  id={video.id}
+                  title={video.title}
+                  creator={video.creator}
+                  thumbnail={video.thumbnail}
+                  videoUrl={video.videoUrl}
+                  isBookmarked={video.isBookmarked}
+                  bookmarkId={video.bookmarkId}
+                  onBookmark={(data) => toggleBookmark(data)}
+                  onShare={() => handleShare(video.id)}
                 />
-                <h2 className="text-2xl font-bold text-white">
-                  Shorts
-                </h2>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                {sampleShorts.map((short) => (
-                  <ShortsCard
-                    key={short.id}
-                    id={short.id}
-                    title={short.title}
-                    creator={short.creator}
-                    thumbnail={short.thumbnail}
-                    videoUrl={short.videoUrl}
-                    onBookmark={handleItemBookmark}
-                    onShare={handleItemShare}
-                    isBookmarked={bookmarkedItems.has(short.id)}
-                  />
-                ))}
-              </div>
-            </section>
-          </div>
+              ))}
+            </div>
+          </section>
+
+          {/* SHORTS */}
+          <section className="mb-8 px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-3 mb-4">
+              <Image src="/shorts.svg" alt="Shorts" width={24} height={24} />
+              <h2 className="text-2xl font-bold text-white">Shorts</h2>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              {shorts.map(short => (
+                <ShortsCard
+                  key={short.id}
+                  id={short.id}
+                  title={short.title}
+                  creator={short.creator}
+                  thumbnail={short.thumbnail}
+                  videoUrl={short.videoUrl}
+                  isBookmarked={short.isBookmarked}
+                  bookmarkId={short.bookmarkId}
+                  onBookmark={(data) => toggleBookmark(data)}
+                  onShare={() => handleShare(short.id)}
+                />
+              ))}
+            </div>
+          </section>
 
         </div>
       </div>
