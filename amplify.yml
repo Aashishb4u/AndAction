@@ -1,0 +1,23 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Cleaning npm cache"
+        - rm -rf node_modules package-lock.json ~/.npm
+        - npm install
+
+        # Prisma: required for AWS runtime
+        - npx prisma generate
+
+    build:
+      commands:
+        - npm run build
+
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+
+  cache:
+    paths: []
