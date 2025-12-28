@@ -1,10 +1,10 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 export const s3 = new S3Client({
-  region: process.env.AWS_REGION!,
+  region: process.env.BUCKET_REGION!,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.BUCKET_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.BUCKET_SECRET_ACCESS_KEY!,
   },
 });
 
@@ -18,7 +18,7 @@ export async function uploadToS3({
   mimeType: string;
 }) {
   const uploadCommand = new PutObjectCommand({
-    Bucket: process.env.AWS_S3_BUCKET!,
+    Bucket: process.env.BUCKET_S3_NAME!,
     Key: key,
     Body: buffer,
     ContentType: mimeType,
@@ -27,5 +27,5 @@ export async function uploadToS3({
 
   await s3.send(uploadCommand);
 
-  return `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+  return `https://${process.env.BUCKET_S3_NAME}.s3.${process.env.BUCKET_REGION}.amazonaws.com/${key}`;
 }

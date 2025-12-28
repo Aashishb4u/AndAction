@@ -4,12 +4,6 @@ import { ApiErrors, successResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { uploadToS3 } from "@/lib/s3";
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 export async function POST(request: NextRequest): Promise<NextResponse<any>> {
   const session = await auth();
   if (!session?.user?.id) return ApiErrors.unauthorized();

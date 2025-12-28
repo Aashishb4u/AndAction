@@ -75,29 +75,29 @@ export default function ArtistDashboard() {
      FETCH BOOKINGS
   ---------------------------------------------------- */
   const getBookings = async () => {
-    try {
-      const response = await fetch("/api/bookings");
-      const json = await response.json();
+  try {
+    const response = await fetch("/api/bookings");
+    const json = await response.json();
 
-      const bookingsGrouped: BookingStatusMap = {
-        PENDING: [],
-        APPROVED: [],
-        DECLINED: [],
-        CANCELLED: [],
-        COMPLETED: [],
-      };
+    const bookingsGrouped: BookingStatusMap = {
+      PENDING: [],
+      APPROVED: [],
+      DECLINED: [],
+      CANCELLED: [],
+      COMPLETED: [],
+    };
 
-      json.data.bookings.forEach((booking: Booking) => {
-        bookingsGrouped[booking.status].push(booking);
-      });
+    json.data.bookings.forEach((booking: Booking) => {
+      bookingsGrouped[booking.status].push(booking);
+    });
 
-      setBookings(bookingsGrouped);
-    } catch (err) {
-      console.error("Unable to fetch bookings", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setBookings(bookingsGrouped);
+  } catch (err) {
+    console.error("Unable to fetch bookings", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
 
   /* ----------------------------------------------------
@@ -149,8 +149,9 @@ export default function ArtistDashboard() {
   }
 
   const artist = session?.user?.artistProfile;
-  const fullName = `${session?.user?.firstName ?? ""} ${session?.user?.lastName ?? ""
-    }`.trim();
+  const fullName = `${session?.user?.firstName ?? ""} ${
+    session?.user?.lastName ?? ""
+  }`.trim();
 
   const totalBookings = Object.values(bookings).flat().length;
 
