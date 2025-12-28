@@ -6,27 +6,33 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { Info } from 'lucide-react';
 import { Artist } from '@/types';
+import { useSession } from "next-auth/react";
+import { mapUserForSession, updateArtistProfile } from '@/lib/helper';
 
 interface PerformanceTabProps {
   artist: Artist;
 }
 
 const performingLanguageOptions = [
-  { value: 'english-hindi-gujarati', label: 'English, Hindi, Gujarati' },
-  { value: 'english-hindi', label: 'English, Hindi' },
-  { value: 'hindi-gujarati', label: 'Hindi, Gujarati' },
-  { value: 'english', label: 'English' },
   { value: 'hindi', label: 'Hindi' },
+  { value: 'english', label: 'English' },
+  { value: 'marathi', label: 'Marathi' },
   { value: 'gujarati', label: 'Gujarati' },
+  { value: 'tamil', label: 'Tamil' },
+  { value: 'telugu', label: 'Telugu' },
+  { value: 'bengali', label: 'Bengali' },
+  { value: 'punjabi', label: 'Punjabi' }
 ];
 
 const eventTypeOptions = [
-  { value: 'party-concert-events', label: 'Party, Concert, Events' },
-  { value: 'party-concert', label: 'Party, Concert' },
-  { value: 'concert-events', label: 'Concert, Events' },
-  { value: 'party', label: 'Party' },
+  { value: 'wedding', label: 'Wedding' },
+  { value: 'corporate', label: 'Corporate Event' },
+  { value: 'birthday', label: 'Birthday Party' },
+  { value: 'festival', label: 'Festival' },
   { value: 'concert', label: 'Concert' },
-  { value: 'events', label: 'Events' },
+  { value: 'private-party', label: 'Private Party' },
+  { value: 'cultural', label: 'Cultural Event' },
+  { value: 'religious', label: 'Religious Event' }
 ];
 
 const performingStatesOptions = [
@@ -54,16 +60,21 @@ const offStageMembersOptions = [
   { value: '4', label: '4+ members' },
 ];
 
-const PerformanceTab: React.FC<PerformanceTabProps> = () => {
+const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
+  const { data: session, update } = useSession();
   const [formData, setFormData] = useState({
-    performingLanguage: 'english-hindi-gujarati',
-    eventType: 'party-concert-events',
-    performingStates: 'gujarat-rajasthan-maharashtra',
-    minDuration: '120',
-    maxDuration: '160',
-    performingMembers: '2',
-    offStageMembers: '0',
+    performingLanguage: artist.performingLanguage || "",
+    eventType: artist.performingEventType || "",
+    performingStates: artist.performingStates
+    ? artist.performingStates.charAt(0).toUpperCase() +
+      artist.performingStates.slice(1).toLowerCase()
+    : "",
+    minDuration: artist.performingDurationFrom || "",
+    maxDuration: artist.performingDurationTo || "",
+    performingMembers: artist.performingMembers || "",
+    offStageMembers: artist.offStageMembers || "",
   });
+
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -72,9 +83,47 @@ const PerformanceTab: React.FC<PerformanceTabProps> = () => {
     }));
   };
 
-  const handleSave = () => {
-    console.log('Saving performance data:', formData);
-  };
+  const handleSave = async () => {
+  try {
+    if (!session?.user?.id) {
+      alert("Not authenticated");
+      return;
+    }
+
+    const payload = {
+      userId: session.user.id,
+
+      performingLanguage: formData.performingLanguage,
+      performingEventType: formData.eventType,
+      performingStates: formData.performingStates,
+      performingDurationFrom: formData.minDuration,
+      performingDurationTo: formData.maxDuration,
+      performingMembers: formData.performingMembers,
+      offStageMembers: formData.offStageMembers,
+    };
+
+    // 1️⃣ Update DB
+    const res = await updateArtistProfile(payload);
+
+    const refreshedUser = res.data.user;
+    const refreshedArtist = res.data.artistProfile;
+
+    // 2️⃣ Build the correct NextAuth structure:
+    const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
+
+    // 3️⃣ Update session
+    await update({
+      update: sessionPayload
+    });
+
+    alert("Performance details updated!");
+
+  } catch (error) {
+    console.error(error);
+    alert("Failed to update performance details");
+  }
+};
+
 
   const handleReset = () => {
     setFormData({
@@ -116,13 +165,14 @@ const PerformanceTab: React.FC<PerformanceTabProps> = () => {
 
       {/* Performing States */}
       <div className="relative">
-        <Select
+        <Input
           label="Performing states"
-          options={performingStatesOptions}
           value={formData.performingStates}
-          onChange={(value) => handleInputChange('performingStates', value)}
+          onChange={(e) => handleInputChange('performingStates', e.target.value)}
+          placeholder="Enter state(s)"
           required
         />
+
         <Info size={16} className="absolute top-0 right-0 text-blue" />
       </div>
 

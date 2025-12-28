@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ChevronRight, LogOut } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
 import Download from '../icons/download';
 import Support from '../icons/support';
 
@@ -13,18 +14,9 @@ interface ArtistSidebarProps {
   onClose: () => void;
 }
 
-// Mock data for artists - this would come from your auth/user context
-const mockArtists = [
-  {
-    id: 1,
-    name: 'MJ Singer',
-    role: 'Singer',
-    image: '/artist.png',
-  }
-];
-
 const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   const navigationItems = [
     { label: 'About us', href: '/about' },
@@ -33,29 +25,29 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Privacy Policy', href: '/privacy' },
   ];
 
-  const handleItemClick = () => {
+  const handleSignOut = async () => {
+    console.log('being triggered');
+    await signOut({ redirect: false });
     onClose();
+    router.push('/');
+  };
+
+  const handleArtistProfile = () => {
+    onClose();
+    router.push('/artist/profile');
   };
 
   const handleInstallApp = () => {
-    // PWA install logic would go here
     console.log('Install app clicked');
     onClose();
   };
 
-  const handleSignOut = () => {
-    // Sign out logic would go here
-    console.log('Sign out clicked');
-    router.push('/');
-    onClose();
-  };
-
-  const handleArtistSelect = (artistId: number) => {
-    // Switch artist logic would go here
-    console.log('Switch to artist:', artistId);
-    onClose();
-    router.push('/artist/profile');
-  };
+  const artist = session?.user?.artistProfile;
+  const user = session?.user;
+  const displayName =
+    artist?.stageName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+  const displayRole = artist?.artistType || user?.role || 'Artist';
+  const avatar = user?.avatar || '/icons/images.jpeg';
 
   return (
     <>
@@ -69,8 +61,9 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-background border-l border-background-light z-[99999] transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
+        className={`fixed top-0 right-0 h-full w-80 bg-background border-l border-background-light z-[99999] transform transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -95,37 +88,32 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
             </button>
           </div>
 
-          {/* Artist Profiles Section */}
+          {/* Artist Profile Section */}
           <div className="px-6 pt-2 pb-5">
-            <div className="space-y-3">
-              {mockArtists.map((artist) => (
-                <button
-                  key={artist.id}
-                  onClick={() => handleArtistSelect(artist.id)}
-                  className="w-full flex items-center gap-3 p-3 bg-card border border-border-color rounded-xl hover:border-primary-pink/30 transition-all duration-300 group"
-                >
-                  {/* Artist Image */}
-                  <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                    <Image
-                      src={artist.image}
-                      alt={artist.name}
-                      width={48}
-                      height={48}
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
+            <button
+              onClick={handleArtistProfile}
+              className="w-full flex items-center gap-3 p-3 bg-card border border-border-color rounded-xl hover:border-primary-pink/30 transition-all duration-300 group"
+            >
+              {/* Artist Image */}
+              <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                <Image
+                  src={avatar}
+                  alt={displayName}
+                  width={48}
+                  height={48}
+                  unoptimized
+                  className="object-cover w-full h-full"
+                />
+              </div>
 
-                  {/* Artist Info */}
-                  <div className="flex-1 text-left">
-                    <h3 className="text-white h2">{artist.name}</h3>
-                    <p className="text-text-gray secondary-text">{artist.role}</p>
-                  </div>
+              {/* Artist Info */}
+              <div className="flex-1 text-left">
+                <h3 className="text-white h2">{displayName}</h3>
+                <p className="text-text-gray secondary-text">{displayRole}</p>
+              </div>
 
-                  {/* Arrow Icon */}
-                  <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
-                </button>
-              ))}
-            </div>
+              <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
+            </button>
           </div>
 
           {/* Separator */}
@@ -138,7 +126,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
                 <Link
                   key={item.label}
                   href={item.href}
-                  onClick={handleItemClick}
+                  onClick={onClose}
                   className="block h3 text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   {item.label}
@@ -146,29 +134,33 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
               ))}
             </div>
 
-
-            {/* Contact Information - Simple box */}
+            {/* Contact Info */}
             <div className="mt-5">
               <div className="flex items-center space-x-3 mb-2">
                 <Support className="size-5 text-text-gray" />
                 <span className="secondary-text text-text-gray">For any query</span>
               </div>
-              <p className="text-white">Contact Us: <Link href="tel:+918860014889" className="hover:underline">+91 8860014889</Link></p>
+              <p className="text-white">
+                Contact Us:{' '}
+                <Link href="tel:+918860014889" className="hover:underline">
+                  +91 8860014889
+                </Link>
+              </p>
             </div>
           </div>
 
           {/* Bottom Section */}
           <div className="p-6 border-t border-background-light space-y-4">
-            {/* Sign Out Button */}
+            {/* Sign Out */}
             <button
               onClick={handleSignOut}
               className="w-full flex items-center gap-3 text-white hover:text-red-400 transition-colors duration-200 h3"
             >
               <LogOut className="w-5 h-5 rotate-180" />
-              <span>Signout</span>
+              <span>Sign out</span>
             </button>
 
-            {/* Install App Button */}
+            {/* Install App */}
             <button
               onClick={handleInstallApp}
               className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group btn1"
@@ -178,7 +170,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
             </button>
           </div>
         </div>
-      </div >
+      </div>
     </>
   );
 };
