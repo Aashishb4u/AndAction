@@ -68,6 +68,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
           className="object-cover transition-transform duration-500 hover:scale-110"
           sizes="230px"
           priority={false}
+          unoptimized
         />
       </div>
 

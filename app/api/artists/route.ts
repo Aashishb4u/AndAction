@@ -2,7 +2,6 @@
  * app/api/artists/route.ts
  *
  * Public artist listing API with search, filtering, verification toggle & pagination.
- * This endpoint is OPEN – no authentication required.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -13,27 +12,63 @@ import { Prisma } from "@prisma/client";
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
+async function getStateFromLatLng(lat: number, lng: number) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Artist-App" },
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+    return data?.address?.state || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest): Promise<NextResponse<any>> {
   try {
     const url = new URL(request.url);
     const searchParams = url.searchParams;
 
-    // ----- Pagination -----
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    let limit = parseInt(
-      searchParams.get("limit") || DEFAULT_PAGE_SIZE.toString(),
-      10
-    );
+    // ---------------------------
+    // LOCATION (lat/lng → state)
+    // ---------------------------
+    const lat = parseFloat(searchParams.get("lat") || "");
+    const lng = parseFloat(searchParams.get("lng") || "");
+
+    // ---------------------------
+    // PAGINATION
+    // ---------------------------
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    let limit = parseInt(searchParams.get("limit") || DEFAULT_PAGE_SIZE.toString());
+
     if (limit > MAX_PAGE_SIZE) limit = MAX_PAGE_SIZE;
     if (limit < 1) limit = DEFAULT_PAGE_SIZE;
 
     const skip = (page - 1) * limit;
 
-    // ----- Base WHERE clause -----
+    // ---------------------------
+    // FILTER PARAMETERS
+    // ---------------------------
+    const search = searchParams.get("search")?.trim();
+    const type = searchParams.get("type");
+    const subType = searchParams.get("subType");
+    const gender = searchParams.get("gender");
+    const language = searchParams.get("language");
+    const eventType = searchParams.get("eventType");
+    const budget = searchParams.get("budget");
+
+    let state = searchParams.get("state");
+    if (!state && lat && lng) state = await getStateFromLatLng(lat, lng);
+
+    // ---------------------------
+    // WHERE CLAUSE
+    // ---------------------------
     const where: Prisma.ArtistWhereInput = {};
 
-    // 1. Full-text search (stageName OR shortBio)
-    const search = searchParams.get("search")?.trim();
+    // 🔍 SEARCH (name or bio)
     if (search) {
       where.OR = [
         { stageName: { contains: search, mode: "insensitive" } },
@@ -41,44 +76,73 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       ];
     }
 
-    // 2. Simple filters
-    const type = searchParams.get("type");
-    const subType = searchParams.get("subType");
-    const gender = searchParams.get("gender");
-    const language = searchParams.get("language");
-    const eventType = searchParams.get("eventType");
-    const state = searchParams.get("state");
-    const budget = searchParams.get("budget");
+    // ---------------------------
+    // REQUIRED FILTER: artistType
+    // ---------------------------
+    if (type) {
+      where.artistType = { contains: type, mode: "insensitive" };
+    }
 
-    if (type) where.artistType = { equals: type, mode: "insensitive" };
-    if (subType) where.subArtistType = { equals: subType, mode: "insensitive" };
-    if (language)
-      where.performingLanguage = { contains: language, mode: "insensitive" };
-    if (eventType)
-      where.performingEventType = { contains: eventType, mode: "insensitive" };
-    if (state)
-      where.performingStates = { contains: state, mode: "insensitive" };
+    // ---------------------------
+    // OPTIONAL MATCH FILTERS (OR)
+    // ---------------------------
+    const dynamicOrFilters: Prisma.ArtistWhereInput[] = [];
 
-    // Budget range filter (e.g. "50000-150000")
-    if (budget && budget.includes("-")) {
+    if (subType) {
+      dynamicOrFilters.push({
+        subArtistType: { contains: subType, mode: "insensitive" },
+      });
+    }
+
+    if (language) {
+      dynamicOrFilters.push({
+        performingLanguage: { contains: language, mode: "insensitive" },
+      });
+    }
+
+    if (eventType) {
+      dynamicOrFilters.push({
+        performingEventType: { contains: eventType, mode: "insensitive" },
+      });
+    }
+
+    if (state) {
+      dynamicOrFilters.push({
+        performingStates: { contains: state, mode: "insensitive" },
+      });
+    }
+
+    if (dynamicOrFilters.length > 0) {
+      where.OR = [...(where.OR ?? []), ...dynamicOrFilters];
+    }
+
+    // ---------------------------
+    // BUDGET FILTER (supports null ranges)
+    // ---------------------------
+    if (budget?.includes("-")) {
       const [minStr, maxStr] = budget.split("-");
       const min = Number(minStr);
       const max = Number(maxStr);
 
       if (!isNaN(min) && !isNaN(max)) {
-        where.AND = [
-          ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+        where.OR = [
+          ...(where.OR ?? []),
+
+          // SOLO charges
           {
-            OR: [
+            AND: [
+              { soloChargesFrom: { gte: min } },
+              { OR: [{ soloChargesTo: null }, { soloChargesTo: { lte: max } }] },
+            ],
+          },
+
+          // BACKLINE charges
+          {
+            AND: [
+              { chargesWithBacklineFrom: { gte: min } },
               {
-                AND: [
-                  { soloChargesFrom: { gte: min } },
-                  { soloChargesTo: { lte: max } },
-                ],
-              },
-              {
-                AND: [
-                  { chargesWithBacklineFrom: { gte: min } },
+                OR: [
+                  { chargesWithBacklineTo: null },
                   { chargesWithBacklineTo: { lte: max } },
                 ],
               },
@@ -88,35 +152,37 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       }
     }
 
-    // 3. Verification & Role filter (with optional ?verified=false to bypass)
-    const verifiedParam = searchParams.get("verified"); // "true" | "false" | null
+    // ---------------------------
+    // USER VERIFICATION LOGIC — FIXED
+    // ---------------------------
+    const verifiedParam = searchParams.get("verified");
 
     const userFilter: Prisma.UserWhereInput = {
       role: "artist",
     };
 
-    // Default (no param or "true") → only fully verified artists
-    // Only when explicitly ?verified=false we show unverified ones
-    if (verifiedParam !== "false") {
+    // ⭐ Now public gets ALL artists unless ?verified=true explicitly
+    if (verifiedParam === "true") {
       userFilter.isAccountVerified = true;
       userFilter.isArtistVerified = true;
     }
 
-    // Gender filter (if provided) goes inside the same user.is object
     if (gender) {
       userFilter.gender = { equals: gender, mode: "insensitive" };
     }
 
     where.user = { is: userFilter };
 
-    // ----- Database Query -----
+    // ---------------------------
+    // QUERY DATABASE
+    // ---------------------------
     const totalArtists = await prisma.artist.count({ where });
 
     const artists = await prisma.artist.findMany({
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         stageName: true,
@@ -146,23 +212,21 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       },
     });
 
-    const metadata = {
-      total: totalArtists,
-      page,
-      limit,
-      totalPages: Math.ceil(totalArtists / limit),
-    };
-
     return successResponse(
-      { artists, metadata },
-      'Artist list retrieved successfully.',
+      {
+        artists,
+        metadata: {
+          total: totalArtists,
+          page,
+          limit,
+          totalPages: Math.ceil(totalArtists / limit),
+        },
+      },
+      "Artist list retrieved successfully.",
       200
     );
-
   } catch (error) {
-    console.error('GET Artists API Error:', error);
-    return ApiErrors.internalError(
-      'An unexpected error occurred while fetching the artist list.'
-    );
+    console.error("GET Artists API Error:", error);
+    return ApiErrors.internalError("An unexpected error occurred while fetching artists.");
   }
 }

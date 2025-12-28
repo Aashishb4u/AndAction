@@ -163,3 +163,9 @@ export function localDateToUTC(dateString: string): Date {
   const offsetMs = utcMidnight.getTimezoneOffset() * 60 * 1000;
   return new Date(utcMidnight.getTime() - offsetMs);
 }
+
+export function isTokenExpired(expiryDate: Date | null): boolean {
+  if (!expiryDate) return true;
+  const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
+  return expiryDate < fiveMinutesFromNow;
+}
