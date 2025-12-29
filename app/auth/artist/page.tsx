@@ -16,6 +16,7 @@ import {
   signInWithFacebookAsArtist,
 } from "@/lib/auth";
 import { signIn } from "next-auth/react";
+import { validatePassword } from "@/lib/validators";
 
 type ArtistSignUpStep = "join" | "otp" | "password" | "userInfo" | "terms";
 type ContactType = "phone" | "email";
@@ -233,6 +234,12 @@ function ArtistAuthContent() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+
+    const validation = validatePassword(password);
+    if (!validation.isValid) {
+      setError(validation.message || "Invalid password.");
       return;
     }
 

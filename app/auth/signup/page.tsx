@@ -18,6 +18,7 @@ import {
 } from "@/lib/auth";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
+import { validatePassword } from "@/lib/validators";
 
 type SignUpStep = "contact" | "otp" | "password" | "profile" | "terms";
 type ContactType = "phone" | "email";
@@ -244,6 +245,12 @@ function SignUpContent() {
     if (password.trim() && confirmPassword.trim()) {
       if (password !== confirmPassword) {
         setError("Passwords do not match.");
+        return;
+      }
+
+      const validation = validatePassword(password);
+      if (!validation.isValid) {
+        setError(validation.message || "Invalid password.");
         return;
       }
 
