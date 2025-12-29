@@ -178,7 +178,7 @@ function SignUpContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.message || "Failed to send verification code (Server Error)."
+            data.error || data.message || "Failed to send verification code (Server Error)."
           );
         setStep("otp");
       } else {
@@ -190,7 +190,7 @@ function SignUpContent() {
         });
         const data = await response.json();
         if (!response.ok)
-          throw new Error(data.message || "Failed to send verification email.");
+          throw new Error(data.error || data.message || "Failed to send verification email.");
         setStep("otp");
       }
     } catch (err: any) {
@@ -227,7 +227,7 @@ function SignUpContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Verification failed.");
+        throw new Error(data.error || data.message || "Verification failed.");
       }
 
       // verified — move to create password
@@ -286,7 +286,7 @@ function SignUpContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.message || "Failed to resend verification code."
+            data.error || data.message || "Failed to resend verification code."
           );
         setError("A new verification code has been sent.");
         setOtp("");
@@ -299,7 +299,7 @@ function SignUpContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.message || "Failed to resend verification email."
+            data.error || data.message || "Failed to resend verification email."
           );
         setError("A new verification code has been sent to your email.");
         setOtp("");
@@ -343,14 +343,17 @@ function SignUpContent() {
       noMarketing: noMarketing,
       shareData: shareData,
     };
+    
 
     try {
       const result = await signUp(userData); // calls /api/auth/signup
+
       await signIn("credentials", {
         contact: result.contactIdentifier,
         password: userData.password,
         redirect: false,
       });
+
       const redirectUrl = getRedirectUrl(searchParams);
       router.push(redirectUrl);
     } catch (err: any) {

@@ -88,7 +88,7 @@ export const signUp = async (
   if (!response.ok) {
     const errorBody = await response.json();
     throw new Error(
-      errorBody.message || "Registration failed due to a server error."
+      errorBody.error || errorBody.message || "Registration failed due to a server error."
     );
   }
 

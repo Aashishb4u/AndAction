@@ -162,7 +162,7 @@ function ArtistAuthContent() {
 
         const data = await response.json();
         if (!response.ok)
-          throw new Error(data.message || "Failed to send verification code.");
+          throw new Error(data.error || data.message || "Failed to send verification code.");
         setStep("otp");
       } else {
         const emailToSend = email.toLowerCase().trim();
@@ -177,7 +177,7 @@ function ArtistAuthContent() {
 
         const data = await response.json();
         if (!response.ok)
-          throw new Error(data.message || "Failed to send verification email.");
+          throw new Error(data.error || data.message || "Failed to send verification email.");
         setStep("otp");
       }
     } catch (err: any) {
@@ -210,7 +210,7 @@ function ArtistAuthContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Invalid verification code.");
+        throw new Error(data.error || data.message || "Invalid verification code.");
       }
 
       // move to password step for artist (per requested flow)
@@ -301,7 +301,7 @@ function ArtistAuthContent() {
       console.log("📥 Signup response:", data);
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || "Failed to create artist account.");
+        throw new Error(data.error || data.message || "Failed to create artist account.");
       }
 
       console.log("✅ Artist signup successful");
@@ -377,7 +377,7 @@ function ArtistAuthContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.message || "Failed to resend verification code."
+            data.error || data.message || "Failed to resend verification code."
           );
         setError("A new verification code has been sent.");
         setOtp("");
@@ -391,7 +391,7 @@ function ArtistAuthContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.message || "Failed to resend verification email."
+            data.error || data.message || "Failed to resend verification email."
           );
         setError("A new verification code has been sent to your email.");
         setOtp("");
