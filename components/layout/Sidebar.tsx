@@ -144,7 +144,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 onClick={handleJoinArtist}
                 className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
               >
-                Join as a artist
+                Join as an Artist
               </button>
             </div>
           ) : (
@@ -164,7 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 onClick={handleJoinArtist}
                 className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
               >
-                Join as a artist
+                Join as an Artist
               </button>
             </div>
           )}
