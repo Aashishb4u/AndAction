@@ -18,6 +18,7 @@ import {
 } from "@/lib/auth";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
+import { validatePassword } from "@/lib/validators";
 
 type SignUpStep = "contact" | "otp" | "password" | "profile" | "terms";
 type ContactType = "phone" | "email";
@@ -53,7 +54,7 @@ function SignUpContent() {
   const oauthError = useMemo(() => {
     const errorParam = searchParams.get("error");
     if (errorParam === "OAuthAccountNotLinked") {
-      return "Email already in use with different sign-in method. Please sign in with your original method or use a different email.";
+      return "Email already in use with different Sign In method. Please sign in with your original method or use a different email.";
     } else if (errorParam === "Configuration") {
       return "There was a problem with the OAuth configuration. Please try again or contact support.";
     } else if (errorParam) {
@@ -177,7 +178,7 @@ function SignUpContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.message || "Failed to send verification code (Server Error)."
+            data.error || data.message || "Failed to send verification code (Server Error)."
           );
         setStep("otp");
       } else {
@@ -189,7 +190,7 @@ function SignUpContent() {
         });
         const data = await response.json();
         if (!response.ok)
-          throw new Error(data.message || "Failed to send verification email.");
+          throw new Error(data.error || data.message || "Failed to send verification email.");
         setStep("otp");
       }
     } catch (err: any) {
@@ -226,7 +227,7 @@ function SignUpContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Verification failed.");
+        throw new Error(data.error || data.message || "Verification failed.");
       }
 
       // verified — move to create password
@@ -244,6 +245,12 @@ function SignUpContent() {
     if (password.trim() && confirmPassword.trim()) {
       if (password !== confirmPassword) {
         setError("Passwords do not match.");
+        return;
+      }
+
+      const validation = validatePassword(password);
+      if (!validation.isValid) {
+        setError(validation.message || "Invalid password.");
         return;
       }
 
@@ -279,7 +286,7 @@ function SignUpContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.message || "Failed to resend verification code."
+            data.error || data.message || "Failed to resend verification code."
           );
         setError("A new verification code has been sent.");
         setOtp("");
@@ -292,7 +299,7 @@ function SignUpContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.message || "Failed to resend verification email."
+            data.error || data.message || "Failed to resend verification email."
           );
         setError("A new verification code has been sent to your email.");
         setOtp("");
@@ -336,14 +343,17 @@ function SignUpContent() {
       noMarketing: noMarketing,
       shareData: shareData,
     };
+    
 
     try {
       const result = await signUp(userData); // calls /api/auth/signup
+
       await signIn("credentials", {
         contact: result.contactIdentifier,
         password: userData.password,
         redirect: false,
       });
+
       const redirectUrl = getRedirectUrl(searchParams);
       router.push(redirectUrl);
     } catch (err: any) {
@@ -398,7 +408,7 @@ function SignUpContent() {
 
         {/* Subtitle */}
         <p className="text-text-gray mb-8">
-          Morem ipsum dolor sit amet, consectetur adipiscing elit. Nunc
+          Create your account to discover and book perfect artists
         </p>
 
         {/* Error Message */}
@@ -459,7 +469,7 @@ function SignUpContent() {
                   href="/auth/signin"
                   className="text-white underline hover:text-primary-pink transition-colors duration-200 btn2"
                 >
-                  Signin
+                  Sign In
                 </Link>
               </div>
 
@@ -564,7 +574,7 @@ function SignUpContent() {
                     onClick={handleChangeContact}
                     className="text-white text-sm hover:text-primary-pink transition-colors duration-200 underline"
                   >
-                    Change number
+                    Change {contactType === "phone" ? "number" : "email"}
                   </button>
                 </div>
               </div>
