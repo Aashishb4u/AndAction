@@ -76,6 +76,12 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse>>
       if (!smsResult.success) {
         console.error("SMS Send Failure:", smsResult);
         await prisma.verificationToken.deleteMany({ where: { identifier } });
+        
+        // Check if it's an invalid phone number error
+        if ((smsResult as any).invalidPhone) {
+          return ApiErrors.badRequest("Please enter a valid phone number.");
+        }
+        
         return ApiErrors.internalError("Failed to send verification SMS. Please try again.");
       }
 
