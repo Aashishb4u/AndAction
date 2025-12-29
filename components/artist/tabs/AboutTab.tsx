@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
-
+import Tooltip from '@/components/ui/Tooltip';
 import Textarea from '@/components/ui/Textarea';
 import Button from '@/components/ui/Button';
 import { Info } from 'lucide-react';
@@ -180,7 +180,11 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
           onChange={(e) => handleInputChange('stageName', e.target.value)}
           required
         />
-        <Info size={16} className="absolute top-0 right-0 text-blue" />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Your professional/stage name that will be displayed to clients">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
       </div>
 
       {/* First Name and Last Name */}
@@ -258,7 +262,11 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
           onChange={(value) => handleInputChange('subArtistType', value)}
           required
         />
-        <Info size={16} className="absolute top-11 right-11 text-text-gray" />
+        <div className="absolute top-11 right-11">
+          <Tooltip content="Specify your performance style or specialization">
+            <Info size={16} className="text-text-gray" />
+          </Tooltip>
+        </div>
       </div>
 
       {/* Achievements and Years of Experience */}
@@ -276,19 +284,29 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
             onChange={(value) => handleInputChange('yearsOfExperience', value)}
             required
           />
-          <Info size={16} className="absolute top-11 right-11 text-text-gray" />
+          <div className="absolute top-11 right-11">
+            <Tooltip content="Total years of professional performing experience">
+              <Info size={16} className="text-text-gray" />
+            </Tooltip>
+          </div>
         </div>
       </div>
 
       {/* Short Bio */}
-      <Textarea
-        label="Short bio"
-        value={formData.shortBio}
-        onChange={(e) => handleInputChange('shortBio', e.target.value)}
-        placeholder="Tell us about yourself..."
-        required
-        rightIcon={<Info size={16} />}
-      />
+      <div className="relative">
+        <Textarea
+          label="Short bio"
+          value={formData.shortBio}
+          onChange={(e) => handleInputChange('shortBio', e.target.value)}
+          placeholder="Tell us about yourself..."
+          required
+        />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Write a brief description about yourself and your artistic journey">
+            <Info size={16} className="text-text-gray" />
+          </Tooltip>
+        </div>
+      </div>
 
       {/* Save Button */}
       <div className="flex md:justify-end gap-4 items-center md:pt-5 p-4 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent z-50">

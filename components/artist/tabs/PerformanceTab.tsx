@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Select from '@/components/ui/Select';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
+import Tooltip from '@/components/ui/Tooltip';
 import { Info } from 'lucide-react';
 import { Artist } from '@/types';
 import { useSession } from "next-auth/react";
@@ -148,7 +149,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           onChange={(value) => handleInputChange('performingLanguage', value)}
           required
         />
-        <Info size={16} className="absolute top-0 right-0 text-blue" />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Select the languages you can perform in during your shows">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
       </div>
 
       {/* Performing Event Type */}
@@ -160,7 +165,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           onChange={(value) => handleInputChange('eventType', value)}
           required
         />
-        <Info size={16} className="absolute top-0 right-0 text-blue" />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Choose the types of events where you typically perform">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
       </div>
 
       {/* Performing States */}
@@ -172,8 +181,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           placeholder="Enter state(s)"
           required
         />
-
-        <Info size={16} className="absolute top-0 right-0 text-blue" />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Enter the states where you are willing to perform">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
       </div>
 
       {/* Performing Duration */}
@@ -197,7 +209,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               required
             />
           </div>
-          <Info size={16} className="absolute top-4 right-4 text-text-gray" />
+          <div className="absolute top-4 right-4">
+            <Tooltip content="Specify the minimum and maximum duration (in minutes) for your performances">
+              <Info size={16} className="text-text-gray" />
+            </Tooltip>
+          </div>
         </div>
       </div>
 
@@ -212,7 +228,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             onChange={(value) => handleInputChange('performingMembers', value)}
             required
           />
-          <Info size={16} className="absolute top-0 right-0 text-blue" />
+          <div className="absolute top-0 right-0">
+            <Tooltip content="Number of people who will perform on stage">
+              <Info size={16} className="text-blue" />
+            </Tooltip>
+          </div>
         </div>
 
         {/* Off Stage Members */}
@@ -224,7 +244,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             onChange={(value) => handleInputChange('offStageMembers', value)}
             required
           />
-          <Info size={16} className="absolute top-0 right-0 text-blue" />
+          <div className="absolute top-0 right-0">
+            <Tooltip content="Number of support staff needed off-stage (sound engineers, assistants, etc.)">
+              <Info size={16} className="text-blue" />
+            </Tooltip>
+          </div>
         </div>
       </div>
 
