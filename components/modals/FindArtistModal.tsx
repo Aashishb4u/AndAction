@@ -147,7 +147,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
         {/* Artist Category */}
         <Select
           label="Artist Category"
-          placeholder="Select Category"
+          placeholder="Select category"
           options={artistCategories}
           value={formData.artistCategory}
           onChange={(value) => handleInputChange('artistCategory', value)}
@@ -186,7 +186,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
         <div className="grid grid-cols-2 gap-4">
           <Select
             label="Event State"
-            placeholder="Select State"
+            placeholder="Select state"
             options={stateOptions}
             value={formData.eventState}
             onChange={(value) => handleInputChange('eventState', value)}
