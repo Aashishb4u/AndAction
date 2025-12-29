@@ -8,7 +8,7 @@ export async function sendOtpSms(
 
     const body = {
       number: [phoneNumber],
-      message: `Your OTP for verification is: ${otp}. OTP is confidential.`,
+      message: `Your OTP Verification Code is ${otp}. Do not share it with anyone. Myorderslip.`,
       senderId: process.env.EDUMARC_SENDER_ID!,
       templateId: process.env.EDUMARC_TEMPLATE_ID!,
     };
@@ -23,7 +23,16 @@ export async function sendOtpSms(
     });
 
     const data = await response.json();
-
+    console.log("SMS API Response:", data,phoneNumber);
+    
+    // Check for invalid phone number error
+    if (data?.success === false && data?.message) {
+      const errorMessage = data.message.toLowerCase();
+      if (errorMessage.includes('invalid') || errorMessage.includes('phone') || errorMessage.includes('number')) {
+        return { success: false, error: data, invalidPhone: true };
+      }
+    }
+    
     // 🔥 Correct success condition based on REAL response structure
     const isSuccess =
       response.ok &&

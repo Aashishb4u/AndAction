@@ -114,7 +114,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
               <Search className="size-5" />
             </button>
 
-            {/* Sign-In (only show when logged out) */}
+            {/* Sign In (only show when logged out) */}
             {!user && status !== "loading" && (
               <Button
                 variant="primary"
@@ -124,7 +124,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                 }
                 className="btn2"
               >
-                Sign-In
+                Sign In
               </Button>
             )}
 
@@ -148,9 +148,9 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
               >
                 <Image
                   src={
-                      user.role === "user"
+                      user.avatar && /^\d+$/.test(String(user.avatar))
                         ? `/avatars/${user.avatar}.png`
-                        : user.avatar ?? "/default-avatar.png"
+                        : user.avatar || "/default-avatar.png"
                     }
                   alt={user.firstName || "User"}
                   width={40}
