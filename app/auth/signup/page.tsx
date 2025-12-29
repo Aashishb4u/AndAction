@@ -408,7 +408,7 @@ function SignUpContent() {
 
         {/* Subtitle */}
         <p className="text-text-gray mb-8">
-          Morem ipsum dolor sit amet, consectetur adipiscing elit. Nunc
+          Create your account to discover and book perfect artists
         </p>
 
         {/* Error Message */}

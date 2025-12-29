@@ -481,7 +481,7 @@ function ArtistAuthContent() {
 
             {/* Subtitle */}
             <p className="text-text-gray mb-8">
-              Morem ipsum dolor sit amet, consectetur adipiscing elit. Nunc
+              Create your artist profile and start getting booked
             </p>
 
             <div className="space-y-6">
