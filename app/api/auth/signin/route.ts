@@ -101,7 +101,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     // 6️⃣ Strip sensitive fields
     const safeUser = selectSafeUser(user);
 
-    // 7️⃣ Add identifier for frontend sign-in compatibility
+    // 7️⃣ Add identifier for frontend Sign In compatibility
     const contactIdentifier = safeUser.email || safeUser.phoneNumber || null;
 
     // 8️⃣ Return Success Response
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
       `Login successful. Welcome back, ${safeUser.firstName || safeUser.email || 'user'}!`
     );
   } catch (error) {
-    console.error('Customer Sign-in API Error:', error);
+    console.error('Customer Sign In API Error:', error);
     return ApiErrors.internalError('An unexpected error occurred during login.');
   }
 }

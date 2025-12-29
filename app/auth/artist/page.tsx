@@ -16,6 +16,7 @@ import {
   signInWithFacebookAsArtist,
 } from "@/lib/auth";
 import { signIn } from "next-auth/react";
+import { validatePassword } from "@/lib/validators";
 
 type ArtistSignUpStep = "join" | "otp" | "password" | "userInfo" | "terms";
 type ContactType = "phone" | "email";
@@ -56,7 +57,7 @@ function ArtistAuthContent() {
   const oauthError = useMemo(() => {
     const errorParam = searchParams.get("error");
     if (errorParam === "OAuthAccountNotLinked") {
-      return "Email already in use with different sign-in method. Please sign in with your original method or use a different email.";
+      return "Email already in use with different Sign In method. Please sign in with your original method or use a different email.";
     } else if (errorParam === "Configuration") {
       return "There was a problem with the OAuth configuration. Please try again or contact support.";
     } else if (errorParam) {
@@ -161,7 +162,7 @@ function ArtistAuthContent() {
 
         const data = await response.json();
         if (!response.ok)
-          throw new Error(data.message || "Failed to send verification code.");
+          throw new Error(data.error || data.message || "Failed to send verification code.");
         setStep("otp");
       } else {
         const emailToSend = email.toLowerCase().trim();
@@ -176,7 +177,7 @@ function ArtistAuthContent() {
 
         const data = await response.json();
         if (!response.ok)
-          throw new Error(data.message || "Failed to send verification email.");
+          throw new Error(data.error || data.message || "Failed to send verification email.");
         setStep("otp");
       }
     } catch (err: any) {
@@ -209,7 +210,7 @@ function ArtistAuthContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Invalid verification code.");
+        throw new Error(data.error || data.message || "Invalid verification code.");
       }
 
       // move to password step for artist (per requested flow)
@@ -233,6 +234,12 @@ function ArtistAuthContent() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+
+    const validation = validatePassword(password);
+    if (!validation.isValid) {
+      setError(validation.message || "Invalid password.");
       return;
     }
 
@@ -294,7 +301,7 @@ function ArtistAuthContent() {
       console.log("📥 Signup response:", data);
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || "Failed to create artist account.");
+        throw new Error(data.error || data.message || "Failed to create artist account.");
       }
 
       console.log("✅ Artist signup successful");
@@ -315,7 +322,7 @@ function ArtistAuthContent() {
 
       console.log("📞 Auto-signin contactIdentifier:", contactIdentifier);
 
-      // ✅ Attempt to auto sign-in via NextAuth
+      // ✅ Attempt to auto Sign In via NextAuth
       if (contactIdentifier && artistData.password) {
         const signInResult = await signIn("credentials", {
           contact: contactIdentifier,
@@ -326,13 +333,13 @@ function ArtistAuthContent() {
         console.log("🧩 signIn result:", signInResult);
 
         if (signInResult?.error) {
-          console.error("Auto sign-in failed:", signInResult.error);
+          console.error("Auto Sign In failed:", signInResult.error);
         } else {
-          console.log("Auto sign-in succeeded. Session cookie created.");
+          console.log("Auto Sign In succeeded. Session cookie created.");
         }
       } else {
         console.warn(
-          "⚠️ Missing contactIdentifier or password for auto sign-in."
+          "⚠️ Missing contactIdentifier or password for auto Sign In."
         );
       }
 
@@ -370,7 +377,7 @@ function ArtistAuthContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.message || "Failed to resend verification code."
+            data.error || data.message || "Failed to resend verification code."
           );
         setError("A new verification code has been sent.");
         setOtp("");
@@ -384,7 +391,7 @@ function ArtistAuthContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.message || "Failed to resend verification email."
+            data.error || data.message || "Failed to resend verification email."
           );
         setError("A new verification code has been sent to your email.");
         setOtp("");
@@ -474,7 +481,7 @@ function ArtistAuthContent() {
 
             {/* Subtitle */}
             <p className="text-text-gray mb-8">
-              Morem ipsum dolor sit amet, consectetur adipiscing elit. Nunc
+              Create your artist profile and start getting booked
             </p>
 
             <div className="space-y-6">

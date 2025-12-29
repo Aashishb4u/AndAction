@@ -113,13 +113,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
       });
     }
 
-    // Return success with created user and helpful contactIdentifier for client-side sign-in
+    // Return success with created user and helpful contactIdentifier for client-side Sign In
     const contactIdentifier = lowerCaseEmail || (normalizedPhone || null);
 
     return successResponse(
       {
         user: newUser,
-        // Helper field for frontend to auto sign-in using next-auth credentials provider
+        // Helper field for frontend to auto Sign In using next-auth credentials provider
         contactIdentifier,
       },
       'Customer account created successfully.',

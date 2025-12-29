@@ -42,7 +42,11 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
           {/* Profile Icon */}
           <div onClick={toggleSidebar} className="hidden md:block w-10 h-10 rounded-full overflow-hidden border-2 border-border-color cursor-pointer">
             <Image
-              src={session?.user?.avatar || '/icons/images.jpeg'}
+              src={
+                session?.user?.avatar && /^\d+$/.test(String(session.user.avatar))
+                  ? `/avatars/${session.user.avatar}.png`
+                  : session?.user?.avatar || '/icons/images.jpeg'
+              }
               alt="Profile"
               width={40}
               height={40}
