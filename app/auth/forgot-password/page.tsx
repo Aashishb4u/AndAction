@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
         console.log('Forgot Password Response:', data);
 
         if (!res.ok) {
-          throw new Error(data.message || 'Failed to send OTP.');
+          throw new Error(data.error || data.message || 'Failed to send OTP.');
         }
 
         setStep('otp');
@@ -102,7 +102,7 @@ export default function ForgotPasswordPage() {
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || 'Invalid OTP.');
+          throw new Error(data.error || data.message || 'Invalid OTP.');
         }
 
         setStep('password');
@@ -143,7 +143,7 @@ export default function ForgotPasswordPage() {
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || 'Failed to reset password.');
+          throw new Error(data.error || data.message || 'Failed to reset password.');
         }
 
         // Redirect to login
@@ -174,7 +174,7 @@ export default function ForgotPasswordPage() {
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || 'Failed to resend OTP.');
+          throw new Error(data.error || data.message || 'Failed to resend OTP.');
         }
 
       } catch (err: any) {

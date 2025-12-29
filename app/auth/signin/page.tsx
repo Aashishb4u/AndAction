@@ -76,7 +76,7 @@ function SignInContent() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data?.message || "Invalid login credentials.");
+        throw new Error(data?.error || data?.message || "Invalid login credentials.");
       }
 
       const result = await signIn("credentials", {
