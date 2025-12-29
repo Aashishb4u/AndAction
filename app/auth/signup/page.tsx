@@ -564,7 +564,7 @@ function SignUpContent() {
                     onClick={handleChangeContact}
                     className="text-white text-sm hover:text-primary-pink transition-colors duration-200 underline"
                   >
-                    Change number
+                    Change {contactType === "phone" ? "number" : "email"}
                   </button>
                 </div>
               </div>
