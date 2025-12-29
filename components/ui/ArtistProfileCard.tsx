@@ -20,7 +20,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   className = "",
 }) => {
   const router = useRouter();
-
+  
   const formatPrice = (price: number) => {
     return `₹ ${price.toLocaleString()}`;
   };
@@ -45,7 +45,12 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
           {/* Artist Image */}
           <div className="relative w-28 h-36 rounded-xl overflow-hidden flex-shrink-0">
             <Image
-              src={artist.image}
+
+                  src={
+                      artist.image && /^\d+$/.test(String(artist.image))
+                        ? `/avatars/${artist.image}.png`
+                        : artist.image || "/default-avatar.png"
+                    }
               alt={artist.name}
               fill
               className="object-cover"

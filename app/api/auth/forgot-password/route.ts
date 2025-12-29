@@ -7,23 +7,22 @@
  * Priority 4: POST /api/auth/forgot-password
  */
 
-import { NextRequest, NextResponse } from 'next/server'; // Added NextResponse for type clarity
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ApiErrors, successResponse, ApiResponse } from '@/lib/api-response';
-import crypto from 'crypto';
+import { ApiErrors, successResponse } from '@/lib/api-response';
+import { sendForgotPasswordEmail } from '@/lib/email';
 
-const RESET_TOKEN_EXPIRY_HOURS = 1;
+const RESET_TOKEN_EXPIRY_MINUTES = 10;
 
 /**
- * Generates a secure, hexadecimal reset token.
+ * Generates a 6-digit numeric OTP.
  */
-const generateResetToken = (): string => {
-    return crypto.randomBytes(32).toString('hex');
+const generateOTP = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 /**
- * Handles POST requests to request a password reset link.
- * FIX: Function signature changed to clean, type-safe Promise<NextResponse<any>>
+ * Handles POST requests to request a password reset OTP.
  */
 export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     let body;
@@ -47,33 +46,38 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
         });
 
         if (!user) {
-            console.warn(`Forgot Password attempted for non-existent email: ${lowerCaseEmail}`);
-            
+            // Security: Don't reveal if user exists
             return successResponse(
                 {}, 
-                'If an account exists for this email, a password reset link has been sent.',
+                'If an account exists for this email, an OTP has been sent.',
                 200
             );
         }
         
-        // 4. Generate Token and Expiry
-        const resetToken = generateResetToken();
-        const resetTokenExpiry = new Date(Date.now() + RESET_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000); // 1 hour from now
+        // Generate OTP and Expiry
+        const otp = generateOTP();
+        const resetTokenExpiry = new Date(Date.now() + RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000);
 
-        // 5. Update User Record with Token
+        // Update User Record with OTP
         await prisma.user.update({
             where: { id: user.id },
             data: {
-                resetToken: resetToken,
+                resetToken: otp,
                 resetTokenExpiry: resetTokenExpiry,
             }
         });
 
-        console.log(`[EMAIL SIMULATION] Password Reset Link for ${user.email}: /auth/reset-password?token=${resetToken}`);
+        // Send OTP Email
+        const emailResult = await sendForgotPasswordEmail(user.email!, otp);
+        console.log('OTP Email Result:', emailResult);
+        if (!emailResult.success) {
+            console.error('Failed to send OTP email:', emailResult.error);
+            return ApiErrors.internalError('Failed to send OTP email.');
+        }
 
         return successResponse(
             {}, 
-            'If an account exists for this email, a password reset link has been sent.',
+            'If an account exists for this email, an OTP has been sent.',
             200
         );
 

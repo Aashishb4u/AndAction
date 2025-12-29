@@ -64,7 +64,7 @@ export const createAuthRedirectUrl = (
 
 export const signIn = async (email: string): Promise<User> => {
   throw new Error(
-    "Sign in implementation is missing. Use nextAuthSignIn with credentials."
+    "Sign In implementation is missing. Use nextAuthSignIn with credentials."
   );
 };
 
@@ -88,7 +88,7 @@ export const signUp = async (
   if (!response.ok) {
     const errorBody = await response.json();
     throw new Error(
-      errorBody.message || "Registration failed due to a server error."
+      errorBody.error || errorBody.message || "Registration failed due to a server error."
     );
   }
 
