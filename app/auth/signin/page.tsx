@@ -87,6 +87,7 @@ function SignInContent() {
 
       if (result?.error) throw new Error(result.error);
       const session = await getSession();
+      
       const userRole = session?.user?.role;
       console.log("userROle: ", userRole);
       if (userRole === "artist") {
