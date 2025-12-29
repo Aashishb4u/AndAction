@@ -91,13 +91,14 @@ export const {
   events: {
     async linkAccount({ user }) {
       if (!user?.id) return;
-
+      console.log("OAuth account linked for user ID:", user);
       await prisma.user.update({
         where: { id: user.id },
         data: {
           isAccountVerified: true,
           firstName: user.name?.split(" ")[0],
           lastName: user.name?.split(" ")[1] || "",
+          avatar: user.image ?? '1', // Default avatar ID
         },
       });
     },
