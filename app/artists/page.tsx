@@ -238,26 +238,24 @@ function ArtistsPageContent() {
 
         {/* Main Layout */}
         <div className="max-w-7xl mx-auto md:px-4 lg:px-8 md:py-6 flex gap-8">
-          {loading ? (
-            <LoadingSpinner fullScreen={false} text="Loading artists..." />
-          ) : (
-            <>
-              {/* Desktop Filters */}
-              <div className="hidden lg:block w-80 flex-shrink-0">
-                <ArtistFilters
-                  filters={filters}
-                  onFilterChange={handleFilterChange}
-                  onReset={resetFilters}
-                  resultCount={totalResults}
-                />
-              </div>
+          {/* Desktop Filters */}
+          <div className="hidden lg:block w-80 flex-shrink-0">
+            <ArtistFilters
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onReset={resetFilters}
+              resultCount={totalResults}
+            />
+          </div>
 
-              {/* Artists Grid */}
-              <div className="flex-1">
-                <ArtistGrid artists={artists} onBookmark={handleBookmark} />
-              </div>
-            </>
-          )}
+          {/* Artists Grid */}
+          <div className="flex-1">
+            {loading ? (
+              <LoadingSpinner fullScreen={false} text="Loading artists..." />
+            ) : (
+              <ArtistGrid artists={artists} onBookmark={handleBookmark} />
+            )}
+          </div>
         </div>
       </div>
     </SiteLayout>
