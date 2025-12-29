@@ -102,11 +102,7 @@ function ArtistProfileContent() {
     firstName: user.firstName || "",
     lastName: user.lastName || "",
     dateOfBirth: user.dob
-      ? new Date(user.dob).toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
+      ? new Date(user.dob).toISOString().split('T')[0]
       : "",
     address: user.address || "",
     pinCode: user.zip || "",

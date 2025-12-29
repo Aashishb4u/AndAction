@@ -165,8 +165,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       data: {
         ...(firstName !== undefined && { firstName }),
         ...(lastName !== undefined && { lastName }),
-        ...(gender !== undefined && { gender }),
-        ...(dob !== undefined && { dob: new Date(dob) }),
+        ...(gender && { gender }),
+        ...(dob && { dob: new Date(dob) }),
         ...(address !== undefined && { address }),
         ...(pinCode !== undefined && { zip: pinCode }),
         ...(city !== undefined && { city }),
