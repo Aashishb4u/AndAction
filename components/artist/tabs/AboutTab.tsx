@@ -6,6 +6,7 @@ import Select from '@/components/ui/Select';
 import Tooltip from '@/components/ui/Tooltip';
 import Textarea from '@/components/ui/Textarea';
 import Button from '@/components/ui/Button';
+import DateInput from '@/components/ui/DateInput';
 import { Info } from 'lucide-react';
 import { Artist } from '@/types';
 import { useSession } from "next-auth/react";
@@ -205,11 +206,12 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
 
       {/* Date of Birth and Gender */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Input
+        <DateInput
           label="Date of birth"
           value={formData.dateOfBirth}
-          onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+          onChange={(value) => handleInputChange('dateOfBirth', value)}
           placeholder="DD / MM / YYYY"
+          maxDate={new Date()}
           required
         />
         <Select
