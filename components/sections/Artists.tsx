@@ -153,21 +153,21 @@ export default function Artists({ location }: { location: { lat: number; lng: nu
   };
 
   return (
-    <section className="relative w-full min-h-screen pb-20 md:pt-0">
+    <section className="relative w-full pt-16">
       {/* Background */}
       <div className="absolute inset-0 -translate-y-32 z-0">
         <div
           className="w-full h-auto bg-cover bg-top bg-no-repeat md:block hidden"
-          style={{ backgroundImage: 'url(/home-bg.webp)', minHeight: '120vh' }}
+          style={{ backgroundImage: 'url(/home-bg.webp)', minHeight: '80vh' }}
         />
         <div
           className="w-full h-auto bg-cover bg-top bg-no-repeat md:hidden"
-          style={{ backgroundImage: 'url(/home-bg-mobile.webp)', minHeight: '100vh' }}
+          style={{ backgroundImage: 'url(/home-bg-mobile.webp)', minHeight: '70vh' }}
         />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto space-y-6">
+      <div className="relative z-10 max-w-7xl mx-auto space-y-6 py-12">
         <ArtistSection title="Singer" artists={sampleArtists.singers} />
         <ArtistSection title="Dancers" artists={sampleArtists.dancers} />
         <ArtistSection title="Anchor" artists={sampleArtists.anchors} />
