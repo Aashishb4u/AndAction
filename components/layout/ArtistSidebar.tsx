@@ -154,7 +154,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
             {/* Sign Out */}
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center gap-3 text-white hover:text-red-400 transition-colors duration-200 h3"
+              className="w-full flex items-center justify-center gap-3 text-white hover:text-red-400 transition-colors duration-200 h3"
             >
               <LogOut className="w-5 h-5 rotate-180" />
               <span>Sign out</span>
