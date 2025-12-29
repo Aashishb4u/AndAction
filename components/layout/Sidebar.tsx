@@ -139,13 +139,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
               </button>
 
-              {/* Join as artist */}
-              <button
-                onClick={handleJoinArtist}
-                className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
-              >
-                Join as an Artist
-              </button>
+              {/* Join as artist - Only show for non-artist users */}
+              {user.role !== "artist" && (
+                <button
+                  onClick={handleJoinArtist}
+                  className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
+                >
+                  Join as an Artist
+                </button>
+              )}
             </div>
           ) : (
             // Guest state
