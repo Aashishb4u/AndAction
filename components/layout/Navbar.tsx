@@ -146,9 +146,9 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
               >
                 <Image
                   src={
-                      user.role === "user"
+                      user.avatar && /^\d+$/.test(String(user.avatar))
                         ? `/avatars/${user.avatar}.png`
-                        : user.avatar ?? "/default-avatar.png"
+                        : user.avatar || "/default-avatar.png"
                     }
                   alt={user.firstName || "User"}
                   width={40}

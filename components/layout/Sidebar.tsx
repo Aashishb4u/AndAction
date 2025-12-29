@@ -109,10 +109,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               >
                 <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                   <Image
-                    src={
-                      user.role === "user"
+                   src={
+                      user.avatar && /^\d+$/.test(String(user.avatar))
                         ? `/avatars/${user.avatar}.png`
-                        : user.avatar ?? "/default-avatar.png"
+                        : user.avatar || "/default-avatar.png"
                     }
                     alt={user.firstName || "User"}
                     width={48}

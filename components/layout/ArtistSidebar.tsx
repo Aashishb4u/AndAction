@@ -47,7 +47,9 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   const displayName =
     artist?.stageName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
   const displayRole = artist?.artistType || user?.role || 'Artist';
-  const avatar = user?.avatar || '/icons/images.jpeg';
+  const avatar = user?.avatar && /^\d+$/.test(String(user.avatar))
+    ? `/avatars/${user.avatar}.png`
+    : user?.avatar || '/icons/images.jpeg';
 
   return (
     <>

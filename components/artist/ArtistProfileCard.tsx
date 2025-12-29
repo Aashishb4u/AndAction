@@ -63,7 +63,6 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
   return (
     <div className="relative md:rounded-2xl overflow-hidden h-[85vh] lg:h-[500px]">
-
       {/* hidden file input */}
       <input
         type="file"
@@ -80,7 +79,11 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       {/* Full Background Image */}
       <div className="absolute inset-0">
         <Image
-          src={artist.image}
+          src={
+            artist.image && /^\d+$/.test(String(artist.image))
+              ? `/avatars/${artist.image}.png`
+              : artist.image || "/default-avatar.png"
+          }
           alt={artist.name}
           fill
           unoptimized
@@ -91,7 +94,6 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
       {/* Content Overlay */}
       <div className="relative z-10 h-full flex flex-col">
-
         {/* Header */}
         <div className="flex justify-between items-center p-6">
           <button
@@ -116,8 +118,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
           <div>
             <h2 className="t1 text-white mb-2 drop-shadow-lg">{artist.name}</h2>
 
-            <div className='flex justify-between gap-4 flex-col'>
-              
+            <div className="flex justify-between gap-4 flex-col">
               <div className="flex flex-wrap gap-2">
                 {[artist.category, artist.subCategory]
                   .filter((tag): tag is string => Boolean(tag))
@@ -126,8 +127,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
                       key={index}
                       className={`px-4 md:py-2 py-1.5 rounded-full btn2 backdrop-blur-sm ${
                         tag === artist.category
-                          ? 'bg-white text-primary-pink'
-                          : 'bg-card border border-border-color text-white'
+                          ? "bg-white text-primary-pink"
+                          : "bg-card border border-border-color text-white"
                       }`}
                     >
                       {tag}
@@ -137,17 +138,15 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
               <Button
                 variant="primary"
-                size='sm'
+                size="sm"
                 onClick={onEdit}
                 className="w-full md:w-auto"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Profile
               </Button>
-
             </div>
           </div>
-
         </div>
       </div>
     </div>
