@@ -208,7 +208,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <div className="p-6 border-t border-background-light space-y-3">
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
+                className="w-full flex items-center justify-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Signout</span>
