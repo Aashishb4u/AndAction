@@ -79,7 +79,7 @@ const Select: React.FC<SelectProps> = ({
           `}
         >
           {placeholder && (
-            <option value="" className="text-text-gray">
+            <option value="" disabled hidden className="text-text-gray">
               {placeholder}
             </option>
           )}
