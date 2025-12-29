@@ -1,7 +1,7 @@
 /**
  * app/api/auth/google/route.ts
  *
- * Handles Google OAuth Sign-in and Sign-up.
+ * Handles Google OAuth Sign In and Sign-up.
  * This is the server-side endpoint that validates the token received from the client,
  * creates a new user, or signs in an existing user linked via Google ID.
  *

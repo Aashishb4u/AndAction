@@ -157,7 +157,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 }}
                 className="block text-white hover:text-primary-pink transition-colors duration-200 h1"
               >
-                Sign-In
+                Sign In
               </button>
 
               <button

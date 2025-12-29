@@ -30,11 +30,11 @@ function SignInContent() {
   const oauthError = useMemo(() => {
     const errorParam = searchParams.get("error");
     if (errorParam === "OAuthAccountNotLinked") {
-      return "Email already in use with different sign-in method. Please use your original sign-in method.";
+      return "Email already in use with different Sign In method. Please use your original Sign In method.";
     } else if (errorParam === "Configuration") {
       return "There was a problem with the OAuth configuration. Please try again or contact support.";
     } else if (errorParam) {
-      return "An error occurred during sign-in. Please try again.";
+      return "An error occurred during Sign In. Please try again.";
     }
     return "";
   }, [searchParams]);
@@ -126,8 +126,8 @@ function SignInContent() {
       const redirectUrl = getRedirectUrl(searchParams);
       router.push(redirectUrl || "/");
     } catch (err) {
-      setError(`${provider} sign-in is not available yet.`);
-      console.error(`${provider} sign-in error:`, err);
+      setError(`${provider} Sign In is not available yet.`);
+      console.error(`${provider} Sign In error:`, err);
     } finally {
       setIsLoading(false);
     }
@@ -168,7 +168,7 @@ function SignInContent() {
           />
         </div>
 
-        <h1 className="h1 text-white mb-2">Sign in to AndAction</h1>
+        <h1 className="h1 text-white mb-2">Sign In to AndAction</h1>
 
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
@@ -210,7 +210,7 @@ function SignInContent() {
                   }`}
                   className="text-white hover:text-primary-pink transition-colors duration-200 font-medium underline btn2"
                 >
-                  Signup
+                  Sign up
                 </Link>
               </p>
 
@@ -309,7 +309,7 @@ function SignInContent() {
               className="w-full"
               disabled={!password.trim() || isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? "Signing In..." : "Sign In"}
             </Button>
           </form>
         )}

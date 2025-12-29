@@ -56,7 +56,7 @@ function ArtistAuthContent() {
   const oauthError = useMemo(() => {
     const errorParam = searchParams.get("error");
     if (errorParam === "OAuthAccountNotLinked") {
-      return "Email already in use with different sign-in method. Please sign in with your original method or use a different email.";
+      return "Email already in use with different Sign In method. Please sign in with your original method or use a different email.";
     } else if (errorParam === "Configuration") {
       return "There was a problem with the OAuth configuration. Please try again or contact support.";
     } else if (errorParam) {
@@ -315,7 +315,7 @@ function ArtistAuthContent() {
 
       console.log("📞 Auto-signin contactIdentifier:", contactIdentifier);
 
-      // ✅ Attempt to auto sign-in via NextAuth
+      // ✅ Attempt to auto Sign In via NextAuth
       if (contactIdentifier && artistData.password) {
         const signInResult = await signIn("credentials", {
           contact: contactIdentifier,
@@ -326,13 +326,13 @@ function ArtistAuthContent() {
         console.log("🧩 signIn result:", signInResult);
 
         if (signInResult?.error) {
-          console.error("Auto sign-in failed:", signInResult.error);
+          console.error("Auto Sign In failed:", signInResult.error);
         } else {
-          console.log("Auto sign-in succeeded. Session cookie created.");
+          console.log("Auto Sign In succeeded. Session cookie created.");
         }
       } else {
         console.warn(
-          "⚠️ Missing contactIdentifier or password for auto sign-in."
+          "⚠️ Missing contactIdentifier or password for auto Sign In."
         );
       }
 
