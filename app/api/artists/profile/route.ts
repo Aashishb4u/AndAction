@@ -120,6 +120,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     const {
       userId,
       stageName,
+      subArtistType,
       firstName,
       lastName,
       gender,
@@ -177,6 +178,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       where: { userId },
       data: {
         ...(stageName !== undefined && { stageName }),
+        ...(subArtistType !== undefined && { subArtistType }),
         ...(shortBio !== undefined && { shortBio }),
         ...(achievements !== undefined && { achievements }),
         ...(yearsOfExperience !== undefined && { yearsOfExperience: Number(yearsOfExperience) }),
