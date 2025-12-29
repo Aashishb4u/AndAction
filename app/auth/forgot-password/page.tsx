@@ -6,6 +6,7 @@ import Input, { PasswordInput } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import OTPInput from '@/components/ui/OTPInput';
 import Image from 'next/image';
+import { validatePassword } from '@/lib/validators';
 
 type ForgotPasswordStep = 'email' | 'otp' | 'password';
 
@@ -123,6 +124,12 @@ export default function ForgotPasswordPage() {
         return;
       }
 
+      const validation = validatePassword(password);
+      if (!validation.isValid) {
+        setError(validation.message || "Invalid password.");
+        return;
+      }
+
       setIsLoading(true);
       setError('');
 
@@ -150,6 +157,34 @@ export default function ForgotPasswordPage() {
     }
   };
 
+
+  // Handle Resend OTP
+  const handleResendOTP = async () => {
+    if (email.trim()) {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || 'Failed to resend OTP.');
+        }
+
+      } catch (err: any) {
+        setError(err.message || 'Failed to resend OTP. Please try again.');
+        console.error('Resend OTP error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
 
   // Mask email for display
   const maskEmail = (email: string) => {
@@ -256,10 +291,8 @@ export default function ForgotPasswordPage() {
                 <button
                   type="button"
                   className="text-white underline hover:text-primary-pink transition-colors duration-200 btn1"
-                  onClick={() => {
-                    // Resend OTP logic
-                    console.log('Resending OTP...');
-                  }}
+                  onClick={handleResendOTP}
+                  disabled={isLoading}
                 >
                   Resend OTP
                 </button>
