@@ -64,7 +64,7 @@ export const createAuthRedirectUrl = (
 
 export const signIn = async (email: string): Promise<User> => {
   throw new Error(
-    "Sign in implementation is missing. Use nextAuthSignIn with credentials."
+    "Sign In implementation is missing. Use nextAuthSignIn with credentials."
   );
 };
 

@@ -53,7 +53,7 @@ function SignUpContent() {
   const oauthError = useMemo(() => {
     const errorParam = searchParams.get("error");
     if (errorParam === "OAuthAccountNotLinked") {
-      return "Email already in use with different sign-in method. Please sign in with your original method or use a different email.";
+      return "Email already in use with different Sign In method. Please sign in with your original method or use a different email.";
     } else if (errorParam === "Configuration") {
       return "There was a problem with the OAuth configuration. Please try again or contact support.";
     } else if (errorParam) {
@@ -459,7 +459,7 @@ function SignUpContent() {
                   href="/auth/signin"
                   className="text-white underline hover:text-primary-pink transition-colors duration-200 btn2"
                 >
-                  Signin
+                  Sign In
                 </Link>
               </div>
 

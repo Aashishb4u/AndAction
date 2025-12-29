@@ -253,7 +253,7 @@ export default function ForgotPasswordPage() {
                 Create new password
               </h1>
               <p className="text-text-gray">
-                We&apos;ll ask for this password whenever you Sign-in.
+                We&apos;ll ask for this password whenever you Sign In.
               </p>
             </div>
 
