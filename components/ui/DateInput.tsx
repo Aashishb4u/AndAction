@@ -114,7 +114,6 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             dateFormat="dd/MM/yyyy"
             wrapperClassName="w-full"
             required={required}
-            minDate={new Date()}
           />
 
           <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
