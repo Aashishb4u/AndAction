@@ -34,6 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const navigationItems = [
     { label: "About us", href: "/about", isActive: pathname === "/about" },
+    { label: "Contact Us", href: "/contact", isActive: pathname === "/contact" },
     { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
     {
       label: "Terms & Conditions",
@@ -199,20 +200,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   {item.label}
                 </Link>
               ))}
-            </div>
-
-            {/* Contact */}
-            <div className="mt-5 border border-border-color rounded-xl p-3 bg-card">
-              <div className="flex items-center space-x-3 mb-1">
-                <Support className="size-5 text-text-gray" />
-                <span className="text-text-gray text-sm">For any query</span>
-              </div>
-              <p className="text-white text-sm">
-                Contact Us:{" "}
-                <Link href="tel:+918860014889" className="hover:underline">
-                  +91 8860014889
-                </Link>
-              </p>
             </div>
           </div>
 
