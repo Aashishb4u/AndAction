@@ -54,7 +54,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50'
       : '';
 
-    const iconPadding = leftIcon ? 'pl-12' : rightIcon ? 'pr-12' : '';
+    // Increase right padding for eye icon so it's not cut off
+    const iconPadding = leftIcon ? 'pl-12' : rightIcon ? 'pr-14' : '';
 
     return (
       <div className="w-full">
@@ -88,7 +89,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           />
 
           {rightIcon && (
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-text-gray">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center h-full text-text-gray">
               {rightIcon}
             </div>
           )}

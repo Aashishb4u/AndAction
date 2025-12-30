@@ -53,7 +53,7 @@ const SiteLayout: React.FC<SiteLayoutProps> = ({
           <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
 
           {/* Main Content */}
-          <main className="pb-20 md:pb-0">
+          <main className="md:pb-0">
             {children}
           </main>
 
