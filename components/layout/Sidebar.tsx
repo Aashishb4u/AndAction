@@ -7,8 +7,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { ChevronRight, LogOut } from "lucide-react";
 import { createAuthRedirectUrl } from "@/lib/auth";
 import Download from "../icons/download";
-import Support from "../icons/support";
 import { useSession, signOut } from "next-auth/react";
+import { usePWAInstall } from "@/hooks/use-pwa-install";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,6 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user;
+  const { isInstallable, isInstalled, installApp, isIOSSafari } = usePWAInstall();
 
   useEffect(() => {
     if (isOpen) {
@@ -55,9 +56,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  const handleInstallApp = () => {
-    console.log("Install app clicked");
-    onClose();
+  const handleInstallApp = async () => {
+    const result = await installApp();
+    if (result.success) {
+      onClose();
+    }
   };
 
   const handleSignOut = async () => {
@@ -214,15 +217,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <span>Signout</span>
               </button>
 
-              <button
-                onClick={handleInstallApp}
-                className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
-              >
-                <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
-                <span className="gradient-text">
-                  Install our web application
-                </span>
-              </button>
+              {!isInstalled && (
+                <button
+                  onClick={handleInstallApp}
+                  className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
+                >
+                  <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
+                  <span className="gradient-text">
+                    {isIOSSafari ? 'Install on iOS' : 'Install our web application'}
+                  </span>
+                </button>
+              )}
             </div>
           )}
         </div>
