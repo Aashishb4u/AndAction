@@ -12,9 +12,9 @@ import { auth } from '@/auth';
 
 // Define the structure for the URL parameters
 interface BookmarkRouteContext {
-    params: {
+    params: Promise<{
         id: string; // The ID of the bookmark to be deleted
-    };
+    }>;
 }
 
 export async function DELETE(
@@ -27,7 +27,10 @@ export async function DELETE(
         return ApiErrors.unauthorized();
     }
     const userId = session.user.id;
-    const bookmarkId = context.params.id;
+    
+    // Await params in Next.js 15+
+    const params = await context.params;
+    const bookmarkId = params.id;
 
     if (!bookmarkId) {
         return ApiErrors.badRequest('Bookmark ID is required.');
