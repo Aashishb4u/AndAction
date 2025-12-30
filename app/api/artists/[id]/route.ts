@@ -12,19 +12,21 @@ import { ApiErrors, successResponse } from '@/lib/api-response';
 
 // Define the structure for the URL parameters
 interface ArtistRouteContext {
-    params: {
+    params: Promise<{
         id: string; // The ID of the artist (Artist model ID, NOT the UserId)
-    };
+    }>;
 }
 
 /**
  * Handles GET requests to retrieve a public artist profile.
  */
+
 export async function GET(
     request: NextRequest,
-    context: ArtistRouteContext
+    context: { params: ArtistRouteContext['params'] }
 ): Promise<NextResponse<any>> {
-    const artistId = context.params.id;
+
+    const artistId = (await context.params).id;
 
     if (!artistId) {
         return ApiErrors.badRequest('Artist ID is required.');

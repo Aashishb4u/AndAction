@@ -5,6 +5,7 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import Image from 'next/image';
+import imageCompression from "browser-image-compression";
 import { ArtistProfileSetupData } from '@/types';
 
 interface ArtistProfileDetailsProps {
@@ -25,7 +26,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
   const [formData, setFormData] = useState({
     profilePhoto: data.profilePhoto || null,
-    avatarUrl: (data as any).avatarUrl || "", // allow avatar url injection
+    avatarUrl: (data as any).avatarUrl || "",
     stageName: data.stageName || '',
     artistType: data.artistType || '',
     subArtistType: data.subArtistType || '',
@@ -49,6 +50,9 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     { value: 'comedian', label: 'Comedian' },
     { value: 'magician', label: 'Magician' },
     { value: 'actor', label: 'Actor' },
+    { value: 'anchor', label: 'Anchor'},
+    { value: 'band', label: 'Live Band'},
+    { value: 'dj', label: 'DJ'},
     { value: 'other', label: 'Other' }
   ];
 
@@ -62,11 +66,11 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   ];
 
   const experienceYears = [
-    { value: '0-1', label: '0-1 years' },
-    { value: '1-3', label: '1-3 years' },
-    { value: '3-5', label: '3-5 years' },
-    { value: '5-10', label: '5-10 years' },
-    { value: '10+', label: '10+ years' }
+    { value: '1', label: '0-1 years' },
+    { value: '2', label: '1-3 years' },
+    { value: '3', label: '3-5 years' },
+    { value: '4', label: '5-10 years' },
+    { value: '5', label: '10+ years' }
   ];
 
   const handleInputChange = (field: string, value: string) => {
@@ -76,44 +80,59 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   };
 
   const handleProfilePhotoUpload = async (file: File) => {
-    console.log("⬆️ Uploading file to /api/media/upload...");
-    try {
-      setUploading(true);
-      setPreview(URL.createObjectURL(file));
+  console.log("⬇️ Original file:", file);
 
-      const formDataUpload = new FormData();
-      formDataUpload.append("file", file);
+  try {
+    setUploading(true);
 
-      const res = await fetch("/api/media/upload", {
-        method: "POST",
-        body: formDataUpload,
-      });
+    // 1️⃣ Compress the file before uploading
+    const options = {
+      maxSizeMB: 1,            // compress to ~1MB
+      maxWidthOrHeight: 800,   // resize if larger
+      useWebWorker: true,
+    };
 
-      const json = await res.json();
+    const compressedFile = await imageCompression(file, options);
 
-      if (!res.ok) {
-        console.error(json.message);
-        setUploading(false);
-        return;
-      }
+    console.log("📦 Compressed file:", compressedFile);
 
-      const imageUrl = json?.data?.imageUrl;
+    // 2️⃣ Show preview using compressed file
+    setPreview(URL.createObjectURL(compressedFile));
 
-      const updatedData = {
-        profilePhoto: file,
-        avatarUrl: imageUrl,
-      };
+    // 3️⃣ Build form data
+    const formDataUpload = new FormData();
+    formDataUpload.append("file", compressedFile);
 
-      setFormData((prev) => ({ ...prev, ...updatedData }));
+    // 4️⃣ Upload compressed image
+    const res = await fetch("/api/media/upload", {
+      method: "POST",
+      body: formDataUpload,
+    });
 
-      onUpdateData(updatedData);
+    const json = await res.json();
 
+    if (!res.ok) {
+      console.error(json.message);
       setUploading(false);
-    } catch (error) {
-      console.error("Profile photo upload failed:", error);
-      setUploading(false);
+      return;
     }
-  };
+
+    const imageUrl = json?.data?.imageUrl;
+
+    const updatedData = {
+      profilePhoto: compressedFile,
+      avatarUrl: imageUrl,
+    };
+
+    setFormData((prev) => ({ ...prev, ...updatedData }));
+    onUpdateData(updatedData);
+
+    setUploading(false);
+  } catch (error) {
+    console.error("Profile photo upload failed:", error);
+    setUploading(false);
+  }
+};
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     
@@ -185,6 +204,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                       className="w-full h-full rounded-full object-cover"
                       width={100}
                       height={100}
+                      unoptimized
                     />
                   ) : (
                     <Image src={`/icons/user-icon.svg`} alt="Profile" width={50} height={50} />

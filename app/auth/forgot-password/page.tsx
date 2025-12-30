@@ -6,6 +6,7 @@ import Input, { PasswordInput } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import OTPInput from '@/components/ui/OTPInput';
 import Image from 'next/image';
+import { validatePassword } from '@/lib/validators';
 
 type ForgotPasswordStep = 'email' | 'otp' | 'password';
 
@@ -61,11 +62,22 @@ export default function ForgotPasswordPage() {
       setError('');
 
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await res.json();
+        console.log('Forgot Password Response:', data);
+
+        if (!res.ok) {
+          throw new Error(data.error || data.message || 'Failed to send OTP.');
+        }
+
         setStep('otp');
-      } catch (err) {
-        setError('Failed to send OTP. Please try again.');
+      } catch (err: any) {
+        setError(err.message || 'Failed to send OTP. Please try again.');
         console.error('Email submit error:', err);
       } finally {
         setIsLoading(false);
@@ -81,11 +93,21 @@ export default function ForgotPasswordPage() {
       setError('');
 
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const res = await fetch('/api/auth/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || data.message || 'Invalid OTP.');
+        }
+
         setStep('password');
-      } catch (err) {
-        setError('Invalid OTP. Please try again.');
+      } catch (err: any) {
+        setError(err.message || 'Invalid OTP. Please try again.');
         console.error('OTP verification error:', err);
       } finally {
         setIsLoading(false);
@@ -102,17 +124,62 @@ export default function ForgotPasswordPage() {
         return;
       }
 
+      const validation = validatePassword(password);
+      if (!validation.isValid) {
+        setError(validation.message || "Invalid password.");
+        return;
+      }
+
       setIsLoading(true);
       setError('');
 
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        // Redirect to signin with success message
-        router.push('/auth/signin?message=Password reset successful');
-      } catch (err) {
-        setError('Failed to reset password. Please try again.');
+        const res = await fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp, newPassword: password }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || data.message || 'Failed to reset password.');
+        }
+
+        // Redirect to login
+        router.push('/auth/signin');
+      } catch (err: any) {
+        setError(err.message || 'Failed to reset password. Please try again.');
         console.error('Password reset error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+
+  // Handle Resend OTP
+  const handleResendOTP = async () => {
+    if (email.trim()) {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || data.message || 'Failed to resend OTP.');
+        }
+
+      } catch (err: any) {
+        setError(err.message || 'Failed to resend OTP. Please try again.');
+        console.error('Resend OTP error:', err);
       } finally {
         setIsLoading(false);
       }
@@ -224,10 +291,8 @@ export default function ForgotPasswordPage() {
                 <button
                   type="button"
                   className="text-white underline hover:text-primary-pink transition-colors duration-200 btn1"
-                  onClick={() => {
-                    // Resend OTP logic
-                    console.log('Resending OTP...');
-                  }}
+                  onClick={handleResendOTP}
+                  disabled={isLoading}
                 >
                   Resend OTP
                 </button>
@@ -253,7 +318,7 @@ export default function ForgotPasswordPage() {
                 Create new password
               </h1>
               <p className="text-text-gray">
-                We&apos;ll ask for this password whenever you Sign-in.
+                We&apos;ll ask for this password whenever you Sign In.
               </p>
             </div>
 

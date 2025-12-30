@@ -1,3 +1,4 @@
+import { parseISO, set } from 'date-fns';
 import { UserRole } from '@/lib/types/database';
 import fs from "fs";
 import path from "path";
@@ -149,4 +150,22 @@ export function simulateFileUpload(
     url: fileUrl,
     thumbnailUrl,
   };
+}
+
+/**
+ * Converts a "YYYY-MM-DD" string from the user to a UTC Date at midnight
+ */
+export function localDateToUTC(dateString: string): Date {
+  const localDate = parseISO(dateString); // e.g., "2025-11-26"
+  const utcMidnight = set(localDate, { hours: 0, minutes: 0, seconds: 0, milliseconds: 0 });
+
+  // Adjust for timezone offset
+  const offsetMs = utcMidnight.getTimezoneOffset() * 60 * 1000;
+  return new Date(utcMidnight.getTime() - offsetMs);
+}
+
+export function isTokenExpired(expiryDate: Date | null): boolean {
+  if (!expiryDate) return true;
+  const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
+  return expiryDate < fiveMinutesFromNow;
 }

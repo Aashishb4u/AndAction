@@ -26,6 +26,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   ];
 
   const handleSignOut = async () => {
+    console.log('being triggered');
     await signOut({ redirect: false });
     onClose();
     router.push('/');
@@ -46,7 +47,9 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   const displayName =
     artist?.stageName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
   const displayRole = artist?.artistType || user?.role || 'Artist';
-  const avatar = user?.avatar || '/icons/images.jpeg';
+  const avatar = user?.avatar && /^\d+$/.test(String(user.avatar))
+    ? `/avatars/${user.avatar}.png`
+    : user?.avatar || '/icons/images.jpeg';
 
   return (
     <>
@@ -100,6 +103,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
                   alt={displayName}
                   width={48}
                   height={48}
+                  unoptimized
                   className="object-cover w-full h-full"
                 />
               </div>

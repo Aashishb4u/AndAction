@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, RotateCcw } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -12,6 +12,20 @@ interface VideoPlayerProps {
   poster?: string;
 }
 
+/* ---------------------------
+   YOUTUBE HELPERS
+---------------------------- */
+
+function isYouTube(url: string) {
+  return url.includes("youtube.com") || url.includes("youtu.be");
+}
+
+function getYouTubeId(url: string) {
+  const regex = /(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : "";
+}
+
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
   videoUrl,
   title = 'Video player',
@@ -20,7 +34,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   muted = false,
   poster,
 }) => {
+
+  const isYT = isYouTube(videoUrl);
+  const ytId = isYT ? getYouTubeId(videoUrl) : null;
+
   const videoRef = useRef<HTMLVideoElement>(null);
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(muted);
   const [currentTime, setCurrentTime] = useState(0);
@@ -28,7 +47,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [volume, setVolume] = useState(1);
 
+  /* -------------------------------------------------
+     ONLY ATTACH EVENTS FOR MP4 — NOT FOR YOUTUBE
+  --------------------------------------------------- */
   useEffect(() => {
+    if (isYT) return; // YT iframe does not use HTML5 video events
+
     const video = videoRef.current;
     if (!video) return;
 
@@ -44,21 +68,26 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       video.removeEventListener('loadedmetadata', updateDuration);
       video.removeEventListener('ended', () => setIsPlaying(false));
     };
-  }, []);
+  }, [isYT]);
 
+  /* ---------------------------
+      MP4 Controls Only
+  ---------------------------- */
   const togglePlay = () => {
+    if (isYT) return; // YouTube has its own controls
+
     const video = videoRef.current;
     if (!video) return;
 
-    if (isPlaying) {
-      video.pause();
-    } else {
-      video.play();
-    }
+    if (isPlaying) video.pause();
+    else video.play();
+
     setIsPlaying(!isPlaying);
   };
 
   const toggleMute = () => {
+    if (isYT) return; // YT has internal mute
+
     const video = videoRef.current;
     if (!video) return;
 
@@ -67,6 +96,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isYT) return;
+
     const video = videoRef.current;
     if (!video) return;
 
@@ -76,6 +107,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isYT) return;
+
     const video = videoRef.current;
     if (!video) return;
 
@@ -86,17 +119,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const toggleFullscreen = () => {
-    const video = videoRef.current;
-    if (!video) return;
+    const container = document.documentElement;
 
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
+    if (!document.fullscreenElement) {
+      container.requestFullscreen();
     } else {
-      video.requestFullscreen();
+      document.exitFullscreen();
     }
   };
 
   const formatTime = (time: number) => {
+    if (!time || isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -107,21 +140,39 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div className={`relative w-full group ${className}`}>
       <div className="relative w-full aspect-video md:rounded-xl overflow-hidden bg-black shadow-lg">
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          poster={poster}
-          className="w-full h-full object-cover"
-          autoPlay={autoplay}
-          muted={muted}
-          playsInline
-          onMouseEnter={() => setShowControls(true)}
-          onMouseLeave={() => setShowControls(false)}
-          onClick={togglePlay}
-        />
 
-        {/* Play/Pause Overlay */}
-        {!isPlaying && (
+        {/* -------------------------------------
+            YOUTUBE PLAYER (iframe)
+        ------------------------------------- */}
+        {isYT ? (
+          <iframe
+            className="w-full h-full object-cover"
+            src={`https://www.youtube.com/embed/${ytId}?autoplay=0&controls=1&playsinline=1&rel=0`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          /* ------------------------------
+             MP4 PLAYER (Custom Controls)
+          ------------------------------- */
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            poster={poster}
+            className="w-full h-full object-cover"
+            autoPlay={autoplay}
+            muted={muted}
+            playsInline
+            onClick={togglePlay}
+            onMouseEnter={() => setShowControls(true)}
+            onMouseLeave={() => setShowControls(false)}
+          />
+        )}
+
+        {/* -------------------------------------
+            MP4 Play Button Overlay
+        ------------------------------------- */}
+        {!isYT && !isPlaying && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20">
             <button
               onClick={togglePlay}
@@ -132,70 +183,70 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
         )}
 
-        {/* Controls */}
-        <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 lg:p-4 transition-opacity duration-300 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
-          {/* Progress Bar */}
-          <div className="mb-2 lg:mb-3">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={progress}
-              onChange={handleSeek}
-              className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
-            />
-          </div>
+        {/* -------------------------------------
+            CUSTOM CONTROLS — MP4 ONLY
+        ------------------------------------- */}
+        {!isYT && (
+          <div
+            className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 lg:p-4 transition-opacity duration-300 ${
+              showControls || !isPlaying ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {/* Progress Bar */}
+            <div className="mb-2 lg:mb-3">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={progress}
+                onChange={handleSeek}
+                className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+              />
+            </div>
 
-          {/* Control Buttons */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 lg:gap-3">
-              <button
-                onClick={togglePlay}
-                className="text-white hover:text-primary-pink transition-colors duration-200"
-              >
-                {isPlaying ? <Pause className="w-4 h-4 lg:w-5 lg:h-5" /> : <Play className="w-4 h-4 lg:w-5 lg:h-5" />}
-              </button>
-
-              <div className="hidden sm:flex items-center gap-2">
+            {/* Control Buttons */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {/* Play / Pause */}
                 <button
-                  onClick={toggleMute}
+                  onClick={togglePlay}
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
-                  {isMuted ? <VolumeX className="w-4 h-4 lg:w-5 lg:h-5" /> : <Volume2 className="w-4 h-4 lg:w-5 lg:h-5" />}
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5" />
+                  ) : (
+                    <Play className="w-5 h-5" />
+                  )}
                 </button>
+
+                {/* Volume */}
+                <button onClick={toggleMute} className="text-white hover:text-primary-pink">
+                  {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </button>
+
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={isMuted ? 0 : volume * 100}
                   onChange={handleVolumeChange}
-                  className="w-12 lg:w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                  className="w-16 h-1 bg-white/20 rounded-lg cursor-pointer"
                 />
+
+                <span className="text-white text-sm">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
               </div>
 
-              <span className="text-white text-xs lg:text-sm">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={toggleMute}
-                className="sm:hidden text-white hover:text-primary-pink transition-colors duration-200"
-              >
-                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </button>
-              <button
-                onClick={toggleFullscreen}
-                className="text-white hover:text-primary-pink transition-colors duration-200"
-              >
-                <Maximize className="w-4 h-4 lg:w-5 lg:h-5" />
+              <button onClick={toggleFullscreen} className="text-white hover:text-primary-pink">
+                <Maximize className="w-5 h-5" />
               </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
+      {/* SLIDER STYLE */}
       <style jsx>{`
         .slider::-webkit-slider-thumb {
           appearance: none;
@@ -204,14 +255,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           border-radius: 50%;
           background: #E8047E;
           cursor: pointer;
-        }
-        .slider::-moz-range-thumb {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          background: #E8047E;
-          cursor: pointer;
-          border: none;
         }
       `}</style>
     </div>

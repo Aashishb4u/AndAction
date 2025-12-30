@@ -2,11 +2,14 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Artist } from '@/types';
 import BookingRequestModal from '@/components/modals/BookingRequestModal';
 import BookingSuccessModal from '@/components/modals/BookingSuccessModal';
 import { BookingFormData } from '@/components/modals/BookingRequestModal';
 import Bookmark from '../icons/bookmark';
+import { createBooking } from '@/app/artists/[id]/page';
 
 interface ArtistProfileHeaderProps {
   artist: Artist;
@@ -17,6 +20,7 @@ interface ArtistProfileHeaderProps {
   onCall: () => void;
   onWhatsApp: () => void;
   isMobile?: boolean;
+  disabledDates?: Date[];
 }
 
 const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
@@ -28,22 +32,37 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
   onCall,
   onWhatsApp,
   isMobile = false,
+  disabledDates,
 }) => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const { data: session } = useSession();
+  const router = useRouter();
+
 
   const formatPrice = (price: number) => {
     return `₹ ${price.toLocaleString()}`;
   };
 
   const handleRequestBooking = () => {
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
+    }
 
+    // User is logged in → open modal
     setShowBookingModal(true);
   };
+
 
   const handleBookingSubmit = (formData: BookingFormData) => {
     // Here you would typically send the data to your API
     console.log('Booking request submitted:', formData);
+    createBooking(artist.id, formData).then(data => {
+      console.log('Booking creation response:', data);
+    }).catch(error => {
+      console.error('Error creating booking:', error);
+    });
 
     // Close booking modal and show success modal
     setShowBookingModal(false);
@@ -66,6 +85,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
           isOpen={showBookingModal}
           onClose={() => setShowBookingModal(false)}
           onSubmit={handleBookingSubmit}
+          disabledDates={disabledDates}
         // artistName={artist.name}
         />
 
@@ -85,12 +105,13 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
         {/* Mobile Header Image */}
         <div className="relative h-[80vh] w-full">
           <Image
-            src={artist.image}
-            alt={artist.name}
+            src={artist.image || "/icons/images.jpeg"}
+            alt={artist.name || "artist"}
             fill
             className="object-cover"
             priority
           />
+
 
           {/* Status Bar Spacer */}
           <div className="h-12" />
@@ -111,7 +132,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
                 onClick={onBookmark}
                 className="w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center"
               >
-                <Bookmark className="w-5 h-5" />
+                 <Bookmark className="w-5 h-5" active={artist.isBookmarked} />
               </button>
 
               <button
@@ -132,7 +153,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
           <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
             <h1 className="t1">{artist.name}</h1>
             <p className="mb-1">
-              {artist.category} | {artist.gender} | {artist.location}
+              {artist.category} | {artist.location}
             </p>
             <div className="flex items-center justify-between">
               <p className="secondary-text font-normal text-text-gray mb-1">Starting Price</p>
@@ -151,7 +172,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
               Request Booking
             </button>
 
-            <div className="flex gap-3">
+            {/*<div className="flex gap-3">
               <button
                 onClick={onCall}
                 className="flex-1 bg-card border border-border-color backdrop-blur-sm text-white size-12 shrink-0 rounded-full font-medium hover:bg-background transition-colors flex items-center justify-center"
@@ -169,7 +190,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
                 </svg>
               </button>
-            </div>
+            </div>*/}
           </div>
         </div>
         {renderModals()}
@@ -190,7 +211,6 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
             className="object-cover"
             priority
           />
-
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
@@ -210,7 +230,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
                 onClick={onBookmark}
                 className="w-10 h-10 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/60 transition-colors"
               >
-                <Bookmark className="w-5 h-5" />
+                <Bookmark className="w-5 h-5" active={artist.isBookmarked} />
               </button>
 
               <button
@@ -228,7 +248,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
           <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
             <h1 className="t1 mb-1">{artist.name}</h1>
             <p className="mb-1 text-white">
-              {artist.category} | {artist.gender} | {artist.location}
+              {artist.category} | {artist.location}
             </p>
 
             <div className="mb-3 flex justify-between items-center gap-3">
@@ -245,7 +265,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
                 Request Booking
               </button>
 
-              <div className="flex gap-3">
+              {/*<div className="flex gap-3">
                 <button
                   onClick={onCall}
                   className="flex-1 bg-card border border-border-color backdrop-blur-sm text-white size-10 shrink-0 rounded-full font-medium hover:bg-background transition-colors flex items-center justify-center"
@@ -263,7 +283,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
                   </svg>
                 </button>
-              </div>
+              </div>*/}
             </div>
           </div>
         </div>
