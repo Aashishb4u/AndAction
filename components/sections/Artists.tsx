@@ -21,7 +21,7 @@ export default function Artists({ location }: { location: { lat: number; lng: nu
     }
 
     // If no location yet, wait for real update
-    if (!location) return;
+
 
     async function fetchSingers() {
       try {
@@ -32,6 +32,7 @@ export default function Artists({ location }: { location: { lat: number; lng: nu
         }
 
         const res = await fetch(url);
+        console.log("Fetching singers from URL:", url);
         const json = await res.json();
 
         const apiArtists = json?.data?.artists || [];
