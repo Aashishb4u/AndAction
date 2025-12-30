@@ -13,6 +13,9 @@ export function usePWAInstall() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
+    // Ensure we're in browser environment
+    if (typeof window === 'undefined') return;
+    
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
       return;
@@ -45,6 +48,11 @@ export function usePWAInstall() {
   }, []);
 
   const installApp = async () => {
+    // Ensure we're in browser environment
+    if (typeof window === 'undefined') {
+      return { success: false, message: 'Not in browser environment' };
+    }
+    
     if (window.matchMedia('(display-mode: standalone)').matches) {
       alert('App is already installed!');
       return { success: false, message: 'Already installed' };
@@ -89,6 +97,7 @@ export function usePWAInstall() {
   };
 
   const isIOSSafari = () => {
+    if (typeof window === 'undefined') return false;
     const ua = window.navigator.userAgent;
     const iOS = /iPad|iPhone|iPod/.test(ua);
     const webkit = /WebKit/.test(ua);
