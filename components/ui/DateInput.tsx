@@ -4,6 +4,7 @@ import React, { forwardRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Calendar } from 'lucide-react';
+import './DateInput.css';
 
 export interface DateInputProps {
   label?: string;
@@ -117,6 +118,11 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             wrapperClassName="w-full"
             required={required}
             maxDate={maxDate}
+            showYearDropdown
+            showMonthDropdown
+            dropdownMode="scroll"
+            yearDropdownItemNumber={100}
+            scrollableYearDropdown
           />
 
           <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
