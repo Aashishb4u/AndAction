@@ -226,7 +226,7 @@ h6 {
 .nav-active-underline::after {
   content: '';
   display: block;
-  width: 100%;
+  width: 120%;
   height: 2px;
   background: var(--gradient-primary);
   margin-top: 8px;
