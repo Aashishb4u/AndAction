@@ -19,6 +19,7 @@ export interface DateInputProps {
   required?: boolean;
   disabledDates?: Date[];
   minDate?: Date;
+  maxDate?: Date;
 }
 
 const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
@@ -36,6 +37,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       disabled = false,
       required = false,
       minDate,
+      maxDate,
       ...props
     },
     ref
@@ -117,6 +119,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             wrapperClassName="w-full"
             required={required}
             minDate={minDate}
+            maxDate={maxDate}
           />
 
           <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />

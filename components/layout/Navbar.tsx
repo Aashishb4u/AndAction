@@ -128,16 +128,18 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
               </Button>
             )}
 
-            {/* Join as a artist */}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() =>
-                router.push(createAuthRedirectUrl("/auth/artist", pathname))
-              }
-            >
-              <span className="gradient-text btn2">Join as a artist</span>
-            </Button>
+            {/* Join as an artist - Only show for non-artist users */}
+            {user?.role !== "artist" && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  router.push(createAuthRedirectUrl("/auth/artist", pathname))
+                }
+              >
+                <span className="gradient-text btn2">Join as an Artist</span>
+              </Button>
+            )}
 
             {user ? (
               <button
