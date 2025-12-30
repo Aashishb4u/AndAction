@@ -108,7 +108,11 @@ export default function BookmarksPage() {
     try {
       const res = await fetch(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
       const json = await res.json();
-      if (!json.success) return;
+      
+      if (!json.success) {
+        console.error("Failed to delete bookmark:", json.message || json.error);
+        return;
+      }
 
       if (type === "artist")
         setArtistBookmarks(prev => prev.filter(a => a.bookmarkId !== bookmarkId));
