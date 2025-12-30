@@ -67,10 +67,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-background border-l border-background-light z-[99999] transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+        className={`fixed top-0 right-0 h-screen max-h-screen w-80 max-w-full sm:w-96 bg-background border-l border-background-light z-99999 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
+          } sidebar-responsive`}
+        style={{ width: 'min(90vw, 22rem)', maxWidth: 400, height: '100dvh', maxHeight: '100dvh', overflowY: 'auto' }}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-0 overflow-y-auto">
           {/* Header Close */}
           <div className="flex items-center justify-end px-6 pt-4">
             <button
@@ -107,7 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 }}
                 className="w-full flex items-center gap-3 p-3 bg-card border border-border-color rounded-xl hover:border-primary-pink/30 transition-all duration-300 group"
               >
-                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                   <Image
                    src={
                       user.avatar && /^\d+$/.test(String(user.avatar))
@@ -170,7 +171,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           )}
 
           {/* Divider */}
-          <div className="h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent" />
+          <div className="h-px bg-linear-to-r from-transparent via-gray-800 to-transparent" />
 
           {/* Navigation Links */}
           <div className="flex-1 px-6 md:py-5 mt-3">

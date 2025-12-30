@@ -18,6 +18,7 @@ export interface DateInputProps {
   id?: string;
   required?: boolean;
   disabledDates?: Date[];
+  minDate?: Date;
 }
 
 const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
@@ -34,6 +35,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       placeholder = 'DD / MM / YYYY',
       disabled = false,
       required = false,
+      minDate,
       ...props
     },
     ref
@@ -114,6 +116,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             dateFormat="dd/MM/yyyy"
             wrapperClassName="w-full"
             required={required}
+            minDate={minDate}
           />
 
           <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
