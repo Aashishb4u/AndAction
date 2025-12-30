@@ -18,7 +18,6 @@ export interface DateInputProps {
   id?: string;
   required?: boolean;
   disabledDates?: Date[];
-  minDate?: Date;
   maxDate?: Date;
 }
 
@@ -36,7 +35,6 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       placeholder = 'DD / MM / YYYY',
       disabled = false,
       required = false,
-      minDate,
       maxDate,
       ...props
     },
@@ -118,7 +116,6 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             dateFormat="dd/MM/yyyy"
             wrapperClassName="w-full"
             required={required}
-            minDate={minDate}
             maxDate={maxDate}
           />
 
