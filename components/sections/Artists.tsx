@@ -17,7 +17,7 @@ export default function Artists({ location }: { location: { lat: number; lng: nu
     if (initialRender.current) {
       initialRender.current = false;
 
-      if (!location) return;
+      //if (!location) return;
     }
 
     // If no location yet, wait for real update
