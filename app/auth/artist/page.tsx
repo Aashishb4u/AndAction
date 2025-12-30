@@ -477,7 +477,7 @@ function ArtistAuthContent() {
         {step === "join" ? (
           <>
             {/* Title */}
-            <h1 className="h1 text-white mb-2">Join as a Artist</h1>
+            <h1 className="h1 text-white mb-2">Join as an Artist</h1>
 
             {/* Subtitle */}
             <p className="text-text-gray mb-8">
@@ -835,6 +835,7 @@ function ArtistAuthContent() {
                   required
                   disabled={isLoading}
                   variant="filled"
+                  maxDate={new Date()}
                 />
 
                 <Select

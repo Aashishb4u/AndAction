@@ -1,14 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { ChevronRight, LogOut } from "lucide-react";
 import { createAuthRedirectUrl } from "@/lib/auth";
 import Download from "../icons/download";
-import Support from "../icons/support";
 import { useSession, signOut } from "next-auth/react";
+import { usePWAInstall } from "@/hooks/use-pwa-install";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,9 +20,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user;
+  const { isInstallable, isInstalled, installApp, isIOSSafari } = usePWAInstall();
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   const navigationItems = [
     { label: "About us", href: "/about", isActive: pathname === "/about" },
+    { label: "Contact Us", href: "/contact", isActive: pathname === "/contact" },
     { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
     {
       label: "Terms & Conditions",
@@ -43,9 +56,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  const handleInstallApp = () => {
-    console.log("Install app clicked");
-    onClose();
+  const handleInstallApp = async () => {
+    const result = await installApp();
+    if (result.success) {
+      onClose();
+    }
   };
 
   const handleSignOut = async () => {
@@ -140,13 +155,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
               </button>
 
-              {/* Join as artist */}
-              <button
-                onClick={handleJoinArtist}
-                className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
-              >
-                Join as a artist
-              </button>
+              {/* Join as artist - Only show for non-artist users */}
+              {user.role !== "artist" && (
+                <button
+                  onClick={handleJoinArtist}
+                  className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
+                >
+                  Join as an Artist
+                </button>
+              )}
             </div>
           ) : (
             // Guest state
@@ -165,7 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 onClick={handleJoinArtist}
                 className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
               >
-                Join as a artist
+                Join as an Artist
               </button>
             </div>
           )}
@@ -188,20 +205,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 </Link>
               ))}
             </div>
-
-            {/* Contact */}
-            <div className="mt-5 border border-border-color rounded-xl p-3 bg-card">
-              <div className="flex items-center space-x-3 mb-1">
-                <Support className="size-5 text-text-gray" />
-                <span className="text-text-gray text-sm">For any query</span>
-              </div>
-              <p className="text-white text-sm">
-                Contact Us:{" "}
-                <Link href="tel:+918860014889" className="hover:underline">
-                  +91 8860014889
-                </Link>
-              </p>
-            </div>
           </div>
 
           {/* Signout + Install App */}
@@ -209,21 +212,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <div className="p-6 border-t border-background-light space-y-3">
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
+                className="w-full flex items-center justify-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Signout</span>
               </button>
 
-              <button
-                onClick={handleInstallApp}
-                className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
-              >
-                <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
-                <span className="gradient-text">
-                  Install our web application
-                </span>
-              </button>
+              {!isInstalled && (
+                <button
+                  onClick={handleInstallApp}
+                  className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
+                >
+                  <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
+                  <span className="gradient-text">
+                    {isIOSSafari ? 'Install on iOS' : 'Install our web application'}
+                  </span>
+                </button>
+              )}
             </div>
           )}
         </div>

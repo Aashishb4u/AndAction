@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,17 @@ interface ArtistSidebarProps {
 const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
   const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   const navigationItems = [
     { label: 'About us', href: '/about' },
@@ -156,7 +167,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
             {/* Sign Out */}
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center gap-3 text-white hover:text-red-400 transition-colors duration-200 h3"
+              className="w-full flex items-center justify-center gap-3 text-white hover:text-red-400 transition-colors duration-200 h3"
             >
               <LogOut className="w-5 h-5 rotate-180" />
               <span>Sign out</span>
