@@ -191,7 +191,7 @@ export default function BookmarksPage() {
                   />
                 ))
               ) : (
-                <div className="text-center text-gray-400 py-12 w-full">No bookmarked videos.</div>
+                <div className="text-center text-gray-400 py-12 w-full col-span-full justify-self-center">No bookmarked videos.</div>
               )}
             </div>
           )}
@@ -214,7 +214,7 @@ export default function BookmarksPage() {
                   />
                 ))
               ) : (
-                <div className="text-center text-gray-400 py-12 w-full">No bookmarked shorts.</div>
+                <div className="text-center text-gray-400 py-12 w-full col-span-full justify-self-center">No bookmarked shorts.</div>
               )}
             </div>
           )}
