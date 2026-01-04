@@ -81,7 +81,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         },
         ...(withBookmarks && userId
           ? {
-              bookmarks: {
+              bookmarkedByUsers: {
                 where: { userId },
                 select: { id: true },
               },

@@ -197,6 +197,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
             placeholder="DD/MM/YYYY"
             value={formData.eventDate || null}
             onChange={(value) => handleInputChange("eventDate", value)}
+            minDate={new Date()}
             required
           />
         </div>
