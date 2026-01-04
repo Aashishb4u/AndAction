@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import Image from 'next/image';
-import { ArrowLeft, Edit, Plus } from 'lucide-react';
+import { ArrowLeft, Edit, Pencil } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Artist } from '@/types';
 import { useSession } from "next-auth/react";
@@ -142,8 +142,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
                 onClick={onEdit}
                 className="w-full md:w-auto"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Profile
+              <Pencil className="w-4 h-4 mr-2" />
+                Edit Profile
               </Button>
             </div>
           </div>
