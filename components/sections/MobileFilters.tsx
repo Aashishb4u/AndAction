@@ -14,6 +14,8 @@ interface MobileFiltersProps {
   filters: Filters;
   onFilterChange: (filterType: keyof Filters, value: string) => void;
   onReset: () => void;
+  onViewResult?: () => void; // NEW: handler for View Result button
+  resultCount?: number;
   className?: string;
 }
 
@@ -84,6 +86,8 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   filters,
   onFilterChange,
   onReset,
+  onViewResult,
+  resultCount = 0,
   className = "",
 }) => {
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -358,10 +362,13 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
               <Button
                 variant="primary"
                 size="xs"
-                onClick={() => setShowFilterModal(false)}
+                onClick={() => {
+                  setShowFilterModal(false);
+                  onViewResult?.();
+                }}
                 className="flex-1"
               >
-                Apply Filters
+                View result ({resultCount})
               </Button>
             </div>
           </div>

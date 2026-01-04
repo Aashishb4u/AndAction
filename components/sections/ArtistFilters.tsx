@@ -14,6 +14,7 @@ interface ArtistFiltersProps {
   filters: Filters;
   onFilterChange: (filterType: keyof Filters, value: string) => void;
   onReset: () => void;
+  onViewResult?: () => void; // NEW: handler for View Result button
   resultCount?: number;
   className?: string;
 }
@@ -96,6 +97,7 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
   filters,
   onFilterChange,
   onReset,
+  onViewResult,
   resultCount = 0,
   className = '',
 }) => {
@@ -175,7 +177,12 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
         <Button variant="secondary" size="xs" onClick={onReset} className="flex-1 border border-border-color">
           <span className="gradient-text">Reset</span>
         </Button>
-        <Button variant="primary" size="xs" className="flex-1 flex items-center justify-center">
+        <Button 
+          variant="primary" 
+          size="xs" 
+          className="flex-1 flex items-center justify-center"
+          onClick={onViewResult}
+        >
           View result ({resultCount})
         </Button>
       </div>

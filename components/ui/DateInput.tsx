@@ -4,6 +4,7 @@ import React, { forwardRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Calendar } from 'lucide-react';
+import './DateInput.css';
 
 export interface DateInputProps {
   label?: string;
@@ -62,6 +63,22 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
 
       if (val.length === 10) {
         const [dd, mm, yyyy] = val.split("/");
+        const enteredDate = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
+        
+        // Validate against maxDate if provided
+        if (maxDate && enteredDate > maxDate) {
+          e.target.value = ""; // Clear invalid date
+          onChange?.("");
+          return;
+        }
+        
+        // Validate it's a valid date
+        if (isNaN(enteredDate.getTime())) {
+          e.target.value = "";
+          onChange?.("");
+          return;
+        }
+        
         onChange?.(`${yyyy}-${mm}-${dd}`);
       }
     };
@@ -117,6 +134,11 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             wrapperClassName="w-full"
             required={required}
             maxDate={maxDate}
+            showYearDropdown
+            showMonthDropdown
+            dropdownMode="scroll"
+            yearDropdownItemNumber={100}
+            scrollableYearDropdown
           />
 
           <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
