@@ -31,6 +31,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
   try {
     const url = new URL(request.url);
     const searchParams = url.searchParams;
+    console.log("Received GET /api/artists with params:", Object.fromEntries(searchParams.entries()));
 
     // ---------------------------
     // LOCATION (lat/lng → state)
@@ -68,6 +69,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     let state = searchParams.get("state");
     if (!state && lat && lng) state = await getStateFromLatLng(lat, lng);
 
+    console.log("Filter Params:", {
+      search,
+      type,
+      subType,
+    });
     // ---------------------------
     // WHERE CLAUSE
     // ---------------------------
@@ -111,7 +117,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       });
     }
 
-    if (state) {
+    // Only apply state filter if location is provided
+    if (state && (lat && lng)) {
       dynamicOrFilters.push({
         performingStates: { contains: state, mode: "insensitive" },
       });
@@ -233,6 +240,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         },
       },
     });
+
+    console.log(`Fetched ${artists.length} artists (Page: ${page}, Limit: ${limit})`);
 
     return successResponse(
       {
