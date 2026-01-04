@@ -95,6 +95,21 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
   ];
 
   const handleInputChange = (field: keyof FormData, value: string) => {
+    // For eventDate, ensure only today or future dates are accepted
+    if (field === 'eventDate' && value) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const inputDate = new Date(value);
+      inputDate.setHours(0, 0, 0, 0);
+      if (inputDate < today) {
+        // Ignore or reset if past date
+        setFormData(prev => ({
+          ...prev,
+          [field]: '',
+        }));
+        return;
+      }
+    }
     setFormData(prev => ({
       ...prev,
       [field]: value,
