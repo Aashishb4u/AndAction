@@ -195,7 +195,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="relative">
-                      <span className="text-white text-sm absolute left-3 pr-4 z-50 top-3.5">₹</span>
+                      <span className="text-white text-sm  left-3 mr-4 z-50 top-3.5">₹</span>
                       <Input
                         placeholder="- From"
                         value={formData.soloChargesFrom}
@@ -205,7 +205,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                       />
                     </div>
                     <div className="relative">
-                      <span className="text-white text-sm absolute pr-4 left-3 z-50 top-3.5">₹</span>
+                      <span className="text-white text-sm  mr-4 left-3 z-50 top-3.5">₹</span>
                       <Input
                         placeholder="- To"
                         value={formData.soloChargesTo}
