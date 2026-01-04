@@ -20,7 +20,10 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
   };
 
   return (
-    <section className={`relative md:min-h-screen min-h-[80vh] flex items-end pb-28 justify-center overflow-hidden ${className}`}>
+    <section
+      className={`relative md:min-h-screen min-h-[80vh] flex items-end pb-28 justify-center overflow-hidden ${className} pt-16 md:pt-20`}
+      /* pt-16 = 64px for mobile navbar, md:pt-20 = 80px for desktop */
+    >
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
