@@ -63,6 +63,22 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
 
       if (val.length === 10) {
         const [dd, mm, yyyy] = val.split("/");
+        const enteredDate = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
+        
+        // Validate against maxDate if provided
+        if (maxDate && enteredDate > maxDate) {
+          e.target.value = ""; // Clear invalid date
+          onChange?.("");
+          return;
+        }
+        
+        // Validate it's a valid date
+        if (isNaN(enteredDate.getTime())) {
+          e.target.value = "";
+          onChange?.("");
+          return;
+        }
+        
         onChange?.(`${yyyy}-${mm}-${dd}`);
       }
     };
