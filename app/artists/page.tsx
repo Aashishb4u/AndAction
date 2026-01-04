@@ -11,6 +11,47 @@ import { transformArtist } from "./transformArtist";
 
 const DEFAULT_LIMIT = 12;
 
+// Fetch artist count only (lightweight)
+const getArtistCount = async (
+  query: string,
+  filters: Filters
+): Promise<number> => {
+  try {
+    const params = new URLSearchParams();
+
+    // Add countOnly parameter
+    params.set("countOnly", "true");
+
+    // Search
+    if (query.trim()) {
+      params.set("search", query.trim());
+    }
+
+    // Filters
+    if (filters.category) params.set("type", filters.category);
+    if (filters.subCategory) params.set("subType", filters.subCategory);
+    if (filters.gender) params.set("gender", filters.gender);
+    if (filters.language) params.set("language", filters.language);
+    if (filters.eventType) params.set("eventType", filters.eventType);
+    if (filters.eventState) params.set("state", filters.eventState);
+    if (filters.budget) params.set("budget", filters.budget);
+
+    const url = `/api/artists?${params.toString()}`;
+    const res = await fetch(url, { cache: "no-store" });
+
+    if (!res.ok) {
+      return 0;
+    }
+
+    const json = await res.json();
+    return json.data?.count || 0;
+  } catch (error) {
+    console.error("Count fetch failed:", error);
+    return 0;
+  }
+};
+
+// Fetch full artist data
 const getArtists = async (
   query: string,
   filters: Filters,
@@ -77,42 +118,34 @@ function ArtistsPageContent() {
   const [totalResults, setTotalResults] = useState(0);
   const [page, setPage] = useState(1);
 
-  // ✅ Load filter values from URL on first load
-  useEffect(() => {
-    const initialFilters: Filters = {
-      category: searchParams.get("type") || "",
-      subCategory: searchParams.get("subType") || "",
-      gender: searchParams.get("gender") || "",
-      budget: searchParams.get("budget") || "",
-      eventState: searchParams.get("state") || "",
-      eventType: searchParams.get("eventType") || "",
-      language: searchParams.get("language") || "",
-    };
-
-    setFilters(initialFilters);
-    setQuery(searchParams.get("search") || "");
-    setPage(1);
-    setArtists([]);
-
-  }, []); // runs only once
-
-  // 🔄 Fetch artists whenever filters/query/page change
+  // ✅ Load initial data on mount
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       const { artists, total } = await getArtists(query, filters, page);
-      setArtists((prev) => (page === 1 ? artists : [...prev, ...artists]));
+      setArtists(artists);
       setTotalResults(total);
       setLoading(false);
     };
-
     fetchData();
-  }, [query, filters, page]);
+  }, []); // Only on mount - load all artists
+
+  // 🔄 Fetch COUNT when filters change
+  useEffect(() => {
+    const anyFilterSet = filters.category || filters.subCategory || filters.gender || 
+                         filters.budget || filters.eventState || filters.eventType || filters.language;
+    
+    if (!anyFilterSet) return; // Skip if no filters
+
+    const fetchCount = async () => {
+      const count = await getArtistCount(query, filters);
+      setTotalResults(count);
+    };
+    fetchCount();
+  }, [query, filters]);
 
   const handleFilterChange = (filterType: keyof Filters, value: string) => {
     setFilters((prev) => ({ ...prev, [filterType]: value }));
-    setPage(1);
-    setArtists([]);
   };
 
   const resetFilters = () => {
@@ -127,7 +160,38 @@ function ArtistsPageContent() {
     });
     setQuery("");
     setPage(1);
-    setArtists([]);
+    
+    // Reload all artists
+    setLoading(true);
+    getArtists("", {
+      category: "",
+      subCategory: "",
+      gender: "",
+      budget: "",
+      eventState: "",
+      eventType: "",
+      language: "",
+    }, 1).then(({ artists, total }) => {
+      setArtists(artists);
+      setTotalResults(total);
+      setLoading(false);
+    });
+  };
+
+  // Handle View Result button click
+  const handleViewResult = () => {
+    console.log('View Result clicked with filters:', filters);
+    setLoading(true);
+    setPage(1);
+    getArtists(query, filters, 1).then(({ artists, total }) => {
+      console.log('Fetched artists:', artists.length, 'Total:', total);
+      setArtists(artists);
+      setTotalResults(total);
+      setLoading(false);
+    }).catch((error) => {
+      console.error('Error fetching artists:', error);
+      setLoading(false);
+    });
   };
 
   // -----------------------------
@@ -233,6 +297,8 @@ function ArtistsPageContent() {
             filters={filters}
             onFilterChange={handleFilterChange}
             onReset={resetFilters}
+            onViewResult={handleViewResult}
+            resultCount={totalResults}
           />
         </div>
 
@@ -244,6 +310,7 @@ function ArtistsPageContent() {
               filters={filters}
               onFilterChange={handleFilterChange}
               onReset={resetFilters}
+              onViewResult={handleViewResult}
               resultCount={totalResults}
             />
           </div>
