@@ -1,4 +1,3 @@
-// Service Worker for ANDACTION PWA
 const CACHE_NAME = 'andaction-v1';
 const urlsToCache = [
     '/',
@@ -15,7 +14,6 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys()
@@ -32,7 +30,6 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch event - serve from cache when offline, otherwise fetch from network
 self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request)
