@@ -15,11 +15,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
-
       },
       {
         protocol: "https",
-        hostname: "i.ytimg.com",
+        hostname: "*i*.ytimg.com",
         port: "",
         pathname: "/**",
       },
@@ -39,7 +38,7 @@ const nextConfig: NextConfig = {
         hostname: "api.dicebear.com",
         port: "",
         pathname: "/**",
-      }
+      },
     ],
   },
 };

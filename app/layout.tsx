@@ -49,7 +49,7 @@ export default function RootLayout({
       <body
         className={`${raleway.variable} ${poppins.variable} antialiased`}
       >
-        <ServiceWorkerRegistration />
+        {/* <ServiceWorkerRegistration /> */}
         <Providers>
           {children}
         </Providers>
