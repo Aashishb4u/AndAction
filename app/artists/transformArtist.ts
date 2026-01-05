@@ -30,6 +30,7 @@ export function transformArtist(raw: RawArtistFromAPI): Artist {
     "Unknown Artist";
 
   return {
+    userId: raw.user.id,
     id: raw.id,
     name: fullName,
     category: capitalize(raw.artistType || "Artist"),
