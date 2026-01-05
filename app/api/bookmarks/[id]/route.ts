@@ -27,7 +27,9 @@ export async function DELETE(
         return ApiErrors.unauthorized();
     }
     const userId = session.user.id;
-    const bookmarkId = context.params.id;
+    // Next.js App Router: context.params is a Promise and must be awaited
+    const params = await context.params;
+    const bookmarkId = params.id;
 
     if (!bookmarkId) {
         return ApiErrors.badRequest('Bookmark ID is required.');
