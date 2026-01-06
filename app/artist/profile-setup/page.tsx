@@ -111,14 +111,12 @@ export default function ProfileSetupPage() {
         (profileData as any).avatarUrl &&
         (profileData as any).avatarUrl.trim() !== ""
           ? (profileData as any).avatarUrl
-          : session.user.avatar;
+          : session?.user?.avatar ?? null;
 
       await update({
-        update: {
-          avatar: avatarToUse,
-          artistProfile: updatedArtistProfile,
-          isArtistVerified: true,
-        },
+        avatar: avatarToUse,
+        artistProfile: updatedArtistProfile,
+        isArtistVerified: true,
       });
 
       setShowSuccessModal(true);
