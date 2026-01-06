@@ -20,7 +20,6 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   className = "",
 }) => {
   const router = useRouter();
-  console.log("Rendering ArtistProfileCard for artist:", artist);
   const formatPrice = (price: number) => {
     return `₹ ${price.toLocaleString()}`;
   };
