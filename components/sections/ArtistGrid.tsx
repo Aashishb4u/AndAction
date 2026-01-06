@@ -15,7 +15,12 @@ const ArtistGrid: React.FC<ArtistGridProps> = ({
   onBookmark,
   className = '',
 }) => {
+    // Log all artist data to the console
+  if (typeof window !== 'undefined') {
+    console.log('All artist data:', artists);
+  }
   if (artists.length === 0) {
+    
     return (
       <div className="flex flex-col items-center justify-center py-16 px-6">
         <div className="text-center">
