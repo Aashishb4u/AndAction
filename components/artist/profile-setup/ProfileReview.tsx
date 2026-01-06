@@ -275,41 +275,6 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Videos & Social Media Section */}
-            <div className="space-y-4">
-              {/* Section Header */}
-              <div className="bg-card border-y border-border-color px-6 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-white h2">Videos & Social media</h3>
-                  </div>
-                  <Image onClick={() => onEdit('videosSocial')} src="/icons/edit.svg" alt="Verified" width={25} height={25} />
-
-                </div>
-              </div>
-
-              {/* Social Media Content */}
-              <div className="space-y-3 text-sm px-6">
-                <div>
-                  <p className="text-text-gray mb-1">YouTube Channel</p>
-                  <p className="text-white">
-                    {data.youtubeConnected ? 'Connected' : 'Not connected'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-text-gray mb-1">Instagram Account</p>
-                  <p className="text-white">
-                    {data.instagramConnected ? 'Connected' : 'Not connected'}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
