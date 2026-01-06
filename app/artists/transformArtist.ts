@@ -29,13 +29,22 @@ export function transformArtist(raw: RawArtistFromAPI): Artist {
     raw.stageName ||
     "Unknown Artist";
 
+  let duration = 'N/A';
+  const from = raw.performingDurationFrom;
+  const to = raw.performingDurationTo;
+  if (typeof from === 'number' && typeof to === 'number' && to > from) {
+    duration = `${from} - ${to} mins`;
+  } else if (typeof from === 'number' && typeof to === 'number' && from === to) {
+    duration = `${from} mins`;
+  }
+
   return {
     userId: raw.user.id,
     id: raw.id,
     name: fullName,
     category: capitalize(raw.artistType || "Artist"),
     location: capitalize(raw.user.city || "") || "Location not set",
-    duration: `${raw.performingDurationFrom} - ${raw.performingDurationTo} mins`,
+    duration,
     startingPrice: raw.soloChargesFrom || 0,
     languages:
       raw.performingLanguage?.split(",").map((s) => capitalize(s.trim())) || [],

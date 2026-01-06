@@ -12,12 +12,30 @@ interface ProfileReviewProps {
   onEdit: (step: string) => void;
 }
 
+import { useState } from 'react';
+
 const ProfileReview: React.FC<ProfileReviewProps> = ({
   data,
   onNext,
   onBack,
   onEdit
 }) => {
+  const [error, setError] = useState<string | null>(null);
+
+  // Validate performance duration before submit
+  const handleNext = () => {
+    if (
+      data.performingDurationFrom &&
+      data.performingDurationTo &&
+      Number(data.performingDurationTo) < Number(data.performingDurationFrom)
+    ) {
+      setError('End time cannot be less than start time.');
+      return;
+    }
+    setError(null);
+    onNext();
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -39,6 +57,11 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
       {/* Content */}
       <div className="flex-1 md:px-6 pb-32">
         <div className="max-w-md mx-auto">
+          {error && (
+            <div className="mb-4 px-6">
+              <p className="text-red-500 text-sm font-semibold">{error}</p>
+            </div>
+          )}
           {/* Title */}
           <div className="md:text-center mb-8 px-6">
             <h2 className="h1 text-white mb-6">All done! Preview profile</h2>
@@ -320,7 +343,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
           <Button
             variant="primary"
             size="md"
-            onClick={onNext}
+            onClick={handleNext}
             className="w-full"
           >
             Submit
