@@ -24,15 +24,19 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
       className={`relative md:min-h-screen min-h-[80vh] flex items-end pb-28 justify-center overflow-hidden ${className} pt-16 md:pt-20`}
       /* pt-16 = 64px for mobile navbar, md:pt-20 = 80px for desktop */
     >
-      {/* Background Image */}
+      {/* Background Video */}
       <div className="absolute inset-0 z-0">
-        <Image
-          src="/hero-bg.jpg"
-          alt="Hero Background"
-          fill
-          className={`object-cover object-center ${isLoaded ? 'hero-bg-animate' : ''}`}
-          priority
-        />
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className={`object-cover object-center w-full h-full ${isLoaded ? 'hero-bg-animate' : ''}`}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
+        >
+          <source src="/video.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
         {/* Dark Overlay */}
         <div className={`absolute inset-0 bg-black/10 ${isLoaded ? 'hero-overlay-animate' : ''}`} />
       </div>
