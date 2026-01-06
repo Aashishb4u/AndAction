@@ -12,7 +12,7 @@ import { prisma } from '@/lib/prisma';
 import { ApiErrors, successResponse } from '@/lib/api-response';
 import { sendForgotPasswordEmail } from '@/lib/email';
 
-const RESET_TOKEN_EXPIRY_MINUTES = 10;
+const RESET_TOKEN_EXPIRY_MINUTES = 5;
 
 /**
  * Generates a 6-digit numeric OTP.
