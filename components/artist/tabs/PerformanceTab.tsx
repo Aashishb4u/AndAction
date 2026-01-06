@@ -1,140 +1,146 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Select from '@/components/ui/Select';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
-import Tooltip from '@/components/ui/Tooltip';
-import { Info } from 'lucide-react';
-import { Artist } from '@/types';
+import React, { useState } from "react";
+import Select from "@/components/ui/Select";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+import Tooltip from "@/components/ui/Tooltip";
+import { Info } from "lucide-react";
+import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
-import { mapUserForSession, updateArtistProfile } from '@/lib/helper';
+import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
+import { toast } from "react-toastify";
 
 interface PerformanceTabProps {
   artist: Artist;
 }
 
 const performingLanguageOptions = [
-  { value: 'hindi', label: 'Hindi' },
-  { value: 'english', label: 'English' },
-  { value: 'marathi', label: 'Marathi' },
-  { value: 'gujarati', label: 'Gujarati' },
-  { value: 'tamil', label: 'Tamil' },
-  { value: 'telugu', label: 'Telugu' },
-  { value: 'bengali', label: 'Bengali' },
-  { value: 'punjabi', label: 'Punjabi' }
+  { value: "hindi", label: "Hindi" },
+  { value: "english", label: "English" },
+  { value: "marathi", label: "Marathi" },
+  { value: "gujarati", label: "Gujarati" },
+  { value: "tamil", label: "Tamil" },
+  { value: "telugu", label: "Telugu" },
+  { value: "bengali", label: "Bengali" },
+  { value: "punjabi", label: "Punjabi" },
 ];
 
 const eventTypeOptions = [
-  { value: 'wedding', label: 'Wedding' },
-  { value: 'corporate', label: 'Corporate Event' },
-  { value: 'birthday', label: 'Birthday Party' },
-  { value: 'festival', label: 'Festival' },
-  { value: 'concert', label: 'Concert' },
-  { value: 'private-party', label: 'Private Party' },
-  { value: 'cultural', label: 'Cultural Event' },
-  { value: 'religious', label: 'Religious Event' }
+  { value: "wedding", label: "Wedding" },
+  { value: "corporate", label: "Corporate Event" },
+  { value: "birthday", label: "Birthday Party" },
+  { value: "festival", label: "Festival" },
+  { value: "concert", label: "Concert" },
+  { value: "private-party", label: "Private Party" },
+  { value: "cultural", label: "Cultural Event" },
+  { value: "religious", label: "Religious Event" },
 ];
 
 const performingStatesOptions = [
-  { value: 'gujarat-rajasthan-maharashtra', label: 'Gujarat, Rajasthan, Maharashtra' },
-  { value: 'gujarat-maharashtra', label: 'Gujarat, Maharashtra' },
-  { value: 'gujarat-rajasthan', label: 'Gujarat, Rajasthan' },
-  { value: 'gujarat', label: 'Gujarat' },
-  { value: 'rajasthan', label: 'Rajasthan' },
-  { value: 'maharashtra', label: 'Maharashtra' },
+  {
+    value: "gujarat-rajasthan-maharashtra",
+    label: "Gujarat, Rajasthan, Maharashtra",
+  },
+  { value: "gujarat-maharashtra", label: "Gujarat, Maharashtra" },
+  { value: "gujarat-rajasthan", label: "Gujarat, Rajasthan" },
+  { value: "gujarat", label: "Gujarat" },
+  { value: "rajasthan", label: "Rajasthan" },
+  { value: "maharashtra", label: "Maharashtra" },
 ];
 
 const performingMembersOptions = [
-  { value: '1', label: '1 member' },
-  { value: '2', label: '2 members' },
-  { value: '3', label: '3 members' },
-  { value: '4', label: '4 members' },
-  { value: '5', label: '5+ members' },
+  { value: "1", label: "1 member" },
+  { value: "2", label: "2 members" },
+  { value: "3", label: "3 members" },
+  { value: "4", label: "4 members" },
+  { value: "5", label: "5+ members" },
 ];
 
 const offStageMembersOptions = [
-  { value: '0', label: '0 members' },
-  { value: '1', label: '1 member' },
-  { value: '2', label: '2 members' },
-  { value: '3', label: '3 members' },
-  { value: '4', label: '4+ members' },
+  { value: "0", label: "0 members" },
+  { value: "1", label: "1 member" },
+  { value: "2", label: "2 members" },
+  { value: "3", label: "3 members" },
+  { value: "4", label: "4+ members" },
 ];
 
 const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
   const { data: session, update } = useSession();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     performingLanguage: artist.performingLanguage || "",
     eventType: artist.performingEventType || "",
     performingStates: artist.performingStates
-    ? artist.performingStates.charAt(0).toUpperCase() +
-      artist.performingStates.slice(1).toLowerCase()
-    : "",
+      ? artist.performingStates.charAt(0).toUpperCase() +
+        artist.performingStates.slice(1).toLowerCase()
+      : "",
     minDuration: artist.performingDurationFrom || "",
     maxDuration: artist.performingDurationTo || "",
     performingMembers: artist.performingMembers || "",
     offStageMembers: artist.offStageMembers || "",
   });
 
-
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleSave = async () => {
-  try {
-    if (!session?.user?.id) {
-      alert("Not authenticated");
-      return;
+    try {
+      if (!session?.user?.id) {
+        toast.error("Not authenticated");
+        return;
+      }
+
+      setIsLoading(true);
+
+      const payload = {
+        userId: session.user.id,
+
+        performingLanguage: formData.performingLanguage,
+        performingEventType: formData.eventType,
+        performingStates: formData.performingStates,
+        performingDurationFrom: formData.minDuration,
+        performingDurationTo: formData.maxDuration,
+        performingMembers: formData.performingMembers,
+        offStageMembers: formData.offStageMembers,
+      };
+
+      // 1️⃣ Update DB
+      const res = await updateArtistProfile(payload);
+
+      const refreshedUser = res.data.user;
+      const refreshedArtist = res.data.artistProfile;
+
+      // 2️⃣ Build the correct NextAuth structure:
+      const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
+
+      // 3️⃣ Update session
+      await update({
+        update: sessionPayload,
+      });
+
+      toast.success("Performance details updated!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update performance details");
+    } finally {
+      setIsLoading(false);
     }
-
-    const payload = {
-      userId: session.user.id,
-
-      performingLanguage: formData.performingLanguage,
-      performingEventType: formData.eventType,
-      performingStates: formData.performingStates,
-      performingDurationFrom: formData.minDuration,
-      performingDurationTo: formData.maxDuration,
-      performingMembers: formData.performingMembers,
-      offStageMembers: formData.offStageMembers,
-    };
-
-    // 1️⃣ Update DB
-    const res = await updateArtistProfile(payload);
-
-    const refreshedUser = res.data.user;
-    const refreshedArtist = res.data.artistProfile;
-
-    // 2️⃣ Build the correct NextAuth structure:
-    const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
-
-    // 3️⃣ Update session
-    await update({
-      update: sessionPayload
-    });
-
-    alert("Performance details updated!");
-
-  } catch (error) {
-    console.error(error);
-    alert("Failed to update performance details");
-  }
-};
-
+  };
 
   const handleReset = () => {
     setFormData({
-      performingLanguage: 'english-hindi-gujarati',
-      eventType: 'party-concert-events',
-      performingStates: 'gujarat-rajasthan-maharashtra',
-      minDuration: '120',
-      maxDuration: '160',
-      performingMembers: '2',
-      offStageMembers: '0',
+      performingLanguage: "english-hindi-gujarati",
+      eventType: "party-concert-events",
+      performingStates: "gujarat-rajasthan-maharashtra",
+      minDuration: "120",
+      maxDuration: "160",
+      performingMembers: "2",
+      offStageMembers: "0",
     });
   };
 
@@ -146,7 +152,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           label="Performing language"
           options={performingLanguageOptions}
           value={formData.performingLanguage}
-          onChange={(value) => handleInputChange('performingLanguage', value)}
+          onChange={(value) => handleInputChange("performingLanguage", value)}
           required
         />
         <div className="absolute top-0 right-0">
@@ -162,7 +168,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           label="Performing event type"
           options={eventTypeOptions}
           value={formData.eventType}
-          onChange={(value) => handleInputChange('eventType', value)}
+          onChange={(value) => handleInputChange("eventType", value)}
           required
         />
         <div className="absolute top-0 right-0">
@@ -177,7 +183,9 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         <Input
           label="Performing states"
           value={formData.performingStates}
-          onChange={(e) => handleInputChange('performingStates', e.target.value)}
+          onChange={(e) =>
+            handleInputChange("performingStates", e.target.value)
+          }
           placeholder="Enter state(s)"
           required
         />
@@ -191,20 +199,21 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       {/* Performing Duration */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-white">
-          Performing duration <span className="text-text-gray">(in minutes)</span>
+          Performing duration{" "}
+          <span className="text-text-gray">(in minutes)</span>
           <span className="text-red-500 ml-1">*</span>
         </label>
         <div className="relative">
           <div className="grid grid-cols-2 gap-6">
             <Input
               value={formData.minDuration}
-              onChange={(e) => handleInputChange('minDuration', e.target.value)}
+              onChange={(e) => handleInputChange("minDuration", e.target.value)}
               placeholder="120 mins"
               required
             />
             <Input
               value={formData.maxDuration}
-              onChange={(e) => handleInputChange('maxDuration', e.target.value)}
+              onChange={(e) => handleInputChange("maxDuration", e.target.value)}
               placeholder="160 mins"
               required
             />
@@ -225,7 +234,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             label="Performing members"
             options={performingMembersOptions}
             value={formData.performingMembers}
-            onChange={(value) => handleInputChange('performingMembers', value)}
+            onChange={(value) => handleInputChange("performingMembers", value)}
             required
           />
           <div className="absolute top-0 right-0">
@@ -241,7 +250,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             label="Off stage members"
             options={offStageMembersOptions}
             value={formData.offStageMembers}
-            onChange={(value) => handleInputChange('offStageMembers', value)}
+            onChange={(value) => handleInputChange("offStageMembers", value)}
             required
           />
           <div className="absolute top-0 right-0">
@@ -257,18 +266,19 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         <Button
           variant="secondary"
           onClick={handleReset}
-          className='w-full md:w-auto text-xs! md:text-base'
-
+          disabled={isLoading}
+          className="w-full md:w-auto text-xs! md:text-base"
         >
-          <span className='gradient-text'>Reset</span>
+          <span className="gradient-text">Reset</span>
         </Button>
 
         <Button
           variant="primary"
           onClick={handleSave}
+          disabled={isLoading}
           className="w-full md:w-auto text-xs! md:text-base"
         >
-          Save Changes
+          {isLoading ? "Saving..." : "Save Changes"}
         </Button>
       </div>
     </div>
