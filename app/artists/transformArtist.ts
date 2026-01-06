@@ -12,8 +12,8 @@ type RawArtistFromAPI = {
   yearsOfExperience: number | null;
   soloChargesFrom: number | null;
   soloChargesTo: number | null;
-  performingDurationFrom: number | null;
-  performingDurationTo: number | null;
+  performingDurationFrom: string | number | null;
+  performingDurationTo: string | number | null;
   user: {
     id: string;
     firstName: string | null;
@@ -29,15 +29,52 @@ export function transformArtist(raw: RawArtistFromAPI): Artist {
     raw.stageName ||
     "Unknown Artist";
 
-  let duration = 'N/A';
-  const from = raw.performingDurationFrom;
-  const to = raw.performingDurationTo;
-  if (typeof from === 'number' && typeof to === 'number' && to > from) {
-    duration = `${from} - ${to} mins`;
-  } else if (typeof from === 'number' && typeof to === 'number' && from === to) {
-    duration = `${from} mins`;
+  let duration = "N/A";
+
+  let fromNum: number | null = null;
+  let toNum: number | null = null;
+
+  if (raw.performingDurationFrom) {
+    if (typeof raw.performingDurationFrom === "number") {
+      fromNum = raw.performingDurationFrom;
+    } else if (typeof raw.performingDurationFrom === "string") {
+      // Check if it's a range string like "120-150"
+      if (raw.performingDurationFrom.includes("-")) {
+        const parts = raw.performingDurationFrom.split("-");
+        fromNum = parseInt(parts[0].trim(), 10);
+        // Extract the second value as toNum if not already set
+        if (parts[1]) {
+          const secondNum = parseInt(parts[1].trim(), 10);
+          if (!isNaN(secondNum)) toNum = secondNum;
+        }
+      } else {
+        fromNum = parseInt(raw.performingDurationFrom, 10);
+      }
+      if (isNaN(fromNum)) fromNum = null;
+    }
   }
 
+  if (!toNum && raw.performingDurationTo) {
+    if (typeof raw.performingDurationTo === "number") {
+      toNum = raw.performingDurationTo;
+    } else if (typeof raw.performingDurationTo === "string") {
+      toNum = parseInt(raw.performingDurationTo, 10);
+      if (isNaN(toNum)) toNum = null;
+    }
+  }
+
+  // Build duration string
+  if (fromNum && toNum) {
+    if (toNum > fromNum) {
+      duration = `${fromNum} - ${toNum} mins`;
+    } else if (fromNum === toNum) {
+      duration = `${fromNum} mins`;
+    }
+  } else if (fromNum) {
+    duration = `${fromNum} mins`;
+  }
+
+  console.log("Transformed artist:", duration);
   return {
     userId: raw.user.id,
     id: raw.id,
