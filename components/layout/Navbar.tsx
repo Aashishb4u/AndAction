@@ -23,7 +23,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   const [lastScrollY, setLastScrollY] = useState(0);
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session, status } = useSession(); 
+  const { data: session, status } = useSession();
   const user = session?.user;
 
   useEffect(() => {
@@ -148,10 +148,10 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
               >
                 <Image
                   src={
-                      user.avatar && /^\d+$/.test(String(user.avatar))
-                        ? `/avatars/${user.avatar}.png`
-                        : user.avatar || "/default-avatar.png"
-                    }
+                    user.avatar && /^\d+$/.test(String(user.avatar))
+                      ? `/avatars/${user.avatar}.png`
+                      : user.avatar || "/avatars/default-avatar.jpeg"
+                  }
                   alt={user.firstName || "User"}
                   width={40}
                   height={40}
