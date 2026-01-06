@@ -74,7 +74,6 @@ export function transformArtist(raw: RawArtistFromAPI): Artist {
     duration = `${fromNum} mins`;
   }
 
-  console.log("Transformed artist:", duration);
   return {
     userId: raw.user.id,
     id: raw.id,

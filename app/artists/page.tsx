@@ -8,6 +8,7 @@ import MobileFilters from "@/components/sections/MobileFilters";
 import { Artist, Filters } from "@/types";
 import LoadingSpinner from "@/components/ui/Loading";
 import { transformArtist } from "./transformArtist";
+import ClientWrapper from "@/components/ui/client-wrapper";
 
 const DEFAULT_LIMIT = 12;
 
@@ -118,7 +119,6 @@ function ArtistsPageContent() {
   const [totalResults, setTotalResults] = useState(0);
   const [page, setPage] = useState(1);
 
-  // ✅ Load initial data on mount
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -132,9 +132,15 @@ function ArtistsPageContent() {
 
   // 🔄 Fetch COUNT when filters change
   useEffect(() => {
-    const anyFilterSet = filters.category || filters.subCategory || filters.gender || 
-                         filters.budget || filters.eventState || filters.eventType || filters.language;
-    
+    const anyFilterSet =
+      filters.category ||
+      filters.subCategory ||
+      filters.gender ||
+      filters.budget ||
+      filters.eventState ||
+      filters.eventType ||
+      filters.language;
+
     if (!anyFilterSet) return; // Skip if no filters
 
     const fetchCount = async () => {
@@ -160,18 +166,22 @@ function ArtistsPageContent() {
     });
     setQuery("");
     setPage(1);
-    
+
     // Reload all artists
     setLoading(true);
-    getArtists("", {
-      category: "",
-      subCategory: "",
-      gender: "",
-      budget: "",
-      eventState: "",
-      eventType: "",
-      language: "",
-    }, 1).then(({ artists, total }) => {
+    getArtists(
+      "",
+      {
+        category: "",
+        subCategory: "",
+        gender: "",
+        budget: "",
+        eventState: "",
+        eventType: "",
+        language: "",
+      },
+      1
+    ).then(({ artists, total }) => {
       setArtists(artists);
       setTotalResults(total);
       setLoading(false);
@@ -180,18 +190,18 @@ function ArtistsPageContent() {
 
   // Handle View Result button click
   const handleViewResult = () => {
-    console.log('View Result clicked with filters:', filters);
     setLoading(true);
     setPage(1);
-    getArtists(query, filters, 1).then(({ artists, total }) => {
-      console.log('Fetched artists:', artists.length, 'Total:', total);
-      setArtists(artists);
-      setTotalResults(total);
-      setLoading(false);
-    }).catch((error) => {
-      console.error('Error fetching artists:', error);
-      setLoading(false);
-    });
+    getArtists(query, filters, 1)
+      .then(({ artists, total }) => {
+        setArtists(artists);
+        setTotalResults(total);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching artists:", error);
+        setLoading(false);
+      });
   };
 
   // -----------------------------
@@ -199,13 +209,13 @@ function ArtistsPageContent() {
   // -----------------------------
   const handleBookmark = async (artistId: string) => {
     // Instant UI feedback
-    setArtists(prev =>
-      prev.map(a =>
+    setArtists((prev) =>
+      prev.map((a) =>
         a.id === artistId ? { ...a, isBookmarked: !a.isBookmarked } : a
       )
     );
 
-    const artist = artists.find(a => a.id === artistId);
+    const artist = artists.find((a) => a.id === artistId);
     if (!artist) return;
 
     try {
@@ -221,11 +231,9 @@ function ArtistsPageContent() {
         if (!json.success) return;
 
         // Remove bookmarkId in state
-        setArtists(prev =>
-          prev.map(a =>
-            a.id === artistId
-              ? { ...a, bookmarkId: undefined }
-              : a
+        setArtists((prev) =>
+          prev.map((a) =>
+            a.id === artistId ? { ...a, bookmarkId: undefined } : a
           )
         );
       }
@@ -242,11 +250,9 @@ function ArtistsPageContent() {
         if (!json.success) return;
 
         // Save the new bookmarkId so we can delete later
-        setArtists(prev =>
-          prev.map(a =>
-            a.id === artistId
-              ? { ...a, bookmarkId: json.data.id }
-              : a
+        setArtists((prev) =>
+          prev.map((a) =>
+            a.id === artistId ? { ...a, bookmarkId: json.data.id } : a
           )
         );
       }
@@ -254,7 +260,6 @@ function ArtistsPageContent() {
       console.error("Bookmark toggle failed:", err);
     }
   };
-
 
   return (
     <SiteLayout showPreloader={false}>
@@ -329,11 +334,12 @@ function ArtistsPageContent() {
   );
 }
 
-
 export default function ArtistsPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <ArtistsPageContent />
+      <ClientWrapper>
+        <ArtistsPageContent />
+      </ClientWrapper>
     </Suspense>
   );
 }

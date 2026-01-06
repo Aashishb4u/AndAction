@@ -128,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                    src={
                       user.avatar && /^\d+$/.test(String(user.avatar))
                         ? `/avatars/${user.avatar}.png`
-                        : user.avatar || "/default-avatar.png"
+                        : user.avatar || "/avatars/default-avatar.jpeg"
                     }
                     alt={user.firstName || "User"}
                     width={48}
