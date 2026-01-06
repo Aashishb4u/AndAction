@@ -1,12 +1,12 @@
 import { Resend } from "resend";
 
 export const resend = new Resend(process.env.RESEND_API_KEY);
-export const resendFromEmail = process.env.FROM_EMAIL
+export const resendFromEmail = process.env.FROM_EMAIL;
 
 export async function sendOtpEmail(to: string, otp: string) {
   try {
     const result = await resend.emails.send({
-      from: `AndAction <${resendFromEmail}>`,   
+      from: `AndAction <${resendFromEmail}>`,
       to,
       subject: "Your AndAction Verification Code",
       html: `
@@ -40,7 +40,6 @@ export async function sendOtpEmail(to: string, otp: string) {
         </div>
       `,
     });
-    console.log(result)
     return { success: true, result };
   } catch (error: any) {
     console.error("Resend Email OTP Error:", error);
@@ -74,7 +73,7 @@ export async function sendForgotPasswordEmail(to: string, otp: string) {
             </div>
             
             <p style="color: #555; font-size: 14px;">
-              This code is valid for <strong>10 minutes</strong>. If you didn't request a password reset, you can safely ignore this email.
+              This code is valid for <strong>5 minutes</strong>. If you didn't request a password reset, you can safely ignore this email.
             </p>
           </div>
           
@@ -84,7 +83,6 @@ export async function sendForgotPasswordEmail(to: string, otp: string) {
         </div>
       `,
     });
-    console.log(result)
     return { success: true, result };
   } catch (error: any) {
     console.error("Resend Email Forgot Password Error:", error);
