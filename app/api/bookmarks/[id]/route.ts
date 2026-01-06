@@ -27,8 +27,7 @@ export async function DELETE(
         return ApiErrors.unauthorized();
     }
     const userId = session.user.id;
-    
-    // Await params in Next.js 15+
+    // Next.js App Router: context.params is a Promise and must be awaited
     const params = await context.params;
     const bookmarkId = params.id;
 
