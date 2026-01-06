@@ -131,51 +131,57 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
           {/* Form */}
           <div className="space-y-6">
             {/* Performing Languages */}
-            <div className="relative">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="block section-text">Performing language*</label>
+                <button className="text-blue">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </div>
               <Select
-                label="Performing language*"
                 placeholder="Select languages"
                 value={formData.performingLanguages[0] || ''}
                 onChange={(value) => handleInputChange('performingLanguages', [value])}
                 options={languages}
               />
-              <button className="absolute top-0 right-0 text-blue p-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
             </div>
 
             {/* Performing Event Type */}
-            <div className="relative">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="block section-text">Performing event type*</label>
+                <button className="text-blue">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </div>
               <Select
-                label="Performing event type*"
                 placeholder="Select event type"
                 value={formData.performingEventTypes[0] || ''}
                 onChange={(value) => handleInputChange('performingEventTypes', [value])}
                 options={eventTypes}
               />
-              <button className="absolute top-0 right-0 text-blue p-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
             </div>
 
             {/* Performing States */}
-            <div className="relative">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="block section-text">Performing states*</label>
+                <button className="text-blue">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </div>
               <Select
-                label="Performing states*"
                 placeholder="Select states"
                 value={formData.performingStates[0] || ''}
                 onChange={(value) => handleInputChange('performingStates', [value])}
                 options={states}
               />
-              <button className="absolute top-0 right-0 text-blue p-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
             </div>
 
             {/* Performing Duration */}
@@ -205,35 +211,39 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
             </div>
 
             {/* Performing Members */}
-            <div className="relative">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="block section-text">Performing members</label>
+                <button className="text-blue">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </div>
               <Select
-                label="Performing members"
                 placeholder="Select members"
                 value={formData.performingMembers}
                 onChange={(value) => handleInputChange('performingMembers', value)}
                 options={memberOptions}
               />
-              <button className="absolute top-0 right-0 text-blue p-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
             </div>
 
             {/* Off Stage Members */}
-            <div className="relative">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="block section-text">Off stage members</label>
+                <button className="text-blue">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </div>
               <Select
-                label="Off stage members"
                 placeholder="Select members"
                 value={formData.offStageMembers}
                 onChange={(value) => handleInputChange('offStageMembers', value)}
                 options={memberOptions}
               />
-              <button className="absolute top-0 right-0 text-blue p-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
             </div>
           </div>
         </div>
