@@ -124,7 +124,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
               </div>
             </div>
             <p className="text-text-gray text-sm text-left">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc
+              Tell us about your performance preferences, including languages, event types, and team size.
             </p>
           </div>
 
