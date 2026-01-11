@@ -1,183 +1,141 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ArtistSection from './ArtistSection';
+import ArtistSectionSkeleton from './ArtistSectionSkeleton';
 
 const mockVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
 
-export default function Artists({ location }: { location: { lat: number; lng: number } | null }) {
-  const [singers, setSingers] = useState<any[]>([]);
-  const [dancers, setDancers] = useState<any[]>([]);
-  const [anchors, setAnchors] = useState<any[]>([]);
-  const [djs, setDJ] = useState<any[]>([]);
+interface Artist {
+  id: string;
+  name: string;
+  location: string;
+  thumbnail: string;
+  videoUrl: string;
+}
 
-  const initialRender = useRef(true);
+type ArtistType = 'singer' | 'dancer' | 'anchor' | 'dj';
+
+interface ArtistsState {
+  singers: Artist[];
+  dancers: Artist[];
+  anchors: Artist[];
+  djs: Artist[];
+}
+
+export default function Artists({ location }: { location: { lat: number; lng: number } | null }) {
+  const [artists, setArtists] = useState<ArtistsState>({
+    singers: [],
+    dancers: [],
+    anchors: [],
+    djs: []
+  });
+  const [loading, setLoading] = useState(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (initialRender.current) {
-      initialRender.current = false;
-
-      //if (!location) return;
+    // Cancel any ongoing requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
 
-    // If no location yet, wait for real update
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
+    const mapArtistData = (artist: any): Artist => ({
+      id: artist.id,
+      name: artist.stageName || `${artist.user.firstName} ${artist.user.lastName}`.trim(),
+      location: artist.user.city || "Unknown",
+      thumbnail: artist.user.avatar || "/icons/images.jpeg",
+      videoUrl: mockVideoUrl,
+    });
 
-    async function fetchSingers() {
+    const fetchArtistsByType = async (type: ArtistType): Promise<Artist[]> => {
       try {
-        let url = `/api/artists?type=singer&verified=false`;
+        let url = `/api/artists?type=${type}&verified=false`;
 
         if (location?.lat && location?.lng) {
           url += `&lat=${location.lat}&lng=${location.lng}`;
         }
 
-        const res = await fetch(url);
-        console.log("Fetching singers from URL:", url);
+        const res = await fetch(url, { signal: abortController.signal });
         const json = await res.json();
-
         const apiArtists = json?.data?.artists || [];
 
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setSingers(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
-      }
-    }
-    async function fetchDancers() {
-      try {
-        let url = `/api/artists?type=dancer&verified=false`;
-
-        if (location?.lat && location?.lng) {
-          url += `&lat=${location.lat}&lng=${location.lng}`;
+        return apiArtists.map(mapArtistData);
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          console.log(`Request for ${type}s was cancelled`);
+          return [];
         }
-
-        const res = await fetch(url);
-        const json = await res.json();
-
-        const apiArtists = json?.data?.artists || [];
-
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setDancers(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
+        console.error(`Failed to load ${type}s:`, err);
+        return [];
       }
-    }
+    };
 
-    async function fetchAnchors() {
+    const fetchAllArtists = async () => {
+      setLoading(true);
       try {
-        let url = `/api/artists?type=anchor&verified=false`;
+        const [singers, dancers, anchors, djs] = await Promise.all([
+          fetchArtistsByType('singer'),
+          fetchArtistsByType('dancer'),
+          fetchArtistsByType('anchor'),
+          fetchArtistsByType('dj')
+        ]);
 
-        if (location?.lat && location?.lng) {
-          url += `&lat=${location.lat}&lng=${location.lng}`;
+        if (!abortController.signal.aborted) {
+          console.log('Fetched artists:', { singers, dancers, anchors, djs });
+          setArtists({ singers, dancers, anchors, djs });
         }
-
-        const res = await fetch(url);
-        const json = await res.json();
-
-        const apiArtists = json?.data?.artists || [];
-
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setAnchors(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
-      }
-    }
-    async function fetchDJ() {
-      try {
-        let url = `/api/artists?type=dj&verified=false`;
-
-        if (location?.lat && location?.lng) {
-          url += `&lat=${location.lat}&lng=${location.lng}`;
+      } finally {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
         }
-
-        const res = await fetch(url);
-        const json = await res.json();
-
-        const apiArtists = json?.data?.artists || [];
-
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setDJ(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
       }
-    }
-    fetchDJ();
-    fetchAnchors();
-    fetchDancers();
-    fetchSingers();
-  }, [location]);
+    };
 
+    fetchAllArtists();
 
-
-
-  const sampleArtists = {
-    singers,
-    dancers,
-    anchors,
-    djs
-  };
+    return () => {
+      abortController.abort();
+    };
+  }, [location?.lat, location?.lng]);
 
   return (
-<section className="relative w-full pt-16">
-  {/* Background */}
-  <div className="absolute inset-0 z-0">
-    {/* Desktop */}
-    <div
-      className="hidden md:block w-full h-full bg-cover bg-top bg-no-repeat"
-      style={{ backgroundImage: "url(/home-bg.webp)" }}
-    />
+    <section className="relative w-full pt-16">
+      {/* Background */}
+      <div className="absolute inset-0 z-0">
+        {/* Desktop */}
+        <div
+          className="hidden md:block w-full h-full bg-cover bg-top bg-no-repeat"
+          style={{ backgroundImage: "url(/home-bg.webp)" }}
+        />
 
-    {/* Mobile */}
-    <div
-      className="md:hidden w-full h-full bg-cover bg-top bg-no-repeat"
-      style={{ backgroundImage: "url(/home-bg-mobile.webp)" }}
-    />
-  </div>
+        {/* Mobile */}
+        <div
+          className="md:hidden w-full h-full bg-cover bg-top bg-no-repeat"
+          style={{ backgroundImage: "url(/home-bg-mobile.webp)" }}
+        />
+      </div>
 
-  {/* Content */}
-  <div className="relative z-10 max-w-7xl mx-auto space-y-6 py-12">
-    <ArtistSection title="Singer" artists={sampleArtists.singers} />
-    <ArtistSection title="Dancers" artists={sampleArtists.dancers} />
-    <ArtistSection title="Anchor" artists={sampleArtists.anchors} />
-    <ArtistSection title="DJ / VJ" artists={sampleArtists.djs} />
-  </div>
-</section>
-
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto space-y-6 py-12">
+        {loading ? (
+          <>
+            <ArtistSectionSkeleton title="Singer" />
+            <ArtistSectionSkeleton title="Dancers" />
+            <ArtistSectionSkeleton title="Anchor" />
+            <ArtistSectionSkeleton title="DJ / VJ" />
+          </>
+        ) : (
+          <>
+            <ArtistSection title="Singer" artists={artists.singers} />
+            <ArtistSection title="Dancers" artists={artists.dancers} />
+            <ArtistSection title="Anchor" artists={artists.anchors} />
+            <ArtistSection title="DJ / VJ" artists={artists.djs} />
+          </>
+        )}
+      </div>
+    </section>
   );
 }
