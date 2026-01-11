@@ -742,6 +742,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Hero animation classes */
 .hero-bg-animate {
   animation: heroBackgroundZoom 1.2s ease-out;
