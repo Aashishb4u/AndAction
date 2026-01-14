@@ -22,6 +22,9 @@ model User {
   state                   String?
   address                 String?
   zip                     String?
+  latitude                Float?
+  longitude               Float?
+  geocodedAt              DateTime?
   role                    String     @default("user")
   isAccountVerified       Boolean    @default(false)
   isArtistVerified        Boolean    @default(false)
