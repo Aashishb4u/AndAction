@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors, successResponse } from '@/lib/api-response';
+import { geocodeAddress } from '@/lib/geocoding';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -44,6 +45,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.role !== 'artist') {
       return ApiErrors.badRequest('Invalid artist user.');
+    }
+
+    let geocodeData: { latitude?: number; longitude?: number; geocodedAt?: Date } = {};
+    if (user.city && (!user.latitude || !user.longitude)) {
+      try {
+        const coords = await geocodeAddress(user.city, user.state || undefined);
+        if (coords) {
+          geocodeData = {
+            latitude: coords.lat,
+            longitude: coords.lng,
+            geocodedAt: new Date(),
+          };
+          console.log(`✅ Geocoded ${user.city}: (${coords.lat}, ${coords.lng})`);
+        }
+      } catch (error) {
+        console.error('Geocoding error during profile setup:', error);
+        // Don't fail the request if geocoding fails
+      }
+    }
+
+    // Update user coordinates if geocoded
+    if (geocodeData.latitude && geocodeData.longitude) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: geocodeData,
+      });
     }
 
     const updatedArtist = await prisma.artist.update({
@@ -161,6 +188,34 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       return ApiErrors.badRequest("Invalid artist user.");
     }
 
+    // Check if city or state is being updated
+    const isCityUpdated = city !== undefined && city !== existingUser.city;
+    const isStateUpdated = state !== undefined && state !== existingUser.state;
+
+    // Prepare geocoding if location changed
+    let geocodeData: { latitude?: number; longitude?: number; geocodedAt?: Date } = {};
+    if (isCityUpdated || isStateUpdated) {
+      const geocodeCity = city !== undefined ? city : existingUser.city;
+      const geocodeState = state !== undefined ? state : existingUser.state;
+
+      if (geocodeCity) {
+        try {
+          const coords = await geocodeAddress(geocodeCity, geocodeState || undefined);
+          if (coords) {
+            geocodeData = {
+              latitude: coords.lat,
+              longitude: coords.lng,
+              geocodedAt: new Date(),
+            };
+            console.log(`✅ Geocoded ${geocodeCity}: (${coords.lat}, ${coords.lng})`);
+          }
+        } catch (error) {
+          console.error('Geocoding error during profile update:', error);
+          // Don't fail the request if geocoding fails
+        }
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
@@ -172,6 +227,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         ...(pinCode !== undefined && { zip: pinCode }),
         ...(city !== undefined && { city }),
         ...(state !== undefined && { state }),
+        ...geocodeData, // Add geocoded coordinates if available
       },
     });
     const updatedArtistProfile = await prisma.artist.update({
