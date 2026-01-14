@@ -8,6 +8,7 @@ export interface Artist {
   location: string;
   thumbnail: string;
   videoUrl: string;
+  distance?: number | null; // Distance from user in km
 }
 
 export type ArtistType = "singer" | "dancer" | "anchor" | "dj";
@@ -21,12 +22,29 @@ interface FetchArtistsParams {
   type: ArtistType;
   location?: LocationParams | null;
   verified?: boolean;
+  minResults?: number;
+  maxRadius?: number;
+}
+
+interface SearchMetadata {
+  strategy: "nearby" | "expanded" | "nationwide";
+  radiusUsed: number;
+  totalFound: number;
+  nearbyCount: number;
+  expandedCount: number;
+  nationwideCount: number;
+  message: string;
+  userLocation: {
+    lat: number;
+    lng: number;
+  } | null;
 }
 
 interface ArtistsApiResponse {
   success: boolean;
   data?: {
     artists: any[];
+    metadata?: SearchMetadata;
   };
   message?: string;
 }
@@ -50,29 +68,34 @@ const mapArtistData = (artist: any): Artist => ({
   location: artist.user.city || "Unknown",
   thumbnail: artist.user.avatar || "/icons/images.jpeg",
   videoUrl: mockVideoUrl,
+  distance: artist.distance !== undefined ? artist.distance : null,
 });
 
 async function fetchArtistsByType({
   type,
   location,
   verified = false,
-}: FetchArtistsParams): Promise<Artist[]> {
-  let url = `/api/artists?type=${type}&verified=${verified}`;
+  minResults = 10,
+  maxRadius = 500,
+}: FetchArtistsParams): Promise<{ artists: Artist[]; metadata?: SearchMetadata }> {
+  let url = `/api/artists/nearby?type=${type}&verified=${verified}&minResults=${minResults}&maxRadius=${maxRadius}`;
 
   if (location?.lat && location?.lng) {
     url += `&lat=${location.lat}&lng=${location.lng}`;
   }
 
   const response = await fetch(url);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch ${type}s`);
   }
 
   const json: ArtistsApiResponse = await response.json();
-  const apiArtists = json?.data?.artists || [];
 
-  return apiArtists.map(mapArtistData);
+  return {
+    artists: (json?.data?.artists || []).map(mapArtistData),
+    metadata: json?.data?.metadata,
+  };
 }
 
 export function useArtistsByType(
@@ -100,10 +123,17 @@ export function useAllArtists(
   const djsQuery = useArtistsByType("dj", location, verified);
 
   return {
-    singers: singersQuery.data || [],
-    dancers: dancersQuery.data || [],
-    anchors: anchorsQuery.data || [],
-    djs: djsQuery.data || [],
+    singers: singersQuery.data?.artists || [],
+    dancers: dancersQuery.data?.artists || [],
+    anchors: anchorsQuery.data?.artists || [],
+    djs: djsQuery.data?.artists || [],
+    
+    // Metadata for each type
+    singersMetadata: singersQuery.data?.metadata,
+    dancersMetadata: dancersQuery.data?.metadata,
+    anchorsMetadata: anchorsQuery.data?.metadata,
+    djsMetadata: djsQuery.data?.metadata,
+    
     isLoading:
       singersQuery.isLoading ||
       dancersQuery.isLoading ||
