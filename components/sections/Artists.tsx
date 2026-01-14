@@ -1,178 +1,56 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import ArtistSection from './ArtistSection';
+import ArtistSectionSkeleton from './ArtistSectionSkeleton';
+import { useAllArtists } from '@/hooks/use-artists';
 
-const mockVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+interface ArtistsProps {
+  location: { lat: number; lng: number } | null;
+}
 
-export default function Artists({ location }: { location: { lat: number; lng: number } | null }) {
-  const [singers, setSingers] = useState<any[]>([]);
-  const [dancers, setDancers] = useState<any[]>([]);
-  const [anchors, setAnchors] = useState<any[]>([]);
-  const [djs, setDJ] = useState<any[]>([]);
-
-  const initialRender = useRef(true);
-
-  useEffect(() => {
-    if (initialRender.current) {
-      initialRender.current = false;
-
-      //if (!location) return;
-    }
-
-    // If no location yet, wait for real update
-
-
-    async function fetchSingers() {
-      try {
-        let url = `/api/artists?type=singer&verified=false`;
-
-        if (location?.lat && location?.lng) {
-          url += `&lat=${location.lat}&lng=${location.lng}`;
-        }
-
-        const res = await fetch(url);
-        console.log("Fetching singers from URL:", url);
-        const json = await res.json();
-
-        const apiArtists = json?.data?.artists || [];
-
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setSingers(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
-      }
-    }
-    async function fetchDancers() {
-      try {
-        let url = `/api/artists?type=dancer&verified=false`;
-
-        if (location?.lat && location?.lng) {
-          url += `&lat=${location.lat}&lng=${location.lng}`;
-        }
-
-        const res = await fetch(url);
-        const json = await res.json();
-
-        const apiArtists = json?.data?.artists || [];
-
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setDancers(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
-      }
-    }
-
-    async function fetchAnchors() {
-      try {
-        let url = `/api/artists?type=anchor&verified=false`;
-
-        if (location?.lat && location?.lng) {
-          url += `&lat=${location.lat}&lng=${location.lng}`;
-        }
-
-        const res = await fetch(url);
-        const json = await res.json();
-
-        const apiArtists = json?.data?.artists || [];
-
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setAnchors(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
-      }
-    }
-    async function fetchDJ() {
-      try {
-        let url = `/api/artists?type=dj&verified=false`;
-
-        if (location?.lat && location?.lng) {
-          url += `&lat=${location.lat}&lng=${location.lng}`;
-        }
-
-        const res = await fetch(url);
-        const json = await res.json();
-
-        const apiArtists = json?.data?.artists || [];
-
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setDJ(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
-      }
-    }
-    fetchDJ();
-    fetchAnchors();
-    fetchDancers();
-    fetchSingers();
-  }, [location]);
-
-
-
-
-  const sampleArtists = {
-    singers,
-    dancers,
-    anchors,
-    djs
-  };
+export default function Artists({ location }: ArtistsProps) {
+  const { 
+    singers, dancers, anchors, djs, 
+    singersMetadata,
+    isLoading 
+  } = useAllArtists(location, false);
 
   return (
     <section className="relative w-full pt-16">
       {/* Background */}
-      <div className="absolute inset-0 -translate-y-32 z-0">
+      <div className="absolute inset-0 z-0">
+        {/* Desktop */}
         <div
-          className="w-full h-auto bg-cover bg-top bg-no-repeat md:block hidden"
-          style={{ backgroundImage: 'url(/home-bg.webp)', minHeight: '80vh' }}
+          className="hidden md:block w-full h-full bg-cover bg-top bg-no-repeat"
+          style={{ backgroundImage: "url(/home-bg.webp)" }}
         />
+
+        {/* Mobile */}
         <div
-          className="w-full h-auto bg-cover bg-top bg-no-repeat md:hidden"
-          style={{ backgroundImage: 'url(/home-bg-mobile.webp)', minHeight: '70vh' }}
+          className="md:hidden w-full h-full bg-cover bg-top bg-no-repeat"
+          style={{ backgroundImage: "url(/home-bg-mobile.webp)" }}
         />
       </div>
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto space-y-6 py-12">
-        <ArtistSection title="Singer" artists={sampleArtists.singers} />
-        <ArtistSection title="Dancers" artists={sampleArtists.dancers} />
-        <ArtistSection title="Anchor" artists={sampleArtists.anchors} />
-        <ArtistSection title="DJ / VJ" artists={sampleArtists.djs} />
+        
+        {isLoading ? (
+          <>
+            <ArtistSectionSkeleton title="Singer" />
+            <ArtistSectionSkeleton title="Dancers" />
+            <ArtistSectionSkeleton title="Anchor" />
+            <ArtistSectionSkeleton title="DJ / VJ" />
+          </>
+        ) : (
+          <>
+            <ArtistSection title="Singer" artists={singers} />
+            <ArtistSection title="Dancers" artists={dancers} />
+            <ArtistSection title="Anchor" artists={anchors} />
+            <ArtistSection title="DJ / VJ" artists={djs} />
+          </>
+        )}
       </div>
     </section>
   );

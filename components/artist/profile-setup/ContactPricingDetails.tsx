@@ -195,23 +195,24 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="relative">
-                      <span className="text-white text-sm  left-3 mr-4 z-50 top-3.5">₹</span>
+                      <span className="text-white text-sm  left-3 mr-4 z-50 top-3.5 absolute">₹</span>
                       <Input
                         placeholder="- From"
                         value={formData.soloChargesFrom}
                         onChange={(e) => handleInputChange('soloChargesFrom', e.target.value)}
                         variant="filled"
-                        className='pl-7'
+                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
                       />
                     </div>
                     <div className="relative">
-                      <span className="text-white text-sm  mr-4 left-3 z-50 top-3.5">₹</span>
+                      <span className="text-white text-sm  absolute mr-4 left-3 z-50 top-3.5">₹</span>
                       <Input
                         placeholder="- To"
                         value={formData.soloChargesTo}
                         onChange={(e) => handleInputChange('soloChargesTo', e.target.value)}
                         variant="filled"
-                        className='pl-7'
+                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
+
                       />
                     </div>
                   </div>
@@ -237,16 +238,23 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="relative">
-                      <span className="text-white text-sm absolute pr-4 left-3 z-50 top-3.5">₹</span>
+                   <div className="relative">
+                      {/* Rupee symbol */}
+                      <span className="text-white text-sm absolute left-3 z-50 pr-4 top-3.5">
+                        ₹
+                      </span>
+
                       <Input
                         placeholder="- From"
                         value={formData.backingChargesFrom}
-                        onChange={(e) => handleInputChange('backingChargesFrom', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("backingChargesFrom", e.target.value)
+                        }
                         variant="filled"
-                        className='pl-7'
+                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
                       />
                     </div>
+
                     <div className="relative">
                       <span className="text-white text-sm absolute left-3 z-50 pr-4 top-3.5">₹</span>
                       <Input
@@ -254,7 +262,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                         value={formData.backingChargesTo}
                         onChange={(e) => handleInputChange('backingChargesTo', e.target.value)}
                         variant="filled"
-                        className='pl-7'
+                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
                       />
                     </div>
                   </div>
