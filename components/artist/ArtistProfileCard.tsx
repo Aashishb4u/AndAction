@@ -81,7 +81,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
           src={
             artist.image && /^\d+$/.test(String(artist.image))
               ? `/avatars/${artist.image}.png`
-              : artist.image || "/avatars/default-avatar.jpeg"
+              : artist.image || "/avatars/placeholder.png"
           }
           alt={artist.name}
           fill
