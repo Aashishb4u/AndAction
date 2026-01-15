@@ -24,10 +24,10 @@ interface UpdateBookingRequestBody {
  */
 export async function GET(
     request: NextRequest, 
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<any>> {
     try {
-        const bookingId = params.id;
+        const { id: bookingId } = await params;
         
         // --- 1. Authentication ---
         const session = await auth();
@@ -99,10 +99,10 @@ export async function GET(
  */
 export async function PUT(
     request: NextRequest, 
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<any>> {
     try {
-        const bookingId = params.id;
+        const { id: bookingId } = await params;
         
         // --- 1. Authentication and Authorization (Artist Role Check) ---
         const session = await auth();

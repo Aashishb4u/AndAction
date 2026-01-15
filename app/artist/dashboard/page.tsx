@@ -307,16 +307,16 @@ export default function ArtistDashboard() {
                         date={formatDate(booking.eventDate)}
                         eventType={booking.eventType}
                         description={booking.notes}
-                        onReject={() =>
-                          status === "PENDING"
-                            ? updateBookingStateLocal(booking.id, "DECLINED")
-                            : null
-                        }
-                        onAccept={() =>
-                          status === "PENDING"
-                            ? updateBookingStateLocal(booking.id, "APPROVED")
-                            : null
-                        }
+                        onReject={() => {
+                          if (booking.status === "PENDING") {
+                            updateBookingStateLocal(booking.id, "DECLINED");
+                          }
+                        }}
+                        onAccept={() => {
+                          if (booking.status === "PENDING") {
+                            updateBookingStateLocal(booking.id, "APPROVED");
+                          }
+                        }}
                       />
                     ))}
                   </div>
