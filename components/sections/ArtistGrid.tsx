@@ -35,7 +35,7 @@ const ArtistGrid: React.FC<ArtistGridProps> = ({
   }
 
   return (
-    <div className={`md:p-6 ${className}`}>
+    <div className={`md:px-6 ${className}`}>
       {/* Desktop Grid Layout */}
       <div className="hidden lg:grid lg:grid-cols-3 gap-6">
         {artists.map((artist) => (

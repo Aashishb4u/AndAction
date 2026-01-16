@@ -289,10 +289,11 @@ function ArtistsPageContent() {
         {/* Header */}
         <div className="w-full px-4 lg:px-8 py-4 border-b border-gray-800">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" style={{marginLeft: '1rem'}}>
               <button
                 onClick={() => router.back()}
                 className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                style={{marginLeft: 0}}
               >
                 <svg
                   className="w-6 h-6 text-white"
