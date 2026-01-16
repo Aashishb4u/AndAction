@@ -17,10 +17,10 @@ export default function Artists({ location }: ArtistsProps) {
   } = useAllArtists(location, false);
 
   return (
-    <section className="relative w-full pt-16">
+    <section className="relative w-full ">
       {/* Remove curve from here, handled in Hero */}
       {/* Background */}
-      <div className="absolute inset-0 z-0 bg-black">
+      <div className="absolute -top-4 bottom-0 left-0 right-0 z-0 bg-black">
         {/* Pink shadow gradient below the curve */}
         <div
           style={{
@@ -28,7 +28,7 @@ export default function Artists({ location }: ArtistsProps) {
             top: 0,
             left: 0,
             right: 0,
-            height: '180px',
+            height: '240px',
             background: 'radial-gradient(ellipse 60% 100px at 50% 0, #ff2d7a33 0%, transparent 100%)',
             zIndex: 1,
             pointerEvents: 'none',

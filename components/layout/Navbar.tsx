@@ -9,6 +9,7 @@ import { NavbarProps, NavItem } from "@/types";
 import { createAuthRedirectUrl } from "@/lib/auth";
 import Search from "../icons/search";
 import { useSession, signOut } from "next-auth/react";
+import { buildArtishProfileUrl } from "@/lib/utils";
 
 interface NavbarWithSidebarProps extends NavbarProps {
   onToggleSidebar?: () => void;
@@ -25,7 +26,6 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   const router = useRouter();
   const { data: session, status } = useSession();
   const user = session?.user;
-
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
@@ -147,11 +147,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                 className="flex items-center justify-center rounded-full border border-transparent hover:border-primary-pink transition"
               >
                 <Image
-                  src={
-                    user.avatar && /^\d+$/.test(String(user.avatar))
-                      ? `/avatars/${user.avatar}.png`
-                      : user.avatar || "/avatars/default-avatar.jpeg"
-                  }
+                  src={ buildArtishProfileUrl(user.avatar!) }
                   alt={user.firstName || "User"}
                   width={40}
                   height={40}
