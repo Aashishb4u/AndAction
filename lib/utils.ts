@@ -1,7 +1,5 @@
 import { parseISO, set } from 'date-fns';
 import { UserRole } from '@/lib/types/database';
-import fs from "fs";
-import path from "path";
 export interface AuthUserPayload {
     id: string;
     role: UserRole; // Now explicitly using the imported type
@@ -81,76 +79,7 @@ export async function getAuthUser(token: string): Promise<AuthUserPayload | null
     };
 }
 
-interface FileUploadResult {
-    url: string; // The URL of the main media file (e.g., video)
-    thumbnailUrl: string; // The URL of the automatically generated thumbnail
-}
 
-interface FileUploadResult {
-  url: string;
-  thumbnailUrl: string;
-}
-
-export function simulateFileUpload(
-  userId: string,
-  fileBuffer: ArrayBuffer,
-  fileExtension: string
-): FileUploadResult {
-  const buffer = Buffer.from(fileBuffer);
-
-  const uniqueId = Math.random().toString(36).substring(2, 9);
-  const fileName = `${userId}-${uniqueId}.${fileExtension}`;
-
-  const isImage = ["jpg", "jpeg", "png", "webp", "gif"].includes(
-    fileExtension.toLowerCase()
-  );
-
-  const uploadFolder = isImage ? "images" : "videos";
-
-  const savePath = path.join(
-    process.cwd(),
-    "public",
-    "uploads",
-    uploadFolder,
-    fileName
-  );
-  console.log(savePath)
-  const dirPath = path.dirname(savePath);
-  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
-
-  fs.writeFileSync(savePath, buffer);
-
-  const fileUrl = `/uploads/${uploadFolder}/${fileName}`;
-
-  let thumbnailUrl = "";
-
-  if (isImage) {
-    thumbnailUrl = fileUrl;
-  } else {
-    const thumbName = `${userId}-${uniqueId}-thumb.jpg`;
-    const thumbPath = path.join(
-      process.cwd(),
-      "public",
-      "uploads",
-      "thumbnails",
-      thumbName
-    );
-
-    const thumbDir = path.dirname(thumbPath);
-    if (!fs.existsSync(thumbDir)) fs.mkdirSync(thumbDir, { recursive: true });
-
-    fs.writeFileSync(thumbPath, Buffer.from([]));
-
-    thumbnailUrl = `/uploads/thumbnails/${thumbName}`;
-  }
-
-  console.log(`[LOCAL UPLOAD] Saved: ${fileUrl}`);
-
-  return {
-    url: fileUrl,
-    thumbnailUrl,
-  };
-}
 
 /**
  * Converts a "YYYY-MM-DD" string from the user to a UTC Date at midnight
@@ -168,4 +97,17 @@ export function isTokenExpired(expiryDate: Date | null): boolean {
   if (!expiryDate) return true;
   const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
   return expiryDate < fiveMinutesFromNow;
+}
+
+export function buildArtishProfileUrl(avatar:string) {
+  if (!avatar) return '/avatars/placeholder.png';
+  
+  if (!isNaN(Number(avatar))) {
+    return `/avatars/${avatar}.png`;
+  }
+  
+  if (avatar.startsWith('http')) {
+    return avatar;
+  }
+    return avatar;
 }

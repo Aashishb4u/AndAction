@@ -37,25 +37,27 @@ export default function Artists({ location }: ArtistsProps) {
   };
 
   return (
-    <section className="relative w-full pt-16">
+    <section className="relative w-full ">
+      {/* Remove curve from here, handled in Hero */}
       {/* Background */}
-      <div className="absolute inset-0 z-0">
-        {/* Desktop */}
+      <div className="absolute -top-4 bottom-0 left-0 right-0 z-0 bg-black">
+        {/* Pink shadow gradient below the curve */}
         <div
-          className="hidden md:block w-full h-full bg-cover bg-top bg-no-repeat"
-          style={{ backgroundImage: "url(/home-bg.webp)" }}
-        />
-
-        {/* Mobile */}
-        <div
-          className="md:hidden w-full h-full bg-cover bg-top bg-no-repeat"
-          style={{ backgroundImage: "url(/home-bg-mobile.webp)" }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '240px',
+            background: 'radial-gradient(ellipse 60% 100px at 50% 0, #ff2d7a33 0%, transparent 100%)',
+            zIndex: 1,
+            pointerEvents: 'none',
+          }}
         />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto space-y-6 py-12">
-        
+      <div className="relative z-20 max-w-7xl mx-auto space-y-6">
         {isLoading ? (
           <>
             {ARTIST_CATEGORIES.map((category) => (

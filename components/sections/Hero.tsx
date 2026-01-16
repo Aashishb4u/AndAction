@@ -21,7 +21,8 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
 
   return (
     <section
-      className={`relative md:min-h-screen min-h-[80vh] flex items-end pb-28 justify-center overflow-hidden ${className} pt-16 md:pt-20`}
+      className={`relative min-h-[90vh] flex items-end pb-28 justify-center overflow-hidden ${className} pt-16 md:pt-20`}
+      style={{ overflow: 'hidden' }}
       /* pt-16 = 64px for mobile navbar, md:pt-20 = 80px for desktop */
     >
       {/* Background Video */}
@@ -34,12 +35,18 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           className={`object-cover object-center w-full h-full ${isLoaded ? 'hero-bg-animate' : ''}`}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
         >
-          <source src="/video.mp4" type="video/mp4" />
+          <source src="/file.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
         {/* Dark Overlay */}
         <div className={`absolute inset-0 bg-black/10 ${isLoaded ? 'hero-overlay-animate' : ''}`} />
       </div>
+        {/* Black Overlay */}
+  <div
+    className={`absolute inset-0 bg-black/50 pointer-events-none ${
+      isLoaded ? 'hero-overlay-animate' : ''
+    }`}
+  />
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center h-full flex flex-col justify-center items-center pb-10">
@@ -66,6 +73,14 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Curved SVG at the bottom for transition */}
+      <div className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none select-none">
+        <svg viewBox="0 0 1440 120" width="100%" height="120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+          <path d="M0,100 Q720,0 1440,100 L1440,120 L0,120 Z" fill="#000" />
+          <path d="M0,100 Q720,0 1440,100" fill="none" stroke="#FF2D7A" strokeWidth="5" />
+        </svg>
       </div>
 
       {/* Find Artist Modal */}
