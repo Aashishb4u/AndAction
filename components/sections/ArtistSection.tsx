@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import ArtistCard from '@/components/ui/ArtistCard';
 
 import Modal from '@/components/ui/Modal';
@@ -27,6 +28,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showNoArtistModal, setShowNoArtistModal] = useState(false);
+  const router = useRouter();
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -57,7 +59,10 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
             if (artists.length === 0) {
               setShowNoArtistModal(true);
             } else {
-              // TODO: Implement navigation to all artists page if needed
+              // Go to artists search page with filter for this section's type
+              // Use title as type (e.g., 'Singer' → 'singer')
+              const typeParam = title.toLowerCase();
+              router.push(`/artists?type=${encodeURIComponent(typeParam)}`);
             }
           }}
         >
