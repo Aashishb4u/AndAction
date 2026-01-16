@@ -11,7 +11,7 @@ export interface Artist {
   distance?: number | null; // Distance from user in km
 }
 
-export type ArtistType = "singer" | "dancer" | "anchor" | "dj";
+export type ArtistType = "singer" | "dancer" | "anchor" | "dj" | "band" | "comedian";
 
 interface LocationParams {
   lat: number;
@@ -121,39 +121,53 @@ export function useAllArtists(
   const dancersQuery = useArtistsByType("dancer", location, verified);
   const anchorsQuery = useArtistsByType("anchor", location, verified);
   const djsQuery = useArtistsByType("dj", location, verified);
+  const bandsQuery = useArtistsByType("band", location, verified);
+  const comediansQuery = useArtistsByType("comedian", location, verified);
 
   return {
     singers: singersQuery.data?.artists || [],
     dancers: dancersQuery.data?.artists || [],
     anchors: anchorsQuery.data?.artists || [],
     djs: djsQuery.data?.artists || [],
+    bands: bandsQuery.data?.artists || [],
+    comedians: comediansQuery.data?.artists || [],
     
     // Metadata for each type
     singersMetadata: singersQuery.data?.metadata,
     dancersMetadata: dancersQuery.data?.metadata,
     anchorsMetadata: anchorsQuery.data?.metadata,
     djsMetadata: djsQuery.data?.metadata,
+    bandsMetadata: bandsQuery.data?.metadata,
+    comediansMetadata: comediansQuery.data?.metadata,
     
     isLoading:
       singersQuery.isLoading ||
       dancersQuery.isLoading ||
       anchorsQuery.isLoading ||
-      djsQuery.isLoading,
+      djsQuery.isLoading ||
+      bandsQuery.isLoading ||
+      comediansQuery.isLoading,
     isError:
       singersQuery.isError ||
       dancersQuery.isError ||
       anchorsQuery.isError ||
-      djsQuery.isError,
+      djsQuery.isError ||
+      bandsQuery.isError ||
+      comediansQuery.isError,
     error:
       singersQuery.error ||
       dancersQuery.error ||
       anchorsQuery.error ||
-      djsQuery.error,
+      djsQuery.error ||
+      bandsQuery.error ||
+      comediansQuery.error,
     refetch: () => {
       singersQuery.refetch();
       dancersQuery.refetch();
       anchorsQuery.refetch();
       djsQuery.refetch();
+      bandsQuery.refetch();
+      comediansQuery.refetch();
     },
   };
 }
