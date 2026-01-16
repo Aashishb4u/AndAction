@@ -59,9 +59,14 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
             if (artists.length === 0) {
               setShowNoArtistModal(true);
             } else {
-              // Go to artists search page with filter for this section's type
-              // Use title as type (e.g., 'Singer' → 'singer')
-              const typeParam = title.toLowerCase();
+              // Map section title to correct filter value
+              let typeParam = title.toLowerCase();
+              if (typeParam.includes('dj')) typeParam = 'dj';
+              else if (typeParam.includes('anchor')) typeParam = 'anchor';
+              else if (typeParam.includes('band')) typeParam = 'band';
+              else if (typeParam.includes('singer')) typeParam = 'singer';
+              else if (typeParam.includes('dancer')) typeParam = 'dancer';
+              else if (typeParam.includes('comedian')) typeParam = 'comedian';
               router.push(`/artists?type=${encodeURIComponent(typeParam)}`);
             }
           }}
@@ -168,6 +173,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
             }}
           >
             {artists.map((artist) => (
+              console.log(artist),
               <ArtistCard
                 key={artist.id}
                 id={artist.id}

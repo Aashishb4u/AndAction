@@ -105,16 +105,22 @@ function ArtistsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Initialize filters from URL params on first render
+  const getInitialFilters = () => {
+    const params = searchParams;
+    return {
+      category: params.get("type") || "",
+      subCategory: params.get("subType") || "",
+      gender: params.get("gender") || "",
+      budget: params.get("budget") || "",
+      eventState: params.get("state") || "",
+      eventType: params.get("eventType") || "",
+      language: params.get("language") || "",
+    };
+  };
+
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [filters, setFilters] = useState<Filters>({
-    category: "",
-    subCategory: "",
-    gender: "",
-    budget: "",
-    eventState: "",
-    eventType: "",
-    language: "",
-  });
+  const [filters, setFilters] = useState<Filters>(getInitialFilters);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [totalResults, setTotalResults] = useState(0);
@@ -302,6 +308,23 @@ function ArtistsPageContent() {
                   />
                 </svg>
               </button>
+              {/* Show active filter name if set */}
+              {filters.category && (
+                <span className="ml-2 px-3 py-1 rounded bg-primary-pink/20 text-primary-pink font-semibold text-base capitalize">
+                  {(() => {
+                    // Map filter value to display name
+                    switch (filters.category) {
+                      case 'singer': return 'Singer';
+                      case 'dj': return 'DJ / VJ';
+                      case 'anchor': return 'Anchor/emcee';
+                      case 'band': return 'Live Band';
+                      case 'dancer': return 'Dancer';
+                      case 'comedian': return 'Comedian';
+                      default: return filters.category;
+                    }
+                  })()}
+                </span>
+              )}
             </div>
             <span className="text-sm text-gray-400">
               {loading ? "Loading..." : `${totalResults} Results`}
