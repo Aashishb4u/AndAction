@@ -41,6 +41,12 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         {/* Dark Overlay */}
         <div className={`absolute inset-0 bg-black/10 ${isLoaded ? 'hero-overlay-animate' : ''}`} />
       </div>
+        {/* Black Overlay */}
+  <div
+    className={`absolute inset-0 bg-black/50 pointer-events-none ${
+      isLoaded ? 'hero-overlay-animate' : ''
+    }`}
+  />
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center h-full flex flex-col justify-center items-center pb-10">
