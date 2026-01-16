@@ -87,7 +87,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
 
           {/* Desktop Navigation */}
           <div className="hidden lg:block">
-            <div className="ml-16 flex items-baseline space-x-3">
+            <div className="ml-16 flex items-center space-x-3">
               {navItems.map((item) => (
                 <Link
                   key={item.label}

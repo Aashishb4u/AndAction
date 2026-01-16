@@ -37,7 +37,7 @@ export default function Artists({ location }: ArtistsProps) {
       </div>
 
       {/* Content */}
-      <div className="relative z-20 max-w-7xl mx-auto space-y-6 py-12">
+      <div className="relative z-20 max-w-7xl mx-auto space-y-6">
         {isLoading ? (
           <>
             <ArtistSectionSkeleton title="Singer" />
