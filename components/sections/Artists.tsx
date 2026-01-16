@@ -17,43 +17,55 @@ export default function Artists({ location }: ArtistsProps) {
   } = useAllArtists(location, false);
 
   return (
-    <section className="relative w-full pt-16">
-      {/* Remove curve from here, handled in Hero */}
-      {/* Background */}
-      <div className="absolute inset-0 z-0 bg-black">
-        {/* Pink shadow gradient below the curve */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '180px',
-            background: 'radial-gradient(ellipse 60% 100px at 50% 0, #ff2d7a33 0%, transparent 100%)',
-            zIndex: 1,
-            pointerEvents: 'none',
-          }}
-        />
-      </div>
+<section className="relative w-full pt-16 overflow-hidden">
 
-      {/* Content */}
-      <div className="relative z-20 max-w-7xl mx-auto space-y-6">
-        {isLoading ? (
-          <>
-            <ArtistSectionSkeleton title="Singer" />
-            <ArtistSectionSkeleton title="Dancers" />
-            <ArtistSectionSkeleton title="Anchor" />
-            <ArtistSectionSkeleton title="DJ / VJ" />
-          </>
-        ) : (
-          <>
-            <ArtistSection title="Singer" artists={singers} />
-            <ArtistSection title="Dancers" artists={dancers} />
-            <ArtistSection title="Anchor" artists={anchors} />
-            <ArtistSection title="DJ / VJ" artists={djs} />
-          </>
-        )}
-      </div>
-    </section>
+  {/* Full-height Gradient Background */}
+  <div className="absolute inset-0 z-0 pointer-events-none">
+    
+    {/* Base black */}
+    <div className="absolute inset-0 bg-black" />
+
+    {/* Full-height pink glow */}
+    <div
+      className="absolute inset-0"
+      style={{
+        background: `
+          radial-gradient(
+            ellipse 70% 40% at 50% 0%,
+            rgba(255,45,122,0.22) 0%,
+            rgba(255,45,122,0.12) 30%,
+            transparent 70%
+          ),
+          linear-gradient(
+            to bottom,
+            transparent 0%,
+            rgba(255,45,122,0.08) 40%,
+            transparent 80%
+          )
+        `,
+      }}
+    />
+  </div>
+
+  {/* Content */}
+  <div className="relative z-20 max-w-7xl mx-auto space-y-6">
+    {isLoading ? (
+      <>
+        <ArtistSectionSkeleton title="Singer" />
+        <ArtistSectionSkeleton title="Dancers" />
+        <ArtistSectionSkeleton title="Anchor" />
+        <ArtistSectionSkeleton title="DJ / VJ" />
+      </>
+    ) : (
+      <>
+        <ArtistSection title="Singer" artists={singers} />
+        <ArtistSection title="Dancers" artists={dancers} />
+        <ArtistSection title="Anchor" artists={anchors} />
+        <ArtistSection title="DJ / VJ" artists={djs} />
+      </>
+    )}
+  </div>
+</section>
+
   );
 }

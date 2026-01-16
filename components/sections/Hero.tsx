@@ -75,13 +75,53 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         </div>
       </div>
 
-      {/* Curved SVG at the bottom for transition */}
-      <div className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none select-none">
-        <svg viewBox="0 0 1440 100" width="100%" height="100" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-          <path d="M0,100 Q720,0 1440,100" fill="#000" />
-          <path d="M0,100 Q720,0 1440,100" fill="none" stroke="#FF2D7A" strokeWidth="5" />
-        </svg>
-      </div>
+<div className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none select-none">
+  <svg
+    viewBox="0 0 1440 100"
+    width="100%"
+    height="100"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    preserveAspectRatio="none"
+  >
+    <defs>
+      {/* <!-- Stroke fade gradient --> */}
+      <linearGradient id="strokeFade" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#FF2D7A" stop-opacity="0" />
+        <stop offset="15%" stop-color="#FF2D7A" stop-opacity="0.6" />
+        <stop offset="50%" stop-color="#FF2D7A" stop-opacity="1" />
+        <stop offset="85%" stop-color="#FF2D7A" stop-opacity="0.6" />
+        <stop offset="100%" stop-color="#FF2D7A" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+
+    {/* <!-- Black fill --> */}
+    <path
+      d="M0,100 Q720,0 1440,100"
+      fill="#000"
+    />
+
+    {/* <!-- Main faded stroke --> */}
+    <path
+      d="M0,100 Q720,0 1440,100"
+      fill="none"
+      stroke="url(#strokeFade)"
+      stroke-width="4"
+      stroke-linecap="round"
+    />
+
+    {/* <!-- Inner thin highlight for taper illusion --> */}
+    <path
+      d="M0,100 Q720,0 1440,100"
+      fill="none"
+      stroke="#FF2D7A"
+      stroke-width="2"
+      stroke-linecap="round"
+      opacity="0.6"
+    />
+  </svg>
+</div>
+
 
       {/* Find Artist Modal */}
       <FindArtistModal
