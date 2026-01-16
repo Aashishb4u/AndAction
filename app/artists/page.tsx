@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SiteLayout from "@/components/layout/SiteLayout";
 import ArtistFilters from "@/components/sections/ArtistFilters";
@@ -100,55 +100,77 @@ const getArtists = async (
   }
 };
 
+
 function ArtistsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Initialize filters from URL params on first render
+  const getInitialFilters = () => {
+    const params = searchParams;
+    return {
+      category: params.get("type") || "",
+      subCategory: params.get("subType") || "",
+      gender: params.get("gender") || "",
+      budget: params.get("budget") || "",
+      eventState: params.get("state") || "",
+      eventType: params.get("eventType") || "",
+      language: params.get("language") || "",
+    };
+  };
+
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [filters, setFilters] = useState<Filters>({
-    category: "",
-    subCategory: "",
-    gender: "",
-    budget: "",
-    eventState: "",
-    eventType: "",
-    language: "",
-  });
+  const [filters, setFilters] = useState<Filters>(getInitialFilters);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [totalResults, setTotalResults] = useState(0);
   const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const observerRef = useRef<HTMLDivElement | null>(null);
 
+  // Initial load and when filters/query change
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const { artists, total } = await getArtists(query, filters, page);
-      setArtists(artists);
+      setPage(1);
+      const { artists: newArtists, total } = await getArtists(query, filters, 1);
+      setArtists(newArtists);
       setTotalResults(total);
+      setHasMore(newArtists.length < total);
       setLoading(false);
     };
     fetchData();
-  }, []); // Only on mount - load all artists
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, JSON.stringify(filters)]);
 
-  // 🔄 Fetch COUNT when filters change
+  // Infinite scroll: fetch more artists when bottom is reached
+  const fetchMoreArtists = useCallback(async () => {
+    if (isFetchingMore || loading || !hasMore) return;
+    setIsFetchingMore(true);
+    const nextPage = page + 1;
+    const { artists: moreArtists } = await getArtists(query, filters, nextPage);
+    setArtists((prev) => [...prev, ...moreArtists]);
+    setPage(nextPage);
+    setHasMore(artists.length + moreArtists.length < totalResults);
+    setIsFetchingMore(false);
+  }, [isFetchingMore, loading, hasMore, page, query, filters, totalResults, artists.length]);
+
   useEffect(() => {
-    const anyFilterSet =
-      filters.category ||
-      filters.subCategory ||
-      filters.gender ||
-      filters.budget ||
-      filters.eventState ||
-      filters.eventType ||
-      filters.language;
-
-    if (!anyFilterSet) return; // Skip if no filters
-
-    const fetchCount = async () => {
-      const count = await getArtistCount(query, filters);
-      setTotalResults(count);
+    if (!observerRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !isFetchingMore) {
+          fetchMoreArtists();
+        }
+      },
+      { threshold: 1 }
+    );
+    observer.observe(observerRef.current);
+    return () => {
+      if (observerRef.current) observer.unobserve(observerRef.current);
     };
-    fetchCount();
-  }, [query, filters]);
+  }, [fetchMoreArtists, hasMore, loading, isFetchingMore]);
 
   const handleFilterChange = (filterType: keyof Filters, value: string) => {
     setFilters((prev) => ({ ...prev, [filterType]: value }));
@@ -267,10 +289,11 @@ function ArtistsPageContent() {
         {/* Header */}
         <div className="w-full px-4 lg:px-8 py-4 border-b border-gray-800">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" style={{marginLeft: '1rem'}}>
               <button
                 onClick={() => router.back()}
                 className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                style={{marginLeft: 0}}
               >
                 <svg
                   className="w-6 h-6 text-white"
@@ -286,9 +309,23 @@ function ArtistsPageContent() {
                   />
                 </svg>
               </button>
-              {/*<h1 className="text-xl lg:text-2xl font-bold text-white">
-                Singer
-              </h1>*/}
+              {/* Show active filter name if set */}
+              {filters.category && (
+                <span className="ml-2 px-3 py-1 rounded bg-primary-pink/20 text-primary-pink font-semibold text-base capitalize">
+                  {(() => {
+                    // Map filter value to display name
+                    switch (filters.category) {
+                      case 'singer': return 'Singer';
+                      case 'dj': return 'DJ / VJ';
+                      case 'anchor': return 'Anchor/emcee';
+                      case 'band': return 'Live Band';
+                      case 'dancer': return 'Dancer';
+                      case 'comedian': return 'Comedian';
+                      default: return filters.category;
+                    }
+                  })()}
+                </span>
+              )}
             </div>
             <span className="text-sm text-gray-400">
               {loading ? "Loading..." : `${totalResults} Results`}
@@ -325,7 +362,16 @@ function ArtistsPageContent() {
             {loading ? (
               <LoadingSpinner fullScreen={false} text="Loading artists..." />
             ) : (
-              <ArtistGrid artists={artists} onBookmark={handleBookmark} />
+              <>
+                <ArtistGrid artists={artists} onBookmark={handleBookmark} />
+                {/* Infinite scroll trigger */}
+                {hasMore && (
+                  <div ref={observerRef} style={{ height: 1 }} />
+                )}
+                {isFetchingMore && (
+                  <div className="flex justify-center py-4 text-gray-400">Loading more artists...</div>
+                )}
+              </>
             )}
           </div>
         </div>
