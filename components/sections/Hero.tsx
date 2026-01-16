@@ -85,42 +85,58 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
     preserveAspectRatio="none"
   >
     <defs>
-      {/* <!-- Stroke fade gradient --> */}
+      {/* Pink glow gradient under curve stroke */}
+      <linearGradient id="pinkGlow" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0.3" />
+        <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
+      </linearGradient>
+
+      {/* Main curve stroke gradient */}
       <linearGradient id="strokeFade" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stop-color="#FF2D7A" stop-opacity="0" />
-        <stop offset="15%" stop-color="#FF2D7A" stop-opacity="0.6" />
-        <stop offset="50%" stop-color="#FF2D7A" stop-opacity="1" />
-        <stop offset="85%" stop-color="#FF2D7A" stop-opacity="0.6" />
-        <stop offset="100%" stop-color="#FF2D7A" stop-opacity="0" />
+        <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
+        <stop offset="15%" stopColor="#FF2D7A" stopOpacity="0.6" />
+        <stop offset="50%" stopColor="#FF2D7A" stopOpacity="1" />
+        <stop offset="85%" stopColor="#FF2D7A" stopOpacity="0.6" />
+        <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
       </linearGradient>
     </defs>
 
-    {/* <!-- Black fill --> */}
+    {/* Black curve fill that hides video */}
     <path
-      d="M0,100 Q720,0 1440,100"
-      fill="#000"
+      d="M0,100 Q720,0 1440,100 L1440,100 L0,100 Z"
+      fill="black"
     />
 
-    {/* <!-- Main faded stroke --> */}
+    {/* Pink gradient overlay slightly inside black curve */}
+    <path
+      d="M0,100 Q720,0 1440,100 L1440,200 L0,100 Z"
+      fill="url(#pinkGlow)"
+    />
+
+    {/* Main curve stroke */}
     <path
       d="M0,100 Q720,0 1440,100"
       fill="none"
       stroke="url(#strokeFade)"
-      stroke-width="4"
-      stroke-linecap="round"
+      strokeWidth="4"
+      strokeLinecap="round"
     />
 
-    {/* <!-- Inner thin highlight for taper illusion --> */}
+    {/* Inner thin highlight */}
     <path
       d="M0,100 Q720,0 1440,100"
       fill="none"
       stroke="#FF2D7A"
-      stroke-width="2"
-      stroke-linecap="round"
+      strokeWidth="2"
+      strokeLinecap="round"
       opacity="0.6"
     />
   </svg>
 </div>
+
+
+
+
 
 
       {/* Find Artist Modal */}

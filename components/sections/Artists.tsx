@@ -31,7 +31,7 @@ export default function Artists({ location }: ArtistsProps) {
       style={{
         background: `
           radial-gradient(
-            ellipse 70% 40% at 50% 0%,
+            ellipse 500% 40% at 50% 0%,
             rgba(255,45,122,0.22) 0%,
             rgba(255,45,122,0.12) 30%,
             transparent 70%
