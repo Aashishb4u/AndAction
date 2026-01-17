@@ -251,7 +251,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       return (
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold text-white mb-2">No Videos</h3>
-          <p>This artist hasn't uploaded any videos yet</p>
+          <p>This artist hasn&apos;t uploaded any videos yet</p>
         </div>
       );
     }
@@ -284,7 +284,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       return (
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold text-white mb-2">No Shorts</h3>
-          <p>This artist hasn't uploaded any shorts yet</p>
+          <p>This artist hasn&apos;t uploaded any shorts yet</p>
         </div>
       );
     }
