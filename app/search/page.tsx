@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import SearchIcon from "@/components/icons/search";
 import Image from "next/image";
@@ -16,7 +16,9 @@ const ARTIST_CATEGORIES = [
 
 export default function MobileSearchPage() {
   const [search, setSearch] = useState("");
-  const [categories, setCategories] = useState(ARTIST_CATEGORIES);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  // const [categories, setCategories] = useState(ARTIST_CATEGORIES); // Removed unused state
   const [artists, setArtists] = useState<Artist[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const router = useRouter();
@@ -67,7 +69,7 @@ export default function MobileSearchPage() {
     }, []);
 
     // Unique categories from artist data
-    const filterCategories = React.useMemo(() => {
+    const filterCategories = useMemo(() => {
       const cats = new Set<string>();
       artists.forEach((a) => {
         if (a.category) cats.add(a.category);
@@ -75,19 +77,31 @@ export default function MobileSearchPage() {
       return ["all", ...Array.from(cats)];
     }, [artists]);
 
+    // Debounce search input
+    useEffect(() => {
+      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+      debounceTimeout.current = setTimeout(() => {
+        setDebouncedSearch(search);
+      }, 2000);
+      return () => {
+        if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+      };
+    }, [search]);
+
+    // Filter artists by debounced search and selected category
     // Filter artists by search and selected category
-    const filteredArtists = React.useMemo(() => {
+    const filteredArtists = useMemo(() => {
       return artists.filter((artist) => {
         const matchesSearch =
-          !search.trim() ||
-          (artist.name && artist.name.toLowerCase().includes(search.toLowerCase())) ||
-          (artist.category && artist.category.toLowerCase().includes(search.toLowerCase()));
+          !debouncedSearch.trim() ||
+          (artist.name && artist.name.toLowerCase().includes(debouncedSearch.toLowerCase())) ||
+          (artist.category && artist.category.toLowerCase().includes(debouncedSearch.toLowerCase()));
         const matchesCategory =
           selectedCategory === "all" ||
           (artist.category && artist.category.toLowerCase() === selectedCategory.toLowerCase());
         return matchesSearch && matchesCategory;
       });
-    }, [artists, search, selectedCategory]);
+    }, [artists, debouncedSearch, selectedCategory]);
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
