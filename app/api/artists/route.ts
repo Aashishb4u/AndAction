@@ -79,11 +79,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // ---------------------------
     const where: Prisma.ArtistWhereInput = {};
 
-    // 🔍 SEARCH (name or bio)
+    // 🔍 SEARCH (name, bio, or user firstName/lastName)
     if (search) {
       where.OR = [
         { stageName: { contains: search, mode: "insensitive" } },
         { shortBio: { contains: search, mode: "insensitive" } },
+        { user: { is: { firstName: { contains: search, mode: "insensitive" } } } },
+        { user: { is: { lastName: { contains: search, mode: "insensitive" } } } },
       ];
     }
 
