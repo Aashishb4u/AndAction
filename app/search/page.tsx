@@ -166,7 +166,7 @@ export default function MobileSearchPage() {
               {filterCategories.slice(1).map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => router.push(`/artists?type=${encodeURIComponent(cat)}`)}
                   className="w-full flex justify-between items-center rounded-lg border border-[#FF4B2B] bg-gradient-to-r from-[#ed4a225f] to-[#e8047e52] px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:from-[#ED4B22] hover:to-[#E8047E] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/50"
                 >
                   <span>{cat}</span>
