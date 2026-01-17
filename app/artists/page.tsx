@@ -9,6 +9,7 @@ import { Artist, Filters } from "@/types";
 import LoadingSpinner from "@/components/ui/Loading";
 import { transformArtist } from "./transformArtist";
 import ClientWrapper from "@/components/ui/client-wrapper";
+import { Search } from "lucide-react";
 
 const DEFAULT_LIMIT = 12;
 
@@ -121,13 +122,15 @@ function ArtistsPageContent() {
 
   const [artists, setArtists] = useState<Artist[]>([]);
   const [filters, setFilters] = useState<Filters>(getInitialFilters);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(searchParams.get("search") || "");
+  const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [loading, setLoading] = useState(true);
   const [totalResults, setTotalResults] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initial load and when filters/query change
   useEffect(() => {
@@ -141,8 +144,42 @@ function ArtistsPageContent() {
       setLoading(false);
     };
     fetchData();
+    updateURL();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, JSON.stringify(filters)]);
+
+  // Debounce search input - wait 2 seconds after user stops typing
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setQuery(searchInput);
+    }, 2000);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchInput]);
+
+  // Update URL with current filters and search query
+  const updateURL = () => {
+    const params = new URLSearchParams();
+    if (query) params.set("search", query);
+    if (filters.category) params.set("type", filters.category);
+    if (filters.subCategory) params.set("subType", filters.subCategory);
+    if (filters.gender) params.set("gender", filters.gender);
+    if (filters.language) params.set("language", filters.language);
+    if (filters.eventType) params.set("eventType", filters.eventType);
+    if (filters.eventState) params.set("state", filters.eventState);
+    if (filters.budget) params.set("budget", filters.budget);
+
+    const newURL = params.toString() ? `?${params.toString()}` : window.location.pathname;
+    window.history.replaceState({}, "", newURL);
+  };
 
   // Infinite scroll: fetch more artists when bottom is reached
   const fetchMoreArtists = useCallback(async () => {
@@ -187,6 +224,7 @@ function ArtistsPageContent() {
       language: "",
     });
     setQuery("");
+    setSearchInput("");
     setPage(1);
 
     // Reload all artists
@@ -288,11 +326,11 @@ function ArtistsPageContent() {
       <div className="min-h-screen pt-20 lg:pt-24">
         {/* Header */}
         <div className="w-full px-4 lg:px-8 py-4 border-b border-gray-800">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
             <div className="flex items-center gap-3" style={{marginLeft: '1rem'}}>
               <button
                 onClick={() => router.back()}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
                 style={{marginLeft: 0}}
               >
                 <svg
@@ -311,7 +349,7 @@ function ArtistsPageContent() {
               </button>
               {/* Show active filter name if set */}
               {filters.category && (
-                <span className="ml-2 px-3 py-1 rounded bg-primary-pink/20 text-primary-pink font-semibold text-base capitalize">
+                <span className="ml-2 px-3 py-1 rounded bg-primary-pink/20 text-primary-pink font-semibold text-base capitalize flex-shrink-0">
                   {(() => {
                     // Map filter value to display name
                     switch (filters.category) {
@@ -327,7 +365,35 @@ function ArtistsPageContent() {
                 </span>
               )}
             </div>
-            <span className="text-sm text-gray-400">
+            
+            {/* Desktop Search Field - Hidden on Mobile */}
+            <div className="hidden lg:flex flex-1 max-w-md mx-4">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Search artists by name or bio..."
+                  className="w-full pl-10 pr-4 py-2 bg-card border border-border-color rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary-pink focus:ring-1 focus:ring-primary-pink transition-colors"
+                />
+                {searchInput && (
+                  <button
+                    onClick={() => {
+                      setSearchInput("");
+                      setQuery("");
+                    }}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <span className="text-sm text-gray-400 flex-shrink-0">
               {loading ? "Loading..." : `${totalResults} Results`}
             </span>
           </div>
