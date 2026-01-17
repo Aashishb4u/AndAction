@@ -75,13 +75,69 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         </div>
       </div>
 
-      {/* Curved SVG at the bottom for transition */}
-      <div className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none select-none">
-        <svg viewBox="0 0 1440 120" width="100%" height="120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-          <path d="M0,100 Q720,0 1440,100 L1440,120 L0,120 Z" fill="#000" />
-          <path d="M0,100 Q720,0 1440,100" fill="none" stroke="#FF2D7A" strokeWidth="5" />
-        </svg>
-      </div>
+<div className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none select-none">
+  <svg
+    viewBox="0 0 1440 100"
+    width="100%"
+    height="100"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    preserveAspectRatio="none"
+  >
+    <defs>
+      {/* Pink glow gradient under curve stroke */}
+      <linearGradient id="pinkGlow" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0.3" />
+        <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
+      </linearGradient>
+
+      {/* Main curve stroke gradient */}
+      <linearGradient id="strokeFade" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
+        <stop offset="15%" stopColor="#FF2D7A" stopOpacity="0.6" />
+        <stop offset="50%" stopColor="#FF2D7A" stopOpacity="1" />
+        <stop offset="85%" stopColor="#FF2D7A" stopOpacity="0.6" />
+        <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
+      </linearGradient>
+    </defs>
+
+    {/* Black curve fill that hides video */}
+    <path
+      d="M0,100 Q720,0 1440,100 L1440,100 L0,100 Z"
+      fill="black"
+    />
+
+    {/* Pink gradient overlay slightly inside black curve */}
+    <path
+      d="M0,100 Q720,0 1440,100 L1440,200 L0,100 Z"
+      fill="url(#pinkGlow)"
+    />
+
+    {/* Main curve stroke */}
+    <path
+      d="M0,100 Q720,0 1440,100"
+      fill="none"
+      stroke="url(#strokeFade)"
+      strokeWidth="4"
+      strokeLinecap="round"
+    />
+
+    {/* Inner thin highlight */}
+    <path
+      d="M0,100 Q720,0 1440,100"
+      fill="none"
+      stroke="#FF2D7A"
+      strokeWidth="2"
+      strokeLinecap="round"
+      opacity="0.6"
+    />
+  </svg>
+</div>
+
+
+
+
+
 
       {/* Find Artist Modal */}
       <FindArtistModal

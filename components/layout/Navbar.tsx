@@ -92,7 +92,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`px-3 py-2 text-sm font-medium transition-colors duration-200 relative ${
+                  className={`px-3 py-3 text-sm font-medium transition-colors duration-200 relative ${
                     item.isActive
                       ? "gradient-text nav-active-underline text-center"
                       : "text-text-light-gray hover:text-white"
