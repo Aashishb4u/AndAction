@@ -51,9 +51,9 @@ const MobileBottomBar = () => {
     {
       id: 'search',
       label: 'Search',
-      href: '/artists',
+      href: '/search',
       icon: (
-        <Search className="w-6 h-6" active={isActive('/artists')} />
+        <Search className="w-6 h-6" active={isActive('/search')} />
       ),
     },
     {
