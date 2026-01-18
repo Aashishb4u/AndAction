@@ -7,6 +7,22 @@ import { Artist } from "@/types";
 import MobileBottomBar from "@/components/layout/MobileBottomBar";
 import LoadingSpinner from "@/components/ui/Loading";
 import { buildArtishProfileUrl } from "@/lib/utils";
+import { useInfiniteQuery } from "@tanstack/react-query";
+
+const fetchArtists = async ({
+  pageParam = 1,
+  query,
+}: {
+  pageParam?: number;
+  query: string;
+}) => {
+  if (!query.trim()) return [];
+  const res = await fetch(
+    `/api/artists/search?q=${encodeURIComponent(query)}&page=${pageParam}`,
+  );
+  const json = await res.json();
+  return json.data?.artists || [];
+};
 
 const ARTIST_CATEGORIES = [
   { value: "singer", label: "Singer" },
@@ -25,77 +41,42 @@ export default function MobileSearchPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [artists, setArtists] = useState<Artist[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
 
-  // Fetch artist suggestions based on debounced search and page
-  useEffect(() => {
-    if (!debouncedSearch.trim()) {
-      setArtists([]);
-      setLoading(false);
-      setHasSearched(false);
-      setPage(1);
-      setHasMore(true);
-      return;
-    }
-    setLoading(true);
-    setHasSearched(true);
-    async function fetchSuggestions() {
-      try {
-        const res = await fetch(
-          `/api/artists/search?q=${encodeURIComponent(debouncedSearch)}&page=1`,
-        );
-        const json = await res.json();
-        setArtists(json.data?.artists || []);
-        setHasMore((json.data?.artists?.length || 0) === 10); // 10 is the page size
-        setPage(2);
-      } catch {
-        setArtists([]);
-        setHasMore(false);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchSuggestions();
-  }, [debouncedSearch]);
+  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ["artists", debouncedSearch],
+      queryFn: ({ pageParam }) =>
+        fetchArtists({ pageParam, query: debouncedSearch }),
+      initialPageParam: 1,
+      getNextPageParam: (lastPage, allPages) => {
+        return lastPage.length === 10 ? allPages.length + 1 : undefined;
+      },
+      enabled: !!debouncedSearch.trim(),
+      placeholderData: (previousData) => previousData,
+    });
 
-  // Load more artists on scroll
-  const loadMoreArtists = async () => {
-    if (!debouncedSearch.trim() || loading || !hasMore) return;
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/artists/search?q=${encodeURIComponent(debouncedSearch)}&page=${page}`,
-      );
-      const json = await res.json();
-      setArtists((prev) => [...prev, ...(json.data?.artists || [])]);
-      setHasMore((json.data?.artists?.length || 0) === 10);
-      setPage((prev) => prev + 1);
-    } catch {
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const artists = useMemo(() => {
+    return (data?.pages.flat() as Artist[]) || [];
+  }, [data]);
+
+  const loading = isFetching || isFetchingNextPage;
+  const hasSearched = !!debouncedSearch.trim();
 
   // Infinite scroll effect
   useEffect(() => {
-    if (!search.trim()) return;
+    if (!debouncedSearch.trim()) return;
     const handleScroll = () => {
       const bottom =
         window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
-      if (bottom && hasMore && !loading) {
-        loadMoreArtists();
+      if (bottom && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
       }
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [search, hasMore, loading, debouncedSearch, page]);
+  }, [debouncedSearch, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Unique categories from all possible artist types (static)
   const filterCategories = useMemo(() => {
@@ -127,12 +108,6 @@ export default function MobileSearchPage() {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
-
-  // When search changes, reset page and hasMore
-  useEffect(() => {
-    setPage(1);
-    setHasMore(true);
-  }, [debouncedSearch]);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">

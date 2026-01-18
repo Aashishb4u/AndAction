@@ -3,12 +3,52 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import SiteLayout from "@/components/layout/SiteLayout";
 import ShortsPlayer from "@/components/ui/ShortsPlayer";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+
+const fetchShortsPage = async ({ pageParam = 1 }) => {
+  const res = await fetch(`/api/videos?type=shorts&page=${pageParam}`);
+  const json = await res.json();
+
+  return json.data.videos.map((v: any) => ({
+    id: v.id,
+    title: v.title,
+    creator: `${v.user.firstName} ${v.user.lastName}`,
+    creatorId: v.user.artist?.id,
+    avatar: v.user.avatar || v.user.image,
+    videoUrl: v.url,
+    thumbnail: v.thumbnailUrl,
+    description: "",
+    isBookmarked: false,
+  }));
+};
 
 export default function ShortsPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [shorts, setShorts] = useState<any[]>([]);
-  const [page, setPage] = useState(1);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ["shorts"],
+      queryFn: fetchShortsPage,
+      initialPageParam: 1,
+      getNextPageParam: (lastPage, allPages) => {
+        return lastPage && lastPage.length > 0
+          ? allPages.length + 1
+          : undefined;
+      },
+      refetchOnWindowFocus: false,
+    });
+
+  const shorts = data?.pages.flat() || [];
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -28,35 +68,20 @@ export default function ShortsPage() {
 
   // Load more videos when approaching the end
   const loadMoreVideos = useCallback(() => {
-    if (currentIndex >= shorts.length - 2) {
-      const nextPage = page + 1;
-      fetchShorts(nextPage);
-      setPage(nextPage);
+    if (
+      currentIndex >= shorts.length - 2 &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      fetchNextPage();
     }
-  }, [currentIndex, shorts.length, page]);
-
-  const fetchShorts = async (pageNum = 1) => {
-    try {
-      const res = await fetch(`/api/videos?type=shorts&page=${pageNum}`);
-      const json = await res.json();
-
-      const mapped = json.data.videos.map((v: any) => ({
-        id: v.id,
-        title: v.title,
-        creator: `${v.user.firstName} ${v.user.lastName}`,
-        creatorId: v.user.artist?.id,
-        avatar: v.user.avatar || v.user.image,
-        videoUrl: v.url,
-        thumbnail: v.thumbnailUrl,
-        description: "",
-        isBookmarked: false,
-      }));
-      console.log("Fetched shorts page", pageNum, ":", json.data.videos);
-      setShorts((prev) => [...prev, ...mapped]);
-    } catch (err) {
-      console.error("Failed to fetch shorts:", err);
-    }
-  };
+  }, [
+    currentIndex,
+    shorts.length,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ]);
 
   const handleScroll = useCallback(
     (direction: "up" | "down", velocity: number = 1) => {
@@ -166,10 +191,6 @@ export default function ShortsPage() {
   );
 
   useEffect(() => {
-    fetchShorts(1);
-  }, []);
-
-  useEffect(() => {
     document.addEventListener("wheel", handleWheel, { passive: false });
     document.addEventListener("keydown", handleKeyDown);
 
@@ -232,13 +253,19 @@ export default function ShortsPage() {
   }, [currentIndex, shorts]);
 
   const handleBookmark = (id: string) => {
-    setShorts((prev) =>
-      prev.map((short) =>
-        short.id === id
-          ? { ...short, isBookmarked: !short.isBookmarked }
-          : short,
-      ),
-    );
+    queryClient.setQueryData(["shorts"], (oldData: any) => {
+      if (!oldData) return oldData;
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page: any[]) =>
+          page.map((short: any) =>
+            short.id === id
+              ? { ...short, isBookmarked: !short.isBookmarked }
+              : short,
+          ),
+        ),
+      };
+    });
   };
 
   const handleShare = (id: string) => {
@@ -272,7 +299,8 @@ export default function ShortsPage() {
               >
                 <ShortsPlayer
                   short={video}
-                  isActive={video.absoluteIndex === currentIndex}
+                  isActive={video.absoluteIndex === currentIndex && !isDesktop}
+                  shouldLoad={!isDesktop}
                   onBookmark={handleBookmark}
                   onShare={handleShare}
                   soundEnabled={soundEnabled}
@@ -308,7 +336,8 @@ export default function ShortsPage() {
                 >
                   <ShortsPlayer
                     short={video}
-                    isActive={video.absoluteIndex === currentIndex}
+                    isActive={video.absoluteIndex === currentIndex && isDesktop}
+                    shouldLoad={isDesktop}
                     onBookmark={handleBookmark}
                     onShare={handleShare}
                     soundEnabled={soundEnabled}
