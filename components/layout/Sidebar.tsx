@@ -9,6 +9,7 @@ import { createAuthRedirectUrl } from "@/lib/auth";
 import Download from "../icons/download";
 import { useSession, signOut } from "next-auth/react";
 import { usePWAInstall } from "@/hooks/use-pwa-install";
+import { buildArtishProfileUrl } from "@/lib/utils";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,22 +21,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user;
-  const { isInstallable, isInstalled, installApp, isIOSSafari } = usePWAInstall();
+  const { isInstallable, isInstalled, installApp, isIOSSafari } =
+    usePWAInstall();
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
   const navigationItems = [
     { label: "About us", href: "/about", isActive: pathname === "/about" },
-    { label: "Contact Us", href: "/contact", isActive: pathname === "/contact" },
+    {
+      label: "Contact Us",
+      href: "/contact",
+      isActive: pathname === "/contact",
+    },
     { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
     {
       label: "Terms & Conditions",
@@ -64,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   const handleSignOut = async () => {
-    console.log('idk being triggered')
+    console.log("idk being triggered");
     await signOut({ redirect: false });
     onClose();
     router.push("/");
@@ -82,9 +88,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-screen max-h-screen w-80 max-w-full sm:w-96 bg-background border-l border-background-light z-99999 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
-          } sidebar-responsive`}
-        style={{ width: 'min(90vw, 22rem)', maxWidth: 400, height: '100dvh', maxHeight: '100dvh', overflowY: 'auto' }}
+        className={`fixed top-0 right-0 h-screen max-h-screen w-80 max-w-full sm:w-96 bg-background border-l border-background-light z-99999 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        } sidebar-responsive`}
+        style={{
+          width: "min(90vw, 22rem)",
+          maxWidth: 400,
+          height: "100dvh",
+          maxHeight: "100dvh",
+          overflowY: "auto",
+        }}
       >
         <div className="flex flex-col h-full min-h-0 overflow-y-auto">
           {/* Header Close */}
@@ -125,11 +138,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               >
                 <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                   <Image
-                   src={
-                      user.avatar && /^\d+$/.test(String(user.avatar))
-                        ? `/avatars/${user.avatar}.png`
-                        : user.avatar || "/avatars/default-avatar.jpeg"
-                    }
+                    src={buildArtishProfileUrl(user.avatar!)}
                     alt={user.firstName || "User"}
                     width={48}
                     height={48}
@@ -198,8 +207,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   key={item.label}
                   href={item.href}
                   onClick={handleItemClick}
-                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${item.isActive ? "gradient-text" : "text-white"
-                    }`}
+                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${
+                    item.isActive ? "gradient-text" : "text-white"
+                  }`}
                 >
                   {item.label}
                 </Link>
@@ -225,7 +235,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 >
                   <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
                   <span className="gradient-text">
-                    {isIOSSafari ? 'Install on iOS' : 'Install our web application'}
+                    {isIOSSafari
+                      ? "Install on iOS"
+                      : "Install our web application"}
                   </span>
                 </button>
               )}

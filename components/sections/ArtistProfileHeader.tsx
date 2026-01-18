@@ -10,6 +10,7 @@ import BookingSuccessModal from '@/components/modals/BookingSuccessModal';
 import { BookingFormData } from '@/components/modals/BookingRequestModal';
 import Bookmark from '../icons/bookmark';
 import { createBooking } from '@/app/artists/[id]/page';
+import { buildArtishProfileUrl } from '@/lib/utils';
 
 interface ArtistProfileHeaderProps {
   artist: Artist;
@@ -105,7 +106,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
         {/* Mobile Header Image */}
         <div className="relative h-[80vh] w-full">
           <Image
-            src={artist.image || "/icons/images.jpeg"}
+            src={buildArtishProfileUrl(artist.image)}
             alt={artist.name || "artist"}
             fill
             className="object-cover"
@@ -205,7 +206,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
         {/* Artist Image */}
         <div className="relative min-h-[600px] rounded-2xl overflow-hidden mx-4">
           <Image
-            src={artist.image}
+            src={buildArtishProfileUrl(artist.image)}
             alt={artist.name}
             fill
             className="object-cover"
