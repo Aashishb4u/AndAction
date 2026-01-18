@@ -9,10 +9,10 @@
  * GET /api/videos
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { ApiErrors, successResponse } from '@/lib/api-response';
-import { auth } from '@/auth';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { ApiErrors, successResponse } from "@/lib/api-response";
+import { auth } from "@/auth";
 
 // --- Configuration ---
 const DEFAULT_LIMIT = 10;
@@ -23,7 +23,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const url = new URL(request.url);
 
     const page = parseInt(url.searchParams.get("page") || "1", 10);
-    let limit = parseInt(url.searchParams.get("limit") || DEFAULT_LIMIT.toString(), 10);
+    let limit = parseInt(
+      url.searchParams.get("limit") || DEFAULT_LIMIT.toString(),
+      10,
+    );
     const type = url.searchParams.get("type"); // "shorts" | "videos" | null
     const artistId = url.searchParams.get("artistId"); // filter by artist
     const withBookmarks = url.searchParams.get("withBookmarks") === "true"; // NEW 🔥
@@ -76,7 +79,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             firstName: true,
             lastName: true,
             avatar: true,
+            image: true,
             isArtistVerified: true,
+            artist: {
+              select: {
+                id: true,
+              },
+            },
           },
         },
         ...(withBookmarks && userId
@@ -120,13 +129,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         },
       },
       `Successfully retrieved ${processedVideos.length} videos for page ${page}.`,
-      200
+      200,
     );
-
   } catch (error) {
     console.error("GET /api/videos API Error:", error);
     return ApiErrors.internalError(
-      "An unexpected error occurred while fetching videos."
+      "An unexpected error occurred while fetching videos.",
     );
   }
 }

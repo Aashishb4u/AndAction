@@ -9,7 +9,7 @@ import { ApiErrors, successResponse } from "@/lib/api-response";
 
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: { id: string } },
 ) {
   const { id: videoId } = context.params;
 
@@ -22,7 +22,7 @@ export async function GET(
     const [updated, video] = await prisma.$transaction([
       prisma.video.update({
         where: { id: videoId },
-        data: { views: { increment: 1 } }
+        data: { views: { increment: 1 } },
       }),
 
       prisma.video.findFirst({
@@ -42,25 +42,25 @@ export async function GET(
               firstName: true,
               lastName: true,
               avatar: true,
+              image: true,
               isArtistVerified: true,
-            }
-          }
-        }
-      })
+              artist: {
+                select: {
+                  id: true,
+                },
+              },
+            },
+          },
+        },
+      }),
     ]);
 
     if (!video) {
       return ApiErrors.notFound("Video not found.");
     }
 
-    return successResponse(
-      { video },
-      "Video retrieved successfully.",
-      200
-    );
-
+    return successResponse({ video }, "Video retrieved successfully.", 200);
   } catch (error: any) {
-
     // Prisma: Record not found during update
     if (error.code === "P2025") {
       return ApiErrors.notFound("Video not found.");

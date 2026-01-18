@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import SiteLayout from '@/components/layout/SiteLayout';
-import ShortsPlayer from '@/components/ui/ShortsPlayer';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import SiteLayout from "@/components/layout/SiteLayout";
+import ShortsPlayer from "@/components/ui/ShortsPlayer";
 
 export default function ShortsPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -11,9 +11,9 @@ export default function ShortsPage() {
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem('shorts_sound');
-      if (saved === 'on') setSoundEnabled(true);
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("shorts_sound");
+      if (saved === "on") setSoundEnabled(true);
     }
   }, []);
 
@@ -44,22 +44,22 @@ export default function ShortsPage() {
         id: v.id,
         title: v.title,
         creator: `${v.user.firstName} ${v.user.lastName}`,
-        creatorId: v.user.id,
-        avatar: v.user.avatar,
+        creatorId: v.user.artist?.id,
+        avatar: v.user.avatar || v.user.image,
         videoUrl: v.url,
         thumbnail: v.thumbnailUrl,
-        description: '',
+        description: "",
         isBookmarked: false,
       }));
-
+      console.log("Fetched shorts page", pageNum, ":", json.data.videos);
       setShorts((prev) => [...prev, ...mapped]);
     } catch (err) {
-      console.error('Failed to fetch shorts:', err);
+      console.error("Failed to fetch shorts:", err);
     }
   };
 
   const handleScroll = useCallback(
-    (direction: 'up' | 'down', velocity: number = 1) => {
+    (direction: "up" | "down", velocity: number = 1) => {
       const now = Date.now();
       const debounceTime = velocity > 2 ? 50 : 100;
 
@@ -71,7 +71,7 @@ export default function ShortsPage() {
 
       setCurrentIndex((prevIndex) => {
         const newIndex =
-          direction === 'down'
+          direction === "down"
             ? Math.min(prevIndex + 1, shorts.length - 1)
             : Math.max(prevIndex - 1, 0);
 
@@ -97,7 +97,7 @@ export default function ShortsPage() {
       velocityRef.current = Math.min(Math.abs(deltaY) / timeDelta, 10);
 
       if (Math.abs(deltaY) > 3) {
-        const direction = deltaY > 0 ? 'down' : 'up';
+        const direction = deltaY > 0 ? "down" : "up";
         handleScroll(direction, velocityRef.current);
       }
     },
@@ -138,7 +138,7 @@ export default function ShortsPage() {
       const threshold = finalVelocity > 0.5 ? 25 : 40;
 
       if (Math.abs(deltaY) > threshold) {
-        const direction = deltaY > 0 ? 'down' : 'up';
+        const direction = deltaY > 0 ? "down" : "up";
         handleScroll(direction, finalVelocity);
       }
     },
@@ -148,15 +148,18 @@ export default function ShortsPage() {
   // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      )
         return;
 
-      if (e.key === 'ArrowDown' || e.key === ' ') {
+      if (e.key === "ArrowDown" || e.key === " ") {
         e.preventDefault();
-        handleScroll('down');
-      } else if (e.key === 'ArrowUp') {
+        handleScroll("down");
+      } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        handleScroll('up');
+        handleScroll("up");
       }
     },
     [handleScroll],
@@ -167,43 +170,55 @@ export default function ShortsPage() {
   }, []);
 
   useEffect(() => {
-    document.addEventListener('wheel', handleWheel, { passive: false });
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("wheel", handleWheel, { passive: false });
+    document.addEventListener("keydown", handleKeyDown);
 
     const mobile = mobileContainerRef.current;
     const desktop = desktopContainerRef.current;
 
     if (mobile) {
-      mobile.addEventListener('touchstart', handleTouchStart, { passive: true });
-      mobile.addEventListener('touchmove', handleTouchMove, { passive: false });
-      mobile.addEventListener('touchend', handleTouchEnd, { passive: true });
+      mobile.addEventListener("touchstart", handleTouchStart, {
+        passive: true,
+      });
+      mobile.addEventListener("touchmove", handleTouchMove, { passive: false });
+      mobile.addEventListener("touchend", handleTouchEnd, { passive: true });
     }
 
     if (desktop) {
-      desktop.addEventListener('touchstart', handleTouchStart, { passive: true });
-      desktop.addEventListener('touchmove', handleTouchMove, { passive: false });
-      desktop.addEventListener('touchend', handleTouchEnd, { passive: true });
+      desktop.addEventListener("touchstart", handleTouchStart, {
+        passive: true,
+      });
+      desktop.addEventListener("touchmove", handleTouchMove, {
+        passive: false,
+      });
+      desktop.addEventListener("touchend", handleTouchEnd, { passive: true });
     }
 
     return () => {
-      document.removeEventListener('wheel', handleWheel);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("wheel", handleWheel);
+      document.removeEventListener("keydown", handleKeyDown);
 
       if (mobile) {
-        mobile.removeEventListener('touchstart', handleTouchStart);
-        mobile.removeEventListener('touchmove', handleTouchMove);
-        mobile.removeEventListener('touchend', handleTouchEnd);
+        mobile.removeEventListener("touchstart", handleTouchStart);
+        mobile.removeEventListener("touchmove", handleTouchMove);
+        mobile.removeEventListener("touchend", handleTouchEnd);
       }
 
       if (desktop) {
-        desktop.removeEventListener('touchstart', handleTouchStart);
-        desktop.removeEventListener('touchmove', handleTouchMove);
-        desktop.removeEventListener('touchend', handleTouchEnd);
+        desktop.removeEventListener("touchstart", handleTouchStart);
+        desktop.removeEventListener("touchmove", handleTouchMove);
+        desktop.removeEventListener("touchend", handleTouchEnd);
       }
 
       if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
     };
-  }, [handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd, handleKeyDown]);
+  }, [
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleKeyDown,
+  ]);
 
   const getVisibleVideos = useCallback(() => {
     const bufferSize = 2;
@@ -219,13 +234,15 @@ export default function ShortsPage() {
   const handleBookmark = (id: string) => {
     setShorts((prev) =>
       prev.map((short) =>
-        short.id === id ? { ...short, isBookmarked: !short.isBookmarked } : short,
+        short.id === id
+          ? { ...short, isBookmarked: !short.isBookmarked }
+          : short,
       ),
     );
   };
 
   const handleShare = (id: string) => {
-    console.log('Share short:', id);
+    console.log("Share short:", id);
   };
 
   const visibleVideos = getVisibleVideos();
@@ -237,14 +254,14 @@ export default function ShortsPage() {
         <div
           ref={mobileContainerRef}
           className="fixed inset-0 bg-black overflow-hidden shorts-scrollbar-hide"
-          style={{ height: '100vh', width: '100vw' }}
+          style={{ height: "100vh", width: "100vw" }}
         >
           <div
             className="relative h-full"
             style={{
               transform: `translateY(-${currentIndex * 100}vh)`,
-              transition: 'transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
-              willChange: 'transform',
+              transition: "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
+              willChange: "transform",
             }}
           >
             {visibleVideos.map((video) => (
@@ -273,14 +290,14 @@ export default function ShortsPage() {
           <div
             ref={desktopContainerRef}
             className="relative bg-black overflow-hidden shorts-scrollbar-hide"
-            style={{ height: 'calc(100vh - 6rem)' }}
+            style={{ height: "calc(100vh - 6rem)" }}
           >
             <div
               className="relative h-full"
               style={{
                 transform: `translateY(-${currentIndex * 100}%)`,
-                transition: 'transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
-                willChange: 'transform',
+                transition: "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
+                willChange: "transform",
               }}
             >
               {visibleVideos.map((video) => (
