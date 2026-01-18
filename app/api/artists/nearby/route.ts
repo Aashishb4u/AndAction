@@ -205,7 +205,6 @@ async function fetchArtistsWithProgressiveSearch(
 
   // Try each radius progressively
   for (const radius of radiusSteps) {
-    console.log(`🔍 Checking ${radius}km radius for ${type}s...`);
 
     // Quick count check
     const count = await countArtistsInRadius(type, userLat, userLng, radius, verified);
@@ -291,7 +290,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // If location not provided, return artists without distance filtering
     if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-      console.log(`\n📍 No location provided, fetching ${type}s nationwide...`);
 
       const artists = await fetchTopRatedNationwide(type, verified, 50);
 
