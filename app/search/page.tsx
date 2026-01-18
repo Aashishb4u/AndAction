@@ -5,14 +5,9 @@ import SearchIcon from "@/components/icons/search";
 import Image from "next/image";
 import { Artist } from "@/types";
 import MobileBottomBar from "@/components/layout/MobileBottomBar";
+import LoadingSpinner from "@/components/ui/Loading";
 
-const ARTIST_CATEGORIES = [
-  { label: "Signer", value: "singer" },
-  { label: "Devotional/Spiritual singer", value: "devotional" },
-  { label: "Anchor", value: "anchor" },
-  { label: "Dj/Vj", value: "dj" },
-  { label: "Dancer", value: "dancer" },
-];
+const ARTIST_CATEGORIES = [ { value: 'singer', label: 'Singer' }, { value: 'dancer', label: 'Dancer' }, { value: 'musician', label: 'Musician' }, { value: 'comedian', label: 'Comedian' }, { value: 'magician', label: 'Magician' }, { value: 'actor', label: 'Actor' }, { value: 'anchor', label: 'Anchor'}, { value: 'band', label: 'Live Band'}, { value: 'dj', label: 'DJ'}, { value: 'other', label: 'Other' } ];
 
 export default function MobileSearchPage() {
   const [search, setSearch] = useState("");
@@ -22,31 +17,68 @@ export default function MobileSearchPage() {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
 
-  // Fetch artist suggestions based on debounced search
+  // Fetch artist suggestions based on debounced search and page
   useEffect(() => {
     if (!debouncedSearch.trim()) {
       setArtists([]);
       setLoading(false);
       setHasSearched(false);
+      setPage(1);
+      setHasMore(true);
       return;
     }
     setLoading(true);
     setHasSearched(true);
     async function fetchSuggestions() {
       try {
-        const res = await fetch(`/api/artists/search?q=${encodeURIComponent(debouncedSearch)}`);
+        const res = await fetch(`/api/artists/search?q=${encodeURIComponent(debouncedSearch)}&page=1`);
         const json = await res.json();
         setArtists(json.data?.artists || []);
+        setHasMore((json.data?.artists?.length || 0) === 10); // 10 is the page size
+        setPage(2);
       } catch {
         setArtists([]);
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     }
     fetchSuggestions();
   }, [debouncedSearch]);
+
+  // Load more artists on scroll
+  const loadMoreArtists = async () => {
+    if (!debouncedSearch.trim() || loading || !hasMore) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/artists/search?q=${encodeURIComponent(debouncedSearch)}&page=${page}`);
+      const json = await res.json();
+      setArtists((prev) => [...prev, ...(json.data?.artists || [])]);
+      setHasMore((json.data?.artists?.length || 0) === 10);
+      setPage((prev) => prev + 1);
+    } catch {
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Infinite scroll effect
+  useEffect(() => {
+    if (!search.trim()) return;
+    const handleScroll = () => {
+      const bottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
+      if (bottom && hasMore && !loading) {
+        loadMoreArtists();
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [search, hasMore, loading, debouncedSearch, page]);
 
   // Unique categories from all possible artist types (static)
   const filterCategories = useMemo(() => {
@@ -78,6 +110,12 @@ export default function MobileSearchPage() {
     setSearch(e.target.value);
   };
 
+  // When search changes, reset page and hasMore
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+  }, [debouncedSearch]);
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Top Bar */}
@@ -99,7 +137,7 @@ export default function MobileSearchPage() {
 
       {/* Category Filter Chips */}
       {(search.trim() || selectedCategory !== "all") && (
-        <div className="flex gap-2 px-4 pb-2 overflow-x-auto">
+        <div className="flex gap-2 px-4 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent" style={{ WebkitOverflowScrolling: 'touch' }}>
           {filterCategories.map((cat) => (
             <button
               key={cat.value}
@@ -115,33 +153,38 @@ export default function MobileSearchPage() {
       {/* Artist Suggestions */}
       {search.trim() && (
         <div className="px-4 pt-2">
-          {loading ? (
-            <div className="text-center text-gray-400 py-6">Loading...</div>
-          ) : hasSearched && filteredArtists.length === 0 ? (
+          {filteredArtists.length === 0 && !loading && hasSearched ? (
             <div className="text-center text-gray-400 py-6">No artists found.</div>
-          ) : filteredArtists.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {filteredArtists.map((artist) => (
-                <button
-                  key={artist.id}
-                  className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-[#222] transition"
-                  onClick={() => router.push(`/artists/${artist.id}`)}
-                >
-                  <Image
-                    src={artist.image || "/avatars/default.png"}
-                    alt={artist.name}
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover w-10 h-10"
-                  />
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium text-base text-white">{artist.name}</span>
-                    <span className="text-sm text-gray-400">{artist.category}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : null}
+          ) : (
+            <>
+              <div className="flex flex-col gap-2">
+                {filteredArtists.map((artist) => (
+                  <button
+                    key={artist.id}
+                    className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-[#222] transition"
+                    onClick={() => router.push(`/artists/${artist.id}`)}
+                  >
+                    <Image
+                      src={artist.image || "/avatars/default.png"}
+                      alt={artist.name}
+                      width={40}
+                      height={40}
+                      className="rounded-full object-cover w-10 h-10"
+                    />
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium text-base text-white">{artist.name}</span>
+                      <span className="text-sm text-gray-400">{artist.category}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {loading && (
+                <div className="flex justify-center py-4">
+                  <LoadingSpinner size="md" text="" />
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
