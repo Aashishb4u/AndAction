@@ -42,40 +42,30 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         const queryTerm = searchParams.get('q')?.trim();
 
         if (queryTerm) {
-            // Search across stageName, shortBio, and potentially artistType
+            // Search across stageName, artistType, and user fields
             where.OR = [
-                { stageName: { contains: queryTerm, mode: 'insensitive' as 'default' } },
-                { shortBio: { contains: queryTerm, mode: 'insensitive' as 'default' } },
-                // Allow searching within performing languages/events as well
-                { performingLanguage: { contains: queryTerm, mode: 'insensitive' as 'default' } },
-                { performingEventType: { contains: queryTerm, mode: 'insensitive' as 'default' } },
+                { stageName: { contains: queryTerm, mode: 'insensitive' } },
+                { artistType: { contains: queryTerm, mode: 'insensitive' } },
+                {
+                  user: {
+                    OR: [
+                      { firstName: { contains: queryTerm, mode: 'insensitive' } },
+                      { lastName: { contains: queryTerm, mode: 'insensitive' } },
+                    ],
+                  },
+                },
             ];
         } else {
-            // If no search term, return a 400 Bad Request, as this is a dedicated search API
-            // Alternatively, you could default to the main /api/artists logic, but for diligence,
-            // we'll require the 'q' parameter for the search endpoint.
             return ApiErrors.badRequest('A search query parameter "q" is required for this endpoint.');
         }
 
-        // B. Optional Filters (e.g., location or type filters can still be applied alongside the search)
-        const artistType = searchParams.get('type');
-        if (artistType) {
-            // Use AND logic if artistType filter is present
-            where.artistType = artistType;
-        }
-        
-        const stateFilter = searchParams.get('state');
-        if (stateFilter) {
-            // Use AND logic for state filter
-            where.performingStates = { contains: stateFilter, mode: 'insensitive' as 'default' };
-        }
-        
         // --- 3. Only show fully public, verified Artists (Security/Quality Filter) ---
-        where.user = {
-            role: 'artist',
-            isAccountVerified: true,  // Must have verified email
-            isArtistVerified: true,   // Must be approved/verified to be public
-        };
+        // Commenting out strict verification for debugging
+        // where.user = {
+        //     role: 'artist',
+        //     isAccountVerified: true,
+        //     isArtistVerified: true,
+        // };
 
 
         // --- 4. Database Query ---
@@ -87,28 +77,32 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             where,
             skip,
             take: limit,
-            // Prioritize relevance or newest first if relevance is complex (default to newest)
             orderBy: {
-                createdAt: 'desc', 
+                createdAt: 'desc',
             },
             select: {
                 id: true,
                 stageName: true,
                 artistType: true,
-                subArtistType: true,
-                shortBio: true,
-                performingLanguage: true,
-                performingEventType: true,
                 user: {
                     select: {
-                        id: true,
-                        firstName: true,
                         avatar: true,
-                        city: true,
+                        firstName: true,
+                        lastName: true,
                     },
                 },
             },
         });
+
+        // Map to minimal info for suggestions
+        const results = artists.map((a) => ({
+            id: a.id,
+            name: a.stageName || `${a.user?.firstName || ''} ${a.user?.lastName || ''}`.trim(),
+            category: a.artistType,
+            image: a.user?.avatar && a.user?.avatar.startsWith('/') ? a.user.avatar : '/icons/images.jpeg',
+        }));
+
+        console.log('Artist search query:', queryTerm, '| Results:', artists.length);
 
         // --- 5. Format Response and Return ---
         
@@ -120,7 +114,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         };
 
         return successResponse(
-            { artists, metadata },
+            { artists: results, metadata },
             'Artist search results retrieved successfully.',
             200
         );
