@@ -1,53 +1,26 @@
-const CACHE_NAME = 'andaction-v1';
-const urlsToCache = [
-    '/',
-    '/manifest.json',
-    '/logo.png',
-];
+const CACHE_VERSION = 'andaction-v3';
 
-// Install event - cache essential resources
+// Install - skip waiting to activate immediately
 self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(urlsToCache))
-            .then(() => self.skipWaiting())
-    );
+    self.skipWaiting();
 });
 
+// Activate - cleanup any old caches
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys()
             .then((cacheNames) => {
                 return Promise.all(
-                    cacheNames.map((cacheName) => {
-                        if (cacheName !== CACHE_NAME) {
-                            return caches.delete(cacheName);
-                        }
-                    })
+                    cacheNames.map((name) => caches.delete(name))
                 );
             })
             .then(() => self.clients.claim())
     );
 });
 
+// Fetch - No caching, always network only
+// If offline, requests will fail naturally (like YouTube)
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request)
-            .then((response) => {
-                // Return cached version or fetch from network
-                return response || fetch(event.request)
-                    .then((fetchResponse) => {
-                        // Cache new resources for future use
-                        return caches.open(CACHE_NAME)
-                            .then((cache) => {
-                                cache.put(event.request, fetchResponse.clone());
-                                return fetchResponse;
-                            });
-                    });
-            })
-            .catch(() => {
-                // Return a custom offline page if available
-                return caches.match('/');
-            })
-    );
+    // Always fetch from network, no cache fallback
+    event.respondWith(fetch(event.request));
 });
