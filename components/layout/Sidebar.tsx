@@ -7,6 +7,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { ChevronRight, LogOut } from "lucide-react";
 import { createAuthRedirectUrl } from "@/lib/auth";
 import Download from "../icons/download";
+import Support from "../icons/support";
 import { useSession, signOut } from "next-auth/react";
 import { usePWAInstall } from "@/hooks/use-pwa-install";
 
@@ -35,7 +36,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const navigationItems = [
     { label: "About us", href: "/about", isActive: pathname === "/about" },
-    { label: "Contact Us", href: "/contact", isActive: pathname === "/contact" },
     { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
     {
       label: "Terms & Conditions",
@@ -125,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               >
                 <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                   <Image
-                   src={
+                    src={
                       user.avatar && /^\d+$/.test(String(user.avatar))
                         ? `/avatars/${user.avatar}.png`
                         : user.avatar || "/avatars/default-avatar.jpeg"
@@ -166,23 +166,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               )}
             </div>
           ) : (
-            // Guest state
+            // Guest state - Match prototype design
             <div className="px-6 pt-2 pb-3">
               <button
                 onClick={() => {
                   router.push(createAuthRedirectUrl("/auth/signin", pathname));
                   onClose();
                 }}
-                className="block text-white hover:text-primary-pink transition-colors duration-200 h1"
+                className="text-white text-xl font-medium mb-2 hover:text-primary-pink transition-colors"
               >
-                Sign In
+                Sign-In / Sign-Up
               </button>
-
+              <br />
               <button
                 onClick={handleJoinArtist}
-                className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
+                className="block gradient-text hover:opacity-80 transition-opacity duration-200 text-lg"
               >
-                Join as an Artist
+                Join as a artist
               </button>
             </div>
           )}
@@ -205,32 +205,43 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 </Link>
               ))}
             </div>
+
+            {/* Contact Info - For any query */}
+            <div className="mt-8 p-4 bg-card border border-border-color rounded-xl">
+              <div className="flex items-center space-x-3 mb-2">
+                <Support className="size-5 text-text-gray" />
+                <span className="text-text-gray text-sm">For any query</span>
+              </div>
+              <p className="text-white text-sm">
+                Contact Us : 8860014889
+              </p>
+            </div>
           </div>
 
-          {/* Signout + Install App */}
-          {user && (
-            <div className="p-6 border-t border-background-light space-y-3">
+          {/* Bottom Section - Install App */}
+          <div className="p-6 space-y-3">
+            {user && (
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center justify-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
+                className="w-full flex items-center justify-center gap-2 text-white hover:text-primary-pink transition-colors duration-200 mb-4"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Signout</span>
               </button>
+            )}
 
-              {!isInstalled && (
-                <button
-                  onClick={handleInstallApp}
-                  className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
-                >
-                  <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
-                  <span className="gradient-text">
-                    {isIOSSafari ? 'Install on iOS' : 'Install our web application'}
-                  </span>
-                </button>
-              )}
-            </div>
-          )}
+            {!isInstalled && (
+              <button
+                onClick={handleInstallApp}
+                className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-card border border-border-color rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
+              >
+                <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
+                <span className="gradient-text text-sm">
+                  Install our web application
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </>
