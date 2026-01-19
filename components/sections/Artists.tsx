@@ -42,7 +42,7 @@ export default function Artists({ location }: ArtistsProps) {
   };
 
   return (
-    <section className="relative w-full pt-4 md:pt-16 overflow-hidden">
+    <section className="relative w-full pt-4 md:pt-16 pb-20 md:pb-8 overflow-hidden">
       {/* Full-height Gradient Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {/* Base black */}

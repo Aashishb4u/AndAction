@@ -173,7 +173,7 @@ export default function MobileSearchPage() {
 
       {/* Artist Suggestions */}
       {search.trim() && (
-        <div className="px-4 pt-2">
+        <div className="px-4 pt-2 pb-24">
           {filteredArtists.length === 0 && !loading && hasSearched ? (
             <div className="text-center text-gray-400 py-6">
               No artists found.
@@ -217,7 +217,7 @@ export default function MobileSearchPage() {
 
       {/* Categories (if not searching) */}
       {!search.trim() && (
-        <div className="px-4 py-4">
+        <div className="px-4 py-4 pb-24">
           <h2 className="text-lg font-semibold mb-4 text-[#F2F2F2]" >Artist Categories</h2>
           <div className="flex flex-col gap-3">
             {filterCategories.slice(1).map((cat) => (
