@@ -137,7 +137,7 @@ export default function MobileSearchPage() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Top Bar */}
-      <div className="p-4 pb-2 flex flex-col">
+      <div className="p-4 pb-2 mt-2 flex flex-col">
         <div className="relative w-full">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
             <SearchIcon className="w-5 h-5 text-gray-400" />
@@ -217,8 +217,8 @@ export default function MobileSearchPage() {
 
       {/* Categories (if not searching) */}
       {!search.trim() && (
-        <div className="px-4">
-          <h2 className="text-lg font-semibold mb-4">Artist Categories</h2>
+        <div className="px-4 py-4">
+          <h2 className="text-lg font-semibold mb-4 text-[#F2F2F2]" >Artist Categories</h2>
           <div className="flex flex-col gap-3">
             {filterCategories.slice(1).map((cat) => (
               <button
@@ -226,10 +226,10 @@ export default function MobileSearchPage() {
                 onClick={() =>
                   router.push(`/artists?type=${encodeURIComponent(cat.value)}`)
                 }
-                className="w-full flex justify-between items-center rounded-lg border border-[#FF4B2B] bg-gradient-to-r from-[#ed4a225f] to-[#e8047e52] px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:from-[#ED4B22] hover:to-[#E8047E] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/50"
+                className="w-full flex justify-between items-center rounded-full border border-[#FF4B2B] bg-[#e8047e52] px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:from-[#ED4B22] hover:to-[#E8047E] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/50"
               >
-                <span>{cat.label}</span>
-                <span className="text-white/90 flex items-center">
+                <span className="text-[#F2F2F2]" >{cat.label}</span>
+                <span className="text-[#F2F2F2] flex items-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
