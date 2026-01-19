@@ -135,7 +135,7 @@ export default function VideosPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Category Filter Chips */}
-          <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent pb-2">
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {VIDEO_CATEGORIES.map((category) => (
               <button
                 key={category.value}

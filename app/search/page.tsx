@@ -147,17 +147,29 @@ export default function MobileSearchPage() {
             value={search}
             onChange={handleSearch}
             placeholder="Search any artist..."
-            className="w-full rounded-full border border-[#333] bg-[#181818] pl-10 pr-4 py-2 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#333] text-base shadow-sm"
+            className="w-full rounded-full border border-[#333] bg-[#181818] pl-10 pr-12 py-2 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#333] text-base shadow-sm"
             style={{ boxShadow: "none" }}
           />
+          {search.trim() && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none"
+              onClick={() => setSearch("")}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Category Filter Chips */}
       {(search.trim() || selectedCategory !== "all") && (
         <div
-          className="flex gap-2 px-4 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
-          style={{ WebkitOverflowScrolling: "touch" }}
+          className="flex gap-2 px-4 pb-2 overflow-x-auto scrollbar-hide"
+          style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {filterCategories.map((cat) => (
             <button

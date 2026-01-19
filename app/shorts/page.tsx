@@ -231,16 +231,16 @@ export default function ShortsPage() {
   const visibleVideos = getVisibleVideos();
 
   return (
-    <SiteLayout showPreloader={false} hideBottomBar>
+    <SiteLayout showPreloader={false}>
       {/* MOBILE */}
       <div className="md:hidden">
         <div
           ref={mobileContainerRef}
           className="fixed inset-0 bg-black overflow-hidden shorts-scrollbar-hide"
-          style={{ height: '100vh', width: '100vw' }}
+          style={{ height: '100vh', width: '100vw', zIndex: 0, paddingTop: '4rem' }} // Add top padding for navbar height
         >
           <div
-            className="relative h-full"
+            className="relative h-full pb-16" // Only bottom padding, top handled by parent
             style={{
               transform: `translateY(-${currentIndex * 100}vh)`,
               transition: 'transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
@@ -265,6 +265,12 @@ export default function ShortsPage() {
             ))}
           </div>
         </div>
+        {/* Add bottom navigation bar for mobile */}
+        <div className="fixed bottom-0 left-0 w-full z-10">
+          {/* Import and use your MobileBottomBar component here */}
+          {/* If you use <MobileBottomBar /> elsewhere, import it at the top */}
+          {/* <MobileBottomBar /> */}
+        </div>
       </div>
 
       {/* DESKTOP */}
@@ -273,10 +279,10 @@ export default function ShortsPage() {
           <div
             ref={desktopContainerRef}
             className="relative bg-black overflow-hidden shorts-scrollbar-hide"
-            style={{ height: 'calc(100vh - 6rem)' }}
+            style={{ height: 'calc(100vh - 6rem)', zIndex: 0 }}
           >
             <div
-              className="relative h-full"
+              className="relative h-full pt-16 pb-16" // Add top and bottom padding to prevent overlap
               style={{
                 transform: `translateY(-${currentIndex * 100}%)`,
                 transition: 'transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
