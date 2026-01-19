@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { buildArtishProfileUrl } from '@/lib/utils';
 
 interface ArtistCardProps {
   id: string;
@@ -62,7 +63,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
       {/* Background Image */}
       <div className="absolute inset-0 transition-opacity duration-300 select-none">
         <Image
-          src={thumbnail}
+          src={buildArtishProfileUrl(thumbnail)}
           alt={name}
           fill
           className="object-cover transition-transform duration-500 hover:scale-110"

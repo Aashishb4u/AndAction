@@ -173,7 +173,6 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
             }}
           >
             {artists.map((artist) => (
-              console.log(artist),
               <ArtistCard
                 key={artist.id}
                 id={artist.id}

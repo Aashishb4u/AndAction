@@ -6,8 +6,20 @@ import Image from "next/image";
 import { Artist } from "@/types";
 import MobileBottomBar from "@/components/layout/MobileBottomBar";
 import LoadingSpinner from "@/components/ui/Loading";
+import { buildArtishProfileUrl } from "@/lib/utils";
 
-const ARTIST_CATEGORIES = [ { value: 'singer', label: 'Singer' }, { value: 'dancer', label: 'Dancer' }, { value: 'musician', label: 'Musician' }, { value: 'comedian', label: 'Comedian' }, { value: 'magician', label: 'Magician' }, { value: 'actor', label: 'Actor' }, { value: 'anchor', label: 'Anchor'}, { value: 'band', label: 'Live Band'}, { value: 'dj', label: 'DJ'}, { value: 'other', label: 'Other' } ];
+const ARTIST_CATEGORIES = [
+  { value: "singer", label: "Singer" },
+  { value: "dancer", label: "Dancer" },
+  { value: "musician", label: "Musician" },
+  { value: "comedian", label: "Comedian" },
+  { value: "magician", label: "Magician" },
+  { value: "actor", label: "Actor" },
+  { value: "anchor", label: "Anchor" },
+  { value: "band", label: "Live Band" },
+  { value: "dj", label: "DJ" },
+  { value: "other", label: "Other" },
+];
 
 export default function MobileSearchPage() {
   const [search, setSearch] = useState("");
@@ -35,7 +47,9 @@ export default function MobileSearchPage() {
     setHasSearched(true);
     async function fetchSuggestions() {
       try {
-        const res = await fetch(`/api/artists/search?q=${encodeURIComponent(debouncedSearch)}&page=1`);
+        const res = await fetch(
+          `/api/artists/search?q=${encodeURIComponent(debouncedSearch)}&page=1`,
+        );
         const json = await res.json();
         setArtists(json.data?.artists || []);
         setHasMore((json.data?.artists?.length || 0) === 10); // 10 is the page size
@@ -55,7 +69,9 @@ export default function MobileSearchPage() {
     if (!debouncedSearch.trim() || loading || !hasMore) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/artists/search?q=${encodeURIComponent(debouncedSearch)}&page=${page}`);
+      const res = await fetch(
+        `/api/artists/search?q=${encodeURIComponent(debouncedSearch)}&page=${page}`,
+      );
       const json = await res.json();
       setArtists((prev) => [...prev, ...(json.data?.artists || [])]);
       setHasMore((json.data?.artists?.length || 0) === 10);
@@ -71,13 +87,14 @@ export default function MobileSearchPage() {
   useEffect(() => {
     if (!search.trim()) return;
     const handleScroll = () => {
-      const bottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
+      const bottom =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
       if (bottom && hasMore && !loading) {
         loadMoreArtists();
       }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [search, hasMore, loading, debouncedSearch, page]);
 
   // Unique categories from all possible artist types (static)
@@ -101,7 +118,8 @@ export default function MobileSearchPage() {
     return artists.filter((artist) => {
       const matchesCategory =
         selectedCategory === "all" ||
-        (artist.category && artist.category.toLowerCase() === selectedCategory.toLowerCase());
+        (artist.category &&
+          artist.category.toLowerCase() === selectedCategory.toLowerCase());
       return matchesCategory;
     });
   }, [artists, selectedCategory]);
@@ -130,14 +148,17 @@ export default function MobileSearchPage() {
             onChange={handleSearch}
             placeholder="Search any artist..."
             className="w-full rounded-full border border-[#333] bg-[#181818] pl-10 pr-4 py-2 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#333] text-base shadow-sm"
-            style={{ boxShadow: 'none' }}
+            style={{ boxShadow: "none" }}
           />
         </div>
       </div>
 
       {/* Category Filter Chips */}
       {(search.trim() || selectedCategory !== "all") && (
-        <div className="flex gap-2 px-4 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div
+          className="flex gap-2 px-4 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
           {filterCategories.map((cat) => (
             <button
               key={cat.value}
@@ -154,7 +175,9 @@ export default function MobileSearchPage() {
       {search.trim() && (
         <div className="px-4 pt-2">
           {filteredArtists.length === 0 && !loading && hasSearched ? (
-            <div className="text-center text-gray-400 py-6">No artists found.</div>
+            <div className="text-center text-gray-400 py-6">
+              No artists found.
+            </div>
           ) : (
             <>
               <div className="flex flex-col gap-2">
@@ -165,15 +188,19 @@ export default function MobileSearchPage() {
                     onClick={() => router.push(`/artists/${artist.id}`)}
                   >
                     <Image
-                      src={artist.image || "/avatars/default.png"}
+                      src={buildArtishProfileUrl(artist.image)}
                       alt={artist.name}
                       width={40}
                       height={40}
                       className="rounded-full object-cover w-10 h-10"
                     />
                     <div className="flex flex-col items-start">
-                      <span className="font-medium text-base text-white">{artist.name}</span>
-                      <span className="text-sm text-gray-400">{artist.category}</span>
+                      <span className="font-medium text-base text-white">
+                        {artist.name}
+                      </span>
+                      <span className="text-sm text-gray-400">
+                        {artist.category}
+                      </span>
                     </div>
                   </button>
                 ))}
@@ -196,7 +223,9 @@ export default function MobileSearchPage() {
             {filterCategories.slice(1).map((cat) => (
               <button
                 key={cat.value}
-                onClick={() => router.push(`/artists?type=${encodeURIComponent(cat.value)}`)}
+                onClick={() =>
+                  router.push(`/artists?type=${encodeURIComponent(cat.value)}`)
+                }
                 className="w-full flex justify-between items-center rounded-lg border border-[#FF4B2B] bg-gradient-to-r from-[#ed4a225f] to-[#e8047e52] px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:from-[#ED4B22] hover:to-[#E8047E] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/50"
               >
                 <span>{cat.label}</span>
@@ -207,7 +236,7 @@ export default function MobileSearchPage() {
         </div>
       )}
 
-     <MobileBottomBar />
+      <MobileBottomBar />
     </div>
   );
 }

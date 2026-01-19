@@ -17,7 +17,6 @@ const ArtistGrid: React.FC<ArtistGridProps> = ({
 }) => {
     // Log all artist data to the console
   if (typeof window !== 'undefined') {
-    console.log('All artist data:', artists);
   }
   if (artists.length === 0) {
     
