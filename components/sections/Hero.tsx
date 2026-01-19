@@ -20,10 +20,10 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
 
   return (
     <section
-      className={`relative h-[75vh] flex flex-col overflow-hidden ${className} pt-16 md:pt-20`}
+      className={`relative h-[75vh] md:h-[95vh] flex flex-col overflow-hidden ${className} pt-16 md:pt-20`}
       style={{ overflow: 'hidden' }}
     /* pt-16 = 64px for mobile navbar, md:pt-20 = 80px for desktop */
-    /* h-[75vh] = 75% of viewport height for video area */
+    /* h-[75vh] = 75% of viewport height for mobile, md:h-[95vh] = 95% for desktop */
     >
       {/* Background Video - covers the entire hero section (3/4 of viewport) */}
       <div className="absolute inset-0 z-0">
