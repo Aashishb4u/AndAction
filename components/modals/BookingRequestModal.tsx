@@ -87,6 +87,11 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
     { value: "night", label: "Night (12 AM - 6 AM)" },
   ];
 
+  // State for confirmation and success modals
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [showSubmitSuccess, setShowSubmitSuccess] = useState(false);
+
   const handleInputChange = (field: keyof BookingFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
@@ -125,6 +130,21 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
     e.preventDefault();
     if (validateForm()) {
       onSubmit(formData);
+      setShowSubmitSuccess(true);
+      // Reset form fields and errors after submit
+      setFormData({
+        firstName: "",
+        lastName: "",
+        mobileNumber: "",
+        state: "",
+        city: "",
+        eventType: "",
+        eventDate: "",
+        time: "",
+        note: "",
+        totalPrice: 1000,
+      });
+      setErrors({});
     }
   };
 
@@ -145,10 +165,21 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
     onClose();
   };
 
+  // Cancel booking handler (triggered by close icon)
+  const handleRequestClose = () => {
+    setShowCancelConfirm(true);
+  };
+  const confirmCancel = () => {
+    setShowCancelConfirm(false);
+    handleClose();
+  };
+
+  // No reject button in footer anymore
+
   return (
     <Modal
       isOpen={isOpen}
-      onClose={handleClose}
+      onClose={handleRequestClose}
       title="Request booking"
       size="lg"
       className="max-h-[90vh]"
@@ -230,6 +261,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
               error={errors.eventDate}
               disabledDates={disabledDates}
               required
+              minDate={new Date()}
             />
 
             <Select
@@ -281,12 +313,48 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
           </div>
         </div>
 
-        {/* Fixed Submit Button */}
-        <div className="md:px-8 px-4 md:py-6 py-4 border-t border-border-color bg-background">
+        {/* Fixed Submit Button Only */}
+        <div className="md:px-8 px-4 md:py-6 py-4 border-t border-border-color bg-background flex gap-2">
           <Button type="submit" variant="primary" size="md" className="w-full">
             Submit
           </Button>
         </div>
+            {/* Cancel Confirmation Modal (on close icon) */}
+            {showCancelConfirm && (
+              <Modal
+                isOpen={showCancelConfirm}
+                onClose={() => setShowCancelConfirm(false)}
+                title="Cancel Booking Request"
+                size="sm"
+              >
+                <div className="p-4">Are you sure you want to cancel this booking request?</div>
+                <div className="flex justify-end gap-2 p-4">
+                  <Button variant="secondary" onClick={() => setShowCancelConfirm(false)}>
+                    No
+                  </Button>
+                  <Button variant="primary" onClick={confirmCancel}>
+                    Yes, Cancel
+                  </Button>
+                </div>
+              </Modal>
+            )}
+
+            {/* Submit Success Modal */}
+            {showSubmitSuccess && (
+              <Modal
+                isOpen={showSubmitSuccess}
+                onClose={() => { setShowSubmitSuccess(false); handleClose(); }}
+                title="Booking Submitted"
+                size="sm"
+              >
+                <div className="p-4">Your booking request has been submitted successfully!</div>
+                <div className="flex justify-end gap-2 p-4">
+                  <Button variant="primary" onClick={() => { setShowSubmitSuccess(false); handleClose(); }}>
+                    OK
+                  </Button>
+                </div>
+              </Modal>
+            )}
       </form>
     </Modal>
   );

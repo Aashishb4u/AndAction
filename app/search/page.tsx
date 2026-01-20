@@ -97,10 +97,35 @@ export default function MobileSearchPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [search, hasMore, loading, debouncedSearch, page]);
 
-  // Unique categories from all possible artist types (static)
+  // Show all categories if no search, otherwise only those with artists
   const filterCategories = useMemo(() => {
-    return [{ label: "All", value: "all" }, ...ARTIST_CATEGORIES];
-  }, []);
+    // Map category value to label for lookup
+    const categoryMap = ARTIST_CATEGORIES.reduce((acc, cat) => {
+      acc[cat.value.toLowerCase()] = cat.label;
+      return acc;
+    }, {} as Record<string, string>);
+
+    // If no search, show all categories
+    if (!search.trim()) {
+      return [{ label: "All", value: "all" }, ...ARTIST_CATEGORIES.map(cat => ({ label: cat.label, value: cat.value }))];
+    }
+
+    // Find unique categories present in the current artists list
+    const presentCategories = Array.from(
+      new Set(
+        artists
+          .map((artist) => artist.category && artist.category.toLowerCase())
+          .filter((cat) => cat && categoryMap[cat])
+      )
+    );
+
+    // Build the filter list: All + only categories with artists
+    const filtered = [
+      { label: "All", value: "all" },
+      ...presentCategories.map((cat) => ({ label: categoryMap[cat], value: cat }))
+    ];
+    return filtered;
+  }, [artists, search]);
 
   // Debounce search input
   useEffect(() => {
@@ -228,9 +253,9 @@ export default function MobileSearchPage() {
       )}
 
       {/* Categories (if not searching) */}
-      {!search.trim() && (
+      {!search.trim() && filterCategories.length > 1 && (
         <div className="px-4 py-4 pb-24">
-          <h2 className="text-lg font-semibold mb-4 text-[#F2F2F2]" >Artist Categories</h2>
+          <h2 className="text-lg font-semibold mb-4 text-[#F2F2F2]">Artist Categories</h2>
           <div className="flex flex-col gap-3">
             {filterCategories.slice(1).map((cat) => (
               <button
@@ -240,7 +265,7 @@ export default function MobileSearchPage() {
                 }
                 className="w-full flex justify-between items-center rounded-full border border-[#FF4B2B] bg-[#e8047e52] px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:from-[#ED4B22] hover:to-[#E8047E] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/50"
               >
-                <span className="text-[#F2F2F2]" >{cat.label}</span>
+                <span className="text-[#F2F2F2]">{cat.label}</span>
                 <span className="text-[#F2F2F2] flex items-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -255,7 +280,6 @@ export default function MobileSearchPage() {
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
                 </span>
-
               </button>
             ))}
           </div>

@@ -216,16 +216,47 @@ export default function ShortsPage() {
     }));
   }, [currentIndex, shorts]);
 
-  const handleBookmark = (id: string) => {
-    setShorts((prev) =>
-      prev.map((short) =>
-        short.id === id ? { ...short, isBookmarked: !short.isBookmarked } : short,
-      ),
-    );
+  // Bookmark handler: persist to backend and update state
+  const handleBookmark = async (id: string) => {
+    const short = shorts.find((s) => s.id === id);
+    if (!short) return;
+    try {
+      if (short.isBookmarked) {
+        // Remove bookmark
+        await fetch(`/api/bookmarks/${id}`, { method: 'DELETE' });
+        setShorts((prev) => prev.map((s) => s.id === id ? { ...s, isBookmarked: false } : s));
+      } else {
+        // Add bookmark
+        await fetch(`/api/bookmarks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoId: id }),
+        });
+        setShorts((prev) => prev.map((s) => s.id === id ? { ...s, isBookmarked: true } : s));
+      }
+    } catch (err) {
+      console.error('Bookmark error:', err);
+    }
   };
 
-  const handleShare = (id: string) => {
-    console.log('Share short:', id);
+  // Share handler: copy link and show toast
+  const handleShare = async (id: string) => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_NEXTAUTH_URL || window.location.origin;
+      const shareUrl = `${baseUrl}/shorts/${id}`;
+      await navigator.clipboard.writeText(shareUrl);
+      if (typeof window !== 'undefined') {
+        // Dynamically import toast if not already available
+        const { toast } = await import('react-toastify');
+        toast.success('Link copied to clipboard');
+      }
+    } catch (err) {
+      console.error('Share error:', err);
+      if (typeof window !== 'undefined') {
+        const { toast } = await import('react-toastify');
+        toast.error('Failed to copy link');
+      }
+    }
   };
 
   const visibleVideos = getVisibleVideos();

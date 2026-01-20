@@ -284,8 +284,9 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
               onBookmark(short.id);
             }}
             className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
+            aria-label={short.isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
           >
-            <Bookmark className="w-6 h-6" />
+            <Bookmark className="w-6 h-6" active={short.isBookmarked} />
           </button>
 
                     <button
