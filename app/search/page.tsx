@@ -78,10 +78,35 @@ export default function MobileSearchPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [debouncedSearch, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Unique categories from all possible artist types (static)
+  // Show all categories if no search, otherwise only those with artists
   const filterCategories = useMemo(() => {
-    return [{ label: "All", value: "all" }, ...ARTIST_CATEGORIES];
-  }, []);
+    // Map category value to label for lookup
+    const categoryMap = ARTIST_CATEGORIES.reduce((acc, cat) => {
+      acc[cat.value.toLowerCase()] = cat.label;
+      return acc;
+    }, {} as Record<string, string>);
+
+    // If no search, show all categories
+    if (!search.trim()) {
+      return [{ label: "All", value: "all" }, ...ARTIST_CATEGORIES.map(cat => ({ label: cat.label, value: cat.value }))];
+    }
+
+    // Find unique categories present in the current artists list
+    const presentCategories = Array.from(
+      new Set(
+        artists
+          .map((artist) => artist.category && artist.category.toLowerCase())
+          .filter((cat) => cat && categoryMap[cat])
+      )
+    );
+
+    // Build the filter list: All + only categories with artists
+    const filtered = [
+      { label: "All", value: "all" },
+      ...presentCategories.map((cat) => ({ label: categoryMap[cat], value: cat }))
+    ];
+    return filtered;
+  }, [artists, search]);
 
   // Debounce search input
   useEffect(() => {
@@ -112,7 +137,7 @@ export default function MobileSearchPage() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Top Bar */}
-      <div className="p-4 pb-2 flex flex-col">
+      <div className="p-4 pb-2 mt-2 flex flex-col">
         <div className="relative w-full">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
             <SearchIcon className="w-5 h-5 text-gray-400" />
@@ -122,17 +147,29 @@ export default function MobileSearchPage() {
             value={search}
             onChange={handleSearch}
             placeholder="Search any artist..."
-            className="w-full rounded-full border border-[#333] bg-[#181818] pl-10 pr-4 py-2 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#333] text-base shadow-sm"
+            className="w-full rounded-full border border-[#333] bg-[#181818] pl-10 pr-12 py-2 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#333] text-base shadow-sm"
             style={{ boxShadow: "none" }}
           />
+          {search.trim() && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none"
+              onClick={() => setSearch("")}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Category Filter Chips */}
       {(search.trim() || selectedCategory !== "all") && (
         <div
-          className="flex gap-2 px-4 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
-          style={{ WebkitOverflowScrolling: "touch" }}
+          className="flex gap-2 px-4 pb-2 overflow-x-auto scrollbar-hide"
+          style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {filterCategories.map((cat) => (
             <button
@@ -148,7 +185,7 @@ export default function MobileSearchPage() {
 
       {/* Artist Suggestions */}
       {search.trim() && (
-        <div className="px-4 pt-2">
+        <div className="px-4 pt-2 pb-24">
           {filteredArtists.length === 0 && !loading && hasSearched ? (
             <div className="text-center text-gray-400 py-6">
               No artists found.
@@ -191,9 +228,9 @@ export default function MobileSearchPage() {
       )}
 
       {/* Categories (if not searching) */}
-      {!search.trim() && (
-        <div className="px-4">
-          <h2 className="text-lg font-semibold mb-4">Artist Categories</h2>
+      {!search.trim() && filterCategories.length > 1 && (
+        <div className="px-4 py-4 pb-24">
+          <h2 className="text-lg font-semibold mb-4 text-[#F2F2F2]">Artist Categories</h2>
           <div className="flex flex-col gap-3">
             {filterCategories.slice(1).map((cat) => (
               <button
@@ -201,10 +238,23 @@ export default function MobileSearchPage() {
                 onClick={() =>
                   router.push(`/artists?type=${encodeURIComponent(cat.value)}`)
                 }
-                className="w-full flex justify-between items-center rounded-lg border border-[#FF4B2B] bg-gradient-to-r from-[#ed4a225f] to-[#e8047e52] px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:from-[#ED4B22] hover:to-[#E8047E] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/50"
+                className="w-full flex justify-between items-center rounded-full border border-[#FF4B2B] bg-[#e8047e52] px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:from-[#ED4B22] hover:to-[#E8047E] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/50"
               >
-                <span>{cat.label}</span>
-                <span className="text-white/90">&gt;</span>
+                <span className="text-[#F2F2F2]">{cat.label}</span>
+                <span className="text-[#F2F2F2] flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-6 h-6"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </span>
               </button>
             ))}
           </div>

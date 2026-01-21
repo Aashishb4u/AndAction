@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Button from '@/components/ui/Button';
 import FindArtistModal from '@/components/modals/FindArtistModal';
 import { HeroProps } from '@/types';
@@ -21,11 +20,12 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
 
   return (
     <section
-      className={`relative min-h-[90vh] flex items-end pb-28 justify-center overflow-hidden ${className} pt-16 md:pt-20`}
+      className={`relative h-[75vh] md:h-[95vh] flex flex-col overflow-hidden ${className} pt-16 md:pt-20`}
       style={{ overflow: 'hidden' }}
-      /* pt-16 = 64px for mobile navbar, md:pt-20 = 80px for desktop */
+    /* pt-16 = 64px for mobile navbar, md:pt-20 = 80px for desktop */
+    /* h-[75vh] = 75% of viewport height for mobile, md:h-[95vh] = 95% for desktop */
     >
-      {/* Background Video */}
+      {/* Background Video - covers the entire hero section (3/4 of viewport) */}
       <div className="absolute inset-0 z-0">
         <video
           autoPlay
@@ -41,15 +41,14 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         {/* Dark Overlay */}
         <div className={`absolute inset-0 bg-black/10 ${isLoaded ? 'hero-overlay-animate' : ''}`} />
       </div>
-        {/* Black Overlay */}
-  <div
-    className={`absolute inset-0 bg-black/50 pointer-events-none ${
-      isLoaded ? 'hero-overlay-animate' : ''
-    }`}
-  />
+      {/* Black Overlay */}
+      <div
+        className={`absolute inset-0 bg-black/50 pointer-events-none ${isLoaded ? 'hero-overlay-animate' : ''
+          }`}
+      />
 
-      {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center h-full flex flex-col justify-center items-center pb-10">
+      {/* Content - centered in the video area */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-center items-center">
         <div className="max-w-4xl mx-auto w-full">
           {/* Main Heading */}
           <h1 className={`text-4xl leading-10 lg:leading-14 lg:text-5xl font-bold text-white mb-3 max-w-3xl ${isLoaded ? 'hero-title-animate' : 'opacity-0'}`}>
@@ -75,64 +74,68 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         </div>
       </div>
 
-<div className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none select-none">
-  <svg
-    viewBox="0 0 1440 100"
-    width="100%"
-    height="100"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    preserveAspectRatio="none"
-  >
-    <defs>
-      {/* Pink glow gradient under curve stroke */}
-      <linearGradient id="pinkGlow" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0.3" />
-        <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
-      </linearGradient>
+      {/* Curve - positioned at the bottom of hero section */}
+      <div className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none select-none">
+        <svg
+          viewBox="0 0 1440 60"
+          width="100%"
+          height="60"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="none"
+          className="block"
+        >
+          <defs>
+            {/* Pink glow gradient under curve stroke */}
+            <linearGradient id="pinkGlow" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
+            </linearGradient>
 
-      {/* Main curve stroke gradient */}
-      <linearGradient id="strokeFade" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
-        <stop offset="15%" stopColor="#FF2D7A" stopOpacity="0.6" />
-        <stop offset="50%" stopColor="#FF2D7A" stopOpacity="1" />
-        <stop offset="85%" stopColor="#FF2D7A" stopOpacity="0.6" />
-        <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
-      </linearGradient>
-    </defs>
+            {/* Main curve stroke gradient */}
+            <linearGradient id="strokeFade" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
+              <stop offset="15%" stopColor="#FF2D7A" stopOpacity="0.6" />
+              <stop offset="50%" stopColor="#FF2D7A" stopOpacity="1" />
+              <stop offset="85%" stopColor="#FF2D7A" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
+            </linearGradient>
+          </defs>
 
-    {/* Black curve fill that hides video */}
-    <path
-      d="M0,100 Q720,0 1440,100 L1440,100 L0,100 Z"
-      fill="black"
-    />
+          {/* Black curve fill that creates the transition */}
+          <path
+            d="M0,60 Q720,20 1440,60 L1440,60 L0,60 Z"
+            fill="black"
+          />
 
-    {/* Pink gradient overlay slightly inside black curve */}
-    <path
-      d="M0,100 Q720,0 1440,100 L1440,200 L0,100 Z"
-      fill="url(#pinkGlow)"
-    />
+          {/* Pink gradient overlay slightly inside black curve */}
+          <path
+            d="M0,60 Q720,20 1440,60 L1440,120 L0,60 Z"
+            fill="url(#pinkGlow)"
+          />
 
-    {/* Main curve stroke */}
-    <path
-      d="M0,100 Q720,0 1440,100"
-      fill="none"
-      stroke="url(#strokeFade)"
-      strokeWidth="4"
-      strokeLinecap="round"
-    />
+          {/* Main curve stroke */}
+          <path
+            d="M0,60 Q720,20 1440,60"
+            fill="none"
+            stroke="url(#strokeFade)"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
 
-    {/* Inner thin highlight */}
-    <path
-      d="M0,100 Q720,0 1440,100"
-      fill="none"
-      stroke="#FF2D7A"
-      strokeWidth="2"
-      strokeLinecap="round"
-      opacity="0.6"
-    />
-  </svg>
-</div>
+          {/* Inner thin highlight */}
+          <path
+            d="M0,60 Q720,20 1440,60"
+            fill="none"
+            stroke="#FF2D7A"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            opacity="0.6"
+          />
+        </svg>
+      </div>
+
+
 
 
 

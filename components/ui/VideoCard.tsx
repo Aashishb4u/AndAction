@@ -35,7 +35,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   thumbnail,
   videoUrl,
   className = '',
-  bookmarkId,                 
+  bookmarkId,
   onBookmark,
   onShare,
   onDelete,
@@ -49,7 +49,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    videoRef.current?.play().catch(() => {});
+    videoRef.current?.play().catch(() => { });
   };
 
   const handleMouseLeave = () => {
@@ -121,11 +121,11 @@ const VideoCard: React.FC<VideoCardProps> = ({
         </div>
 
         {/* BOTTOM INFO */}
-        <div className="mt-3 px-1 flex justify-between gap-3">
+        <div className="mt-3 px-1 flex justify-between items-start gap-3">
 
-          <div className='flex gap-2'>
-            <Image src={thumbnail} alt={title} width={48} height={48} className="rounded-full object-cover shrink-0 h-10 w-10" />
-            <div>
+          <div className='flex gap-3 flex-1 min-w-0'>
+            <Image src={thumbnail} alt={title} width={40} height={40} className="rounded-full object-cover shrink-0 h-10 w-10" />
+            <div className="flex-1 min-w-0">
               <h3 className="btn2 text-white line-clamp-2 group-hover:text-primary-pink transition-colors duration-300">
                 {title}
               </h3>
@@ -134,28 +134,27 @@ const VideoCard: React.FC<VideoCardProps> = ({
           </div>
 
           {/* MENU */}
-          <div className="relative z-50 flex items-center gap-2">
+          <div className="relative flex items-start shrink-0">
             {showDeleteButton ? (
-              <button onClick={handleDelete} className="text-red-500 hover:scale-110 z-10">
+              <button onClick={handleDelete} className="text-red-500 hover:scale-110 p-2">
                 <Trash2 className="size-4" />
               </button>
             ) : (
               <>
                 <button
                   onClick={handleMenuToggle}
-                  className="p-2 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70"
+                  className="p-2 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 transition-colors"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
 
                 {showMenu && (
-                  <div className="absolute bottom-full right-0 mt-2 w-40 bg-card/95 rounded-lg shadow-xl border border-background-light z-50">
+                  <div className="absolute top-full right-0 mt-2 w-40 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl border border-background-light z-50">
 
                     <button
                       onClick={handleBookmark}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-card ${
-                        isBookmarked ? 'text-primary-pink' : 'text-white'
-                      }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/50 transition-colors ${isBookmarked ? 'text-primary-pink' : 'text-white'
+                        }`}
                     >
                       <Bookmark className="w-4 h-4" />
                       {isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
@@ -163,7 +162,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
 
                     <button
                       onClick={handleShare}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-card"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-background/50 transition-colors"
                     >
                       <Share className="w-4 h-4" />
                       Share

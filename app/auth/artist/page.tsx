@@ -3,7 +3,6 @@
 import React, { useState, Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import Input, { PasswordInput } from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
@@ -455,17 +454,6 @@ function ArtistAuthContent() {
       </button>
 
       <div className="md:p-8 p-5">
-        {/* Logo */}
-        <div className="mb-8">
-          <Image
-            src="/logo.png"
-            alt="ANDACTION Logo"
-            className="h-8 object-contain"
-            width={150}
-            height={32}
-          />
-        </div>
-
         {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
@@ -722,10 +710,10 @@ function ArtistAuthContent() {
                     </span>
                     <span
                       className={`text-sm font-medium ${getPasswordStrength(password).label === "Weak"
-                          ? "text-red-400"
-                          : getPasswordStrength(password).label === "Medium"
-                            ? "text-yellow-400"
-                            : "text-green-400"
+                        ? "text-red-400"
+                        : getPasswordStrength(password).label === "Medium"
+                          ? "text-yellow-400"
+                          : "text-green-400"
                         }`}
                     >
                       {getPasswordStrength(password).label}

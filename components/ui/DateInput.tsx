@@ -20,6 +20,7 @@ export interface DateInputProps {
   required?: boolean;
   disabledDates?: Date[];
   maxDate?: Date;
+  minDate?: Date;
 }
 
 const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
@@ -37,6 +38,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       disabled = false,
       required = false,
       maxDate,
+      minDate,
       ...props
     },
     ref
@@ -64,21 +66,24 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       if (val.length === 10) {
         const [dd, mm, yyyy] = val.split("/");
         const enteredDate = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
-        
         // Validate against maxDate if provided
         if (maxDate && enteredDate > maxDate) {
           e.target.value = ""; // Clear invalid date
           onChange?.("");
           return;
         }
-        
+        // Validate against minDate if provided
+        if (minDate && enteredDate < new Date(minDate.setHours(0,0,0,0))) {
+          e.target.value = "";
+          onChange?.("");
+          return;
+        }
         // Validate it's a valid date
         if (isNaN(enteredDate.getTime())) {
           e.target.value = "";
           onChange?.("");
           return;
         }
-        
         onChange?.(`${yyyy}-${mm}-${dd}`);
       }
     };
@@ -123,23 +128,24 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
 
         <div className="relative">
           <DatePicker
-            selected={selectedDate}
-            onChange={handlePickerChange}
-            onChangeRaw={handleChangeRaw}
-            placeholderText={placeholder}
-            disabled={disabled}
-            id={inputId}
-            className={allClasses}
-            dateFormat="dd/MM/yyyy"
-            wrapperClassName="w-full"
-            required={required}
-            maxDate={maxDate}
-            showYearDropdown
-            showMonthDropdown
-            dropdownMode="scroll"
-            yearDropdownItemNumber={100}
-            scrollableYearDropdown
-          />
+              selected={selectedDate}
+              onChange={handlePickerChange}
+              onChangeRaw={handleChangeRaw}
+              placeholderText={placeholder}
+              disabled={disabled}
+              id={inputId}
+              className={allClasses + ' react-datepicker-ignore-ios-zoom'}
+              dateFormat="dd/MM/yyyy"
+              wrapperClassName="w-full"
+              required={required}
+              maxDate={maxDate}
+              minDate={minDate}
+              showYearDropdown
+              showMonthDropdown
+              dropdownMode="scroll"
+              yearDropdownItemNumber={100}
+              scrollableYearDropdown
+            />
 
           <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
         </div>

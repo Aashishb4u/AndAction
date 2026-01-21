@@ -322,99 +322,87 @@ function ArtistsPageContent() {
   };
 
   return (
-    <SiteLayout showPreloader={false}>
-      <div className="min-h-screen pt-20 lg:pt-24">
-        {/* Header */}
-        <div className="w-full px-4 lg:px-8 py-4 border-b border-gray-800">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3" style={{marginLeft: '1rem'}}>
-              <button
-                onClick={() => router.back()}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
-                style={{marginLeft: 0}}
-              >
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+    <div data-page="artists">
+      <SiteLayout showPreloader={false} hideNavbar={false} hideBottomBar={true} className="lg:pt-20">
+        <div className="min-h-screen lg:pt-4 overflow-x-hidden">
+          {/* Header */}
+          <div className="w-full px-4 lg:px-8 py-4 border-b border-gray-800">
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 md:gap-4 overflow-hidden">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => router.back()}
+                  className="p-2 text-white transition-colors flex-shrink-0"
+                  aria-label="Go back"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                     strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-              {/* Show active filter name if set */}
-              {filters.category && (
-                <span className="ml-2 px-3 py-1 rounded bg-primary-pink/20 text-primary-pink font-semibold text-base capitalize flex-shrink-0">
-                  {(() => {
-                    // Map filter value to display name
-                    switch (filters.category) {
-                      case 'singer': return 'Singer';
-                      case 'dj': return 'DJ / VJ';
-                      case 'anchor': return 'Anchor/emcee';
-                      case 'band': return 'Live Band';
-                      case 'dancer': return 'Dancer';
-                      case 'comedian': return 'Comedian';
-                      default: return filters.category;
-                    }
-                  })()}
-                </span>
-              )}
-            </div>
-            
-            {/* Desktop Search Field - Hidden on Mobile */}
-            <div className="hidden lg:flex flex-1 max-w-md mx-4">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Search artists by name or bio..."
-                  className="w-full pl-10 pr-4 py-2 bg-card border border-border-color rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary-pink focus:ring-1 focus:ring-primary-pink transition-colors"
-                />
-                {searchInput && (
-                  <button
-                    onClick={() => {
-                      setSearchInput("");
-                      setQuery("");
-                    }}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+                {/* Show active filter name if set */}
+                {filters.category && (
+                  <span className="ml-2 px-3 py-1 rounded bg-primary-pink/20 text-primary-pink font-semibold text-base capitalize flex-shrink-0">
+                    {(() => {
+                      // Map filter value to display name
+                      switch (filters.category) {
+                        case 'singer': return 'Singer';
+                        case 'dj': return 'DJ / VJ';
+                        case 'anchor': return 'Anchor/emcee';
+                        case 'band': return 'Live Band';
+                        case 'dancer': return 'Dancer';
+                        case 'comedian': return 'Comedian';
+                        default: return filters.category;
+                      }
+                    })()}
+                  </span>
                 )}
               </div>
+
+              {/* Desktop Search Field - Hidden on Mobile */}
+              <div className="hidden lg:flex flex-1 max-w-md mx-4">
+                <div className="relative w-full">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    placeholder="Search artists by name or bio..."
+                    className="w-full pl-10 pr-4 py-2 bg-card border border-border-color rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary-pink focus:ring-1 focus:ring-primary-pink transition-colors"
+                  />
+                  {searchInput && (
+                    <button
+                      onClick={() => {
+                        setSearchInput("");
+                        setQuery("");
+                      }}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <span className="text-sm text-gray-400 flex-shrink-0">
+                {loading ? "Loading..." : `${totalResults} Results`}
+              </span>
             </div>
-
-            <span className="text-sm text-gray-400 flex-shrink-0">
-              {loading ? "Loading..." : `${totalResults} Results`}
-            </span>
           </div>
-        </div>
 
-        {/* Mobile Filters */}
-        <div className="lg:hidden">
-          <MobileFilters
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onReset={resetFilters}
-            onViewResult={handleViewResult}
-            resultCount={totalResults}
-          />
-        </div>
-
-        {/* Main Layout */}
-        <div className="max-w-7xl mx-auto md:px-4 lg:px-8 md:py-6 flex gap-8">
-          {/* Desktop Filters */}
-          <div className="hidden lg:block w-80 flex-shrink-0">
-            <ArtistFilters
+          {/* Mobile Filters */}
+          <div className="lg:hidden">
+            <MobileFilters
               filters={filters}
               onFilterChange={handleFilterChange}
               onReset={resetFilters}
@@ -423,26 +411,40 @@ function ArtistsPageContent() {
             />
           </div>
 
-          {/* Artists Grid */}
-          <div className="flex-1">
-            {loading ? (
-              <LoadingSpinner fullScreen={false} text="Loading artists..." />
-            ) : (
-              <>
-                <ArtistGrid artists={artists} onBookmark={handleBookmark} />
-                {/* Infinite scroll trigger */}
-                {hasMore && (
-                  <div ref={observerRef} style={{ height: 1 }} />
-                )}
-                {isFetchingMore && (
-                  <div className="flex justify-center py-4 text-gray-400">Loading more artists...</div>
-                )}
-              </>
-            )}
+          {/* Main Layout */}
+          <div className="max-w-7xl mx-auto px-4 lg:px-8 md:py-6 flex gap-8 overflow-x-hidden">
+            {/* Desktop Filters */}
+            <div className="hidden lg:block w-80 flex-shrink-0">
+              <ArtistFilters
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onReset={resetFilters}
+                onViewResult={handleViewResult}
+                resultCount={totalResults}
+              />
+            </div>
+
+            {/* Artists Grid */}
+            <div className="flex-1">
+              {loading ? (
+                <LoadingSpinner fullScreen={false} text="Loading artists..." />
+              ) : (
+                <>
+                  <ArtistGrid artists={artists} onBookmark={handleBookmark} />
+                  {/* Infinite scroll trigger */}
+                  {hasMore && (
+                    <div ref={observerRef} style={{ height: 1 }} />
+                  )}
+                  {isFetchingMore && (
+                    <div className="flex justify-center py-4 text-gray-400">Loading more artists...</div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </SiteLayout>
+      </SiteLayout>
+    </div>
   );
 }
 

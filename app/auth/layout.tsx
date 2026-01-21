@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 
 interface AuthLayoutProps {
@@ -8,6 +8,14 @@ interface AuthLayoutProps {
 }
 
 const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
+  // Hide navbar on mobile for auth pages
+  useEffect(() => {
+    document.body.classList.add('auth-page');
+    return () => {
+      document.body.classList.remove('auth-page');
+    };
+  }, []);
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Background Image with Overlay */}

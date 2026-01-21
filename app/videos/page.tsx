@@ -7,9 +7,20 @@ import { toast } from 'react-toastify';
 import { useSession } from 'next-auth/react';
 import { useRouter } from "next/navigation";
 
+const VIDEO_CATEGORIES = [
+  { value: "all", label: "All" },
+  { value: "musician", label: "Musician" },
+  { value: "dancer", label: "Dancer" },
+  { value: "dj", label: "DJ" },
+  { value: "speaker", label: "Speaker" },
+  { value: "comedian", label: "Comedian" },
+  { value: "actor", label: "Actor" },
+];
+
 export default function VideosPage() {
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   const { data: session } = useSession();
   const router = useRouter();
@@ -28,6 +39,7 @@ export default function VideosPage() {
             creator: `${v.user.firstName} ${v.user.lastName}`,
             thumbnail: v.thumbnailUrl,
             videoUrl: v.url,
+            category: v.category || 'other',
 
             // 🔥 bookmark data
             isBookmarked: v.isBookmarked,
@@ -46,15 +58,21 @@ export default function VideosPage() {
     fetchVideos();
   }, []);
 
+  // Filter videos by category
+  const filteredVideos = videos.filter(video => {
+    if (selectedCategory === "all") return true;
+    return video.category?.toLowerCase() === selectedCategory.toLowerCase();
+  });
+
   // ---------- TOGGLE BOOKMARK ----------
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
     try {
       // REMOVE bookmark
 
       if (!session?.user) {
-      router.push("/auth/signin");
-      return;
-    }
+        router.push("/auth/signin");
+        return;
+      }
       if (isBookmarked && bookmarkId) {
         await fetch(`/api/bookmarks/${bookmarkId}`, {
           method: 'DELETE',
@@ -114,7 +132,23 @@ export default function VideosPage() {
   return (
     <SiteLayout showPreloader={false}>
       <div className="min-h-screen pt-20 lg:pt-24 pb-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* Category Filter Chips */}
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {VIDEO_CATEGORIES.map((category) => (
+              <button
+                key={category.value}
+                onClick={() => setSelectedCategory(category.value)}
+                className={`px-4 py-2 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${selectedCategory === category.value
+                    ? "bg-white text-black border-white"
+                    : "bg-transparent text-white border-gray-600 hover:border-gray-400"
+                  }`}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
 
           {/* Loading */}
           {loading && (
@@ -125,8 +159,8 @@ export default function VideosPage() {
 
           {/* Videos Grid */}
           {!loading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {videos.map((video) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
+              {filteredVideos.map((video) => (
                 <VideoCard
                   key={video.id}
                   id={video.id}
@@ -146,10 +180,10 @@ export default function VideosPage() {
           )}
 
           {/* Empty State */}
-          {!loading && videos.length === 0 && (
+          {!loading && filteredVideos.length === 0 && (
             <div className="text-center py-16">
               <p className="text-gray-400 text-lg">
-                No videos found.
+                {selectedCategory === "all" ? "No videos found." : `No ${selectedCategory} videos found.`}
               </p>
             </div>
           )}

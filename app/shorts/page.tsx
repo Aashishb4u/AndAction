@@ -252,39 +252,84 @@ export default function ShortsPage() {
     }));
   }, [currentIndex, shorts]);
 
-  const handleBookmark = (id: string) => {
-    queryClient.setQueryData(["shorts"], (oldData: any) => {
-      if (!oldData) return oldData;
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page: any[]) =>
-          page.map((short: any) =>
-            short.id === id
-              ? { ...short, isBookmarked: !short.isBookmarked }
-              : short,
+  // Bookmark handler: persist to backend and update state
+  const handleBookmark = async (id: string) => {
+    const short = shorts.find((s) => s.id === id);
+    if (!short) return;
+
+    const previousData = queryClient.getQueryData(["shorts"]);
+
+    // Optimistic update helper
+    const updateBookmarkState = (isBookmarked: boolean) => {
+      queryClient.setQueryData(["shorts"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any[]) =>
+            page.map((video) =>
+              video.id === id ? { ...video, isBookmarked } : video
+            )
           ),
-        ),
-      };
-    });
+        };
+      });
+    };
+
+    try {
+      if (short.isBookmarked) {
+        // Optimistic update: Remove bookmark
+        updateBookmarkState(false);
+        await fetch(`/api/bookmarks/${id}`, { method: 'DELETE' });
+      } else {
+        // Optimistic update: Add bookmark
+        updateBookmarkState(true);
+        await fetch(`/api/bookmarks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoId: id }),
+        });
+      }
+    } catch (err) {
+      console.error('Bookmark error:', err);
+      // Revert to previous data on error
+      if (previousData) {
+        queryClient.setQueryData(["shorts"], previousData);
+      }
+    }
   };
 
-  const handleShare = (id: string) => {
-    console.log("Share short:", id);
+  // Share handler: copy link and show toast
+  const handleShare = async (id: string) => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_NEXTAUTH_URL || window.location.origin;
+      const shareUrl = `${baseUrl}/shorts/${id}`;
+      await navigator.clipboard.writeText(shareUrl);
+      if (typeof window !== 'undefined') {
+        // Dynamically import toast if not already available
+        const { toast } = await import('react-toastify');
+        toast.success('Link copied to clipboard');
+      }
+    } catch (err) {
+      console.error('Share error:', err);
+      if (typeof window !== 'undefined') {
+        const { toast } = await import('react-toastify');
+        toast.error('Failed to copy link');
+      }
+    }
   };
 
   const visibleVideos = getVisibleVideos();
 
   return (
-    <SiteLayout showPreloader={false} hideBottomBar>
+    <SiteLayout showPreloader={false}>
       {/* MOBILE */}
       <div className="md:hidden">
         <div
           ref={mobileContainerRef}
           className="fixed inset-0 bg-black overflow-hidden shorts-scrollbar-hide"
-          style={{ height: "100vh", width: "100vw" }}
+          style={{ height: '100vh', width: '100vw', zIndex: 0, paddingTop: '4rem' }} // Add top padding for navbar height
         >
           <div
-            className="relative h-full"
+            className="relative h-full pb-16" // Only bottom padding, top handled by parent
             style={{
               transform: `translateY(-${currentIndex * 100}vh)`,
               transition: "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
@@ -310,6 +355,12 @@ export default function ShortsPage() {
             ))}
           </div>
         </div>
+        {/* Add bottom navigation bar for mobile */}
+        <div className="fixed bottom-0 left-0 w-full z-10">
+          {/* Import and use your MobileBottomBar component here */}
+          {/* If you use <MobileBottomBar /> elsewhere, import it at the top */}
+          {/* <MobileBottomBar /> */}
+        </div>
       </div>
 
       {/* DESKTOP */}
@@ -318,10 +369,10 @@ export default function ShortsPage() {
           <div
             ref={desktopContainerRef}
             className="relative bg-black overflow-hidden shorts-scrollbar-hide"
-            style={{ height: "calc(100vh - 6rem)" }}
+            style={{ height: 'calc(100vh - 6rem)', zIndex: 0 }}
           >
             <div
-              className="relative h-full"
+              className="relative h-full pt-16 pb-16" // Add top and bottom padding to prevent overlap
               style={{
                 transform: `translateY(-${currentIndex * 100}%)`,
                 transition: "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
