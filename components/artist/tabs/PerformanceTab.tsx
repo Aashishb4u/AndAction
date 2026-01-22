@@ -149,7 +149,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       {/* Performing Language */}
       <div className="relative">
         <Select
-          label="Performing language"
+          label="Performing language*"
           options={performingLanguageOptions}
           value={formData.performingLanguage}
           onChange={(value) => handleInputChange("performingLanguage", value)}
@@ -165,7 +165,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       {/* Performing Event Type */}
       <div className="relative">
         <Select
-          label="Performing event type"
+          label="Performing event type*"
           options={eventTypeOptions}
           value={formData.eventType}
           onChange={(value) => handleInputChange("eventType", value)}
@@ -181,7 +181,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       {/* Performing States */}
       <div className="relative">
         <Input
-          label="Performing states"
+          label="Performing states*"
           value={formData.performingStates}
           onChange={(e) =>
             handleInputChange("performingStates", e.target.value)
@@ -231,7 +231,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         {/* Performing Members */}
         <div className="relative">
           <Select
-            label="Performing members"
+            label="Performing members*"
             options={performingMembersOptions}
             value={formData.performingMembers}
             onChange={(value) => handleInputChange("performingMembers", value)}
@@ -247,7 +247,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         {/* Off Stage Members */}
         <div className="relative">
           <Select
-            label="Off stage members"
+            label="Off stage members*"
             options={offStageMembersOptions}
             value={formData.offStageMembers}
             onChange={(value) => handleInputChange("offStageMembers", value)}

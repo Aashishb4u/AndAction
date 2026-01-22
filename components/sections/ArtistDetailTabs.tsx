@@ -164,7 +164,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
         <div className="text-white mb-1">
-          ₹ {artist.soloChargesFrom || 0} - ₹ {artist.soloChargesTo || 0}
+          Starting from ₹ {artist.soloChargesFrom || 0}
         </div>
         <p className="footnote">
           {artist.soloChargesDescription?.trim() || "No description provided."}
@@ -174,7 +174,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
         <div className="text-white mb-1">
-          ₹ {artist.chargesWithBacklineFrom || 0} - ₹ {artist.chargesWithBacklineTo || 0}
+          Starting from ₹ {artist.chargesWithBacklineFrom || 0}
         </div>
         <p className="footnote">
           {artist.chargesWithBacklineDescription?.trim() || "No description provided."}

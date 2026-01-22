@@ -194,19 +194,24 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                   </svg>
                 </button>
               </label>
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  placeholder="From"
-                  value={formData.performingDurationFrom}
-                  onChange={(e) => handleInputChange('performingDurationFrom', e.target.value)}
-                  variant="filled"
-                />
-                <Input
-                  placeholder="To"
-                  value={formData.performingDurationTo}
-                  onChange={(e) => handleInputChange('performingDurationTo', e.target.value)}
-                  variant="filled"
-                />
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder="From"
+                    value={formData.performingDurationFrom}
+                    onChange={(e) => handleInputChange('performingDurationFrom', e.target.value)}
+                    variant="filled"
+                  />
+                </div>
+                <span className="mx-2 text-lg text-gray-400 select-none">—</span>
+                <div className="flex-1">
+                  <Input
+                    placeholder="To"
+                    value={formData.performingDurationTo}
+                    onChange={(e) => handleInputChange('performingDurationTo', e.target.value)}
+                    variant="filled"
+                  />
+                </div>
               </div>
             </div>
 

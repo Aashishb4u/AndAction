@@ -183,7 +183,7 @@ function SignInContent() {
             </p>
             <form onSubmit={handleEmailSubmit} className="space-y-6">
               <Input
-                label="Email or Mobile number"
+                label="Email or Mobile number*"
                 type="text"
                 placeholder="Enter email ID or mobile number"
                 value={email}
@@ -285,7 +285,7 @@ function SignInContent() {
             </div>
 
             <PasswordInput
-              label="Password"
+              label="Password*"
               placeholder="Enter password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

@@ -28,11 +28,9 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
     whatsappNumber: data.whatsappNumber || '',
     sameAsContact: data.sameAsContact || false,
     email: data.email || '',
-    soloChargesFrom: data.soloChargesFrom || '',
-    soloChargesTo: data.soloChargesTo || '',
+    soloCharges: data.soloCharges || '',
     soloDescription: data.soloDescription || '',
-    backingChargesFrom: data.backingChargesFrom || '',
-    backingChargesTo: data.backingChargesTo || '',
+    backingCharges: data.backingCharges || '',
     backingDescription: data.backingDescription || ''
   });
 
@@ -84,12 +82,12 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
             {/* Progress Bar */}
             <div className="w-full bg-[#2D2D2D] rounded-full h-1 mb-6">
-              <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-3/4"></div>
+              <div className="bg-linear-to-r from-primary-pink to-primary-orange h-1 rounded-full w-3/4"></div>
             </div>
 
             {/* Step Info */}
             <div className="flex items-center gap-3 mb-2">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <Image src="/icons/phone.svg" alt="Contact & Pricing" width={25} height={25} />
               </div>
               <div className="text-left">
@@ -184,7 +182,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
               <div className="space-y-6">
                 {/* Solo Charges */}
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2 mb-1">
                     <label className="text-white font-medium">Solo charges</label>
                     <button className="text-blue">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -192,29 +190,17 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                       </svg>
                     </button>
                   </div>
+                  <p className="text-text-gray text-sm mb-3">(Amount you usually charge when you perform solo)</p>
 
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="relative">
-                      <span className="text-white text-sm  left-3 mr-4 z-50 top-3.5 absolute">₹</span>
-                      <Input
-                        placeholder="- From"
-                        value={formData.soloChargesFrom}
-                        onChange={(e) => handleInputChange('soloChargesFrom', e.target.value)}
-                        variant="filled"
-                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
-                      />
-                    </div>
-                    <div className="relative">
-                      <span className="text-white text-sm  absolute mr-4 left-3 z-50 top-3.5">₹</span>
-                      <Input
-                        placeholder="- To"
-                        value={formData.soloChargesTo}
-                        onChange={(e) => handleInputChange('soloChargesTo', e.target.value)}
-                        variant="filled"
-                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
-
-                      />
-                    </div>
+                  <div className="relative mb-4">
+                    <span className="text-white text-sm left-3 mr-4 z-50 top-3.5 absolute">₹</span>
+                    <Input
+                      placeholder="Starting from"
+                      value={formData.soloCharges}
+                      onChange={(e) => handleInputChange('soloCharges', e.target.value)}
+                      variant="filled"
+                      style={{ paddingLeft: "2rem" }}
+                    />
                   </div>
 
                   <textarea
@@ -228,47 +214,29 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
                 {/* Charges with Backing */}
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <label className="text-white font-medium">Charges with backing</label>
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="text-white font-medium">Charges with backline</label>
                     <button className="text-blue">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </button>
                   </div>
+                  <p className="text-text-gray text-sm mb-3">(Amount you usually charge including backline like sound system, stage, chorus)</p>
 
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                   <div className="relative">
-                      {/* Rupee symbol */}
-                      <span className="text-white text-sm absolute left-3 z-50 pr-4 top-3.5">
-                        ₹
-                      </span>
-
-                      <Input
-                        placeholder="- From"
-                        value={formData.backingChargesFrom}
-                        onChange={(e) =>
-                          handleInputChange("backingChargesFrom", e.target.value)
-                        }
-                        variant="filled"
-                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
-                      />
-                    </div>
-
-                    <div className="relative">
-                      <span className="text-white text-sm absolute left-3 z-50 pr-4 top-3.5">₹</span>
-                      <Input
-                        placeholder="- To"
-                        value={formData.backingChargesTo}
-                        onChange={(e) => handleInputChange('backingChargesTo', e.target.value)}
-                        variant="filled"
-                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
-                      />
-                    </div>
+                  <div className="relative mb-4">
+                    <span className="text-white text-sm absolute left-3 z-50 pr-4 top-3.5">₹</span>
+                    <Input
+                      placeholder="Starting from"
+                      value={formData.backingCharges}
+                      onChange={(e) => handleInputChange("backingCharges", e.target.value)}
+                      variant="filled"
+                      style={{ paddingLeft: "2rem" }}
+                    />
                   </div>
 
                   <textarea
-                    placeholder="Add Description...."
+                    placeholder="Backline like Sound system, stage, Chorus"
                     value={formData.backingDescription}
                     onChange={(e) => handleInputChange('backingDescription', e.target.value)}
                     rows={3}

@@ -191,7 +191,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
           {/* Name Fields */}
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="First name"
+              label="First name*"
               placeholder="First name"
               value={formData.firstName}
               onChange={(e) => handleInputChange("firstName", e.target.value)}
@@ -199,7 +199,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
               required
             />
             <Input
-              label="Last name"
+              label="Last name*"
               placeholder="Last name"
               value={formData.lastName}
               onChange={(e) => handleInputChange("lastName", e.target.value)}
@@ -211,7 +211,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
           {/* Mobile Number */}
 
           <PhoneInput
-            label="Mobile number"
+            label="Mobile number*"
             placeholder="Enter mobile number"
             value={formData.mobileNumber}
             onChange={(value) => handleInputChange("mobileNumber", value)}
@@ -221,7 +221,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
           {/* Location Fields */}
           <div className="grid grid-cols-2 gap-4">
             <Select
-              label="State"
+              label="State*"
               placeholder="Select"
               options={stateOptions}
               value={formData.state}
@@ -230,7 +230,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
               required
             />
             <Select
-              label="City"
+              label="City*"
               placeholder="Select"
               options={cityOptions}
               value={formData.city}
@@ -242,7 +242,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
 
           {/* Event Type */}
           <Select
-            label="Event type"
+            label="Event type*"
             placeholder="Select event type"
             options={eventTypeOptions}
             value={formData.eventType}
@@ -254,7 +254,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
           {/* Date and Time */}
           <div className="grid grid-cols-2 gap-4">
             <DateInput
-              label="Event date"
+              label="Event date*"
               placeholder="DD/MM/YYYY"
               value={formData.eventDate || null}
               onChange={(value) => handleInputChange("eventDate", value)}
@@ -265,7 +265,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
             />
 
             <Select
-              label="Time"
+              label="Time*"
               placeholder="Select slot"
               options={timeSlotOptions}
               value={formData.time}
@@ -276,7 +276,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
           </div>
           <div className="relative">
             <Input
-              label="Total Price"
+              label="Total Price*"
               placeholder="Total Price"
               value={formData.totalPrice}
               onChange={(e) => handleInputChange("totalPrice", e.target.value)}

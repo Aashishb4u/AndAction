@@ -49,11 +49,9 @@ export default function ProfileSetupPage() {
     whatsappNumber: "",
     sameAsContact: false,
     email: "",
-    soloChargesFrom: "",
-    soloChargesTo: "",
+    soloCharges: "",
     soloDescription: "",
-    backingChargesFrom: "",
-    backingChargesTo: "",
+    backingCharges: "",
     backingDescription: "",
   });
 
@@ -88,11 +86,11 @@ export default function ProfileSetupPage() {
           contactNumber: profileData.contactNumber,
           whatsappNumber: profileData.whatsappNumber,
           contactEmail: profileData.email,
-          soloChargesFrom: profileData.soloChargesFrom,
-          soloChargesTo: profileData.soloChargesTo,
+          soloChargesFrom: profileData.soloCharges,
+          soloChargesTo: null,
           soloChargesDescription: profileData.soloDescription,
-          chargesWithBacklineFrom: profileData.backingChargesFrom,
-          chargesWithBacklineTo: profileData.backingChargesTo,
+          chargesWithBacklineFrom: profileData.backingCharges,
+          chargesWithBacklineTo: null,
           chargesWithBacklineDescription: profileData.backingDescription,
         }),
       });
@@ -218,11 +216,9 @@ export default function ProfileSetupPage() {
       whatsappNumber: "",
       sameAsContact: false,
       email: "",
-      soloChargesFrom: "",
-      soloChargesTo: "",
+      soloCharges: "",
       soloDescription: "",
-      backingChargesFrom: "",
-      backingChargesTo: "",
+      backingCharges: "",
       backingDescription: "",
     });
   };
@@ -285,7 +281,7 @@ export default function ProfileSetupPage() {
             </p>
             <button
               onClick={handleNext}
-              className="px-6 py-2 bg-gradient-to-r from-primary-pink to-primary-orange text-white rounded-lg"
+              className="px-6 py-2 bg-linear-to-r from-primary-pink to-primary-orange text-white rounded-lg"
             >
               Continue
             </button>
