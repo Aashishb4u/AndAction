@@ -35,6 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   const navigationItems = [
+    { label: "Home", href: "/", isActive: pathname === "/" },
     { label: "About us", href: "/about", isActive: pathname === "/about" },
     { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
     {
@@ -223,7 +224,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             {user && (
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center justify-center gap-2 text-white hover:text-primary-pink transition-colors duration-200 mb-4"
+                className="w-full flex items-start gap-2 text-white hover:text-primary-pink transition-colors duration-200 mb-4"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Signout</span>
