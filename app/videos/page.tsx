@@ -171,7 +171,6 @@ export default function VideosPage() {
 
                   isBookmarked={video.isBookmarked}
                   bookmarkId={video.bookmarkId}
-
                   onBookmark={(data) => toggleBookmark(data)}
                   onShare={() => handleShare(video.id)}
                 />
