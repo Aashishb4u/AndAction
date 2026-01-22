@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import Image from 'next/image';
 import imageCompression from "browser-image-compression";
 import { ArtistProfileSetupData } from '@/types';
+import Cropper from 'react-easy-crop';
+import { Area } from 'react-easy-crop';
 
 interface ArtistProfileDetailsProps {
   data: ArtistProfileSetupData;
@@ -15,6 +17,45 @@ interface ArtistProfileDetailsProps {
   onBack: () => void;
   onUpdateData: (data: Partial<ArtistProfileSetupData>) => void;
 }
+
+// Helper function to create cropped image
+const createImage = (url: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const image = new window.Image();
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', (error) => reject(error));
+    image.crossOrigin = 'anonymous';
+    image.src = url;
+  });
+
+const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<Blob | null> => {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) return null;
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height
+  );
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(blob);
+    }, 'image/jpeg', 0.95);
+  });
+};
 
 const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   data,
@@ -42,6 +83,18 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   );
 
   const [uploading, setUploading] = useState<boolean>(false);
+
+  // Cropping states
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
 
   const artistTypes = [
     { value: 'singer', label: 'Singer' },
@@ -134,12 +187,53 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   }
 };
 
+  // Handle file selection - opens crop modal
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    
     const file = e.target.files?.[0];
     if (!file) return;
     console.log("📸 File selected:", file);
-    handleProfilePhotoUpload(file);
+    
+    // Create URL for cropping
+    const imageUrl = URL.createObjectURL(file);
+    setImageToCrop(imageUrl);
+    setShowCropModal(true);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Handle crop completion
+  const handleCropSave = async () => {
+    if (!imageToCrop || !croppedAreaPixels) return;
+    
+    try {
+      const croppedBlob = await getCroppedImg(imageToCrop, croppedAreaPixels);
+      if (!croppedBlob) return;
+      
+      // Convert blob to file
+      const croppedFile = new File([croppedBlob], 'cropped-profile.jpg', { type: 'image/jpeg' });
+      
+      setShowCropModal(false);
+      setImageToCrop(null);
+      
+      // Upload the cropped image
+      handleProfilePhotoUpload(croppedFile);
+    } catch (error) {
+      console.error('Crop failed:', error);
+    }
+  };
+
+  // Cancel cropping
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setImageToCrop(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleNext = () => {
@@ -195,29 +289,33 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
             {/* Profile Photo Upload */}
             <div className="flex justify-center">
               <div className="relative">
-                <div className="max-w-[150px] bg-card border border-dashed border-border-color rounded-md flex flex-col gap-3 text-center items-center justify-center px-3 py-10">
+                <div className="w-[150px] h-[150px] bg-card border border-dashed border-border-color rounded-md flex flex-col gap-3 text-center items-center justify-center overflow-hidden">
 
                   {preview ? (
                     <Image
                       src={preview}
                       alt="Profile"
-                      className="w-full h-full rounded-full object-cover"
-                      width={100}
-                      height={100}
+                      className="w-full h-full object-contain"
+                      width={150}
+                      height={150}
                       unoptimized
                     />
                   ) : (
-                    <Image src={`/icons/user-icon.svg`} alt="Profile" width={50} height={50} />
-                  )}
-
-                  {uploading ? (
-                    <p className="text-text-gray text-sm">Uploading...</p>
-                  ) : (
-                    <p className="text-text-gray secondary-text">Upload Profile Photo</p>
+                    <>
+                      <Image src={`/icons/user-icon.svg`} alt="Profile" width={50} height={50} />
+                      <p className="text-text-gray secondary-text px-2">Upload Profile Photo</p>
+                    </>
                   )}
                 </div>
 
+                {uploading && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md">
+                    <p className="text-white text-sm">Uploading...</p>
+                  </div>
+                )}
+
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
@@ -304,6 +402,73 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Crop Modal */}
+      {showCropModal && imageToCrop && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <div className="bg-card border border-border-color rounded-xl w-[90vw] max-w-md overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-border-color">
+              <h3 className="text-white font-semibold">Crop Image</h3>
+              <button 
+                onClick={handleCropCancel}
+                className="text-text-gray hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Crop Area */}
+            <div className="relative h-[300px] bg-black">
+              <Cropper
+                image={imageToCrop}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            </div>
+
+            {/* Zoom Slider */}
+            <div className="p-4 border-t border-border-color">
+              <label className="block text-text-gray text-sm mb-2">Zoom</label>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.1}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-full h-2 bg-[#2D2D2D] rounded-lg appearance-none cursor-pointer accent-primary-pink"
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex gap-3 p-4 border-t border-border-color">
+              <Button 
+                variant="secondary" 
+                size="md" 
+                onClick={handleCropCancel}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                size="md" 
+                onClick={handleCropSave}
+                className="flex-1"
+              >
+                Apply
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
