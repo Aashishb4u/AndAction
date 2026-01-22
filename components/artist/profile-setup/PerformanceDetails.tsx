@@ -32,6 +32,9 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
     offStageMembers: data.offStageMembers || ''
   });
 
+  // State dropdown visibility
+  const [showStatesDropdown, setShowStatesDropdown] = useState(false);
+
   const languages = [
     { value: 'hindi', label: 'Hindi' },
     { value: 'english', label: 'English' },
@@ -79,6 +82,30 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
     const updatedData = { ...formData, [field]: value };
     setFormData(updatedData);
     onUpdateData(updatedData);
+  };
+
+  // Toggle a single state selection
+  const toggleStateSelection = (stateValue: string) => {
+    const current = formData.performingStates;
+    let updated: string[];
+    if (current.includes(stateValue)) {
+      updated = current.filter((s) => s !== stateValue);
+    } else {
+      updated = [...current, stateValue];
+    }
+    handleInputChange('performingStates', updated);
+  };
+
+  // Toggle all states
+  const toggleAllStates = () => {
+    const allValues = states.map((s) => s.value);
+    if (formData.performingStates.length === states.length) {
+      // Deselect all
+      handleInputChange('performingStates', []);
+    } else {
+      // Select all
+      handleInputChange('performingStates', allValues);
+    }
   };
 
   const handleNext = () => {
@@ -166,8 +193,8 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
               />
             </div>
 
-            {/* Performing States */}
-            <div>
+            {/* Performing States - Multi-select */}
+            <div className="relative">
               <div className="flex items-center gap-2 mb-1">
                 <label className="block section-text">Performing states*</label>
                 <button className="text-blue">
@@ -176,12 +203,61 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                   </svg>
                 </button>
               </div>
-              <Select
-                placeholder="Select states"
-                value={formData.performingStates[0] || ''}
-                onChange={(value) => handleInputChange('performingStates', [value])}
-                options={states}
-              />
+              
+              {/* Trigger button */}
+              <button
+                type="button"
+                onClick={() => setShowStatesDropdown(!showStatesDropdown)}
+                className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
+              >
+                <span className={formData.performingStates.length > 0 ? 'text-white' : 'text-text-gray'}>
+                  {formData.performingStates.length > 0
+                    ? formData.performingStates.length === states.length
+                      ? 'All States'
+                      : `${formData.performingStates.length} state${formData.performingStates.length > 1 ? 's' : ''} selected`
+                    : 'Select states'}
+                </span>
+                <svg
+                  className={`w-5 h-5 text-text-gray transition-transform ${showStatesDropdown ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Dropdown */}
+              {showStatesDropdown && (
+                <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-64 overflow-auto">
+                  {/* All States checkbox */}
+                  <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
+                    <input
+                      type="checkbox"
+                      checked={formData.performingStates.length === states.length}
+                      onChange={toggleAllStates}
+                      className="w-4 h-4 accent-primary-pink rounded"
+                    />
+                    <span className="text-white font-medium">All States</span>
+                  </label>
+                  
+                  {/* Individual state checkboxes */}
+                  {states.map((state) => (
+                    <label
+                      key={state.value}
+                      className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.performingStates.includes(state.value)}
+                        onChange={() => toggleStateSelection(state.value)}
+                        className="w-4 h-4 accent-primary-pink rounded"
+                      />
+                      <span className="text-white text-sm">{state.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Performing Duration */}
