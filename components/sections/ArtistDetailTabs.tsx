@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Artist } from '@/types';
 import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
@@ -17,6 +17,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   isMobile = false,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('about');
+  const [isBioExpanded, setIsBioExpanded] = useState(false);
+  const [showBioMoreButton, setShowBioMoreButton] = useState(false);
+  const bioRef = useRef<HTMLParagraphElement>(null);
 
   const [artistVideos, setArtistVideos] = useState<any[]>([]);
   const [artistShorts, setArtistShorts] = useState<any[]>([]);
@@ -102,6 +105,25 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     fetchMedia();
   }, [artist?.id]);
 
+  // Check if bio text overflows (more than 2 lines)
+  useEffect(() => {
+    const checkBioOverflow = () => {
+      if (bioRef.current) {
+        const lineHeight = parseFloat(getComputedStyle(bioRef.current).lineHeight) || 20;
+        const maxHeight = lineHeight * 2; // 2 lines
+        setShowBioMoreButton(bioRef.current.scrollHeight > maxHeight + 2);
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(checkBioOverflow, 100);
+    window.addEventListener('resize', checkBioOverflow);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', checkBioOverflow);
+    };
+  }, [artist.bio, activeTab]);
+
 
   const tabs = [
     { id: 'about' as TabType, label: 'About' },
@@ -114,14 +136,20 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     <div className="space-y-4 max-w-4xl">
       <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
         <h3 className="text-text-gray secondary-text mb-1">Bio</h3>
-        <p className=" leading-relaxed text-sm">
+        <p 
+          ref={bioRef}
+          className={`leading-relaxed text-sm ${isBioExpanded ? '' : 'line-clamp-2'}`}
+        >
           {artist.bio || 'Borem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero Borem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero'}
-          {(!artist.bio || (artist.bio && artist.bio.length > 100)) && (
-            <button className="text-blue hover:text-primary-pink transition-colors font-medium ml-1">
-              more.
-            </button>
-          )}
         </p>
+        {showBioMoreButton && (
+          <button 
+            onClick={() => setIsBioExpanded(!isBioExpanded)}
+            className="text-blue hover:text-primary-pink transition-colors font-medium text-sm mt-1"
+          >
+            {isBioExpanded ? 'less' : 'more...'}
+          </button>
+        )}
       </div>
 
       <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>

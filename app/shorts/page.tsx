@@ -3,12 +3,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import SiteLayout from '@/components/layout/SiteLayout';
 import ShortsPlayer from '@/components/ui/ShortsPlayer';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function ShortsPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [shorts, setShorts] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
+
+  const { data: session } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -218,6 +223,12 @@ export default function ShortsPage() {
 
   // Bookmark handler: persist to backend and update state
   const handleBookmark = async (id: string) => {
+    // Check if user is logged in
+    if (!session?.user) {
+      router.push('/auth/signin');
+      return;
+    }
+
     const short = shorts.find((s) => s.id === id);
     if (!short) return;
     try {
