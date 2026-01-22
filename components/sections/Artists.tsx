@@ -45,8 +45,8 @@ export default function Artists({ location }: ArtistsProps) {
     <section className="relative w-full pt-4 md:pt-16 pb-20 md:pb-8 overflow-hidden">
       {/* Full-height Gradient Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        {/* Base black */}
-        <div className="absolute inset-0 bg-black" />
+        {/* Base background (use theme background variable) */}
+        <div className="absolute inset-0 bg-background" />
 
         {/* Full-height pink glow */}
         <div

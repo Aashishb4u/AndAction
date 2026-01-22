@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
@@ -92,6 +92,11 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sub-artist suggestions (persisted in localStorage)
+  const defaultSubTypes = ['Classical', 'Contemporary', 'Folk', 'Bollywood', 'Western', 'Fusion'];
+  const [subArtistSuggestions, setSubArtistSuggestions] = useState<string[]>(defaultSubTypes);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
@@ -131,6 +136,42 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     setFormData(updatedData);
     onUpdateData(updatedData);
   };
+
+  // Persist suggestions to localStorage
+  const persistSuggestions = (items: string[]) => {
+    try {
+      localStorage.setItem('subArtistTypes', JSON.stringify(items));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  // Add new suggestion if not exists
+  const addSuggestionIfNew = (value: string) => {
+    const v = value?.trim();
+    if (!v) return;
+    if (!subArtistSuggestions.includes(v)) {
+      const next = [v, ...subArtistSuggestions].slice(0, 50);
+      setSubArtistSuggestions(next);
+      persistSuggestions(next);
+    }
+  };
+
+  // Load suggestions on mount (ensure merged with defaults)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('subArtistTypes');
+      if (raw) {
+        const items: string[] = JSON.parse(raw);
+        // merge saved and defaults
+        const merged = Array.from(new Set([...items, ...defaultSubTypes]));
+        setSubArtistSuggestions(merged);
+      }
+    } catch (e) {
+      // On error, keep defaults
+      setSubArtistSuggestions(defaultSubTypes);
+    }
+  }, []);
 
   const handleProfilePhotoUpload = async (file: File) => {
   console.log("⬇️ Original file:", file);
@@ -237,6 +278,11 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   };
 
   const handleNext = () => {
+    // Persist sub-artist type into suggestions if new
+    if (formData.subArtistType) {
+      addSuggestionIfNew(formData.subArtistType);
+    }
+
     onUpdateData(formData);
     onNext();
   };
@@ -346,15 +392,48 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
               />
             </div>
 
-            {/* Sub Artist Type */}
-            <div>
-              <Select
-                label="Sub-Artist type"
-                placeholder="Select sub-artist type"
+            {/* Sub Artist Type (text input with suggestions) */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-white mb-2">Sub-Artist type</label>
+              <input
+                type="text"
+                placeholder="e.g. Classical, Bollywood, Fusion"
                 value={formData.subArtistType}
-                onChange={(value) => handleInputChange('subArtistType', value)}
-                options={subArtistTypes}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  handleInputChange('subArtistType', v);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-white placeholder-text-gray focus:outline-none"
               />
+
+              {/* Suggestions dropdown */}
+              {showSuggestions && (
+                <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
+                  {subArtistSuggestions.filter(s => s.toLowerCase().includes((formData.subArtistType || '').toLowerCase())).length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-text-gray">No suggestions</div>
+                  ) : (
+                    subArtistSuggestions
+                      .filter(s => s.toLowerCase().includes((formData.subArtistType || '').toLowerCase()))
+                      .map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onMouseDown={(e) => { e.preventDefault(); }}
+                          onClick={() => {
+                            handleInputChange('subArtistType', s);
+                            setShowSuggestions(false);
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
+                        >
+                          {s}
+                        </button>
+                      ))
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Achievements + Experience */}
