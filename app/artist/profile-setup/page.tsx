@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ProfileOverview from "@/components/artist/profile-setup/ProfileOverview";
 import ArtistProfileDetails from "@/components/artist/profile-setup/ArtistProfileDetails";
@@ -54,6 +54,24 @@ export default function ProfileSetupPage() {
     backingCharges: "",
     backingDescription: "",
   });
+
+  // Pre-fill contact number from session if user signed up with phone
+  useEffect(() => {
+    if (session?.user?.phoneNumber) {
+      const phone = session.user.phoneNumber;
+      setProfileData((prev) => ({
+        ...prev,
+        contactNumber: prev.contactNumber || phone,
+        whatsappNumber: prev.whatsappNumber || phone,
+      }));
+    }
+    if (session?.user?.email) {
+      setProfileData((prev) => ({
+        ...prev,
+        email: prev.email || session.user.email || "",
+      }));
+    }
+  }, [session?.user?.phoneNumber, session?.user?.email]);
 
   const handleSubmitProfile = async () => {
     try {

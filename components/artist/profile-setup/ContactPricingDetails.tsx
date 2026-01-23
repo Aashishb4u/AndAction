@@ -34,6 +34,11 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
     backingDescription: data.backingDescription || ''
   });
 
+  // Track if fields are in edit mode (editable) or locked
+  const [isContactEditing, setIsContactEditing] = useState(!data.contactNumber);
+  const [isWhatsappEditing, setIsWhatsappEditing] = useState(!data.whatsappNumber);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const handleInputChange = (field: string, value: string | boolean) => {
     const updatedData = { ...formData, [field]: value };
 
@@ -47,6 +52,22 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
   };
 
   const handleNext = () => {
+    // Validate required fields
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.contactNumber?.trim()) {
+      newErrors.contactNumber = 'Contact number is required';
+    }
+    if (!formData.whatsappNumber?.trim()) {
+      newErrors.whatsappNumber = 'WhatsApp number is required';
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      return; // Don't proceed if there are errors
+    }
+
     onUpdateData(formData);
     onNext();
   };
@@ -120,10 +141,22 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                     value={formData.contactNumber}
                     onChange={(value) => handleInputChange('contactNumber', value)}
                     variant="filled"
+                    disabled={!isContactEditing && !!formData.contactNumber}
                   />
-                  <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1">
-                    Verify
-                  </button>
+                  {/* Show Edit or Verify based on editing state */}
+                  {formData.contactNumber && !isContactEditing ? (
+                    <button 
+                      onClick={() => setIsContactEditing(true)}
+                      className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1"
+                    >
+                      Edit
+                    </button>
+                  ) : (
+                    <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1">
+                      Verify
+                    </button>
+                  )}
+                  {errors.contactNumber && <p className="text-red-500 text-sm mt-1">{errors.contactNumber}</p>}
                 </div>
                 {/* WhatsApp Number */}
                 <div className="relative">
@@ -139,10 +172,22 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                     value={formData.whatsappNumber}
                     onChange={(value) => handleInputChange('whatsappNumber', value)}
                     variant="filled"
+                    disabled={!isWhatsappEditing && !!formData.whatsappNumber}
                   />
-                  <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1">
-                    Verify
-                  </button>
+                  {/* Show Edit or Verify based on editing state */}
+                  {formData.whatsappNumber && !isWhatsappEditing ? (
+                    <button 
+                      onClick={() => setIsWhatsappEditing(true)}
+                      className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1"
+                    >
+                      Edit
+                    </button>
+                  ) : (
+                    <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1">
+                      Verify
+                    </button>
+                  )}
+                  {errors.whatsappNumber && <p className="text-red-500 text-sm mt-1">{errors.whatsappNumber}</p>}
                 </div>
 
                 {/* Same as Contact Checkbox */}

@@ -34,6 +34,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
   // State dropdown visibility
   const [showStatesDropdown, setShowStatesDropdown] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const languages = [
     { value: 'hindi', label: 'Hindi' },
@@ -109,6 +110,25 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
   };
 
   const handleNext = () => {
+    // Validate required fields
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.performingLanguages || formData.performingLanguages.length === 0) {
+      newErrors.performingLanguages = 'Performing language is required';
+    }
+    if (!formData.performingEventTypes || formData.performingEventTypes.length === 0) {
+      newErrors.performingEventTypes = 'Performing event type is required';
+    }
+    if (!formData.performingStates || formData.performingStates.length === 0) {
+      newErrors.performingStates = 'Performing states is required';
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      return; // Don't proceed if there are errors
+    }
+
     onUpdateData(formData);
     onNext();
   };
@@ -173,6 +193,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                 onChange={(value) => handleInputChange('performingLanguages', [value])}
                 options={languages}
               />
+              {errors.performingLanguages && <p className="text-red-500 text-sm mt-1">{errors.performingLanguages}</p>}
             </div>
 
             {/* Performing Event Type */}
@@ -191,6 +212,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                 onChange={(value) => handleInputChange('performingEventTypes', [value])}
                 options={eventTypes}
               />
+              {errors.performingEventTypes && <p className="text-red-500 text-sm mt-1">{errors.performingEventTypes}</p>}
             </div>
 
             {/* Performing States - Multi-select */}
@@ -257,8 +279,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     </label>
                   ))}
                 </div>
-              )}
-            </div>
+              )}              {errors.performingStates && <p className="text-red-500 text-sm mt-1">{errors.performingStates}</p>}            </div>
 
             {/* Performing Duration */}
             <div className="relative">

@@ -96,6 +96,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   const defaultSubTypes = ['Classical', 'Contemporary', 'Folk', 'Bollywood', 'Western', 'Fusion'];
   const [subArtistSuggestions, setSubArtistSuggestions] = useState<string[]>(defaultSubTypes);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -278,6 +279,28 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   };
 
   const handleNext = () => {
+    // Validate required fields
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.stageName?.trim()) {
+      newErrors.stageName = 'Stage name is required';
+    }
+    if (!formData.artistType) {
+      newErrors.artistType = 'Artist type is required';
+    }
+    if (!formData.yearsOfExperience) {
+      newErrors.yearsOfExperience = 'Years of experience is required';
+    }
+    if (!formData.shortBio?.trim()) {
+      newErrors.shortBio = 'Short bio is required';
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      return; // Don't proceed if there are errors
+    }
+
     // Persist sub-artist type into suggestions if new
     if (formData.subArtistType) {
       addSuggestionIfNew(formData.subArtistType);
@@ -379,6 +402,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                 onChange={(e) => handleInputChange('stageName', e.target.value)}
                 variant="filled"
               />
+              {errors.stageName && <p className="text-red-500 text-sm mt-1">{errors.stageName}</p>}
             </div>
 
             {/* Artist Type */}
@@ -390,6 +414,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                 onChange={(value) => handleInputChange('artistType', value)}
                 options={artistTypes}
               />
+              {errors.artistType && <p className="text-red-500 text-sm mt-1">{errors.artistType}</p>}
             </div>
 
             {/* Sub Artist Type (text input with suggestions) */}
@@ -453,6 +478,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                 onChange={(value) => handleInputChange('yearsOfExperience', value)}
                 options={experienceYears}
               />
+              {errors.yearsOfExperience && <p className="text-red-500 text-sm mt-1">{errors.yearsOfExperience}</p>}
             </div>
 
             {/* Short Bio */}
@@ -465,6 +491,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                 rows={4}
                 className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-white placeholder-text-gray focus:outline-none"
               />
+              {errors.shortBio && <p className="text-red-500 text-sm mt-1">{errors.shortBio}</p>}
             </div>
           </div>
         </div>
