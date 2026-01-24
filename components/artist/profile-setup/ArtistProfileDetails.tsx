@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
+import Tooltip from '@/components/ui/Tooltip';
 import Image from 'next/image';
 import imageCompression from "browser-image-compression";
 import { ArtistProfileSetupData } from '@/types';
@@ -395,8 +396,15 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
             {/* Stage Name */}
             <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="block text-sm font-medium text-white">Stage name*</label>
+                <Tooltip content="Your stage name or artist alias that fans will recognize you by. This will be displayed on your public profile.">
+                  <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </Tooltip>
+              </div>
               <Input
-                label="Stage name*"
                 placeholder="Enter your stage name"
                 value={formData.stageName}
                 onChange={(e) => handleInputChange('stageName', e.target.value)}
@@ -407,8 +415,15 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
             {/* Artist Type */}
             <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="block text-sm font-medium text-white">Artist type*</label>
+                <Tooltip content="Select the primary category that best describes your art form, such as Singer, Dancer, Musician, etc.">
+                  <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </Tooltip>
+              </div>
               <Select
-                label="Artist type*"
                 placeholder="Select or write artist type"
                 value={formData.artistType}
                 onChange={(value) => handleInputChange('artistType', value)}
@@ -419,7 +434,14 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
             {/* Sub Artist Type (text input with suggestions) */}
             <div className="relative">
-              <label className="block text-sm font-medium text-white mb-2">Sub-Artist type</label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className="block text-sm font-medium text-white">Sub-Artist type</label>
+                <Tooltip content="Specify your specialty within your art form. For example, if you're a singer, you might specialize in Classical, Bollywood, or Fusion music.">
+                  <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </Tooltip>
+              </div>
               <input
                 type="text"
                 placeholder="e.g. Classical, Bollywood, Fusion"
@@ -463,27 +485,52 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
             {/* Achievements + Experience */}
             <div className="grid md:grid-cols-2 gap-4">
-              <Input
-                label="Achievements / Awards"
-                placeholder="Enter achievements"
-                value={formData.achievements}
-                onChange={(e) => handleInputChange('achievements', e.target.value)}
-                variant="filled"
-              />
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="block text-sm font-medium text-white">Achievements / Awards</label>
+                  <Tooltip content="List any notable achievements, awards, or recognitions you have received in your career. This helps build credibility with potential clients.">
+                    <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </Tooltip>
+                </div>
+                <Input
+                  placeholder="Enter achievements"
+                  value={formData.achievements}
+                  onChange={(e) => handleInputChange('achievements', e.target.value)}
+                  variant="filled"
+                />
+              </div>
 
-              <Select
-                label="Years of experience*"
-                placeholder="Select no. of years"
-                value={formData.yearsOfExperience}
-                onChange={(value) => handleInputChange('yearsOfExperience', value)}
-                options={experienceYears}
-              />
-              {errors.yearsOfExperience && <p className="text-red-500 text-sm mt-1">{errors.yearsOfExperience}</p>}
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="block text-sm font-medium text-white">Years of experience*</label>
+                  <Tooltip content="Select how many years you have been performing professionally. This helps clients understand your experience level.">
+                    <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </Tooltip>
+                </div>
+                <Select
+                  placeholder="Select no. of years"
+                  value={formData.yearsOfExperience}
+                  onChange={(value) => handleInputChange('yearsOfExperience', value)}
+                  options={experienceYears}
+                />
+                {errors.yearsOfExperience && <p className="text-red-500 text-sm mt-1">{errors.yearsOfExperience}</p>}
+              </div>
             </div>
 
             {/* Short Bio */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">Short bio*</label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className="block text-sm font-medium text-white">Short bio*</label>
+                <Tooltip content="Write a compelling description about yourself, your journey, and what makes you unique. This is your chance to tell your story to potential clients.">
+                  <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </Tooltip>
+              </div>
               <textarea
                 placeholder="Write a short bio about yourself..."
                 value={formData.shortBio}

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
+import Tooltip from '@/components/ui/Tooltip';
 import Image from 'next/image';
 import PhoneInput from '@/components/ui/PhoneInput';
 import { ArtistProfileSetupData } from '@/types';
@@ -129,11 +130,13 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
               <div className="space-y-6">
                 {/* Contact Number */}
                 <div className="relative">
-                  <button className="absolute top-0 right-0 text-blue p-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
+                  <Tooltip content="Your primary contact number for clients to reach you. This will be verified via OTP to ensure authenticity." position="top">
+                    <button className="absolute top-0 right-0 text-blue p-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                  </Tooltip>
 
                   <PhoneInput
                     label="Contact number*"
@@ -160,11 +163,13 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                 </div>
                 {/* WhatsApp Number */}
                 <div className="relative">
-                  <button className="absolute top-0 right-0 text-blue p-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
+                  <Tooltip content="Your WhatsApp number for quick communication with clients. Many clients prefer WhatsApp for booking inquiries." position="top">
+                    <button className="absolute top-0 right-0 text-blue p-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                  </Tooltip>
 
                   <PhoneInput
                     label="WhatsApp number*"
@@ -211,11 +216,13 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                     variant="filled"
                     type="email"
                   />
-                  <button className="absolute top-0 right-0 text-blue p-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
+                  <Tooltip content="Your professional email address for formal communications, contracts, and booking confirmations." position="top">
+                    <button className="absolute top-0 right-0 text-blue p-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -229,11 +236,11 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <label className="text-white font-medium">Solo charges</label>
-                    <button className="text-blue">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <Tooltip content="Enter your starting price when performing alone without any supporting equipment. This gives clients a baseline for your rates.">
+                      <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                    </button>
+                    </Tooltip>
                   </div>
                   <p className="text-text-gray text-sm mb-3">(Amount you usually charge when you perform solo)</p>
 
@@ -249,7 +256,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                   </div>
 
                   <textarea
-                    placeholder="Add Description...."
+                    placeholder="Solo charges like Sound system, stage, Chorus"
                     value={formData.soloDescription}
                     onChange={(e) => handleInputChange('soloDescription', e.target.value)}
                     rows={3}
@@ -261,11 +268,11 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <label className="text-white font-medium">Charges with backline</label>
-                    <button className="text-blue">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <Tooltip content="Enter your price when you provide the complete setup including sound system, stage equipment, chorus singers, etc. This is your all-inclusive rate.">
+                      <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                    </button>
+                    </Tooltip>
                   </div>
                   <p className="text-text-gray text-sm mb-3">(Amount you usually charge including backline like sound system, stage, chorus)</p>
 
