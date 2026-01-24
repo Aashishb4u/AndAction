@@ -5,12 +5,19 @@ import SiteLayout from '@/components/layout/SiteLayout';
 import ShortsPlayer from '@/components/ui/ShortsPlayer';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { X, Copy, MessageCircle, Facebook, Twitter, Mail, Linkedin } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function ShortsPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [shorts, setShorts] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
+  const [shareModal, setShareModal] = useState<{ isOpen: boolean; shortId: string; title: string }>({
+    isOpen: false,
+    shortId: '',
+    title: '',
+  });
 
   const { data: session } = useSession();
   const router = useRouter();
@@ -250,25 +257,80 @@ export default function ShortsPage() {
     }
   };
 
-  // Share handler: copy link and show toast
+  // Share handler: open share modal
   const handleShare = async (id: string) => {
+    const short = shorts.find((s) => s.id === id);
+    const shareTitle = short?.title || 'Check out this short';
+    setShareModal({ isOpen: true, shortId: id, title: shareTitle });
+  };
+
+  const getShareUrl = () => {
+    const baseUrl = process.env.NEXT_PUBLIC_NEXTAUTH_URL || window.location.origin;
+    return `${baseUrl}/shorts/${shareModal.shortId}`;
+  };
+
+  const handleCopyLink = async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_NEXTAUTH_URL || window.location.origin;
-      const shareUrl = `${baseUrl}/shorts/${id}`;
-      await navigator.clipboard.writeText(shareUrl);
-      if (typeof window !== 'undefined') {
-        // Dynamically import toast if not already available
-        const { toast } = await import('react-toastify');
-        toast.success('Link copied to clipboard');
-      }
-    } catch (err) {
-      console.error('Share error:', err);
-      if (typeof window !== 'undefined') {
-        const { toast } = await import('react-toastify');
-        toast.error('Failed to copy link');
-      }
+      await navigator.clipboard.writeText(getShareUrl());
+      toast.success('Link copied to clipboard');
+      setShareModal({ isOpen: false, shortId: '', title: '' });
+    } catch {
+      toast.error('Failed to copy link');
     }
   };
+
+  const shareOptions = [
+    {
+      name: 'WhatsApp',
+      icon: MessageCircle,
+      color: 'bg-green-500 hover:bg-green-600',
+      action: () => {
+        const url = `https://wa.me/?text=${encodeURIComponent(`${shareModal.title} - ${getShareUrl()}`)}`;
+        window.open(url, '_blank');
+        setShareModal({ isOpen: false, shortId: '', title: '' });
+      },
+    },
+    {
+      name: 'Facebook',
+      icon: Facebook,
+      color: 'bg-blue-600 hover:bg-blue-700',
+      action: () => {
+        const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}`;
+        window.open(url, '_blank');
+        setShareModal({ isOpen: false, shortId: '', title: '' });
+      },
+    },
+    {
+      name: 'Twitter',
+      icon: Twitter,
+      color: 'bg-sky-500 hover:bg-sky-600',
+      action: () => {
+        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareModal.title)}&url=${encodeURIComponent(getShareUrl())}`;
+        window.open(url, '_blank');
+        setShareModal({ isOpen: false, shortId: '', title: '' });
+      },
+    },
+    {
+      name: 'LinkedIn',
+      icon: Linkedin,
+      color: 'bg-blue-700 hover:bg-blue-800',
+      action: () => {
+        const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(getShareUrl())}`;
+        window.open(url, '_blank');
+        setShareModal({ isOpen: false, shortId: '', title: '' });
+      },
+    },
+    {
+      name: 'Email',
+      icon: Mail,
+      color: 'bg-gray-600 hover:bg-gray-700',
+      action: () => {
+        const url = `mailto:?subject=${encodeURIComponent(shareModal.title)}&body=${encodeURIComponent(`Check out this short: ${getShareUrl()}`)}`;
+        window.location.href = url;
+        setShareModal({ isOpen: false, shortId: '', title: '' });
+      },
+    },
+  ];
 
   const visibleVideos = getVisibleVideos();
 
@@ -351,6 +413,64 @@ export default function ShortsPage() {
           </div>
         </div>
       </div>
+
+      {/* Share Modal */}
+      {shareModal.isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          onClick={() => setShareModal({ isOpen: false, shortId: '', title: '' })}
+        >
+          <div 
+            className="bg-gray-900 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-gray-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-white">Share Short</h3>
+              <button
+                onClick={() => setShareModal({ isOpen: false, shortId: '', title: '' })}
+                className="p-2 rounded-full hover:bg-gray-700 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Video Title */}
+            <p className="text-gray-400 text-sm mb-6 line-clamp-2">{shareModal.title}</p>
+
+            {/* Share Options Grid */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              {shareOptions.map((option) => (
+                <button
+                  key={option.name}
+                  onClick={option.action}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl ${option.color} transition-all transform hover:scale-105`}
+                >
+                  <option.icon className="w-6 h-6 text-white" />
+                  <span className="text-xs text-white font-medium">{option.name}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Copy Link Section */}
+            <div className="flex items-center gap-2 p-3 bg-gray-800 rounded-xl">
+              <input
+                type="text"
+                readOnly
+                value={getShareUrl()}
+                className="flex-1 bg-transparent text-gray-300 text-sm outline-none truncate"
+              />
+              <button
+                onClick={handleCopyLink}
+                className="flex items-center gap-2 px-4 py-2 bg-primary-pink hover:bg-primary-pink/80 text-white rounded-lg transition-colors text-sm font-medium"
+              >
+                <Copy className="w-4 h-4" />
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </SiteLayout>
   );
 }
