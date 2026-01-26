@@ -223,14 +223,23 @@ h6 {
 
 
 /* Custom active nav item with gradient underline */
+/* Active nav underline without layout shift */
+.nav-active-underline {
+  position: relative;
+}
+
 .nav-active-underline::after {
   content: '';
-  display: block;
-  width: 120%;
+  position: absolute;
+  left: 50%;
+  bottom: 4px; /* adjust vertical position */
+  transform: translateX(-50%);
+  width: 70%;
   height: 2px;
   background: var(--gradient-primary);
-  margin-top: 8px;
+  border-radius: 2px;
 }
+
 
 
 /* Scrollbar Styling */
