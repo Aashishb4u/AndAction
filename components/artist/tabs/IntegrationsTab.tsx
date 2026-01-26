@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { Artist } from "@/types";
 import {
@@ -14,6 +15,7 @@ import {
 import {
   useIntegrationStatus,
   useYouTubeConnect,
+  useYouTubeConnectByChannel,
   useYouTubeDisconnect,
   useInstagramConnect,
   useInstagramDisconnect,
@@ -28,17 +30,40 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
   const [disconnectType, setDisconnectType] = useState<"youtube" | "instagram">(
     "youtube"
   );
+  const [showChannelInput, setShowChannelInput] = useState(false);
+  const [channelInput, setChannelInput] = useState("");
 
   const { data: integrationStatus, isLoading: isLoadingStatus } =
     useIntegrationStatus();
 
   const youtubeConnectMutation = useYouTubeConnect();
+  const youtubeConnectByChannelMutation = useYouTubeConnectByChannel();
   const youtubeDisconnectMutation = useYouTubeDisconnect();
   const instagramConnectMutation = useInstagramConnect();
   const instagramDisconnectMutation = useInstagramDisconnect();
 
   const handleYouTubeConnect = () => {
     youtubeConnectMutation.mutate();
+  };
+
+  const handleShowChannelInput = () => {
+    setShowChannelInput(true);
+  };
+
+  const handleConnectByChannel = () => {
+    if (channelInput.trim()) {
+      youtubeConnectByChannelMutation.mutate(channelInput.trim(), {
+        onSuccess: () => {
+          setShowChannelInput(false);
+          setChannelInput("");
+        },
+      });
+    }
+  };
+
+  const handleCancelChannelInput = () => {
+    setShowChannelInput(false);
+    setChannelInput("");
   };
 
   const handleYouTubeDisconnect = () => {
@@ -65,7 +90,9 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
   };
 
   const isYouTubeLoading =
-    youtubeConnectMutation.isPending || youtubeDisconnectMutation.isPending;
+    youtubeConnectMutation.isPending ||
+    youtubeConnectByChannelMutation.isPending ||
+    youtubeDisconnectMutation.isPending;
   const isInstagramLoading =
     instagramConnectMutation.isPending || instagramDisconnectMutation.isPending;
 
@@ -144,8 +171,40 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                   <Button variant="outline" size="sm" onClick={handleYouTubeDisconnect} disabled={isYouTubeLoading} className="text-red-400 border-red-400/30 hover:bg-red-400/10">
                     {isYouTubeLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Disconnect"}
                   </Button>
+                ) : showChannelInput ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Channel name or ID"
+                      value={channelInput}
+                      onChange={(e) => setChannelInput(e.target.value)}
+                      variant="filled"
+                      className="max-w-xs"
+                      disabled={isYouTubeLoading}
+                    />
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleConnectByChannel}
+                      disabled={isYouTubeLoading || !channelInput.trim()}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {isYouTubeLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Connect"
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelChannelInput}
+                      disabled={isYouTubeLoading}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 ) : (
-                  <Button variant="primary" size="sm" onClick={handleYouTubeConnect} disabled={isYouTubeLoading} className="bg-red-600 hover:bg-red-700">
+                  <Button variant="primary" size="sm" onClick={handleShowChannelInput} disabled={isYouTubeLoading} className="bg-red-600 hover:bg-red-700">
                     {isYouTubeLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Youtube className="w-4 h-4 mr-2" />}
                     Connect YouTube
                   </Button>
@@ -244,8 +303,42 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                 <Button variant="outline" size="sm" onClick={handleYouTubeDisconnect} disabled={isYouTubeLoading} className="text-red-400 border-red-400/30 hover:bg-red-400/10 w-full">
                   {isYouTubeLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Disconnect"}
                 </Button>
+              ) : showChannelInput ? (
+                <div className="flex flex-col gap-2 w-full">
+                  <Input
+                    placeholder="Channel name or ID"
+                    value={channelInput}
+                    onChange={(e) => setChannelInput(e.target.value)}
+                    variant="filled"
+                    disabled={isYouTubeLoading}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleConnectByChannel}
+                      disabled={isYouTubeLoading || !channelInput.trim()}
+                      className="bg-red-600 hover:bg-red-700 flex-1"
+                    >
+                      {isYouTubeLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Connect"
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelChannelInput}
+                      disabled={isYouTubeLoading}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
               ) : (
-                <Button variant="primary" size="sm" onClick={handleYouTubeConnect} disabled={isYouTubeLoading} className="bg-red-600 hover:bg-red-700 w-full flex items-center justify-center">
+                <Button variant="primary" size="sm" onClick={handleShowChannelInput} disabled={isYouTubeLoading} className="bg-red-600 hover:bg-red-700 w-full flex items-center justify-center">
                   {isYouTubeLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Youtube className="w-4 h-4 mr-2" />}
                   Connect YouTube
                 </Button>

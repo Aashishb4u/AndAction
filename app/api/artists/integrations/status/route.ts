@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
     // Return integration status (without exposing tokens)
     const integrationStatus = {
       youtube: {
-        connected: !!(artist.youtubeAccessToken && artist.youtubeChannelId),
+        // Connected if channel ID exists (either via OAuth or manual connection)
+        connected: !!artist.youtubeChannelId,
         channelName: artist.youtubeChannelName || null,
         channelId: artist.youtubeChannelId || null,
         connectedAt: artist.youtubeConnectedAt?.toISOString() || null,
