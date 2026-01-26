@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Share2, X, Copy, MessageCircle, Facebook, Twitter, Mail, Linkedin } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -10,6 +11,7 @@ interface VideoPlayerProps {
   autoplay?: boolean;
   muted?: boolean;
   poster?: string;
+  videoId?: string;
 }
 
 /* ---------------------------
@@ -33,6 +35,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   autoplay = false,
   muted = false,
   poster,
+  videoId,
 }) => {
 
   const isYT = isYouTube(videoUrl);
@@ -46,6 +49,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [volume, setVolume] = useState(1);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   /* -------------------------------------------------
      ONLY ATTACH EVENTS FOR MP4 — NOT FOR YOUTUBE
@@ -137,6 +141,75 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  // Share functionality
+  const getShareUrl = () => {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    return videoId ? `${baseUrl}/videos/${videoId}` : (typeof window !== 'undefined' ? window.location.href : '');
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(getShareUrl());
+      toast.success('Link copied to clipboard');
+      setShareModalOpen(false);
+    } catch {
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const shareOptions = [
+    {
+      name: 'WhatsApp',
+      icon: MessageCircle,
+      color: 'bg-green-500 hover:bg-green-600',
+      action: () => {
+        const url = `https://wa.me/?text=${encodeURIComponent(`${title} - ${getShareUrl()}`)}`;
+        window.open(url, '_blank');
+        setShareModalOpen(false);
+      },
+    },
+    {
+      name: 'Facebook',
+      icon: Facebook,
+      color: 'bg-blue-600 hover:bg-blue-700',
+      action: () => {
+        const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}`;
+        window.open(url, '_blank');
+        setShareModalOpen(false);
+      },
+    },
+    {
+      name: 'Twitter',
+      icon: Twitter,
+      color: 'bg-sky-500 hover:bg-sky-600',
+      action: () => {
+        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(getShareUrl())}`;
+        window.open(url, '_blank');
+        setShareModalOpen(false);
+      },
+    },
+    {
+      name: 'LinkedIn',
+      icon: Linkedin,
+      color: 'bg-blue-700 hover:bg-blue-800',
+      action: () => {
+        const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(getShareUrl())}`;
+        window.open(url, '_blank');
+        setShareModalOpen(false);
+      },
+    },
+    {
+      name: 'Email',
+      icon: Mail,
+      color: 'bg-gray-600 hover:bg-gray-700',
+      action: () => {
+        const url = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`Check out this video: ${getShareUrl()}`)}`;
+        window.location.href = url;
+        setShareModalOpen(false);
+      },
+    },
+  ];
+
   return (
     <div className={`relative w-full group ${className}`}>
       <div className="relative w-full aspect-video md:rounded-xl overflow-hidden bg-black shadow-lg">
@@ -147,7 +220,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         {isYT ? (
           <iframe
             className="w-full h-full object-cover"
-            src={`https://www.youtube.com/embed/${ytId}?autoplay=0&controls=1&playsinline=1&rel=0`}
+            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=1&playsinline=1&rel=0`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
@@ -241,6 +314,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               <button onClick={toggleFullscreen} className="text-white hover:text-primary-pink">
                 <Maximize className="w-5 h-5" />
               </button>
+
+              <button onClick={() => setShareModalOpen(true)} className="text-white hover:text-primary-pink">
+                <Share2 className="w-5 h-5" />
+              </button>
             </div>
           </div>
         )}
@@ -257,6 +334,64 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           cursor: pointer;
         }
       `}</style>
+
+      {/* Share Modal */}
+      {shareModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          onClick={() => setShareModalOpen(false)}
+        >
+          <div 
+            className="bg-gray-900 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-gray-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-white">Share Video</h3>
+              <button
+                onClick={() => setShareModalOpen(false)}
+                className="p-2 rounded-full hover:bg-gray-700 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Video Title */}
+            <p className="text-gray-400 text-sm mb-6 line-clamp-2">{title}</p>
+
+            {/* Share Options Grid */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              {shareOptions.map((option) => (
+                <button
+                  key={option.name}
+                  onClick={option.action}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl ${option.color} transition-all transform hover:scale-105`}
+                >
+                  <option.icon className="w-6 h-6 text-white" />
+                  <span className="text-xs text-white font-medium">{option.name}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Copy Link Section */}
+            <div className="flex items-center gap-2 p-3 bg-gray-800 rounded-xl">
+              <input
+                type="text"
+                readOnly
+                value={getShareUrl()}
+                className="flex-1 bg-transparent text-gray-300 text-sm outline-none truncate"
+              />
+              <button
+                onClick={handleCopyLink}
+                className="flex items-center gap-2 px-4 py-2 bg-primary-pink hover:bg-primary-pink/80 text-white rounded-lg transition-colors text-sm font-medium"
+              >
+                <Copy className="w-4 h-4" />
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

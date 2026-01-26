@@ -40,7 +40,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         className={`md:bg-card relative rounded-2xl overflow-hidden hover:bg-gray-800/50 transition-all duration-300 cursor-pointer ${className}`}
         onClick={handleClick}
       >
-        <div className="flex p-4 gap-4">
+        <div className="flex p-4 gap-4 items-start">
           {/* Artist Image */}
           <div className="relative w-28 h-36 rounded-xl overflow-hidden flex-shrink-0">
             <Image
@@ -60,12 +60,13 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
           </div>
 
           {/* Artist Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between relative">
-              <h3 className="btn1 text-white truncate pr-2">{artist.name}</h3>
+          <div className="flex-1 min-w-0 pr-2">
+            <div className="flex items-start justify-between mb-2 gap-2">
+              <h3 className="btn1 text-white flex-1 line-clamp-2 artist-name-multiline leading-tight">{artist.name}</h3>
               <button
                 onClick={handleBookmarkClick}
-                className="p-2 hover:bg-gray-700 rounded-full bg-card border border-border-color transition-colors flex-shrink-0 absolute top-0 right-0"
+                className="p-2 hover:bg-gray-700 rounded-full bg-gray-800 border border-gray-600 transition-colors flex-shrink-0 text-white"
+                style={{ minWidth: '36px', minHeight: '36px' }}
               >
                 <Bookmark className="w-5 h-5" active={artist.isBookmarked} />
               </button>

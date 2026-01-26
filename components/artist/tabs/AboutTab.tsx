@@ -185,7 +185,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       {/* Stage Name */}
       <div className="relative">
         <Input
-          label="Stage name"
+          label="Stage name*"
           value={formData.stageName}
           onChange={(e) => handleInputChange("stageName", e.target.value)}
           required
@@ -200,13 +200,13 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       {/* First Name and Last Name */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Input
-          label="First name"
+          label="First name*"
           value={formData.firstName}
           onChange={(e) => handleInputChange("firstName", e.target.value)}
           required
         />
         <Input
-          label="Last name"
+          label="Last name*"
           value={formData.lastName}
           onChange={(e) => handleInputChange("lastName", e.target.value)}
           required
@@ -216,7 +216,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       {/* Date of Birth and Gender */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <DateInput
-          label="Date of birth"
+          label="Date of birth*"
           value={formData.dateOfBirth}
           onChange={(value) => handleInputChange("dateOfBirth", value)}
           placeholder="DD / MM / YYYY"
@@ -224,7 +224,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
           required
         />
         <Select
-          label="Gender"
+          label="Gender*"
           options={genderOptions}
           value={formData.gender}
           onChange={(value) => handleInputChange("gender", value)}
@@ -234,7 +234,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
 
       {/* Address */}
       <Input
-        label="Office/Home full address"
+        label="Office/Home full address*"
         value={formData.address}
         onChange={(e) => handleInputChange("address", e.target.value)}
         required
@@ -243,20 +243,20 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       {/* PIN Code, State, City */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Input
-          label="PIN code"
+          label="PIN code*"
           value={formData.pinCode}
           onChange={(e) => handleInputChange("pinCode", e.target.value)}
           required
         />
         <Select
-          label="State"
+          label="State*"
           options={stateOptions}
           value={formData.state}
           onChange={(value) => handleInputChange("state", value)}
           required
         />
         <Select
-          label="City"
+          label="City*"
           options={cityOptions}
           value={formData.city}
           onChange={(value) => handleInputChange("city", value)}
@@ -267,7 +267,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       {/* Sub-Artist Type */}
       <div className="relative">
         <Select
-          label="Sub-Artist type"
+          label="Sub-Artist type*"
           options={subArtistTypeOptions}
           value={formData.subArtistType}
           onChange={(value) => handleInputChange("subArtistType", value)}
@@ -289,7 +289,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         />
         <div className="relative">
           <Select
-            label="Years of experience"
+            label="Years of experience*"
             options={experienceOptions}
             value={formData.yearsOfExperience}
             onChange={(value) => handleInputChange("yearsOfExperience", value)}

@@ -77,26 +77,26 @@ export default function ArtistDetailPage() {
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
 
   const fetchBookmarkStatus = async (artistId: string) => {
-  if (!session?.user) return { isBookmarked: false, bookmarkId: null };
+    if (!session?.user) return { isBookmarked: false, bookmarkId: null };
 
-  try {
-    const res = await fetch(`/api/bookmarks/check?artistId=${artistId}`);
+    try {
+      const res = await fetch(`/api/bookmarks/check?artistId=${artistId}`);
 
-    if (!res.ok) return { isBookmarked: false, bookmarkId: null };
+      if (!res.ok) return { isBookmarked: false, bookmarkId: null };
 
-    const json = await res.json();
+      const json = await res.json();
 
-    const bookmark = json?.data?.bookmark;
+      const bookmark = json?.data?.bookmark;
 
-    return {
-      isBookmarked: !!bookmark,
-      bookmarkId: bookmark?.id || null,
-    };
-  } catch (err) {
-    console.error("Bookmark check error:", err);
-    return { isBookmarked: false, bookmarkId: null };
-  }
-};
+      return {
+        isBookmarked: !!bookmark,
+        bookmarkId: bookmark?.id || null,
+      };
+    } catch (err) {
+      console.error("Bookmark check error:", err);
+      return { isBookmarked: false, bookmarkId: null };
+    }
+  };
 
 
   useEffect(() => {
@@ -149,8 +149,8 @@ export default function ArtistDetailPage() {
           duration: `${a.performingDurationFrom || ""} - ${a.performingDurationTo || ""} minutes`,
           startingPrice: Number(a.soloChargesFrom) || 0,
 
-          phone: a.contactNumber || "",
-          whatsapp: a.whatsappNumber || "",
+          phone: a.contactNumber || "+918248621277", // Fallback for testing
+          whatsapp: a.whatsappNumber || "+918248621277", // Fallback for testing
           userId: a.user.id,
 
           // 🔥 bookmark state restored on reload
@@ -272,12 +272,19 @@ export default function ArtistDetailPage() {
   };
 
   const handleRequestBooking = () => console.log("Request booking");
-  const handleCall = () => window.open(`tel:${`+918248621277`}`, "_self");
-  const handleWhatsApp = () =>
-    window.open(
-      `https://wa.me/${`+918248621277`.replace(/[^0-9]/g, "")}`,
-      "_blank"
-    );
+  const handleCall = () => {
+    if (artist.phone) {
+      window.open(`tel:${artist.phone}`, "_self");
+    }
+  };
+  const handleWhatsApp = () => {
+    if (artist.whatsapp) {
+      window.open(
+        `https://wa.me/${artist.whatsapp.replace(/[^0-9]/g, "")}`,
+        "_blank"
+      );
+    }
+  };
 
   return (
     <SiteLayout hideNavbar hideBottomBar>

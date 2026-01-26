@@ -280,7 +280,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div>
                   <p className="text-text-gray text-sm mb-1">Solo Charges</p>
                   <p className="text-white font-medium text-lg">
-                    ₹ {data.soloChargesFrom || '1,00,000'} - ₹ {data.soloChargesTo || '2,00,000'}
+                    Starting from ₹ {data.soloCharges || '1,00,000'}
                   </p>
                   <p className="text-twhite text-xs mt-1">
                     {data.soloDescription || 'Solo performance charges with sound system and lighting setup. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.'}
@@ -288,9 +288,9 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 </div>
 
                 <div>
-                  <p className="text-text-gray text-sm mb-1">Charges with backing</p>
+                  <p className="text-text-gray text-sm mb-1">Charges with backline</p>
                   <p className="text-white font-medium text-lg">
-                    ₹ {data.backingChargesFrom || '2,00,000'} - ₹ {data.backingChargesTo || '4,00,000'}
+                    Starting from ₹ {data.backingCharges || '2,00,000'}
                   </p>
                   <p className="text-white text-xs mt-1">
                     {data.backingDescription || 'Performance charges with full backing band, sound system and lighting setup. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.'}

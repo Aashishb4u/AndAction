@@ -235,7 +235,7 @@ export default function ForgotPasswordPage() {
 
             <form onSubmit={handleEmailSubmit} className="space-y-6">
               <Input
-                label="Email"
+                label="Email*"
                 type="email"
                 placeholder="Enter email ID"
                 value={email}

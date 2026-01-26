@@ -123,8 +123,10 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
             required={required}
-            className="flex-1 bg-transparent border-none outline-none text-white placeholder-text-gray"
+            className="flex-1 bg-transparent border-none outline-none text-white placeholder-text-gray autofill-fix"
             id={id}
+            autoComplete="tel"
+            style={{ WebkitTextFillColor: 'white' }}
           />
         </div>
 

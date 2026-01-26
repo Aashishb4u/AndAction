@@ -254,7 +254,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
                 alt={short.creator}
                 width={40}
                 height={40}
-                className="rounded-full border-2 border-white"
+                className="rounded-full"
               />
               <div>
                 <h3 className="text-white">{short.creator}</h3>
@@ -266,15 +266,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
 
         <div className="flex flex-col items-center justify-end space-y-4 p-4 pb-24 md:pb-8">
           {/* Sound button (above Share) */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleSoundToggle();
-            }}
-            className="p-3 rounded-full bg-white/30 text-white pointer-events-auto"
-          >
-            {soundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
-          </button>
+
 
           <button
             onClick={(e) => {
@@ -292,8 +284,19 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
               onBookmark(short.id);
             }}
             className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
+            aria-label={short.isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
           >
-            <Bookmark className="w-6 h-6" />
+            <Bookmark className="w-6 h-6" active={short.isBookmarked} />
+          </button>
+
+                    <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSoundToggle();
+            }}
+            className="p-3 rounded-full bg-white/30 text-white pointer-events-auto"
+          >
+            {soundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
           </button>
 
           <button
@@ -302,7 +305,6 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
             }}
             className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
           >
-            <MoreVertical className="w-6 h-6" />
           </button>
         </div>
       </div>

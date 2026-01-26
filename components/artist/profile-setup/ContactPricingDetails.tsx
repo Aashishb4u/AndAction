@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
+import Tooltip from '@/components/ui/Tooltip';
 import Image from 'next/image';
 import PhoneInput from '@/components/ui/PhoneInput';
 import { ArtistProfileSetupData } from '@/types';
@@ -28,13 +29,16 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
     whatsappNumber: data.whatsappNumber || '',
     sameAsContact: data.sameAsContact || false,
     email: data.email || '',
-    soloChargesFrom: data.soloChargesFrom || '',
-    soloChargesTo: data.soloChargesTo || '',
+    soloCharges: data.soloCharges || '',
     soloDescription: data.soloDescription || '',
-    backingChargesFrom: data.backingChargesFrom || '',
-    backingChargesTo: data.backingChargesTo || '',
+    backingCharges: data.backingCharges || '',
     backingDescription: data.backingDescription || ''
   });
+
+  // Track if fields are in edit mode (editable) or locked
+  const [isContactEditing, setIsContactEditing] = useState(!data.contactNumber);
+  const [isWhatsappEditing, setIsWhatsappEditing] = useState(!data.whatsappNumber);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleInputChange = (field: string, value: string | boolean) => {
     const updatedData = { ...formData, [field]: value };
@@ -49,6 +53,22 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
   };
 
   const handleNext = () => {
+    // Validate required fields
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.contactNumber?.trim()) {
+      newErrors.contactNumber = 'Contact number is required';
+    }
+    if (!formData.whatsappNumber?.trim()) {
+      newErrors.whatsappNumber = 'WhatsApp number is required';
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      return; // Don't proceed if there are errors
+    }
+
     onUpdateData(formData);
     onNext();
   };
@@ -84,12 +104,12 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
             {/* Progress Bar */}
             <div className="w-full bg-[#2D2D2D] rounded-full h-1 mb-6">
-              <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-3/4"></div>
+              <div className="bg-linear-to-r from-primary-pink to-primary-orange h-1 rounded-full w-3/4"></div>
             </div>
 
             {/* Step Info */}
             <div className="flex items-center gap-3 mb-2">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <Image src="/icons/phone.svg" alt="Contact & Pricing" width={25} height={25} />
               </div>
               <div className="text-left">
@@ -110,11 +130,13 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
               <div className="space-y-6">
                 {/* Contact Number */}
                 <div className="relative">
-                  <button className="absolute top-0 right-0 text-blue p-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
+                  <Tooltip content="Your primary contact number for clients to reach you. This will be verified via OTP to ensure authenticity." position="top">
+                    <button className="absolute top-0 right-0 text-blue p-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                  </Tooltip>
 
                   <PhoneInput
                     label="Contact number*"
@@ -122,18 +144,32 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                     value={formData.contactNumber}
                     onChange={(value) => handleInputChange('contactNumber', value)}
                     variant="filled"
+                    disabled={!isContactEditing && !!formData.contactNumber}
                   />
-                  <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1">
-                    Verify
-                  </button>
+                  {/* Show Edit or Verify based on editing state */}
+                  {formData.contactNumber && !isContactEditing ? (
+                    <button 
+                      onClick={() => setIsContactEditing(true)}
+                      className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1"
+                    >
+                      Edit
+                    </button>
+                  ) : (
+                    <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1">
+                      Verify
+                    </button>
+                  )}
+                  {errors.contactNumber && <p className="text-red-500 text-sm mt-1">{errors.contactNumber}</p>}
                 </div>
                 {/* WhatsApp Number */}
                 <div className="relative">
-                  <button className="absolute top-0 right-0 text-blue p-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
+                  <Tooltip content="Your WhatsApp number for quick communication with clients. Many clients prefer WhatsApp for booking inquiries." position="top">
+                    <button className="absolute top-0 right-0 text-blue p-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                  </Tooltip>
 
                   <PhoneInput
                     label="WhatsApp number*"
@@ -141,10 +177,22 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                     value={formData.whatsappNumber}
                     onChange={(value) => handleInputChange('whatsappNumber', value)}
                     variant="filled"
+                    disabled={!isWhatsappEditing && !!formData.whatsappNumber}
                   />
-                  <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1">
-                    Verify
-                  </button>
+                  {/* Show Edit or Verify based on editing state */}
+                  {formData.whatsappNumber && !isWhatsappEditing ? (
+                    <button 
+                      onClick={() => setIsWhatsappEditing(true)}
+                      className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1"
+                    >
+                      Edit
+                    </button>
+                  ) : (
+                    <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1">
+                      Verify
+                    </button>
+                  )}
+                  {errors.whatsappNumber && <p className="text-red-500 text-sm mt-1">{errors.whatsappNumber}</p>}
                 </div>
 
                 {/* Same as Contact Checkbox */}
@@ -168,11 +216,13 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                     variant="filled"
                     type="email"
                   />
-                  <button className="absolute top-0 right-0 text-blue p-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
+                  <Tooltip content="Your professional email address for formal communications, contracts, and booking confirmations." position="top">
+                    <button className="absolute top-0 right-0 text-blue p-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -184,41 +234,29 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
               <div className="space-y-6">
                 {/* Solo Charges */}
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2 mb-1">
                     <label className="text-white font-medium">Solo charges</label>
-                    <button className="text-blue">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <Tooltip content="Enter your starting price when performing alone without any supporting equipment. This gives clients a baseline for your rates.">
+                      <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                    </button>
+                    </Tooltip>
                   </div>
+                  <p className="text-text-gray text-sm mb-3">(Amount you usually charge when you perform solo)</p>
 
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="relative">
-                      <span className="text-white text-sm  left-3 mr-4 z-50 top-3.5 absolute">₹</span>
-                      <Input
-                        placeholder="- From"
-                        value={formData.soloChargesFrom}
-                        onChange={(e) => handleInputChange('soloChargesFrom', e.target.value)}
-                        variant="filled"
-                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
-                      />
-                    </div>
-                    <div className="relative">
-                      <span className="text-white text-sm  absolute mr-4 left-3 z-50 top-3.5">₹</span>
-                      <Input
-                        placeholder="- To"
-                        value={formData.soloChargesTo}
-                        onChange={(e) => handleInputChange('soloChargesTo', e.target.value)}
-                        variant="filled"
-                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
-
-                      />
-                    </div>
+                  <div className="relative mb-4">
+                    <span className="text-white text-sm left-3 mr-4 z-50 top-3.5 absolute">₹</span>
+                    <Input
+                      placeholder="Starting from"
+                      value={formData.soloCharges}
+                      onChange={(e) => handleInputChange('soloCharges', e.target.value)}
+                      variant="filled"
+                      style={{ paddingLeft: "2rem" }}
+                    />
                   </div>
 
                   <textarea
-                    placeholder="Add Description...."
+                    placeholder="Solo charges like Sound system, stage, Chorus"
                     value={formData.soloDescription}
                     onChange={(e) => handleInputChange('soloDescription', e.target.value)}
                     rows={3}
@@ -228,47 +266,29 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
                 {/* Charges with Backing */}
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <label className="text-white font-medium">Charges with backing</label>
-                    <button className="text-blue">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="text-white font-medium">Charges with backline</label>
+                    <Tooltip content="Enter your price when you provide the complete setup including sound system, stage equipment, chorus singers, etc. This is your all-inclusive rate.">
+                      <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                    </button>
+                    </Tooltip>
                   </div>
+                  <p className="text-text-gray text-sm mb-3">(Amount you usually charge including backline like sound system, stage, chorus)</p>
 
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                   <div className="relative">
-                      {/* Rupee symbol */}
-                      <span className="text-white text-sm absolute left-3 z-50 pr-4 top-3.5">
-                        ₹
-                      </span>
-
-                      <Input
-                        placeholder="- From"
-                        value={formData.backingChargesFrom}
-                        onChange={(e) =>
-                          handleInputChange("backingChargesFrom", e.target.value)
-                        }
-                        variant="filled"
-                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
-                      />
-                    </div>
-
-                    <div className="relative">
-                      <span className="text-white text-sm absolute left-3 z-50 pr-4 top-3.5">₹</span>
-                      <Input
-                        placeholder="- To"
-                        value={formData.backingChargesTo}
-                        onChange={(e) => handleInputChange('backingChargesTo', e.target.value)}
-                        variant="filled"
-                        style={{ paddingLeft: "2rem" }} // ✅ FORCE padding
-                      />
-                    </div>
+                  <div className="relative mb-4">
+                    <span className="text-white text-sm absolute left-3 z-50 pr-4 top-3.5">₹</span>
+                    <Input
+                      placeholder="Starting from"
+                      value={formData.backingCharges}
+                      onChange={(e) => handleInputChange("backingCharges", e.target.value)}
+                      variant="filled"
+                      style={{ paddingLeft: "2rem" }}
+                    />
                   </div>
 
                   <textarea
-                    placeholder="Add Description...."
+                    placeholder="Backline like Sound system, stage, Chorus"
                     value={formData.backingDescription}
                     onChange={(e) => handleInputChange('backingDescription', e.target.value)}
                     rows={3}
