@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
-import Bookmark from '@/components/icons/bookmark';
-import Share from '@/components/icons/share';
-import MoreVertical from '@/components/icons/more-vertical';
-import Play from '@/components/icons/play';
-import Pause from '@/components/icons/pause';
-import Link from 'next/link';
+import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import Bookmark from "@/components/icons/bookmark";
+import Share from "@/components/icons/share";
+import MoreVertical from "@/components/icons/more-vertical";
+import Play from "@/components/icons/play";
+import Pause from "@/components/icons/pause";
+import Link from "next/link";
 
 const SoundOnIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
@@ -105,24 +105,26 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   useEffect(() => {
     if (!isYouTube) return;
 
-    const iframe = document.getElementById(`yt-${short.id}`) as HTMLIFrameElement | null;
+    const iframe = document.getElementById(
+      `yt-${short.id}`,
+    ) as HTMLIFrameElement | null;
     if (!iframe || !iframe.contentWindow) return;
 
     const commands = [
       {
-        event: 'command',
-        func: soundEnabled ? 'unMute' : 'mute',
+        event: "command",
+        func: soundEnabled ? "unMute" : "mute",
         args: [] as unknown[],
       },
       {
-        event: 'command',
-        func: isActive ? 'playVideo' : 'pauseVideo',
+        event: "command",
+        func: isActive ? "playVideo" : "pauseVideo",
         args: [] as unknown[],
       },
     ];
 
     commands.forEach((cmd) => {
-      iframe.contentWindow?.postMessage(JSON.stringify(cmd), '*');
+      iframe.contentWindow?.postMessage(JSON.stringify(cmd), "*");
     });
   }, [isActive, soundEnabled, isYouTube, short.id]);
 
@@ -171,7 +173,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     const newState = !soundEnabled;
     setSoundEnabled(newState);
     try {
-      sessionStorage.setItem('shorts_sound', newState ? 'on' : 'off');
+      sessionStorage.setItem("shorts_sound", newState ? "on" : "off");
     } catch {
       // ignore if sessionStorage isn't available
     }
@@ -189,12 +191,12 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       />
 
       {/* -------- VIDEO / YOUTUBE -------- */}
-      {shouldLoad && (
-        isYouTube ? (
+      {shouldLoad &&
+        (isYouTube ? (
           <iframe
             id={`yt-${short.id}`}
             className="absolute inset-0 w-full h-full"
-            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=${isActive ? 1 : 0}&controls=0&playsinline=1&enablejsapi=1&mute=1`}
+            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&controls=0&playsinline=1&enablejsapi=1&mute=${soundEnabled ? 0 : 1}&origin=${typeof window !== "undefined" ? window.location.origin : ""}`}
             allow="autoplay; encrypted-media; picture-in-picture"
           />
         ) : (
@@ -208,8 +210,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
             onLoadedData={() => setIsVideoLoaded(true)}
             onClick={handleVideoClick}
           />
-        )
-      )}
+        ))}
 
       {/* Gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
@@ -247,7 +248,10 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       {/* Content Overlay */}
       <div className="absolute inset-0 flex z-20 pointer-events-none">
         <div className="flex-1 flex flex-col justify-end p-4 pb-20 md:pb-8">
-          <Link href={`/artists/${short.creatorId}`} className="pointer-events-auto">
+          <Link
+            href={`/artists/${short.creatorId}`}
+            className="pointer-events-auto"
+          >
             <div className="flex items-center space-x-2 mb-4 cursor-pointer">
               <Image
                 src={short.avatar}
@@ -267,7 +271,6 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
         <div className="flex flex-col items-center justify-end space-y-4 p-4 pb-24 md:pb-8">
           {/* Sound button (above Share) */}
 
-
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -284,12 +287,12 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
               onBookmark(short.id);
             }}
             className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
-            aria-label={short.isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+            aria-label={short.isBookmarked ? "Remove bookmark" : "Add bookmark"}
           >
             <Bookmark className="w-6 h-6" active={short.isBookmarked} />
           </button>
 
-                    <button
+          <button
             onClick={(e) => {
               e.stopPropagation();
               handleSoundToggle();
@@ -304,8 +307,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
               e.stopPropagation();
             }}
             className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
-          >
-          </button>
+          ></button>
         </div>
       </div>
     </div>
