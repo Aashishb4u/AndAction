@@ -231,19 +231,24 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           </Tooltip>
         </div>
         
+        {/* Selected values display */}
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+          <span className={formData.performingLanguages.length > 0 ? "text-white" : "text-text-gray"}>
+            {formData.performingLanguages.length > 0
+              ? formData.performingLanguages
+                  .map((val) => performingLanguageOptions.find((opt) => opt.value === val)?.label || val)
+                  .join(", ")
+              : "No languages selected"}
+          </span>
+        </div>
+
         {/* Trigger button */}
         <button
           type="button"
           onClick={() => setShowLanguagesDropdown(!showLanguagesDropdown)}
           className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
         >
-          <span className={formData.performingLanguages.length > 0 ? "text-white" : "text-text-gray"}>
-            {formData.performingLanguages.length > 0
-              ? formData.performingLanguages.length === performingLanguageOptions.length
-                ? "All Languages"
-                : `${formData.performingLanguages.length} language${formData.performingLanguages.length > 1 ? "s" : ""} selected`
-              : "Select languages"}
-          </span>
+          <span className="text-text-gray">Select languages</span>
           <svg
             className={`w-5 h-5 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
             fill="none"
@@ -296,19 +301,24 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           </Tooltip>
         </div>
         
+        {/* Selected values display */}
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+          <span className={formData.eventTypes.length > 0 ? "text-white" : "text-text-gray"}>
+            {formData.eventTypes.length > 0
+              ? formData.eventTypes
+                  .map((val) => eventTypeOptions.find((opt) => opt.value === val)?.label || val)
+                  .join(", ")
+              : "No event types selected"}
+          </span>
+        </div>
+
         {/* Trigger button */}
         <button
           type="button"
           onClick={() => setShowEventTypesDropdown(!showEventTypesDropdown)}
           className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
         >
-          <span className={formData.eventTypes.length > 0 ? "text-white" : "text-text-gray"}>
-            {formData.eventTypes.length > 0
-              ? formData.eventTypes.length === eventTypeOptions.length
-                ? "All Event Types"
-                : `${formData.eventTypes.length} event type${formData.eventTypes.length > 1 ? "s" : ""} selected`
-              : "Select event types"}
-          </span>
+          <span className="text-text-gray">Select event types</span>
           <svg
             className={`w-5 h-5 text-text-gray transition-transform ${showEventTypesDropdown ? "rotate-180" : ""}`}
             fill="none"
@@ -361,19 +371,26 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           </Tooltip>
         </div>
         
+        {/* Selected values display */}
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+          <span className={formData.performingStates.length > 0 ? "text-white" : "text-text-gray"}>
+            {formData.performingStates.length > 0
+              ? formData.performingStates.length === performingStatesOptions.length
+                ? "PAN India (All States)"
+                : formData.performingStates
+                    .map((val) => performingStatesOptions.find((opt) => opt.value === val)?.label || val)
+                    .join(", ")
+              : "No states selected"}
+          </span>
+        </div>
+
         {/* Trigger button */}
         <button
           type="button"
           onClick={() => setShowStatesDropdown(!showStatesDropdown)}
           className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
         >
-          <span className={formData.performingStates.length > 0 ? "text-white" : "text-text-gray"}>
-            {formData.performingStates.length > 0
-              ? formData.performingStates.length === performingStatesOptions.length
-                ? "PAN India"
-                : `${formData.performingStates.length} state${formData.performingStates.length > 1 ? "s" : ""} selected`
-              : "Select states"}
-          </span>
+          <span className="text-text-gray">Select states</span>
           <svg
             className={`w-5 h-5 text-text-gray transition-transform ${showStatesDropdown ? "rotate-180" : ""}`}
             fill="none"
