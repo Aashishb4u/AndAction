@@ -235,7 +235,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
         <div className="flex flex-wrap gap-1.5">
-          {(artist.languages?.length ? artist.languages : ["N/A"]).map((language, index) => (
+          {(artist.languages?.length
+            ? artist.languages.flatMap((lang: string) => lang.split(',').map((l: string) => l.trim())).filter((l: string) => l)
+            : ["N/A"]
+          ).map((language: string, index: number) => (
             <span
               key={index}
               className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
@@ -249,19 +252,30 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Performing event type</h3>
         <div className="flex flex-wrap gap-1.5">
-          <span className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium">
-            {artist.performingEventType || "N/A"}
-          </span>
+          {(artist.performingEventType
+            ? artist.performingEventType.split(',').map((e: string) => e.trim()).filter((e: string) => e)
+            : ["N/A"]
+          ).map((eventType: string, index: number) => (
+            <span
+              key={index}
+              className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
+            >
+              {eventType}
+            </span>
+          ))}
         </div>
       </div>
 
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Performing States</h3>
         <div className="flex flex-wrap gap-1.5">
-          {(artist.performingStates
-            ? artist.performingStates.split(',').map(s => s.trim())
-            : ["N/A"]
-          ).map((state, index) => (
+          {(() => {
+            const states = artist.performingStates
+              ? artist.performingStates.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+              : ["N/A"];
+            const hasPanIndia = states.some((s: string) => s.toLowerCase() === 'pan india');
+            return hasPanIndia ? ["Pan India"] : states;
+          })().map((state: string, index: number) => (
             <span
               key={index}
               className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
