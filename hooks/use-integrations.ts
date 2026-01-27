@@ -53,6 +53,24 @@ async function disconnectYouTube(): Promise<void> {
   }
 }
 
+async function connectYouTubeByChannel(
+  channelInput: string
+): Promise<{ channelId: string; channelName: string }> {
+  const response = await fetch(
+    "/api/artists/integrations/youtube/connect-channel",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ channelInput }),
+    }
+  );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to connect YouTube channel");
+  }
+  return data.data;
+}
+
 async function getInstagramAuthUrl(returnUrl?: string): Promise<string> {
   const url = new URL(
     "/api/artists/integrations/instagram/auth-url",
@@ -100,6 +118,44 @@ export function useYouTubeConnect() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to connect YouTube");
+    },
+  });
+}
+
+export function useYouTubeConnectByChannel() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: connectYouTubeByChannel,
+    onSuccess: (data) => {
+      // Update the integration status in cache
+      queryClient.setQueryData(
+        integrationKeys.status(),
+        (oldData: IntegrationStatus | undefined) => {
+          if (!oldData) {
+            return {
+              youtube: {
+                connected: true,
+                channelName: data.channelName,
+                channelId: data.channelId,
+              },
+              instagram: { connected: false },
+            };
+          }
+          return {
+            ...oldData,
+            youtube: {
+              connected: true,
+              channelName: data.channelName,
+              channelId: data.channelId,
+            },
+          };
+        }
+      );
+      toast.success(`YouTube channel "${data.channelName}" connected successfully`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to connect YouTube channel");
     },
   });
 }

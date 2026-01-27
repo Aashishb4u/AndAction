@@ -73,35 +73,49 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    const updatedArtist = await prisma.artist.update({
+    // Check if artist profile exists, create if not (for OAuth users)
+    const existingArtist = await prisma.artist.findUnique({
       where: { userId },
-      data: {
-        stageName,
-        artistType,
-        subArtistType,
-        achievements,
-        yearsOfExperience: yearsOfExperience ? parseInt(yearsOfExperience) : null,
-        shortBio,
-        performingLanguage: performingLanguages?.join(','),
-        performingEventType: performingEventTypes?.join(','),
-        performingStates: performingStates?.join(','),
-        performingDurationFrom,
-        performingDurationTo,
-        performingMembers,
-        offStageMembers,
-        contactNumber,
-        whatsappNumber,
-        contactEmail,
-        soloChargesFrom: soloChargesFrom ? parseFloat(soloChargesFrom) : null,
-        soloChargesTo: soloChargesTo ? parseFloat(soloChargesTo) : null,
-        soloChargesDescription,
-        chargesWithBacklineFrom: chargesWithBacklineFrom ? parseFloat(chargesWithBacklineFrom) : null,
-        chargesWithBacklineTo: chargesWithBacklineTo ? parseFloat(chargesWithBacklineTo) : null,
-        chargesWithBacklineDescription,
-        youtubeChannelId,
-        instagramId,
-      },
     });
+
+    const artistData = {
+      stageName,
+      artistType,
+      subArtistType,
+      achievements,
+      yearsOfExperience: yearsOfExperience ? parseInt(yearsOfExperience) : null,
+      shortBio,
+      performingLanguage: performingLanguages?.join(','),
+      performingEventType: performingEventTypes?.join(','),
+      performingStates: performingStates?.join(','),
+      performingDurationFrom,
+      performingDurationTo,
+      performingMembers,
+      offStageMembers,
+      contactNumber,
+      whatsappNumber,
+      contactEmail,
+      soloChargesFrom: soloChargesFrom ? parseFloat(soloChargesFrom) : null,
+      soloChargesTo: soloChargesTo ? parseFloat(soloChargesTo) : null,
+      soloChargesDescription,
+      chargesWithBacklineFrom: chargesWithBacklineFrom ? parseFloat(chargesWithBacklineFrom) : null,
+      chargesWithBacklineTo: chargesWithBacklineTo ? parseFloat(chargesWithBacklineTo) : null,
+      chargesWithBacklineDescription,
+      youtubeChannelId,
+      instagramId,
+    };
+
+    const updatedArtist = existingArtist
+      ? await prisma.artist.update({
+          where: { userId },
+          data: artistData,
+        })
+      : await prisma.artist.create({
+          data: {
+            userId,
+            ...artistData,
+          },
+        });
     const refreshedUser = await prisma.user.findUnique({
       where: { id: userId },
       select: {
