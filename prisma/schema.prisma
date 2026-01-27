@@ -170,7 +170,7 @@ model Video {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   bookmarkedByUsers Bookmark[]
-  user              User       @relation(fields: [userId], references: [id])
+  user              User       @relation(fields: [userId], references: [id],onDelete: Cascade)
 
   @@index([userId])
   @@index([isApproved])
@@ -187,7 +187,7 @@ model Bookmark {
   artistId  String?
   createdAt DateTime @default(now())
   artist    Artist?  @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   video     Video?   @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
   @@unique([userId, videoId])
@@ -211,8 +211,8 @@ model Booking {
   notes         String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  artist        Artist        @relation(fields: [artistId], references: [id])
-  client        User          @relation(fields: [clientId], references: [id])
+  artist        Artist        @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  client        User          @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([artistId])
