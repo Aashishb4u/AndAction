@@ -105,15 +105,18 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
   const artistTypes = [
     { value: 'singer', label: 'Singer' },
-    { value: 'dancer', label: 'Dancer' },
-    { value: 'musician', label: 'Musician' },
+    { value: 'dancer', label: 'Dancer / Dance Group' },
+    { value: 'musician', label: 'Musician / Instrumentalist' },
     { value: 'comedian', label: 'Comedian' },
-    { value: 'magician', label: 'Magician' },
-    { value: 'actor', label: 'Actor' },
-    { value: 'anchor', label: 'Anchor'},
-    { value: 'band', label: 'Live Band'},
-    { value: 'dj', label: 'DJ'},
-    { value: 'other', label: 'Other' }
+    { value: 'magician', label: 'Magician / Illusionist' },
+    { value: 'actor', label: 'Theatre Artist / Actor' },
+    { value: 'anchor', label: 'Anchor / Emcee / Host' },
+    { value: 'band', label: 'Live Band / Group' },
+    { value: 'dj', label: 'DJ' },
+    { value: 'mimicry', label: 'Mimicry / Impressionist' },
+    { value: 'special-act', label: 'Special Act Performer' },
+    { value: 'spiritual', label: 'Spiritual / Devotional' },
+    { value: 'kids-entertainer', label: 'Kids Entertainer' },
   ];
 
   const subArtistTypes = [
