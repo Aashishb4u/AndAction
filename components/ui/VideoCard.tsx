@@ -88,7 +88,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   };
 
   return (
-    <Link href={`/videos/${id}`} className="block">
+    <Link href={`/videos/${id}`} className={`block ${showMenu ? 'z-50 relative' : ''}`}>
       <div
         className={`relative group cursor-pointer transition-all duration-300 ease-out hover:scale-105 ${className}`}
         onMouseEnter={handleMouseEnter}

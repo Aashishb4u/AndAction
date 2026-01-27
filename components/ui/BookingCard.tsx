@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import { Calendar, MapPin, Phone, X, Check, Mail } from 'lucide-react';
 import Image from 'next/image';
@@ -42,6 +42,26 @@ const BookingCard: React.FC<BookingCardProps> = ({
   const isPending = status === "PENDING";
   const isApproved = status === "APPROVED";
 
+  // State for expanding description
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showMoreButton, setShowMoreButton] = useState(false);
+  const descriptionRef = useRef<HTMLParagraphElement>(null);
+
+  // Check if description overflows (more than 2 lines)
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (descriptionRef.current) {
+        const lineHeight = parseFloat(getComputedStyle(descriptionRef.current).lineHeight) || 20;
+        const maxHeight = lineHeight * 2; // 2 lines
+        setShowMoreButton(descriptionRef.current.scrollHeight > maxHeight + 2);
+      }
+    };
+
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [description]);
+
   return (
     <div className={`bg-card border border-border-color rounded-xl p-4 ${className}`}>
       
@@ -70,10 +90,22 @@ const BookingCard: React.FC<BookingCardProps> = ({
       </div>
 
       {/* Description */}
-      <p className="text-white secondary-text mb-3 line-clamp-2">
-        {description}
-        <button className="text-blue hover:text-primary-pink/80 ml-1">more...</button>
-      </p>
+      <div className="mb-3">
+        <p 
+          ref={descriptionRef}
+          className={`text-white secondary-text ${isExpanded ? '' : 'line-clamp-2'}`}
+        >
+          {description}
+        </p>
+        {showMoreButton && (
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-blue hover:text-primary-pink/80 text-sm mt-1"
+          >
+            {isExpanded ? 'less' : 'more...'}
+          </button>
+        )}
+      </div>
 
       {/* ---------------------------------------------------
           CONDITIONAL ACTION BUTTONS

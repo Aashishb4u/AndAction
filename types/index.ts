@@ -249,10 +249,8 @@ export interface ArtistProfileSetupData {
   whatsappNumber: string;
   sameAsContact: boolean;
   email: string;
-  soloChargesFrom: string;
-  soloChargesTo: string;
+  soloCharges: string;
   soloDescription: string;
-  backingChargesFrom: string;
-  backingChargesTo: string;
+  backingCharges: string;
   backingDescription: string;
 }

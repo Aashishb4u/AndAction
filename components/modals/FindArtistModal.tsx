@@ -208,7 +208,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
           />
 
           <DateInput
-            label="Event date"
+            label="Event date*"
             placeholder="DD/MM/YYYY"
             value={formData.eventDate || null}
             onChange={(value) => handleInputChange("eventDate", value)}

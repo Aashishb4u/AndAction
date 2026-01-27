@@ -11,7 +11,20 @@ export interface Artist {
   distance?: number | null; // Distance from user in km
 }
 
-export type ArtistType = "singer" | "dancer" | "anchor" | "dj" | "band" | "comedian";
+export type ArtistType = 
+  | "singer"
+  | "dancer"
+  | "anchor"
+  | "dj"
+  | "band"
+  | "comedian"
+  | "musician"
+  | "magician"
+  | "actor"
+  | "mimicry"
+  | "special-act"
+  | "spiritual"
+  | "kids-entertainer";
 
 interface LocationParams {
   lat: number;
@@ -113,6 +126,23 @@ export function useArtistsByType(
   });
 }
 
+// All available artist types
+export const ALL_ARTIST_TYPES: ArtistType[] = [
+  "singer",
+  "dancer",
+  "anchor",
+  "dj",
+  "band",
+  "comedian",
+  "musician",
+  "magician",
+  "actor",
+  "mimicry",
+  "special-act",
+  "spiritual",
+  "kids-entertainer",
+];
+
 export function useAllArtists(
   location: LocationParams | null = null,
   verified: boolean = false
@@ -123,6 +153,13 @@ export function useAllArtists(
   const djsQuery = useArtistsByType("dj", location, verified);
   const bandsQuery = useArtistsByType("band", location, verified);
   const comediansQuery = useArtistsByType("comedian", location, verified);
+  const musiciansQuery = useArtistsByType("musician", location, verified);
+  const magiciansQuery = useArtistsByType("magician", location, verified);
+  const actorsQuery = useArtistsByType("actor", location, verified);
+  const mimicryQuery = useArtistsByType("mimicry", location, verified);
+  const specialActQuery = useArtistsByType("special-act", location, verified);
+  const spiritualQuery = useArtistsByType("spiritual", location, verified);
+  const kidsEntertainerQuery = useArtistsByType("kids-entertainer", location, verified);
 
   return {
     singers: singersQuery.data?.artists || [],
@@ -131,6 +168,13 @@ export function useAllArtists(
     djs: djsQuery.data?.artists || [],
     bands: bandsQuery.data?.artists || [],
     comedians: comediansQuery.data?.artists || [],
+    musicians: musiciansQuery.data?.artists || [],
+    magicians: magiciansQuery.data?.artists || [],
+    actors: actorsQuery.data?.artists || [],
+    mimicry: mimicryQuery.data?.artists || [],
+    specialAct: specialActQuery.data?.artists || [],
+    spiritual: spiritualQuery.data?.artists || [],
+    kidsEntertainers: kidsEntertainerQuery.data?.artists || [],
     
     // Metadata for each type
     singersMetadata: singersQuery.data?.metadata,
@@ -139,6 +183,13 @@ export function useAllArtists(
     djsMetadata: djsQuery.data?.metadata,
     bandsMetadata: bandsQuery.data?.metadata,
     comediansMetadata: comediansQuery.data?.metadata,
+    musiciansMetadata: musiciansQuery.data?.metadata,
+    magiciansMetadata: magiciansQuery.data?.metadata,
+    actorsMetadata: actorsQuery.data?.metadata,
+    mimicryMetadata: mimicryQuery.data?.metadata,
+    specialActMetadata: specialActQuery.data?.metadata,
+    spiritualMetadata: spiritualQuery.data?.metadata,
+    kidsEntertainersMetadata: kidsEntertainerQuery.data?.metadata,
     
     isLoading:
       singersQuery.isLoading ||
@@ -146,21 +197,42 @@ export function useAllArtists(
       anchorsQuery.isLoading ||
       djsQuery.isLoading ||
       bandsQuery.isLoading ||
-      comediansQuery.isLoading,
+      comediansQuery.isLoading ||
+      musiciansQuery.isLoading ||
+      magiciansQuery.isLoading ||
+      actorsQuery.isLoading ||
+      mimicryQuery.isLoading ||
+      specialActQuery.isLoading ||
+      spiritualQuery.isLoading ||
+      kidsEntertainerQuery.isLoading,
     isError:
       singersQuery.isError ||
       dancersQuery.isError ||
       anchorsQuery.isError ||
       djsQuery.isError ||
       bandsQuery.isError ||
-      comediansQuery.isError,
+      comediansQuery.isError ||
+      musiciansQuery.isError ||
+      magiciansQuery.isError ||
+      actorsQuery.isError ||
+      mimicryQuery.isError ||
+      specialActQuery.isError ||
+      spiritualQuery.isError ||
+      kidsEntertainerQuery.isError,
     error:
       singersQuery.error ||
       dancersQuery.error ||
       anchorsQuery.error ||
       djsQuery.error ||
       bandsQuery.error ||
-      comediansQuery.error,
+      comediansQuery.error ||
+      musiciansQuery.error ||
+      magiciansQuery.error ||
+      actorsQuery.error ||
+      mimicryQuery.error ||
+      specialActQuery.error ||
+      spiritualQuery.error ||
+      kidsEntertainerQuery.error,
     refetch: () => {
       singersQuery.refetch();
       dancersQuery.refetch();
@@ -168,6 +240,13 @@ export function useAllArtists(
       djsQuery.refetch();
       bandsQuery.refetch();
       comediansQuery.refetch();
+      musiciansQuery.refetch();
+      magiciansQuery.refetch();
+      actorsQuery.refetch();
+      mimicryQuery.refetch();
+      specialActQuery.refetch();
+      spiritualQuery.refetch();
+      kidsEntertainerQuery.refetch();
     },
   };
 }

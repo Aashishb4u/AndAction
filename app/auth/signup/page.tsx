@@ -424,7 +424,7 @@ function SignUpContent() {
             <form onSubmit={handleContactSubmit} className="space-y-6">
               {contactType === "phone" ? (
                 <PhoneInput
-                  label="Mobile number"
+                  label="Mobile number*"
                   placeholder="Enter mobile number"
                   value={phone}
                   onChange={setPhone}
@@ -437,7 +437,7 @@ function SignUpContent() {
                 />
               ) : (
                 <Input
-                  label="Email"
+                  label="Email*"
                   type="email"
                   placeholder="Enter your email"
                   value={email}
@@ -619,7 +619,7 @@ function SignUpContent() {
             {/* Progress Indicator */}
             <div className="space-y-3">
               <div className="w-full bg-[#2D2D2D] rounded-full h-1">
-                <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-1/3"></div>
+                <div className="bg-linear-to-r from-primary-pink to-primary-orange h-1 rounded-full w-1/3"></div>
               </div>
               <div className="flex items-center gap-3 my-3">
                 <button
@@ -652,7 +652,7 @@ function SignUpContent() {
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <PasswordInput
-                label="Password"
+                label="Password*"
                 placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -696,7 +696,7 @@ function SignUpContent() {
               )}
 
               <PasswordInput
-                label="Confirm Password"
+                label="Confirm Password*"
                 placeholder="Enter password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -724,7 +724,7 @@ function SignUpContent() {
             {/* Progress Indicator */}
             <div className="space-y-3">
               <div className="w-full bg-[#2D2D2D] rounded-full h-1">
-                <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-2/3"></div>
+                <div className="bg-linear-to-r from-primary-pink to-primary-orange h-1 rounded-full w-2/3"></div>
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -954,7 +954,7 @@ function SignUpContent() {
             {/* Progress Indicator */}
             <div className="space-y-3">
               <div className="w-full bg-[#2D2D2D] rounded-full h-1">
-                <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-full"></div>
+                <div className="bg-linear-to-r from-primary-pink to-primary-orange h-1 rounded-full w-full"></div>
               </div>
               <div className="flex items-center gap-3">
                 <button

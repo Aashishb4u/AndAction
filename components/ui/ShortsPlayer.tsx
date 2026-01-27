@@ -305,7 +305,6 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
             }}
             className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
           >
-            <MoreVertical className="w-6 h-6" />
           </button>
         </div>
       </div>
