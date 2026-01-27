@@ -12,21 +12,35 @@ interface ArtistsProps {
 // Known display titles for categories (fallback will prettify keys)
 const TITLE_MAP: Record<string, string> = {
   singers: "Singer",
-  anchors: "Anchor/emcee",
-  bands: "Live Band",
-  djs: "DJ / VJ",
-  dancers: "Dancer",
+  dancers: "Dancer / Dance Group",
+  anchors: "Anchor / Emcee / Host",
+  djs: "DJ",
+  bands: "Live Band / Group",
   comedians: "Comedian",
+  musicians: "Musician / Instrumentalist",
+  magicians: "Magician / Illusionist",
+  actors: "Theatre Artist / Actor",
+  mimicry: "Mimicry / Impressionist",
+  specialAct: "Special Act Performer",
+  spiritual: "Spiritual / Devotional",
+  kidsEntertainers: "Kids Entertainer",
 };
 
 // Preferred ordering for categories (unknown categories will be appended)
 const PREFERRED_ORDER = [
   "singers",
-  "anchors",
-  "bands",
-  "djs",
   "dancers",
+  "musicians",
+  "anchors",
+  "djs",
+  "bands",
   "comedians",
+  "magicians",
+  "actors",
+  "mimicry",
+  "specialAct",
+  "spiritual",
+  "kidsEntertainers",
 ];
 
 // Number of categories to display initially and per load
@@ -41,13 +55,41 @@ function prettifyKey(key: string) {
 }
 
 export default function Artists({ location }: ArtistsProps) {
-  const { singers, dancers, anchors, djs, bands, comedians, isLoading } =
-    useAllArtists(location, false);
+  const { 
+    singers, 
+    dancers, 
+    anchors, 
+    djs, 
+    bands, 
+    comedians, 
+    musicians, 
+    magicians, 
+    actors, 
+    mimicry,
+    specialAct,
+    spiritual,
+    kidsEntertainers,
+    isLoading 
+  } = useAllArtists(location, false);
 
   // Map category keys to their artist arrays (memoized to keep stable ref)
   const categoryData: Record<string, any[]> = useMemo(
-    () => ({ singers, dancers, anchors, djs, bands, comedians }),
-    [singers, dancers, anchors, djs, bands, comedians]
+    () => ({ 
+      singers, 
+      dancers, 
+      anchors, 
+      djs, 
+      bands, 
+      comedians, 
+      musicians, 
+      magicians, 
+      actors,
+      mimicry,
+      specialAct,
+      spiritual,
+      kidsEntertainers,
+    }),
+    [singers, dancers, anchors, djs, bands, comedians, musicians, magicians, actors, mimicry, specialAct, spiritual, kidsEntertainers]
   );
 
   // Derive categories dynamically from returned data keys and memoize

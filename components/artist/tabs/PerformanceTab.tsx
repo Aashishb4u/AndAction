@@ -38,15 +38,16 @@ const eventTypeOptions = [
 ];
 
 const performingStatesOptions = [
-  {
-    value: "gujarat-rajasthan-maharashtra",
-    label: "Gujarat, Rajasthan, Maharashtra",
-  },
-  { value: "gujarat-maharashtra", label: "Gujarat, Maharashtra" },
-  { value: "gujarat-rajasthan", label: "Gujarat, Rajasthan" },
+  { value: "maharashtra", label: "Maharashtra" },
+  { value: "delhi", label: "Delhi" },
+  { value: "karnataka", label: "Karnataka" },
+  { value: "tamil-nadu", label: "Tamil Nadu" },
   { value: "gujarat", label: "Gujarat" },
   { value: "rajasthan", label: "Rajasthan" },
-  { value: "maharashtra", label: "Maharashtra" },
+  { value: "uttar-pradesh", label: "Uttar Pradesh" },
+  { value: "west-bengal", label: "West Bengal" },
+  { value: "punjab", label: "Punjab" },
+  { value: "haryana", label: "Haryana" },
 ];
 
 const performingMembersOptions = [
@@ -65,27 +66,102 @@ const offStageMembersOptions = [
   { value: "4", label: "4+ members" },
 ];
 
+// Helper function to parse comma-separated string to array
+const parseCSV = (value: string | undefined | null): string[] => {
+  if (!value) return [];
+  return value.split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
+};
+
 const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
   const { data: session, update } = useSession();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Dropdown visibility states
+  const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
+  const [showEventTypesDropdown, setShowEventTypesDropdown] = useState(false);
+  const [showStatesDropdown, setShowStatesDropdown] = useState(false);
+
   const [formData, setFormData] = useState({
-    performingLanguage: artist.performingLanguage || "",
-    eventType: artist.performingEventType || "",
-    performingStates: artist.performingStates
-      ? artist.performingStates.charAt(0).toUpperCase() +
-        artist.performingStates.slice(1).toLowerCase()
-      : "",
+    performingLanguages: parseCSV(artist.performingLanguage),
+    eventTypes: parseCSV(artist.performingEventType),
+    performingStates: parseCSV(artist.performingStates),
     minDuration: artist.performingDurationFrom || "",
     maxDuration: artist.performingDurationTo || "",
     performingMembers: artist.performingMembers || "",
     offStageMembers: artist.offStageMembers || "",
   });
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
+  };
+
+  // Toggle language selection
+  const toggleLanguageSelection = (langValue: string) => {
+    const current = formData.performingLanguages;
+    let updated: string[];
+    if (current.includes(langValue)) {
+      updated = current.filter((l) => l !== langValue);
+    } else {
+      updated = [...current, langValue];
+    }
+    handleInputChange("performingLanguages", updated);
+  };
+
+  // Toggle all languages
+  const toggleAllLanguages = () => {
+    const allValues = performingLanguageOptions.map((l) => l.value);
+    if (formData.performingLanguages.length === performingLanguageOptions.length) {
+      handleInputChange("performingLanguages", []);
+    } else {
+      handleInputChange("performingLanguages", allValues);
+    }
+  };
+
+  // Toggle event type selection
+  const toggleEventTypeSelection = (eventValue: string) => {
+    const current = formData.eventTypes;
+    let updated: string[];
+    if (current.includes(eventValue)) {
+      updated = current.filter((e) => e !== eventValue);
+    } else {
+      updated = [...current, eventValue];
+    }
+    handleInputChange("eventTypes", updated);
+  };
+
+  // Toggle all event types
+  const toggleAllEventTypes = () => {
+    const allValues = eventTypeOptions.map((e) => e.value);
+    if (formData.eventTypes.length === eventTypeOptions.length) {
+      handleInputChange("eventTypes", []);
+    } else {
+      handleInputChange("eventTypes", allValues);
+    }
+  };
+
+  // Toggle state selection
+  const toggleStateSelection = (stateValue: string) => {
+    const current = formData.performingStates;
+    let updated: string[];
+    if (current.includes(stateValue)) {
+      updated = current.filter((s) => s !== stateValue);
+    } else {
+      updated = [...current, stateValue];
+    }
+    handleInputChange("performingStates", updated);
+  };
+
+  // Toggle PAN India (all states)
+  const togglePanIndia = () => {
+    const allValues = performingStatesOptions.map((s) => s.value);
+    if (formData.performingStates.length === performingStatesOptions.length) {
+      handleInputChange("performingStates", []);
+    } else {
+      handleInputChange("performingStates", allValues);
+    }
   };
 
   const handleSave = async () => {
@@ -97,12 +173,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
       setIsLoading(true);
 
+      // Join arrays to comma-separated strings for storage
       const payload = {
         userId: session.user.id,
-
-        performingLanguage: formData.performingLanguage,
-        performingEventType: formData.eventType,
-        performingStates: formData.performingStates,
+        performingLanguage: formData.performingLanguages.join(","),
+        performingEventType: formData.eventTypes.join(","),
+        performingStates: formData.performingStates.join(","),
         performingDurationFrom: formData.minDuration,
         performingDurationTo: formData.maxDuration,
         performingMembers: formData.performingMembers,
@@ -134,9 +210,9 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
   const handleReset = () => {
     setFormData({
-      performingLanguage: "english-hindi-gujarati",
-      eventType: "party-concert-events",
-      performingStates: "gujarat-rajasthan-maharashtra",
+      performingLanguages: ["english", "hindi", "gujarati"],
+      eventTypes: ["party", "concert", "events"],
+      performingStates: ["gujarat", "rajasthan", "maharashtra"],
       minDuration: "120",
       maxDuration: "160",
       performingMembers: "2",
@@ -146,54 +222,216 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
   return (
     <div className="md:space-y-5 space-y-4 pb-24 md:pb-0">
-      {/* Performing Language */}
+      {/* Performing Language - Multi-select */}
       <div className="relative">
-        <Select
-          label="Performing language*"
-          options={performingLanguageOptions}
-          value={formData.performingLanguage}
-          onChange={(value) => handleInputChange("performingLanguage", value)}
-          required
-        />
-        <div className="absolute top-0 right-0">
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">Performing language*</label>
           <Tooltip content="Select the languages you can perform in during your shows">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
+        
+        {/* Selected values display */}
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+          <span className={formData.performingLanguages.length > 0 ? "text-white" : "text-text-gray"}>
+            {formData.performingLanguages.length > 0
+              ? formData.performingLanguages
+                  .map((val) => performingLanguageOptions.find((opt) => opt.value === val)?.label || val)
+                  .join(", ")
+              : "No languages selected"}
+          </span>
+        </div>
+
+        {/* Trigger button */}
+        <button
+          type="button"
+          onClick={() => setShowLanguagesDropdown(!showLanguagesDropdown)}
+          className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
+        >
+          <span className="text-text-gray">Select languages</span>
+          <svg
+            className={`w-5 h-5 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Dropdown */}
+        {showLanguagesDropdown && (
+          <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-64 overflow-auto">
+            {/* All Languages checkbox */}
+            <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
+              <input
+                type="checkbox"
+                checked={formData.performingLanguages.length === performingLanguageOptions.length}
+                onChange={toggleAllLanguages}
+                className="w-4 h-4 accent-primary-pink rounded"
+              />
+              <span className="text-white font-medium">All Languages</span>
+            </label>
+            
+            {/* Individual language checkboxes */}
+            {performingLanguageOptions.map((language) => (
+              <label
+                key={language.value}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.performingLanguages.includes(language.value)}
+                  onChange={() => toggleLanguageSelection(language.value)}
+                  className="w-4 h-4 accent-primary-pink rounded"
+                />
+                <span className="text-white text-sm">{language.label}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Performing Event Type */}
+      {/* Performing Event Type - Multi-select */}
       <div className="relative">
-        <Select
-          label="Performing event type*"
-          options={eventTypeOptions}
-          value={formData.eventType}
-          onChange={(value) => handleInputChange("eventType", value)}
-          required
-        />
-        <div className="absolute top-0 right-0">
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">Performing event type*</label>
           <Tooltip content="Choose the types of events where you typically perform">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
+        
+        {/* Selected values display */}
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+          <span className={formData.eventTypes.length > 0 ? "text-white" : "text-text-gray"}>
+            {formData.eventTypes.length > 0
+              ? formData.eventTypes
+                  .map((val) => eventTypeOptions.find((opt) => opt.value === val)?.label || val)
+                  .join(", ")
+              : "No event types selected"}
+          </span>
+        </div>
+
+        {/* Trigger button */}
+        <button
+          type="button"
+          onClick={() => setShowEventTypesDropdown(!showEventTypesDropdown)}
+          className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
+        >
+          <span className="text-text-gray">Select event types</span>
+          <svg
+            className={`w-5 h-5 text-text-gray transition-transform ${showEventTypesDropdown ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Dropdown */}
+        {showEventTypesDropdown && (
+          <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-64 overflow-auto">
+            {/* All Event Types checkbox */}
+            <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
+              <input
+                type="checkbox"
+                checked={formData.eventTypes.length === eventTypeOptions.length}
+                onChange={toggleAllEventTypes}
+                className="w-4 h-4 accent-primary-pink rounded"
+              />
+              <span className="text-white font-medium">All Event Types</span>
+            </label>
+            
+            {/* Individual event type checkboxes */}
+            {eventTypeOptions.map((eventType) => (
+              <label
+                key={eventType.value}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.eventTypes.includes(eventType.value)}
+                  onChange={() => toggleEventTypeSelection(eventType.value)}
+                  className="w-4 h-4 accent-primary-pink rounded"
+                />
+                <span className="text-white text-sm">{eventType.label}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Performing States */}
+      {/* Performing States - Multi-select */}
       <div className="relative">
-        <Input
-          label="Performing states*"
-          value={formData.performingStates}
-          onChange={(e) =>
-            handleInputChange("performingStates", e.target.value)
-          }
-          placeholder="Enter state(s)"
-          required
-        />
-        <div className="absolute top-0 right-0">
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">Performing states*</label>
           <Tooltip content="Enter the states where you are willing to perform">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
+        
+        {/* Selected values display */}
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+          <span className={formData.performingStates.length > 0 ? "text-white" : "text-text-gray"}>
+            {formData.performingStates.length > 0
+              ? formData.performingStates.length === performingStatesOptions.length
+                ? "PAN India (All States)"
+                : formData.performingStates
+                    .map((val) => performingStatesOptions.find((opt) => opt.value === val)?.label || val)
+                    .join(", ")
+              : "No states selected"}
+          </span>
+        </div>
+
+        {/* Trigger button */}
+        <button
+          type="button"
+          onClick={() => setShowStatesDropdown(!showStatesDropdown)}
+          className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
+        >
+          <span className="text-text-gray">Select states</span>
+          <svg
+            className={`w-5 h-5 text-text-gray transition-transform ${showStatesDropdown ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Dropdown */}
+        {showStatesDropdown && (
+          <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-64 overflow-auto">
+            {/* PAN India checkbox */}
+            <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
+              <input
+                type="checkbox"
+                checked={formData.performingStates.length === performingStatesOptions.length}
+                onChange={togglePanIndia}
+                className="w-4 h-4 accent-primary-pink rounded"
+              />
+              <span className="text-white font-medium">PAN India</span>
+            </label>
+            
+            {/* Individual state checkboxes */}
+            {performingStatesOptions.map((state) => (
+              <label
+                key={state.value}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.performingStates.includes(state.value)}
+                  onChange={() => toggleStateSelection(state.value)}
+                  className="w-4 h-4 accent-primary-pink rounded"
+                />
+                <span className="text-white text-sm">{state.label}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Performing Duration */}

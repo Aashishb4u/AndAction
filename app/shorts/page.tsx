@@ -1,31 +1,82 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import SiteLayout from '@/components/layout/SiteLayout';
-import ShortsPlayer from '@/components/ui/ShortsPlayer';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { X, Copy, MessageCircle, Facebook, Twitter, Mail, Linkedin } from 'lucide-react';
-import { toast } from 'react-toastify';
+const fetchShortsPage = async ({ pageParam = 1 }) => {
+  const res = await fetch(`/api/videos?type=shorts&page=${pageParam}`);
+  const json = await res.json();
+
+  return json.data.videos.map((v: any) => ({
+    id: v.id,
+    title: v.title,
+    creator: `${v.user.firstName} ${v.user.lastName}`,
+    creatorId: v.user.artist?.id,
+    avatar: v.user.avatar || v.user.image,
+    videoUrl: v.url,
+    thumbnail: v.thumbnailUrl,
+    description: "",
+    isBookmarked: false,
+  }));
+};
+import { useState, useEffect, useRef, useCallback } from "react";
+import SiteLayout from "@/components/layout/SiteLayout";
+import ShortsPlayer from "@/components/ui/ShortsPlayer";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  X,
+  Copy,
+  MessageCircle,
+  Facebook,
+  Twitter,
+  Mail,
+  Linkedin,
+} from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function ShortsPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [shorts, setShorts] = useState<any[]>([]);
-  const [page, setPage] = useState(1);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
-  const [shareModal, setShareModal] = useState<{ isOpen: boolean; shortId: string; title: string }>({
+  const [isDesktop, setIsDesktop] = useState(false);
+  const queryClient = useQueryClient();
+  const [shareModal, setShareModal] = useState<{
+    isOpen: boolean;
+    shortId: string;
+    title: string;
+  }>({
     isOpen: false,
-    shortId: '',
-    title: '',
+    shortId: "",
+    title: "",
   });
 
   const { data: session } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem('shorts_sound');
-      if (saved === 'on') setSoundEnabled(true);
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ["shorts"],
+      queryFn: fetchShortsPage,
+      initialPageParam: 1,
+      getNextPageParam: (lastPage, allPages) => {
+        return lastPage && lastPage.length > 0
+          ? allPages.length + 1
+          : undefined;
+      },
+      refetchOnWindowFocus: false,
+    });
+
+  const shorts = data?.pages.flat() || [];
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("shorts_sound");
+      if (saved === "on") setSoundEnabled(true);
     }
   }, []);
 
@@ -40,38 +91,23 @@ export default function ShortsPage() {
 
   // Load more videos when approaching the end
   const loadMoreVideos = useCallback(() => {
-    if (currentIndex >= shorts.length - 2) {
-      const nextPage = page + 1;
-      fetchShorts(nextPage);
-      setPage(nextPage);
+    if (
+      currentIndex >= shorts.length - 2 &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      fetchNextPage();
     }
-  }, [currentIndex, shorts.length, page]);
-
-  const fetchShorts = async (pageNum = 1) => {
-    try {
-      const res = await fetch(`/api/videos?type=shorts&page=${pageNum}`);
-      const json = await res.json();
-
-      const mapped = json.data.videos.map((v: any) => ({
-        id: v.id,
-        title: v.title,
-        creator: `${v.user.firstName} ${v.user.lastName}`,
-        creatorId: v.user.id,
-        avatar: v.user.avatar,
-        videoUrl: v.url,
-        thumbnail: v.thumbnailUrl,
-        description: '',
-        isBookmarked: false,
-      }));
-
-      setShorts((prev) => [...prev, ...mapped]);
-    } catch (err) {
-      console.error('Failed to fetch shorts:', err);
-    }
-  };
+  }, [
+    currentIndex,
+    shorts.length,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ]);
 
   const handleScroll = useCallback(
-    (direction: 'up' | 'down', velocity: number = 1) => {
+    (direction: "up" | "down", velocity: number = 1) => {
       const now = Date.now();
       const debounceTime = velocity > 2 ? 50 : 100;
 
@@ -83,7 +119,7 @@ export default function ShortsPage() {
 
       setCurrentIndex((prevIndex) => {
         const newIndex =
-          direction === 'down'
+          direction === "down"
             ? Math.min(prevIndex + 1, shorts.length - 1)
             : Math.max(prevIndex - 1, 0);
 
@@ -109,7 +145,7 @@ export default function ShortsPage() {
       velocityRef.current = Math.min(Math.abs(deltaY) / timeDelta, 10);
 
       if (Math.abs(deltaY) > 3) {
-        const direction = deltaY > 0 ? 'down' : 'up';
+        const direction = deltaY > 0 ? "down" : "up";
         handleScroll(direction, velocityRef.current);
       }
     },
@@ -150,7 +186,7 @@ export default function ShortsPage() {
       const threshold = finalVelocity > 0.5 ? 25 : 40;
 
       if (Math.abs(deltaY) > threshold) {
-        const direction = deltaY > 0 ? 'down' : 'up';
+        const direction = deltaY > 0 ? "down" : "up";
         handleScroll(direction, finalVelocity);
       }
     },
@@ -160,62 +196,73 @@ export default function ShortsPage() {
   // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      )
         return;
 
-      if (e.key === 'ArrowDown' || e.key === ' ') {
+      if (e.key === "ArrowDown" || e.key === " ") {
         e.preventDefault();
-        handleScroll('down');
-      } else if (e.key === 'ArrowUp') {
+        handleScroll("down");
+      } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        handleScroll('up');
+        handleScroll("up");
       }
     },
     [handleScroll],
   );
 
   useEffect(() => {
-    fetchShorts(1);
-  }, []);
-
-  useEffect(() => {
-    document.addEventListener('wheel', handleWheel, { passive: false });
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("wheel", handleWheel, { passive: false });
+    document.addEventListener("keydown", handleKeyDown);
 
     const mobile = mobileContainerRef.current;
     const desktop = desktopContainerRef.current;
 
     if (mobile) {
-      mobile.addEventListener('touchstart', handleTouchStart, { passive: true });
-      mobile.addEventListener('touchmove', handleTouchMove, { passive: false });
-      mobile.addEventListener('touchend', handleTouchEnd, { passive: true });
+      mobile.addEventListener("touchstart", handleTouchStart, {
+        passive: true,
+      });
+      mobile.addEventListener("touchmove", handleTouchMove, { passive: false });
+      mobile.addEventListener("touchend", handleTouchEnd, { passive: true });
     }
 
     if (desktop) {
-      desktop.addEventListener('touchstart', handleTouchStart, { passive: true });
-      desktop.addEventListener('touchmove', handleTouchMove, { passive: false });
-      desktop.addEventListener('touchend', handleTouchEnd, { passive: true });
+      desktop.addEventListener("touchstart", handleTouchStart, {
+        passive: true,
+      });
+      desktop.addEventListener("touchmove", handleTouchMove, {
+        passive: false,
+      });
+      desktop.addEventListener("touchend", handleTouchEnd, { passive: true });
     }
 
     return () => {
-      document.removeEventListener('wheel', handleWheel);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("wheel", handleWheel);
+      document.removeEventListener("keydown", handleKeyDown);
 
       if (mobile) {
-        mobile.removeEventListener('touchstart', handleTouchStart);
-        mobile.removeEventListener('touchmove', handleTouchMove);
-        mobile.removeEventListener('touchend', handleTouchEnd);
+        mobile.removeEventListener("touchstart", handleTouchStart);
+        mobile.removeEventListener("touchmove", handleTouchMove);
+        mobile.removeEventListener("touchend", handleTouchEnd);
       }
 
       if (desktop) {
-        desktop.removeEventListener('touchstart', handleTouchStart);
-        desktop.removeEventListener('touchmove', handleTouchMove);
-        desktop.removeEventListener('touchend', handleTouchEnd);
+        desktop.removeEventListener("touchstart", handleTouchStart);
+        desktop.removeEventListener("touchmove", handleTouchMove);
+        desktop.removeEventListener("touchend", handleTouchEnd);
       }
 
       if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
     };
-  }, [handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd, handleKeyDown]);
+  }, [
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleKeyDown,
+  ]);
 
   const getVisibleVideos = useCallback(() => {
     const bufferSize = 2;
@@ -232,102 +279,125 @@ export default function ShortsPage() {
   const handleBookmark = async (id: string) => {
     // Check if user is logged in
     if (!session?.user) {
-      router.push('/auth/signin');
+      router.push("/auth/signin");
       return;
     }
 
     const short = shorts.find((s) => s.id === id);
     if (!short) return;
+
+    const previousData = queryClient.getQueryData(["shorts"]);
+
+    // Optimistic update helper
+    const updateBookmarkState = (isBookmarked: boolean) => {
+      queryClient.setQueryData(["shorts"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any[]) =>
+            page.map((video) =>
+              video.id === id ? { ...video, isBookmarked } : video,
+            ),
+          ),
+        };
+      });
+    };
+
     try {
       if (short.isBookmarked) {
-        // Remove bookmark
-        await fetch(`/api/bookmarks/${id}`, { method: 'DELETE' });
-        setShorts((prev) => prev.map((s) => s.id === id ? { ...s, isBookmarked: false } : s));
+        // Optimistic update: Remove bookmark
+        updateBookmarkState(false);
+        await fetch(`/api/bookmarks/${id}`, { method: "DELETE" });
       } else {
-        // Add bookmark
+        // Optimistic update: Add bookmark
+        updateBookmarkState(true);
         await fetch(`/api/bookmarks`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ videoId: id }),
         });
-        setShorts((prev) => prev.map((s) => s.id === id ? { ...s, isBookmarked: true } : s));
       }
     } catch (err) {
-      console.error('Bookmark error:', err);
+      console.error("Bookmark error:", err);
+      // Revert to previous data on error
+      if (previousData) {
+        queryClient.setQueryData(["shorts"], previousData);
+      }
     }
   };
 
   // Share handler: open share modal
   const handleShare = async (id: string) => {
     const short = shorts.find((s) => s.id === id);
-    const shareTitle = short?.title || 'Check out this short';
+    const shareTitle = short?.title || "Check out this short";
     setShareModal({ isOpen: true, shortId: id, title: shareTitle });
   };
 
   const getShareUrl = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_NEXTAUTH_URL || window.location.origin;
+    const baseUrl =
+      process.env.NEXT_PUBLIC_NEXTAUTH_URL || window.location.origin;
     return `${baseUrl}/shorts/${shareModal.shortId}`;
   };
 
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(getShareUrl());
-      toast.success('Link copied to clipboard');
-      setShareModal({ isOpen: false, shortId: '', title: '' });
+      toast.success("Link copied to clipboard");
+      setShareModal({ isOpen: false, shortId: "", title: "" });
     } catch {
-      toast.error('Failed to copy link');
+      toast.error("Failed to copy link");
     }
   };
 
   const shareOptions = [
     {
-      name: 'WhatsApp',
+      name: "WhatsApp",
       icon: MessageCircle,
-      color: 'bg-green-500 hover:bg-green-600',
+      color: "bg-green-500 hover:bg-green-600",
       action: () => {
         const url = `https://wa.me/?text=${encodeURIComponent(`${shareModal.title} - ${getShareUrl()}`)}`;
-        window.open(url, '_blank');
-        setShareModal({ isOpen: false, shortId: '', title: '' });
+        window.open(url, "_blank");
+        setShareModal({ isOpen: false, shortId: "", title: "" });
       },
     },
     {
-      name: 'Facebook',
+      name: "Facebook",
       icon: Facebook,
-      color: 'bg-blue-600 hover:bg-blue-700',
+      color: "bg-blue-600 hover:bg-blue-700",
       action: () => {
         const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getShareUrl())}`;
-        window.open(url, '_blank');
-        setShareModal({ isOpen: false, shortId: '', title: '' });
+        window.open(url, "_blank");
+        setShareModal({ isOpen: false, shortId: "", title: "" });
       },
     },
     {
-      name: 'Twitter',
+      name: "Twitter",
       icon: Twitter,
-      color: 'bg-sky-500 hover:bg-sky-600',
+      color: "bg-sky-500 hover:bg-sky-600",
       action: () => {
         const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareModal.title)}&url=${encodeURIComponent(getShareUrl())}`;
-        window.open(url, '_blank');
-        setShareModal({ isOpen: false, shortId: '', title: '' });
+        window.open(url, "_blank");
+        setShareModal({ isOpen: false, shortId: "", title: "" });
       },
     },
     {
-      name: 'LinkedIn',
+      name: "LinkedIn",
       icon: Linkedin,
-      color: 'bg-blue-700 hover:bg-blue-800',
+      color: "bg-blue-700 hover:bg-blue-800",
       action: () => {
         const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(getShareUrl())}`;
-        window.open(url, '_blank');
-        setShareModal({ isOpen: false, shortId: '', title: '' });
+        window.open(url, "_blank");
+        setShareModal({ isOpen: false, shortId: "", title: "" });
       },
     },
     {
-      name: 'Email',
+      name: "Email",
       icon: Mail,
-      color: 'bg-gray-600 hover:bg-gray-700',
+      color: "bg-gray-600 hover:bg-gray-700",
       action: () => {
         const url = `mailto:?subject=${encodeURIComponent(shareModal.title)}&body=${encodeURIComponent(`Check out this short: ${getShareUrl()}`)}`;
         window.location.href = url;
-        setShareModal({ isOpen: false, shortId: '', title: '' });
+        setShareModal({ isOpen: false, shortId: "", title: "" });
       },
     },
   ];
@@ -341,14 +411,19 @@ export default function ShortsPage() {
         <div
           ref={mobileContainerRef}
           className="fixed inset-0 bg-black overflow-hidden shorts-scrollbar-hide"
-          style={{ height: '100vh', width: '100vw', zIndex: 0, paddingTop: '4rem' }} // Add top padding for navbar height
+          style={{
+            height: "100vh",
+            width: "100vw",
+            zIndex: 0,
+            paddingTop: "4rem",
+          }} // Add top padding for navbar height
         >
           <div
             className="relative h-full pb-16" // Only bottom padding, top handled by parent
             style={{
               transform: `translateY(-${currentIndex * 100}vh)`,
-              transition: 'transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
-              willChange: 'transform',
+              transition: "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
+              willChange: "transform",
             }}
           >
             {visibleVideos.map((video) => (
@@ -359,7 +434,8 @@ export default function ShortsPage() {
               >
                 <ShortsPlayer
                   short={video}
-                  isActive={video.absoluteIndex === currentIndex}
+                  isActive={video.absoluteIndex === currentIndex && !isDesktop}
+                  shouldLoad={!isDesktop}
                   onBookmark={handleBookmark}
                   onShare={handleShare}
                   soundEnabled={soundEnabled}
@@ -383,14 +459,14 @@ export default function ShortsPage() {
           <div
             ref={desktopContainerRef}
             className="relative bg-black overflow-hidden shorts-scrollbar-hide"
-            style={{ height: 'calc(100vh - 6rem)', zIndex: 0 }}
+            style={{ height: "calc(100vh - 6rem)", zIndex: 0 }}
           >
             <div
               className="relative h-full pt-16 pb-16" // Add top and bottom padding to prevent overlap
               style={{
                 transform: `translateY(-${currentIndex * 100}%)`,
-                transition: 'transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
-                willChange: 'transform',
+                transition: "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
+                willChange: "transform",
               }}
             >
               {visibleVideos.map((video) => (
@@ -401,7 +477,8 @@ export default function ShortsPage() {
                 >
                   <ShortsPlayer
                     short={video}
-                    isActive={video.absoluteIndex === currentIndex}
+                    isActive={video.absoluteIndex === currentIndex && isDesktop}
+                    shouldLoad={isDesktop}
                     onBookmark={handleBookmark}
                     onShare={handleShare}
                     soundEnabled={soundEnabled}
@@ -416,11 +493,13 @@ export default function ShortsPage() {
 
       {/* Share Modal */}
       {shareModal.isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-          onClick={() => setShareModal({ isOpen: false, shortId: '', title: '' })}
+          onClick={() =>
+            setShareModal({ isOpen: false, shortId: "", title: "" })
+          }
         >
-          <div 
+          <div
             className="bg-gray-900 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-gray-700"
             onClick={(e) => e.stopPropagation()}
           >
@@ -428,7 +507,9 @@ export default function ShortsPage() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-white">Share Short</h3>
               <button
-                onClick={() => setShareModal({ isOpen: false, shortId: '', title: '' })}
+                onClick={() =>
+                  setShareModal({ isOpen: false, shortId: "", title: "" })
+                }
                 className="p-2 rounded-full hover:bg-gray-700 transition-colors"
               >
                 <X className="w-5 h-5 text-gray-400" />
@@ -436,7 +517,9 @@ export default function ShortsPage() {
             </div>
 
             {/* Video Title */}
-            <p className="text-gray-400 text-sm mb-6 line-clamp-2">{shareModal.title}</p>
+            <p className="text-gray-400 text-sm mb-6 line-clamp-2">
+              {shareModal.title}
+            </p>
 
             {/* Share Options Grid */}
             <div className="grid grid-cols-3 gap-4 mb-6">
@@ -447,7 +530,9 @@ export default function ShortsPage() {
                   className={`flex flex-col items-center gap-2 p-4 rounded-xl ${option.color} transition-all transform hover:scale-105`}
                 >
                   <option.icon className="w-6 h-6 text-white" />
-                  <span className="text-xs text-white font-medium">{option.name}</span>
+                  <span className="text-xs text-white font-medium">
+                    {option.name}
+                  </span>
                 </button>
               ))}
             </div>

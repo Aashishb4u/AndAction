@@ -37,7 +37,13 @@ export async function GET(req: NextRequest) {
             firstName: true,
             lastName: true,
             avatar: true,
+            image: true,
             isArtistVerified: true,
+            artist: {
+              select: {
+                id: true,
+              },
+            },
           },
         },
       },
@@ -87,7 +93,7 @@ export async function GET(req: NextRequest) {
         related: relatedVideos,
         shorts: shorts,
       },
-      "Fetched related videos successfully."
+      "Fetched related videos successfully.",
     );
   } catch (err) {
     console.error("RELATED VIDEO API ERROR:", err);

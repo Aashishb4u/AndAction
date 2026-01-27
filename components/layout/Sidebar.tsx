@@ -10,6 +10,7 @@ import Download from "../icons/download";
 import Support from "../icons/support";
 import { useSession, signOut } from "next-auth/react";
 import { usePWAInstall } from "@/hooks/use-pwa-install";
+import { buildArtishProfileUrl } from "@/lib/utils";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,16 +22,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user;
-  const { isInstallable, isInstalled, installApp, isIOSSafari } = usePWAInstall();
+  const { isInstallable, isInstalled, installApp, isIOSSafari } =
+    usePWAInstall();
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
@@ -65,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   const handleSignOut = async () => {
-    console.log('idk being triggered')
+    console.log("idk being triggered");
     await signOut({ redirect: false });
     onClose();
     router.push("/");
@@ -83,9 +85,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-screen max-h-screen w-80 max-w-full sm:w-96 bg-background border-l border-background-light z-99999 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
-          } sidebar-responsive`}
-        style={{ width: 'min(90vw, 22rem)', maxWidth: 400, height: '100dvh', maxHeight: '100dvh', overflowY: 'auto' }}
+        className={`fixed top-0 right-0 h-screen max-h-screen w-80 max-w-full sm:w-96 bg-background border-l border-background-light z-99999 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        } sidebar-responsive`}
+        style={{
+          width: "min(90vw, 22rem)",
+          maxWidth: 400,
+          height: "100dvh",
+          maxHeight: "100dvh",
+          overflowY: "auto",
+        }}
       >
         <div className="flex flex-col h-full min-h-0 overflow-y-auto">
           {/* Header Close */}
@@ -199,8 +208,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   key={item.label}
                   href={item.href}
                   onClick={handleItemClick}
-                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${item.isActive ? "gradient-text" : "text-white"
-                    }`}
+                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${
+                    item.isActive ? "gradient-text" : "text-white"
+                  }`}
                 >
                   {item.label}
                 </Link>
