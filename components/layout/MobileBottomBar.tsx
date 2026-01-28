@@ -116,13 +116,12 @@ const MobileBottomBar = () => {
       fixed bottom-0 left-0 right-0 z-50 md:hidden transition-all duration-300 ease-out
       ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
     `}>
-      {/* Simple background */}
-      <div className="bg-[#0F0F0F]  border-t border-border-color">
+      {/* Blurred glass background */}
+      <div className="bg-[#0F0F0F]/70 backdrop-blur-xl border-t border-white/10">
         {/* Navigation items */}
         <nav className="flex items-center justify-around px-3 py-2">
           {bottomBarItems.map((item) => {
             const active = isActive(item.href);
-
             return (
               <Link
                 key={item.id}
