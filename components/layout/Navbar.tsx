@@ -144,7 +144,8 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
             {user ? (
               <button
                 onClick={handleToggleSidebar}
-                className="flex items-center justify-center rounded-full border border-transparent hover:border-primary-pink transition"
+                className="flex items-center justify-center rounded-full border border-transparent hover:border-primary-pink transition overflow-hidden"
+                style={{ width: '40px', height: '40px' }}
               >
                 <Image
                   src={ buildArtishProfileUrl(user.avatar!) }
@@ -152,7 +153,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                   width={40}
                   height={40}
                   unoptimized
-                  className="rounded-full"
+                  className="rounded-full object-cover w-full h-full"
                 />
               </button>
             ) : (
