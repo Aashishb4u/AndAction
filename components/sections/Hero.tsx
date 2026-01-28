@@ -86,16 +86,25 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           className="block"
         >
           <defs>
-            {/* Pink glow gradient under curve stroke - centered 40% width */}
+            {/* Pink glow gradient under curve stroke - centered 40% width, fades vertically */}
             <linearGradient id="pinkGlow" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
-              <stop offset="30%" stopColor="#FF2D7A" stopOpacity="0.18" />
+              <stop offset="20%" stopColor="#FF2D7A" stopOpacity="0.18" />
+              <stop offset="30%" stopColor="#FF2D7A" stopOpacity="0.2" />
               <stop offset="40%" stopColor="#FF2D7A" stopOpacity="0.3" />
               <stop offset="50%" stopColor="#FF2D7A" stopOpacity="0.3" />
               <stop offset="60%" stopColor="#FF2D7A" stopOpacity="0.3" />
-              <stop offset="70%" stopColor="#FF2D7A" stopOpacity="0.18" />
+              <stop offset="70%" stopColor="#FF2D7A" stopOpacity="0.2" />
+              <stop offset="80%" stopColor="#FF2D7A" stopOpacity="0.18" />
               <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
             </linearGradient>
+
+            {/* Combined radial gradient - centered horizontally, fades down */}
+            {/* <radialGradient id="pinkGlow" cx="50%" cy="0%" r="60%" fx="50%" fy="0%">
+              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0.3" />
+              <stop offset="80%" stopColor="#FF2D7A" stopOpacity="0.24" />
+              <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
+            </radialGradient> */}
 
             {/* Main curve stroke gradient */}
             <linearGradient id="strokeFade" x1="0%" y1="0%" x2="100%" y2="0%">
