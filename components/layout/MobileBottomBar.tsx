@@ -129,7 +129,7 @@ const MobileBottomBar = () => {
                 className="flex flex-col items-center justify-center min-w-0 flex-1 py-3 px-1 transition-all duration-200 ease-out"
               >
                 {/* Icon */}
-                <div className="mb-1">
+                <div className="mb-1.5">
                   <div className={`
                     transition-colors duration-200
                     ${active ? 'text-white' : 'text-text-gray'}
@@ -140,7 +140,7 @@ const MobileBottomBar = () => {
 
                 {/* Label */}
                 <span className={`
-                  text-xs font-medium leading-none transition-colors duration-200
+                  text-sm leading-none transition-colors duration-200
                   ${active ? 'text-white' : 'text-text-gray'}
                 `}>
                   {item.label}
