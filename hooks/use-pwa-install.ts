@@ -54,13 +54,12 @@ export function usePWAInstall() {
     }
     
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      alert('App is already installed!');
       return { success: false, message: 'Already installed' };
     }
 
+    // For iOS Safari, we can't programmatically install - just return false
     if (isIOSSafari()) {
-      alert('To install this app on iOS:\n\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" in the top right corner');
-      return { success: false, message: 'iOS installation instructions shown' };
+      return { success: false, message: 'iOS requires manual installation' };
     }
 
     if (deferredPrompt) {
@@ -71,6 +70,7 @@ export function usePWAInstall() {
         if (outcome === 'accepted') {
           setDeferredPrompt(null);
           setIsInstallable(false);
+          alert('🎉 App installed successfully! You can now access ANDACTION from your home screen.');
           return { success: true, message: 'App installed successfully' };
         } else {
           return { success: false, message: 'Installation cancelled' };
@@ -81,19 +81,8 @@ export function usePWAInstall() {
       }
     }
 
-    const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-    const isEdge = /Edg/.test(navigator.userAgent);
-    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-    
-    if (isChrome || isEdge) {
-      alert('To install ANDACTION:\n\n1. Click the install icon (⊕) in your browser\'s address bar\n2. Or open browser menu (⋮) → "Install ANDACTION"\n3. Follow the prompts to add to your home screen');
-    } else if (isSafari) {
-      alert('To install ANDACTION:\n\n1. Tap the Share button in Safari\n2. Scroll and select "Add to Home Screen"\n3. Tap "Add" to install');
-    } else {
-      alert('To install ANDACTION:\n\nLook for the install or "Add to Home Screen" option in your browser menu.\n\nFor best experience, use Chrome, Edge, or Safari.');
-    }
-    
-    return { success: false, message: 'Installation instructions shown' };
+    // No deferred prompt available - browser doesn't support PWA install or prompt wasn't captured
+    return { success: false, message: 'Installation not available' };
   };
 
   const isIOSSafari = () => {
