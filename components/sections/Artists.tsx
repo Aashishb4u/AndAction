@@ -166,27 +166,21 @@ export default function Artists({ location }: ArtistsProps) {
     <section className="relative w-full pt-4 md:pt-16 pb-20 md:pb-8 overflow-hidden">
       {/* Full-height Gradient Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        {/* Base background (use theme background variable) */}
+        {/* Base background */}
         <div className="absolute inset-0 bg-background" />
 
-        {/* Full-height pink glow */}
+        {/* Centered pink glow at top - matches the curve */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-x-0 top-0 h-96"
           style={{
             background: `
-          radial-gradient(
-            ellipse 500% 40% at 50% 0%,
-            rgba(255,45,122,0.22) 0%,
-            rgba(255,45,122,0.12) 30%,
-            transparent 70%
-          ),
-          linear-gradient(
-            to bottom,
-            transparent 0%,
-            rgba(255,45,122,0.08) 40%,
-            transparent 80%
-          )
-        `,
+              radial-gradient(
+                ellipse 60% 100% at 50% 0%,
+                rgba(255,45,122,0.25) 0%,
+                rgba(255,45,122,0.1) 40%,
+                transparent 70%
+              )
+            `,
           }}
         />
       </div>

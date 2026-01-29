@@ -20,10 +20,10 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
 
   return (
     <section
-      className={`relative h-[75vh] md:h-[95vh] flex flex-col overflow-hidden ${className} pt-16 md:pt-20`}
+      className={`relative h-[75vh] md:h-[80vh] flex flex-col overflow-hidden ${className} pt-16 md:pt-20`}
       style={{ overflow: 'hidden' }}
     /* pt-16 = 64px for mobile navbar, md:pt-20 = 80px for desktop */
-    /* h-[75vh] = 75% of viewport height for mobile, md:h-[95vh] = 95% for desktop */
+    /* h-[75vh] = 75% of viewport height for mobile, md:h-[70vh] = 70% for desktop */
     >
       {/* Background Video - covers the entire hero section (3/4 of viewport) */}
       <div className="absolute inset-0 z-0">
@@ -79,18 +79,32 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         <svg
           viewBox="0 0 1440 60"
           width="100%"
-          height="60"
+          height="50"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           preserveAspectRatio="none"
           className="block"
         >
           <defs>
-            {/* Pink glow gradient under curve stroke */}
-            <linearGradient id="pinkGlow" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0.3" />
+            {/* Pink glow gradient under curve stroke - centered 40% width, fades vertically */}
+            <linearGradient id="pinkGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
+              <stop offset="20%" stopColor="#FF2D7A" stopOpacity="0.18" />
+              <stop offset="30%" stopColor="#FF2D7A" stopOpacity="0.2" />
+              <stop offset="40%" stopColor="#FF2D7A" stopOpacity="0.3" />
+              <stop offset="50%" stopColor="#FF2D7A" stopOpacity="0.3" />
+              <stop offset="60%" stopColor="#FF2D7A" stopOpacity="0.3" />
+              <stop offset="70%" stopColor="#FF2D7A" stopOpacity="0.2" />
+              <stop offset="80%" stopColor="#FF2D7A" stopOpacity="0.18" />
               <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
             </linearGradient>
+
+            {/* Combined radial gradient - centered horizontally, fades down */}
+            {/* <radialGradient id="pinkGlow" cx="50%" cy="0%" r="60%" fx="50%" fy="0%">
+              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0.3" />
+              <stop offset="80%" stopColor="#FF2D7A" stopOpacity="0.24" />
+              <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
+            </radialGradient> */}
 
             {/* Main curve stroke gradient */}
             <linearGradient id="strokeFade" x1="0%" y1="0%" x2="100%" y2="0%">

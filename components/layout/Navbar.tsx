@@ -65,14 +65,14 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
         isScrolled
-          ? "bg-background/95 backdrop-blur-md border-b border-background-light"
-          : "bg-transparent border-b border-transparent"
+          ? "bg-background/80 backdrop-blur-md border-b border-background-light"
+          : "bg-background/60 backdrop-blur-sm border-b border-transparent"
       } ${
         isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
       } ${className}`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+        <div className="flex items-center justify-between h-14 lg:h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
@@ -144,7 +144,8 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
             {user ? (
               <button
                 onClick={handleToggleSidebar}
-                className="flex items-center justify-center rounded-full border border-transparent hover:border-primary-pink transition"
+                className="flex items-center justify-center rounded-full border border-transparent hover:border-primary-pink transition overflow-hidden"
+                style={{ width: '40px', height: '40px' }}
               >
                 <Image
                   src={ buildArtishProfileUrl(user.avatar!) }
@@ -152,7 +153,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                   width={40}
                   height={40}
                   unoptimized
-                  className="rounded-full"
+                  className="rounded-full object-cover w-full h-full"
                 />
               </button>
             ) : (
