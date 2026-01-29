@@ -47,7 +47,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logo.png" />
       </head>
       <body
-        className={`${raleway.variable} ${poppins.variable} antialiased`}
+        className={`${raleway.variable} ${poppins.variable} antialiased bg-background min-h-screen`}
       >
         <ServiceWorkerRegistration />
         <Providers>
