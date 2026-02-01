@@ -48,7 +48,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
       />
 
       {/* Content - centered in the video area */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-center items-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-end md:justify-center items-center pb-20 md:pb-0">
         <div className="max-w-4xl mx-auto w-full">
           {/* Main Heading */}
           <h1 className={`text-4xl leading-10 lg:leading-14 lg:text-5xl font-bold text-white mb-3 max-w-3xl ${isLoaded ? 'hero-title-animate' : 'opacity-0'}`}>

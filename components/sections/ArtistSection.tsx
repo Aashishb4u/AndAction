@@ -54,7 +54,9 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
       <div className="flex items-center justify-between mb-1 px-6">
         <h2 className="text-2xl font-semibold text-white">{title}</h2>
         <button
-          className="gradient-text hover:text-primary-orange transition-colors duration-300 btn1 border-b border-primary-pink/80 leading-4!"
+          className="gradient-text hover:text-primary-orange transition-colors duration-300           font-bold
+          btn1 border-b 
+          border-primary-pink/80 leading-4!"
           onClick={() => {
             if (artists.length === 0) {
               setShowNoArtistModal(true);

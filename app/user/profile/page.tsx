@@ -153,12 +153,12 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background md:p-4 p-0">
+    <div className="min-h-screen bg-background md:p-4 p-0 ">
       {/* Back Button and Title - Title Centered */}
-      <div className="relative flex items-center justify-center md:mb-8 mb-4 md:mt-4 mt-2 md:px-0 px-4">
+      <div className="relative flex items-center md:justify-center md:mb-8 mb-4 md:mt-4 mt-2 md:px-0 px-4">
         <button
           onClick={() => router.back()}
-          className="absolute left-0 md:left-0 text-white hover:text-primary-pink transition-colors duration-200 flex items-center gap-2"
+          className="absolute left-0 md:left-0 text-white m-3 hover:text-primary-pink transition-colors duration-200 flex items-center gap-2"
           aria-label="Back"
         >
           <svg
@@ -176,7 +176,7 @@ export default function UserProfilePage() {
           </svg>
           <span className="md:inline hidden">Back</span>
         </button>
-        <h1 className="h1 font-semibold text-white">
+        <h1 className="h1 ml-6 font-semibold text-white">
           Edit your profile
         </h1>
       </div>
