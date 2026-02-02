@@ -81,31 +81,34 @@ export default function MobileSearchPage() {
   // Show all categories if no search, otherwise only those with artists
   const filterCategories = useMemo(() => {
     // Map category value to label for lookup
-    const categoryMap = ARTIST_CATEGORIES.reduce((acc, cat) => {
-      acc[cat.value.toLowerCase()] = cat.label;
-      return acc;
-    }, {} as Record<string, string>);
+    // const categoryMap = ARTIST_CATEGORIES.reduce((acc, cat) => {
+    //   acc[cat.value.toLowerCase()] = cat.label;
+    //   return acc;
+    // }, {} as Record<string, string>);
 
-    // If no search, show all categories
-    if (!search.trim()) {
-      return [{ label: "All", value: "all" }, ...ARTIST_CATEGORIES.map(cat => ({ label: cat.label, value: cat.value }))];
-    }
+    // // If no search, show all categories
+    // if (!search.trim()) {
+    //   return [{ label: "All", value: "all" }, ...ARTIST_CATEGORIES.map(cat => ({ label: cat.label, value: cat.value }))];
+    // }
 
-    // Find unique categories present in the current artists list
-    const presentCategories = Array.from(
-      new Set(
-        artists
-          .map((artist) => artist.category && artist.category.toLowerCase())
-          .filter((cat) => cat && categoryMap[cat])
-      )
-    );
+    // // Find unique categories present in the current artists list
+    // const presentCategories = Array.from(
+    //   new Set(
+    //     artists
+    //       .map((artist) => artist.category && artist.category.toLowerCase())
+    //       .filter((cat) => cat && categoryMap[cat])
+    //   )
+    // );
 
-    // Build the filter list: All + only categories with artists
-    const filtered = [
-      { label: "All", value: "all" },
-      ...presentCategories.map((cat) => ({ label: categoryMap[cat], value: cat }))
-    ];
-    return filtered;
+    // // Build the filter list: All + only categories with artists
+    // const filtered = [
+    //   { label: "All", value: "all" },
+    //   ...presentCategories.map((cat) => ({ label: categoryMap[cat], value: cat }))
+    // ];
+    // return filtered;
+
+    // Fix 1 - i must see all the options in the header as it is like (all mmusicians dancer dj  etc etc etc) 
+    return [{ label: "All", value: "all" }, ...ARTIST_CATEGORIES.map(cat => ({ label: cat.label, value: cat.value }))];
   }, [artists, search]);
 
   // Debounce search input
@@ -140,7 +143,8 @@ export default function MobileSearchPage() {
       <div className="p-4 pb-2 mt-2 flex flex-col">
         <div className="relative w-full">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-            <SearchIcon className="w-5 h-5 text-gray-400" />
+            {/* Fix 3 - when i type smthg the search icon must become white only when i type smthg in search box */}
+            <SearchIcon className={`w-5 h-5 ${search.trim() ? "text-white" : "text-gray-400"}`} />
           </span>
           <input
             type="text"
@@ -175,9 +179,12 @@ export default function MobileSearchPage() {
             <button
               key={cat.value}
               onClick={() => setSelectedCategory(cat.value)}
-              className={`px-4 py-1 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${selectedCategory === cat.value ? "bg-white text-black" : "bg-[#232323] text-white border-[#333]"}`}
+              // Fix 2 only the acive option's text must have gradient - linear gradient (#ED4B22 , #E8047E)
+              className={`px-4 py-1 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${selectedCategory === cat.value ? "bg-white border-white" : "bg-[#232323] text-white border-[#333]"}`}
             >
-              {cat.label}
+              <span className={selectedCategory === cat.value ? "bg-gradient-to-r from-[#ED4B22] to-[#E8047E] bg-clip-text text-transparent" : ""}>
+                {cat.label}
+              </span>
             </button>
           ))}
         </div>
@@ -238,7 +245,7 @@ export default function MobileSearchPage() {
                 onClick={() =>
                   router.push(`/artists?type=${encodeURIComponent(cat.value)}`)
                 }
-                className="w-full flex justify-between items-center rounded-full border border-[#FF4B2B] bg-[#e8047e52] px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:from-[#ED4B22] hover:to-[#E8047E] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/50"
+                className="w-full flex justify-between items-center rounded-full border border-[#FF4B2B] bg-[#e8047e2a] px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:from-[#ED4B22] hover:to-[#E8047E] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/50"
               >
                 <span className="text-[#F2F2F2]">{cat.label}</span>
                 <span className="text-[#F2F2F2] flex items-center">
