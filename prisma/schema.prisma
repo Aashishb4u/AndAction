@@ -177,6 +177,7 @@ model Video {
   @@index([youtubeVideoId])
   @@index([isShort])
   @@unique([youtubeVideoId, userId])
+  @@unique([instagramReelId, userId])
   @@map("videos")
 }
 
@@ -228,4 +229,19 @@ enum BookingStatus {
   DECLINED
   CANCELLED
   COMPLETED
+}
+
+model CronJob {
+  id          String   @id @default(cuid())
+  jobName     String
+  status      String   // "started", "completed", "failed"
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  error       String?  @db.Text
+  metadata    Json?    // Store additional info like artistsProcessed, videosUpdated, etc.
+  createdAt   DateTime @default(now())
+  
+  @@index([jobName])
+  @@index([startedAt])
+  @@map("cron_jobs")
 }
