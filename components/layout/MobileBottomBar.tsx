@@ -117,7 +117,7 @@ const MobileBottomBar = () => {
       ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
     `}>
       {/* Blurred glass background */}
-      <div className="bg-[#0F0F0F]/70 backdrop-blur-xl border-t border-white/10">
+      <div className="bg-black/10 backdrop-blur-xl border-t border-white/10">
         {/* Navigation items */}
         <nav className="flex items-center justify-around px-3 py-2">
           {bottomBarItems.map((item) => {

@@ -203,11 +203,13 @@ export default function VideosPage() {
                 key={category.value}
                 onClick={() => setSelectedCategory(category.value)}
                 className={`px-4 py-2 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${selectedCategory === category.value
-                    ? "bg-white text-black border-white"
+                    ? "bg-white border-white"
                     : "bg-transparent text-white border-gray-600 hover:border-gray-400"
                   }`}
               >
-                {category.label}
+                <span className={selectedCategory === category.value ? "text-transparent bg-clip-text bg-gradient-to-r from-[#ED4B22] to-[#E8047E]" : ""}>
+                  {category.label}
+                </span>
               </button>
             ))}
           </div>

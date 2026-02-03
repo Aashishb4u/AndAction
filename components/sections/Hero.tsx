@@ -43,12 +43,12 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
       </div>
       {/* Black Overlay */}
       <div
-        className={`absolute inset-0 bg-black/50 pointer-events-none ${isLoaded ? 'hero-overlay-animate' : ''
+        className={`absolute inset-0 bg-black/70 pointer-events-none ${isLoaded ? 'hero-overlay-animate' : ''
           }`}
       />
 
       {/* Content - centered in the video area */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-center items-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-end md:justify-center items-center pb-20 md:pb-0">
         <div className="max-w-4xl mx-auto w-full">
           {/* Main Heading */}
           <h1 className={`text-4xl leading-10 lg:leading-14 lg:text-5xl font-bold text-white mb-3 max-w-3xl ${isLoaded ? 'hero-title-animate' : 'opacity-0'}`}>
@@ -75,11 +75,11 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
       </div>
 
       {/* Curve - positioned at the bottom of hero section */}
-      <div className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none select-none">
+      <div className="absolute left-0 right-0 bottom-0 z-50 pointer-events-none select-none">
         <svg
-          viewBox="0 0 1440 60"
+          viewBox="0 0 1400 80"
           width="100%"
-          height="50"
+          height="85"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           preserveAspectRatio="none"
@@ -87,7 +87,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         >
           <defs>
             {/* Pink glow gradient under curve stroke - centered 40% width, fades vertically */}
-            <linearGradient id="pinkGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+            {/* <linearGradient id="pinkGlow" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
               <stop offset="20%" stopColor="#FF2D7A" stopOpacity="0.18" />
               <stop offset="30%" stopColor="#FF2D7A" stopOpacity="0.2" />
@@ -97,14 +97,14 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
               <stop offset="70%" stopColor="#FF2D7A" stopOpacity="0.2" />
               <stop offset="80%" stopColor="#FF2D7A" stopOpacity="0.18" />
               <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
-            </linearGradient>
+            </linearGradient> */}
 
             {/* Combined radial gradient - centered horizontally, fades down */}
-            {/* <radialGradient id="pinkGlow" cx="50%" cy="0%" r="60%" fx="50%" fy="0%">
+            <radialGradient id="pinkGlow" cx="50%" cy="0%" r="60%" fx="50%" fy="0%">
               <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0.3" />
               <stop offset="80%" stopColor="#FF2D7A" stopOpacity="0.24" />
               <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
-            </radialGradient> */}
+            </radialGradient>
 
             {/* Main curve stroke gradient */}
             <linearGradient id="strokeFade" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -118,19 +118,19 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
 
           {/* Black curve fill that creates the transition */}
           <path
-            d="M0,60 Q720,20 1440,60 L1440,60 L0,60 Z"
+            d="M0,80 Q720,10 1440,80 L1440,80 L0,80 Z"
             fill="black"
           />
 
           {/* Pink gradient overlay slightly inside black curve */}
           <path
-            d="M0,60 Q720,20 1440,60 L1440,120 L0,60 Z"
+            d="M0,80 Q720,10 1440,80 L1440,160 L0,80 Z"
             fill="url(#pinkGlow)"
           />
 
           {/* Main curve stroke */}
           <path
-            d="M0,60 Q720,20 1440,60"
+            d="M0,80 Q720,10 1440,80"
             fill="none"
             stroke="url(#strokeFade)"
             strokeWidth="3"
@@ -139,7 +139,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
 
           {/* Inner thin highlight */}
           <path
-            d="M0,60 Q720,20 1440,60"
+            d="M0,80 Q720,10 1440,80"
             fill="none"
             stroke="#FF2D7A"
             strokeWidth="1.5"

@@ -35,18 +35,21 @@ const Select: React.FC<SelectProps> = ({
 }) => {
   const selectId = `select-${Math.random().toString(36).substr(2, 9)}`;
 
+  const isPlaceholderSelected = !value || value === "";
+  const textColorClass = isPlaceholderSelected ? 'text-[#7F7F7F]' : 'text-white';
+
   const baseClasses = `
     w-full md:px-4 px-3 py-3
     border rounded-lg transition-all duration-200
     focus:outline-none focus:ring-2 focus:ring-primary-pink/50
     disabled:opacity-50 disabled:cursor-not-allowed
-    appearance-none cursor-pointer
+    appearance-none cursor-pointer font-normal
   `;
 
   const stateClasses = disabled
     ? 'bg-gray-900 border-gray-700 text-gray-400'
     : `
-        bg-[#1B1B1B] border-border-color text-white
+        bg-[#1B1B1B] border-border-color ${textColorClass}
         hover:border-gray-500 focus:border-primary-pink
       `;
 
@@ -59,7 +62,7 @@ const Select: React.FC<SelectProps> = ({
       {label && (
         <label
           htmlFor={selectId}
-          className="block section-text mb-1"
+          className="block section-text mb-1 font-normal"
         >
           {label}
         </label>
