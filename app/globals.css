@@ -33,6 +33,7 @@
   --text-gray: #7F7F7F;
   --text-light-gray: #d4d4d8;
   --border-color: #2D2D2D;
+  --border-line: #232323;
 
   /* Gradient Colors */
   --gradient-primary: linear-gradient(135deg, #ED4B22 0%, #E8047E 100%);
@@ -54,6 +55,7 @@
   --color-orange: var(--orange);
   --color-red: var(--red);
   --color-blue: var(--blue);
+  --color-white: var(--text-white);
   --color-foreground: var(--foreground);
   --color-text-gray: var(--text-gray);
   --color-text-light-gray: var(--text-light-gray);
@@ -68,6 +70,7 @@
 
   /* Custom Colors */
   --color-border-color: var(--border-color);
+  --color-border-line: var(--border-line);
 }
 
 * {
@@ -182,6 +185,12 @@ h6 {
 .secondary-text {
   font-size: 14px;
   line-height: 20px;
+  font-weight: normal;
+}
+
+.secondary-grey-text {
+  font-size: 16px;
+  line-height: 24px;
   font-weight: normal;
 }
 
