@@ -15,7 +15,11 @@ const ArtistGrid: React.FC<ArtistGridProps> = ({
   onBookmark,
   className = '',
 }) => {
+    // Log all artist data to the console
+  if (typeof window !== 'undefined') {
+  }
   if (artists.length === 0) {
+    
     return (
       <div className="flex flex-col items-center justify-center py-16 px-6">
         <div className="text-center">
@@ -30,7 +34,7 @@ const ArtistGrid: React.FC<ArtistGridProps> = ({
   }
 
   return (
-    <div className={`md:p-6 ${className}`}>
+    <div className={`md:px-6 ${className}`}>
       {/* Desktop Grid Layout */}
       <div className="hidden lg:grid lg:grid-cols-3 gap-6">
         {artists.map((artist) => (

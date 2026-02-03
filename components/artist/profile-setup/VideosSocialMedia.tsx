@@ -1,13 +1,15 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 import Image from "next/image";
 import { Loader2, CheckCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   useIntegrationStatus,
   useYouTubeConnect,
+  useYouTubeConnectByChannel,
 } from "@/hooks/use-integrations";
 
 interface VideosSocialMediaProps {
@@ -21,18 +23,40 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
   onSkip,
   onBack,
 }) => {
+  const [showChannelInput, setShowChannelInput] = useState(false);
+  const [channelInput, setChannelInput] = useState("");
+
   const { data: integrationStatus, isLoading: isLoadingStatus } =
     useIntegrationStatus();
   const connectYouTubeMutation = useYouTubeConnect();
+  const connectYouTubeByChannelMutation = useYouTubeConnectByChannel();
 
   const youtubeConnected = integrationStatus?.youtube.connected ?? false;
   const instagramConnected = integrationStatus?.instagram.connected ?? false;
-
 
   const connectYouTube = () => {
     connectYouTubeMutation.mutate();
   };
 
+  const handleShowChannelInput = () => {
+    setShowChannelInput(true);
+  };
+
+  const handleConnectByChannel = () => {
+    if (channelInput.trim()) {
+      connectYouTubeByChannelMutation.mutate(channelInput.trim(), {
+        onSuccess: () => {
+          setShowChannelInput(false);
+          setChannelInput("");
+        },
+      });
+    }
+  };
+
+  const handleCancelChannelInput = () => {
+    setShowChannelInput(false);
+    setChannelInput("");
+  };
 
   const connectInstagram = () => {
     toast.info("Instagram integration coming soon!");
@@ -137,9 +161,45 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
                     </span>
                   )}
                 </div>
+              ) : showChannelInput ? (
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Enter channel name or ID"
+                    value={channelInput}
+                    onChange={(e) => setChannelInput(e.target.value)}
+                    variant="filled"
+                    disabled={connectYouTubeByChannelMutation.isPending}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleConnectByChannel}
+                      disabled={
+                        connectYouTubeByChannelMutation.isPending ||
+                        !channelInput.trim()
+                      }
+                      className="flex-1 w-full py-2 text-sm bg-white rounded-full font-medium hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {connectYouTubeByChannelMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
+                          <span className="gradient-text">Connecting...</span>
+                        </>
+                      ) : (
+                        <span className="gradient-text">Connect</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={handleCancelChannelInput}
+                      disabled={connectYouTubeByChannelMutation.isPending}
+                      className="flex-1 w-full py-2 text-sm border border-border-color text-white rounded-full font-medium hover:bg-card transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <button
-                  onClick={connectYouTube}
+                  onClick={handleShowChannelInput}
                   disabled={connectYouTubeMutation.isPending}
                   className="w-full py-2 text-sm bg-white rounded-full font-medium hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >

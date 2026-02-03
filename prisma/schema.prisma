@@ -22,6 +22,9 @@ model User {
   state                   String?
   address                 String?
   zip                     String?
+  latitude                Float?
+  longitude               Float?
+  geocodedAt              DateTime?
   role                    String     @default("user")
   isAccountVerified       Boolean    @default(false)
   isArtistVerified        Boolean    @default(false)
@@ -167,13 +170,14 @@ model Video {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   bookmarkedByUsers Bookmark[]
-  user              User       @relation(fields: [userId], references: [id])
+  user              User       @relation(fields: [userId], references: [id],onDelete: Cascade)
 
   @@index([userId])
   @@index([isApproved])
   @@index([youtubeVideoId])
   @@index([isShort])
   @@unique([youtubeVideoId, userId])
+  @@unique([instagramReelId, userId])
   @@map("videos")
 }
 
@@ -184,7 +188,7 @@ model Bookmark {
   artistId  String?
   createdAt DateTime @default(now())
   artist    Artist?  @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   video     Video?   @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
   @@unique([userId, videoId])
@@ -208,8 +212,8 @@ model Booking {
   notes         String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  artist        Artist        @relation(fields: [artistId], references: [id])
-  client        User          @relation(fields: [clientId], references: [id])
+  artist        Artist        @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  client        User          @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([artistId])
@@ -225,4 +229,19 @@ enum BookingStatus {
   DECLINED
   CANCELLED
   COMPLETED
+}
+
+model CronJob {
+  id          String   @id @default(cuid())
+  jobName     String
+  status      String   // "started", "completed", "failed"
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  error       String?  @db.Text
+  metadata    Json?    // Store additional info like artistsProcessed, videosUpdated, etc.
+  createdAt   DateTime @default(now())
+  
+  @@index([jobName])
+  @@index([startedAt])
+  @@map("cron_jobs")
 }

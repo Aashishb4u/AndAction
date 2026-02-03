@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import SiteLayout from '@/components/layout/SiteLayout';
-import VideoPlayer from '@/components/ui/VideoPlayer';
-import ArtistInfo from '@/components/sections/ArtistInfo';
-import VideoCard from '@/components/ui/VideoCard';
-import ShortsCard from '@/components/ui/ShortsCard';
-import Image from 'next/image';
-import { toast } from 'react-toastify';
-import { useSession } from 'next-auth/react';
+import React, { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import SiteLayout from "@/components/layout/SiteLayout";
+import VideoPlayer from "@/components/ui/VideoPlayer";
+import ArtistInfo from "@/components/sections/ArtistInfo";
+import VideoCard from "@/components/ui/VideoCard";
+import ShortsCard from "@/components/ui/ShortsCard";
+import Image from "next/image";
+import { toast } from "react-toastify";
+import { useSession } from "next-auth/react";
 
 export default function VideoDetailsPage() {
   const params = useParams();
@@ -28,7 +28,7 @@ export default function VideoDetailsPage() {
     async function fetchData() {
       try {
         const res = await fetch(
-          `/api/videos/related?videoId=${videoId}&withBookmarks=true`
+          `/api/videos/related?videoId=${videoId}&withBookmarks=true`,
         );
         const json = await res.json();
 
@@ -43,7 +43,7 @@ export default function VideoDetailsPage() {
         setVideoData({
           id: v.id,
           title: v.title,
-          description: v.description ?? '',
+          description: v.description ?? "",
           videoUrl: v.url,
           poster: v.thumbnailUrl,
           views: v.views,
@@ -51,7 +51,7 @@ export default function VideoDetailsPage() {
           isBookmarked: v.isBookmarked,
           bookmarkId: v.bookmarkId,
           artist: {
-            id: v.user.id,
+            id: v.user?.artist?.id,
             name: `${v.user.firstName} ${v.user.lastName}`,
             avatar: v.user.avatar,
             verified: v.user.isArtistVerified,
@@ -68,7 +68,7 @@ export default function VideoDetailsPage() {
             videoUrl: rv.url,
             isBookmarked: rv.isBookmarked,
             bookmarkId: rv.bookmarkId,
-          }))
+          })),
         );
 
         // SHORTS
@@ -81,10 +81,10 @@ export default function VideoDetailsPage() {
             videoUrl: sv.url,
             isBookmarked: sv.isBookmarked,
             bookmarkId: sv.bookmarkId,
-          }))
+          })),
         );
       } catch (error) {
-        console.error('Error fetching video details:', error);
+        console.error("Error fetching video details:", error);
       } finally {
         setLoading(false);
       }
@@ -104,7 +104,7 @@ export default function VideoDetailsPage() {
       }
 
       if (isBookmarked && bookmarkId) {
-        await fetch(`/api/bookmarks/${bookmarkId}`, { method: 'DELETE' });
+        await fetch(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
 
         if (videoData?.id === id) {
           setVideoData((prev: any) => ({
@@ -114,16 +114,16 @@ export default function VideoDetailsPage() {
           }));
         }
 
-        setRelatedVideos(prev =>
-          prev.map(v =>
-            v.id === id ? { ...v, isBookmarked: false, bookmarkId: null } : v
-          )
+        setRelatedVideos((prev) =>
+          prev.map((v) =>
+            v.id === id ? { ...v, isBookmarked: false, bookmarkId: null } : v,
+          ),
         );
 
-        setShorts(prev =>
-          prev.map(s =>
-            s.id === id ? { ...s, isBookmarked: false, bookmarkId: null } : s
-          )
+        setShorts((prev) =>
+          prev.map((s) =>
+            s.id === id ? { ...s, isBookmarked: false, bookmarkId: null } : s,
+          ),
         );
 
         return;
@@ -131,8 +131,8 @@ export default function VideoDetailsPage() {
 
       // CREATE
       const res = await fetch(`/api/bookmarks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ videoId: id }),
       });
 
@@ -147,23 +147,23 @@ export default function VideoDetailsPage() {
         }));
       }
 
-      setRelatedVideos(prev =>
-        prev.map(v =>
+      setRelatedVideos((prev) =>
+        prev.map((v) =>
           v.id === id
             ? { ...v, isBookmarked: true, bookmarkId: newBookmarkId }
-            : v
-        )
+            : v,
+        ),
       );
 
-      setShorts(prev =>
-        prev.map(s =>
+      setShorts((prev) =>
+        prev.map((s) =>
           s.id === id
             ? { ...s, isBookmarked: true, bookmarkId: newBookmarkId }
-            : s
-        )
+            : s,
+        ),
       );
     } catch (err) {
-      console.error('Bookmark error:', err);
+      console.error("Bookmark error:", err);
     }
   };
 
@@ -171,18 +171,17 @@ export default function VideoDetailsPage() {
   const handleShare = async (videoId: string) => {
     try {
       const baseUrl =
-        process.env.NEXT_PUBLIC_NEXTAUTH_URL ||
-        window.location.origin;
+        process.env.NEXT_PUBLIC_NEXTAUTH_URL || window.location.origin;
 
       const shareUrl = `${baseUrl}/videos/${videoId}`;
 
       await navigator.clipboard.writeText(shareUrl);
 
       // 🔔 Toast success
-      toast.success('Link copied to clipboard');
+      toast.success("Link copied to clipboard");
     } catch (err) {
-      console.error('Share error:', err);
-      toast.error('Failed to copy link');
+      console.error("Share error:", err);
+      toast.error("Failed to copy link");
     }
   };
 
@@ -207,7 +206,6 @@ export default function VideoDetailsPage() {
     <SiteLayout showPreloader={false}>
       <div className="min-h-screen pt-16 lg:pt-20 pb-28">
         <div className="max-w-7xl mx-auto lg:px-8">
-
           {/* MAIN VIDEO */}
           <div className="mb-8">
             <VideoPlayer
@@ -248,7 +246,7 @@ export default function VideoDetailsPage() {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {relatedVideos.map(video => (
+              {relatedVideos.map((video) => (
                 <VideoCard
                   key={video.id}
                   id={video.id}
@@ -273,7 +271,7 @@ export default function VideoDetailsPage() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-              {shorts.map(short => (
+              {shorts.map((short) => (
                 <ShortsCard
                   key={short.id}
                   id={short.id}
@@ -289,7 +287,6 @@ export default function VideoDetailsPage() {
               ))}
             </div>
           </section>
-
         </div>
       </div>
     </SiteLayout>

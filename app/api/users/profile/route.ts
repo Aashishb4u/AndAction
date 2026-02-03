@@ -23,8 +23,7 @@ import { auth } from '@/auth';
 const selectSafeUser = (user: any) => {
     const { 
         password, resetToken, resetTokenExpiry, 
-        verificationToken, verificationTokenExpiry, 
-        phoneOtp, phoneOtpExpiry,
+        verificationToken, verificationTokenExpiry,
         ...safeUser 
     } = user;
     return safeUser;
@@ -74,7 +73,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
                 password: true, 
                 resetToken: true,
                 verificationToken: true,
-                phoneOtp: true,
                 // Include the full Artist relation if the role is 'artist'
                 artist: userRole === 'artist' ? {
                     select: {

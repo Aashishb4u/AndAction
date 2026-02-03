@@ -9,6 +9,7 @@ import { NavbarProps, NavItem } from "@/types";
 import { createAuthRedirectUrl } from "@/lib/auth";
 import Search from "../icons/search";
 import { useSession, signOut } from "next-auth/react";
+import { buildArtishProfileUrl } from "@/lib/utils";
 
 interface NavbarWithSidebarProps extends NavbarProps {
   onToggleSidebar?: () => void;
@@ -23,9 +24,8 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   const [lastScrollY, setLastScrollY] = useState(0);
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session, status } = useSession(); 
+  const { data: session, status } = useSession();
   const user = session?.user;
-
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
@@ -65,14 +65,14 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
         isScrolled
-          ? "bg-background/95 backdrop-blur-md border-b border-background-light"
-          : "bg-transparent border-b border-transparent"
+          ? "bg-background/80 backdrop-blur-md border-b border-background-light"
+          : "bg-background/60 backdrop-blur-sm border-b border-transparent"
       } ${
         isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
       } ${className}`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+        <div className="flex items-center justify-between h-14 lg:h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
@@ -87,12 +87,12 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
 
           {/* Desktop Navigation */}
           <div className="hidden lg:block">
-            <div className="ml-16 flex items-baseline space-x-3">
+            <div className="ml-16 flex items-center space-x-3">
               {navItems.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`px-3 py-2 text-sm font-medium transition-colors duration-200 relative ${
+                  className={`px-3 py-3 text-sm font-medium transition-colors duration-200 relative ${
                     item.isActive
                       ? "gradient-text nav-active-underline text-center"
                       : "text-text-light-gray hover:text-white"
@@ -128,33 +128,32 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
               </Button>
             )}
 
-            {/* Join as a artist */}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() =>
-                router.push(createAuthRedirectUrl("/auth/artist", pathname))
-              }
-            >
-              <span className="gradient-text btn2">Join as a artist</span>
-            </Button>
+            {/* Join as an artist - Only show for non-artist users */}
+            {user?.role !== "artist" && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  router.push(createAuthRedirectUrl("/auth/artist", pathname))
+                }
+              >
+                <span className="gradient-text btn2">Join as an Artist</span>
+              </Button>
+            )}
 
             {user ? (
               <button
                 onClick={handleToggleSidebar}
-                className="flex items-center justify-center rounded-full border border-transparent hover:border-primary-pink transition"
+                className="flex items-center justify-center rounded-full border border-transparent hover:border-primary-pink transition overflow-hidden"
+                style={{ width: '40px', height: '40px' }}
               >
                 <Image
-                  src={
-                      user.avatar && /^\d+$/.test(String(user.avatar))
-                        ? `/avatars/${user.avatar}.png`
-                        : user.avatar || "/default-avatar.png"
-                    }
+                  src={ buildArtishProfileUrl(user.avatar!) }
                   alt={user.firstName || "User"}
                   width={40}
                   height={40}
                   unoptimized
-                  className="rounded-full"
+                  className="rounded-full object-cover w-full h-full"
                 />
               </button>
             ) : (

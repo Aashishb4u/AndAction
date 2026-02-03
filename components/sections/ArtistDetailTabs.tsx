@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Artist } from '@/types';
 import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
@@ -17,6 +17,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   isMobile = false,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('about');
+  const [isBioExpanded, setIsBioExpanded] = useState(false);
+  const [showBioMoreButton, setShowBioMoreButton] = useState(false);
+  const bioRef = useRef<HTMLParagraphElement>(null);
 
   const [artistVideos, setArtistVideos] = useState<any[]>([]);
   const [artistShorts, setArtistShorts] = useState<any[]>([]);
@@ -102,6 +105,25 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     fetchMedia();
   }, [artist?.id]);
 
+  // Check if bio text overflows (more than 2 lines)
+  useEffect(() => {
+    const checkBioOverflow = () => {
+      if (bioRef.current) {
+        const lineHeight = parseFloat(getComputedStyle(bioRef.current).lineHeight) || 20;
+        const maxHeight = lineHeight * 2; // 2 lines
+        setShowBioMoreButton(bioRef.current.scrollHeight > maxHeight + 2);
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(checkBioOverflow, 100);
+    window.addEventListener('resize', checkBioOverflow);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', checkBioOverflow);
+    };
+  }, [artist.bio, activeTab]);
+
 
   const tabs = [
     { id: 'about' as TabType, label: 'About' },
@@ -114,14 +136,20 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     <div className="space-y-4 max-w-4xl">
       <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
         <h3 className="text-text-gray secondary-text mb-1">Bio</h3>
-        <p className=" leading-relaxed text-sm">
+        <p 
+          ref={bioRef}
+          className={`leading-relaxed text-sm ${isBioExpanded ? '' : 'line-clamp-2'}`}
+        >
           {artist.bio || 'Borem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero Borem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero'}
-          {(!artist.bio || (artist.bio && artist.bio.length > 100)) && (
-            <button className="text-blue hover:text-primary-pink transition-colors font-medium ml-1">
-              more.
-            </button>
-          )}
         </p>
+        {showBioMoreButton && (
+          <button 
+            onClick={() => setIsBioExpanded(!isBioExpanded)}
+            className="text-blue hover:text-primary-pink transition-colors font-medium text-sm mt-1"
+          >
+            {isBioExpanded ? 'less' : 'more...'}
+          </button>
+        )}
       </div>
 
       <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
@@ -164,7 +192,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
         <div className="text-white mb-1">
-          ₹ {artist.soloChargesFrom || 0} - ₹ {artist.soloChargesTo || 0}
+          Starting from ₹ {artist.soloChargesFrom || 0}
         </div>
         <p className="footnote">
           {artist.soloChargesDescription?.trim() || "No description provided."}
@@ -174,7 +202,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
         <div className="text-white mb-1">
-          ₹ {artist.chargesWithBacklineFrom || 0} - ₹ {artist.chargesWithBacklineTo || 0}
+          Starting from ₹ {artist.chargesWithBacklineFrom || 0}
         </div>
         <p className="footnote">
           {artist.chargesWithBacklineDescription?.trim() || "No description provided."}
@@ -207,7 +235,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
         <div className="flex flex-wrap gap-1.5">
-          {(artist.languages?.length ? artist.languages : ["N/A"]).map((language, index) => (
+          {(artist.languages?.length
+            ? artist.languages.flatMap((lang: string) => lang.split(',').map((l: string) => l.trim())).filter((l: string) => l)
+            : ["N/A"]
+          ).map((language: string, index: number) => (
             <span
               key={index}
               className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
@@ -221,19 +252,30 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Performing event type</h3>
         <div className="flex flex-wrap gap-1.5">
-          <span className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium">
-            {artist.performingEventType || "N/A"}
-          </span>
+          {(artist.performingEventType
+            ? artist.performingEventType.split(',').map((e: string) => e.trim()).filter((e: string) => e)
+            : ["N/A"]
+          ).map((eventType: string, index: number) => (
+            <span
+              key={index}
+              className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
+            >
+              {eventType}
+            </span>
+          ))}
         </div>
       </div>
 
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Performing States</h3>
         <div className="flex flex-wrap gap-1.5">
-          {(artist.performingStates
-            ? artist.performingStates.split(',').map(s => s.trim())
-            : ["N/A"]
-          ).map((state, index) => (
+          {(() => {
+            const states = artist.performingStates
+              ? artist.performingStates.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+              : ["N/A"];
+            const hasPanIndia = states.some((s: string) => s.toLowerCase() === 'pan india');
+            return hasPanIndia ? ["Pan India"] : states;
+          })().map((state: string, index: number) => (
             <span
               key={index}
               className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
@@ -251,7 +293,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       return (
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold text-white mb-2">No Videos</h3>
-          <p>This artist hasn't uploaded any videos yet</p>
+          <p>This artist hasn&apos;t uploaded any videos yet</p>
         </div>
       );
     }
@@ -284,7 +326,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       return (
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold text-white mb-2">No Shorts</h3>
-          <p>This artist hasn't uploaded any shorts yet</p>
+          <p>This artist hasn&apos;t uploaded any shorts yet</p>
         </div>
       );
     }

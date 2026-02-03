@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -9,6 +9,8 @@ import { createAuthRedirectUrl } from "@/lib/auth";
 import Download from "../icons/download";
 import Support from "../icons/support";
 import { useSession, signOut } from "next-auth/react";
+import { usePWAInstall } from "@/hooks/use-pwa-install";
+import { buildArtishProfileUrl } from "@/lib/utils";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,8 +22,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user;
+  const { isInstallable, isInstalled, installApp, isIOSSafari } =
+    usePWAInstall();
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   const navigationItems = [
+    { label: "Home", href: "/", isActive: pathname === "/" },
     { label: "About us", href: "/about", isActive: pathname === "/about" },
     { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
     {
@@ -43,13 +59,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  const handleInstallApp = () => {
-    console.log("Install app clicked");
-    onClose();
+  const handleInstallApp = async () => {
+    const result = await installApp();
+    if (result.success) {
+      onClose();
+    }
   };
 
   const handleSignOut = async () => {
-    console.log('idk being triggered')
+    console.log("idk being triggered");
     await signOut({ redirect: false });
     onClose();
     router.push("/");
@@ -67,9 +85,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-screen max-h-screen w-80 max-w-full sm:w-96 bg-background border-l border-background-light z-99999 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
-          } sidebar-responsive`}
-        style={{ width: 'min(90vw, 22rem)', maxWidth: 400, height: '100dvh', maxHeight: '100dvh', overflowY: 'auto' }}
+        className={`fixed top-0 right-0 h-screen max-h-screen w-80 max-w-full sm:w-96 bg-background border-l border-background-light z-99999 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        } sidebar-responsive`}
+        style={{
+          width: "min(90vw, 22rem)",
+          maxWidth: 400,
+          height: "100dvh",
+          maxHeight: "100dvh",
+          overflowY: "auto",
+        }}
       >
         <div className="flex flex-col h-full min-h-0 overflow-y-auto">
           {/* Header Close */}
@@ -110,10 +135,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               >
                 <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                   <Image
-                   src={
+                    src={
                       user.avatar && /^\d+$/.test(String(user.avatar))
                         ? `/avatars/${user.avatar}.png`
-                        : user.avatar || "/default-avatar.png"
+                        : user.avatar || "/avatars/default-avatar.jpeg"
                     }
                     alt={user.firstName || "User"}
                     width={48}
@@ -140,30 +165,32 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
               </button>
 
-              {/* Join as artist */}
-              <button
-                onClick={handleJoinArtist}
-                className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
-              >
-                Join as a artist
-              </button>
+              {/* Join as artist - Only show for non-artist users */}
+              {user.role !== "artist" && (
+                <button
+                  onClick={handleJoinArtist}
+                  className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
+                >
+                  Join as an Artist
+                </button>
+              )}
             </div>
           ) : (
-            // Guest state
+            // Guest state - Match prototype design
             <div className="px-6 pt-2 pb-3">
               <button
                 onClick={() => {
                   router.push(createAuthRedirectUrl("/auth/signin", pathname));
                   onClose();
                 }}
-                className="block text-white hover:text-primary-pink transition-colors duration-200 h1"
+                className="text-white text-xl font-medium mb-2 hover:text-primary-pink transition-colors"
               >
-                Sign In
+                Sign-In / Sign-Up
               </button>
-
+              <br />
               <button
                 onClick={handleJoinArtist}
-                className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
+                className="block gradient-text hover:opacity-80 transition-opacity duration-200 text-lg"
               >
                 Join as a artist
               </button>
@@ -181,51 +208,51 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   key={item.label}
                   href={item.href}
                   onClick={handleItemClick}
-                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${item.isActive ? "gradient-text" : "text-white"
-                    }`}
+                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${
+                    item.isActive ? "gradient-text" : "text-white"
+                  }`}
                 >
                   {item.label}
                 </Link>
               ))}
             </div>
 
-            {/* Contact */}
-            <div className="mt-5 border border-border-color rounded-xl p-3 bg-card">
-              <div className="flex items-center space-x-3 mb-1">
+            {/* Contact Info - For any query */}
+            <div className="mt-8 p-4 bg-card border border-border-color rounded-xl">
+              <div className="flex items-center space-x-3 mb-2">
                 <Support className="size-5 text-text-gray" />
                 <span className="text-text-gray text-sm">For any query</span>
               </div>
               <p className="text-white text-sm">
-                Contact Us:{" "}
-                <Link href="tel:+918860014889" className="hover:underline">
-                  +91 8860014889
-                </Link>
+                Contact Us : 8860014889
               </p>
             </div>
           </div>
 
-          {/* Signout + Install App */}
-          {user && (
-            <div className="p-6 border-t border-background-light space-y-3">
+          {/* Bottom Section - Install App */}
+          <div className="p-6 space-y-3">
+            {user && (
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
+                className="w-full flex items-start gap-2 text-white hover:text-primary-pink transition-colors duration-200 mb-4"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Signout</span>
               </button>
+            )}
 
+            {!isInstalled && (
               <button
                 onClick={handleInstallApp}
-                className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
+                className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-card border border-border-color rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
               >
                 <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
-                <span className="gradient-text">
+                <span className="gradient-text text-sm">
                   Install our web application
                 </span>
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </>

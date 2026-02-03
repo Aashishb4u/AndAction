@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React, { useRef, useState } from 'react';
-import Image from 'next/image';
-import { ArrowLeft, Edit, Plus } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import { Artist } from '@/types';
+import React, { useRef, useState } from "react";
+import Image from "next/image";
+import { ArrowLeft, Edit, Pencil } from "lucide-react";
+import Button from "@/components/ui/Button";
+import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
 
 interface ArtistProfileCardProps {
@@ -16,9 +16,8 @@ interface ArtistProfileCardProps {
 const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   artist,
   onBack,
-  onEdit
+  onEdit,
 }) => {
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { update } = useSession();
   const [uploading, setUploading] = useState(false);
@@ -43,8 +42,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       // update session with new avatar
       await update({
         update: {
-          avatar: imageUrl
-        }
+          avatar: imageUrl,
+        },
       });
 
       setUploading(false);
@@ -82,7 +81,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
           src={
             artist.image && /^\d+$/.test(String(artist.image))
               ? `/avatars/${artist.image}.png`
-              : artist.image || "/default-avatar.png"
+              : artist.image || "/avatars/placeholder.png"
           }
           alt={artist.name}
           fill
@@ -142,8 +141,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
                 onClick={onEdit}
                 className="w-full md:w-auto"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Profile
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit Profile
               </Button>
             </div>
           </div>

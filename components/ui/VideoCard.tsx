@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React, { useState, useRef } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import MoreVertical from '@/components/icons/more-vertical';
-import Bookmark from '@/components/icons/bookmark';
-import Share from '@/components/icons/share';
-import { Trash2 } from 'lucide-react';
+import React, { useState, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import MoreVertical from "@/components/icons/more-vertical";
+import Bookmark from "@/components/icons/bookmark";
+import Share from "@/components/icons/share";
+import { Trash2 } from "lucide-react";
 
 interface VideoCardProps {
   id: string;
@@ -20,7 +20,11 @@ interface VideoCardProps {
   bookmarkId?: string | null;
 
   // UPDATED: pass full object instead of just ID
-  onBookmark?: (data: { id: string; bookmarkId?: string | null; isBookmarked: boolean }) => void;
+  onBookmark?: (data: {
+    id: string;
+    bookmarkId?: string | null;
+    isBookmarked: boolean;
+  }) => void;
   onShare?: (id: string) => void;
 
   onDelete?: (id: string) => void;
@@ -34,8 +38,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
   creator,
   thumbnail,
   videoUrl,
-  className = '',
-  bookmarkId,                 
+  className = "",
+  bookmarkId,
   onBookmark,
   onShare,
   onDelete,
@@ -88,22 +92,21 @@ const VideoCard: React.FC<VideoCardProps> = ({
   };
 
   return (
-    <Link href={`/videos/${id}`} className="block">
+    <Link
+      href={`/videos/${id}`}
+      className={`block ${showMenu ? "z-50 relative" : ""}`}
+    >
       <div
-        className={`relative group cursor-pointer transition-all duration-300 ease-out hover:scale-105 ${className}`}
+        className={`relative group cursor-pointer ${className}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
+        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-card transition-transform duration-300 ease-out hover:scale-105">
+          <Image src={thumbnail} alt={title} fill className="object-cover" />
 
-        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-card">
-          <Image
-            src={thumbnail}
-            alt={title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-
-          <div className={`absolute inset-0 transition-opacity duration-500 ${isHovered && isVideoLoaded ? 'opacity-100' : 'opacity-0'}`}>
+          <div
+            className={`absolute inset-0 transition-opacity duration-500 ${isHovered && isVideoLoaded ? "opacity-100" : "opacity-0"}`}
+          >
             <video
               ref={videoRef}
               className="w-full h-full object-cover"
@@ -121,11 +124,9 @@ const VideoCard: React.FC<VideoCardProps> = ({
         </div>
 
         {/* BOTTOM INFO */}
-        <div className="mt-3 px-1 flex justify-between gap-3">
-
-          <div className='flex gap-2'>
-            <Image src={thumbnail} alt={title} width={48} height={48} className="rounded-full object-cover shrink-0 h-10 w-10" />
-            <div>
+        <div className="mt-3 px-1 flex justify-between items-start gap-3">
+          <div className="flex gap-3 flex-1 min-w-0">
+            <div className="flex-1 min-w-0">
               <h3 className="btn2 text-white line-clamp-2 group-hover:text-primary-pink transition-colors duration-300">
                 {title}
               </h3>
@@ -134,49 +135,48 @@ const VideoCard: React.FC<VideoCardProps> = ({
           </div>
 
           {/* MENU */}
-          <div className="relative z-50 flex items-center gap-2">
+          <div className="relative flex items-start shrink-0">
             {showDeleteButton ? (
-              <button onClick={handleDelete} className="text-red-500 hover:scale-110 z-10">
+              <button
+                onClick={handleDelete}
+                className="text-red-500 hover:scale-110 p-2"
+              >
                 <Trash2 className="size-4" />
               </button>
             ) : (
               <>
                 <button
                   onClick={handleMenuToggle}
-                  className="p-2 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70"
+                  className="p-2 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 transition-colors"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
 
                 {showMenu && (
-                  <div className="absolute bottom-full right-0 mt-2 w-40 bg-card/95 rounded-lg shadow-xl border border-background-light z-50">
-
+                  <div className="absolute top-full right-0 mt-2 w-40 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl border border-background-light z-50">
                     <button
                       onClick={handleBookmark}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-card ${
-                        isBookmarked ? 'text-primary-pink' : 'text-white'
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/50 transition-colors ${
+                        isBookmarked ? "text-primary-pink" : "text-white"
                       }`}
                     >
                       <Bookmark className="w-4 h-4" />
-                      {isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
+                      {isBookmarked ? "Remove Bookmark" : "Bookmark"}
                     </button>
 
                     <button
                       onClick={handleShare}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-card"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-background/50 transition-colors"
                     >
                       <Share className="w-4 h-4" />
                       Share
                     </button>
-
                   </div>
                 )}
               </>
             )}
           </div>
-
         </div>
-
       </div>
     </Link>
   );

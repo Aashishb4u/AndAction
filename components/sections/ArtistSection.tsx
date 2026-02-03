@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import ArtistCard from '@/components/ui/ArtistCard';
+
+import Modal from '@/components/ui/Modal';
 
 interface Artist {
   id: string;
@@ -22,7 +25,10 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   artists,
   className = '',
 }) => {
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showNoArtistModal, setShowNoArtistModal] = useState(false);
+  const router = useRouter();
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -46,11 +52,48 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
     <div className={`w-full ${className}`}>
       {/* Section Header */}
       <div className="flex items-center justify-between mb-1 px-6">
-        <h2 className="h2 text-white">{title}</h2>
-        <button className="gradient-text hover:text-primary-orange transition-colors duration-300 btn1 border-b border-primary-pink/80 leading-4!">
+        <h2 className="text-2xl font-semibold text-white">{title}</h2>
+        <button
+          className="gradient-text hover:text-primary-orange transition-colors duration-300           font-bold
+          btn1 border-b 
+          border-primary-pink/80 leading-4!"
+          onClick={() => {
+            if (artists.length === 0) {
+              setShowNoArtistModal(true);
+            } else {
+              // Map section title to correct filter value
+              let typeParam = title.toLowerCase();
+              if (typeParam.includes('dj')) typeParam = 'dj';
+              else if (typeParam.includes('anchor')) typeParam = 'anchor';
+              else if (typeParam.includes('band')) typeParam = 'band';
+              else if (typeParam.includes('singer')) typeParam = 'singer';
+              else if (typeParam.includes('dancer')) typeParam = 'dancer';
+              else if (typeParam.includes('comedian')) typeParam = 'comedian';
+              router.push(`/artists?type=${encodeURIComponent(typeParam)}`);
+            }
+          }}
+        >
           View all
         </button>
       </div>
+
+      {/* Modal for no artists found */}
+      <Modal
+        isOpen={showNoArtistModal}
+        onClose={() => setShowNoArtistModal(false)}
+        title={`No artist found`}
+        size="sm"
+      >
+        <div className="p-6 text-center">
+          <p>No artist found for this category.</p>
+          <button
+            className="mt-4 px-4 py-2 bg-primary-orange text-white rounded hover:bg-primary-pink transition"
+            onClick={() => setShowNoArtistModal(false)}
+          >
+            Close
+          </button>
+        </div>
+      </Modal>
 
       {/* Only show scrollable container if there are artists */}
       {artists.length > 0 && (

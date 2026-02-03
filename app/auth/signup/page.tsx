@@ -368,48 +368,55 @@ function SignUpContent() {
 
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
-      {/* Close Button */}
-      <button
-        onClick={() => router.push("/")}
-        className="absolute top-6 right-6 p-2 text-text-gray hover:text-white transition-colors duration-200"
-        aria-label="Close"
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
+      <div className="flex justify-between items-center mr-4 ml-4 pt-4">
+          {/* Logo */}
+          <div>
+            <Image
+              src="/logo.png"
+              alt="ANDACTION Logo"
+              className="h-8 object-contain"
+              width={150}
+              height={24}
+            />
+          </div>
 
-      <div className="md:p-8 p-5">
-        {/* Logo */}
-        <div className="mb-8">
-          <Image
-            src="/logo.png"
-            alt="ANDACTION Logo"
-            className="h-8 object-contain"
-            width={150}
-            height={24}
-          />
+          {/* Close Button */}
+          <button
+            onClick={() => router.push("/")}
+            className="p-2  transition-colors duration-200"
+            aria-label="Close"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
+      <div className="md:p-8 p-4">
+        
 
-        {/* Title */}
-        <h1 className="h1 font-semibold text-white mb-2">
-          Sign up to AndAction
-        </h1>
+        {step !== "otp" && (
+          <>
+            {/* Title */}
+            <h1 className="h1 font-semibold text-white mb-2">
+              Sign up to AndAction
+            </h1>
 
-        {/* Subtitle */}
-        <p className="text-text-gray mb-8">
-          Create your account to discover and book perfect artists
-        </p>
+            {/* Subtitle */}
+            <p className="text-text-gray mb-8">
+              Create your account to discover and book perfect artists
+            </p>
+          </>
+        )}
 
         {/* Error Message */}
         {error && (
@@ -423,29 +430,34 @@ function SignUpContent() {
           <div className="space-y-6">
             <form onSubmit={handleContactSubmit} className="space-y-6">
               {contactType === "phone" ? (
-                <PhoneInput
-                  label="Mobile number"
-                  placeholder="Enter mobile number"
-                  value={phone}
-                  onChange={setPhone}
-                  onCountryChange={(country) =>
-                    setCountryCode(country.dialCode)
-                  }
-                  required
-                  disabled={isLoading}
-                  variant="filled"
-                />
+                <div>
+                  <label className="secondary-text  block mb-1">Mobile number</label>
+                  <PhoneInput
+                    placeholder="Enter mobile number"
+                    value={phone}
+                    onChange={setPhone}
+                    onCountryChange={(country) =>
+                      setCountryCode(country.dialCode)
+                    }
+                    required
+                    disabled={isLoading}
+                    variant="filled"
+                    className="secondary-text"
+                  />
+                </div>
               ) : (
-                <Input
-                  label="Email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  variant="filled"
-                />
+                <div>
+                  <label className="secondary-text block mb-1">Email*</label>
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    variant="filled"
+                  />
+                </div>
               )}
 
               <Button
@@ -462,7 +474,7 @@ function SignUpContent() {
               </Button>
 
               <div>
-                <span className="text-text-gray">
+                <span className="secondary-text text-text-gray">
                   Already have an account?{" "}
                 </span>
                 <Link
@@ -474,9 +486,9 @@ function SignUpContent() {
               </div>
 
               <div className="flex items-center my-6">
-                <div className="flex-1 border-t border-border-color"></div>
+                <div className="flex-1 border-t border-border-line"></div>
                 <span className="px-4 text-text-gray text-sm">Or</span>
-                <div className="flex-1 border-t border-border-color"></div>
+                <div className="flex-1 border-t border-border-line"></div>
               </div>
 
               <div className="space-y-3">
@@ -490,6 +502,7 @@ function SignUpContent() {
                   }
                   disabled={isLoading}
                 >
+                  <span className="btn2">Sign up with Google</span>
                   Sign up with {contactType === "phone" ? "Email" : "Phone"}
                 </Button>
 
@@ -519,7 +532,7 @@ function SignUpContent() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  Sign up with Google
+                  <span className="btn2">Sign up with Google</span>
                 </Button>
 
                 <Button
@@ -533,7 +546,7 @@ function SignUpContent() {
                   <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                   </svg>
-                  Signup with Facebook
+                  <span className="btn2">Signup with Facebook</span>
                 </Button>
 
                 {/*<Button
@@ -556,15 +569,15 @@ function SignUpContent() {
           /* OTP Verification Step */
           <div className="space-y-6">
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="h1">
                 OTP Verification
               </h2>
               <div className=" flex flex-col gap-2">
-                <p className="text-text-gray text-sm">
+                <p className="secondary-grey-text text-text-gray">
                   Enter the 6-digit code sent to you at{" "}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="text-white">
+                  <span className="text-text-gray">
                     {contactType === "phone"
                       ? `${phone.slice(0, 2)}******${phone.slice(-3)}`
                       : `${email.slice(0, 2)}****@${email.split("@")[1]}`}
@@ -572,7 +585,7 @@ function SignUpContent() {
                   <button
                     type="button"
                     onClick={handleChangeContact}
-                    className="text-white text-sm hover:text-primary-pink transition-colors duration-200 underline"
+                    className="text-[var(--color-white)] hover:text-primary-pink transition-colors duration-200 font-medium underline btn2 text-2xl"
                   >
                     Change {contactType === "phone" ? "number" : "email"}
                   </button>
@@ -619,7 +632,7 @@ function SignUpContent() {
             {/* Progress Indicator */}
             <div className="space-y-3">
               <div className="w-full bg-[#2D2D2D] rounded-full h-1">
-                <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-1/3"></div>
+                <div className="bg-linear-to-r from-primary-pink to-primary-orange h-1 rounded-full w-1/3"></div>
               </div>
               <div className="flex items-center gap-3 my-3">
                 <button
@@ -652,7 +665,7 @@ function SignUpContent() {
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <PasswordInput
-                label="Password"
+                label="Password*"
                 placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -696,7 +709,7 @@ function SignUpContent() {
               )}
 
               <PasswordInput
-                label="Confirm Password"
+                label="Confirm Password*"
                 placeholder="Enter password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -724,7 +737,7 @@ function SignUpContent() {
             {/* Progress Indicator */}
             <div className="space-y-3">
               <div className="w-full bg-[#2D2D2D] rounded-full h-1">
-                <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-2/3"></div>
+                <div className="bg-linear-to-r from-primary-pink to-primary-orange h-1 rounded-full w-2/3"></div>
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -954,7 +967,7 @@ function SignUpContent() {
             {/* Progress Indicator */}
             <div className="space-y-3">
               <div className="w-full bg-[#2D2D2D] rounded-full h-1">
-                <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-full"></div>
+                <div className="bg-linear-to-r from-primary-pink to-primary-orange h-1 rounded-full w-full"></div>
               </div>
               <div className="flex items-center gap-3">
                 <button

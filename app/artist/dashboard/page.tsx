@@ -68,36 +68,36 @@ export default function ArtistDashboard() {
   const { data: session, status } = useSession();
 
   const [loading, setLoading] = useState(true);
-  const [bookings, setBookings] =
-    useState<BookingStatusMap>(defaultBookingsState);
+  const [bookings, setBookings] = useState<BookingStatusMap>(defaultBookingsState);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // 'desc' = Newest first
 
   /* ----------------------------------------------------
      FETCH BOOKINGS
   ---------------------------------------------------- */
   const getBookings = async () => {
-  try {
-    const response = await fetch("/api/bookings");
-    const json = await response.json();
+    try {
+      const response = await fetch("/api/bookings");
+      const json = await response.json();
 
-    const bookingsGrouped: BookingStatusMap = {
-      PENDING: [],
-      APPROVED: [],
-      DECLINED: [],
-      CANCELLED: [],
-      COMPLETED: [],
-    };
+      const bookingsGrouped: BookingStatusMap = {
+        PENDING: [],
+        APPROVED: [],
+        DECLINED: [],
+        CANCELLED: [],
+        COMPLETED: [],
+      };
 
-    json.data.bookings.forEach((booking: Booking) => {
-      bookingsGrouped[booking.status].push(booking);
-    });
+      json.data.bookings.forEach((booking: Booking) => {
+        bookingsGrouped[booking.status].push(booking);
+      });
 
-    setBookings(bookingsGrouped);
-  } catch (err) {
-    console.error("Unable to fetch bookings", err);
-  } finally {
-    setLoading(false);
-  }
-};
+      setBookings(bookingsGrouped);
+    } catch (err) {
+      console.error("Unable to fetch bookings", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   /* ----------------------------------------------------
@@ -260,10 +260,21 @@ export default function ArtistDashboard() {
         <div className="flex-1 p-5">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-white h1">Leads / Bookings</h1>
-
-            <button className="flex items-center gap-1 bg-[#262626] py-2 px-4 border-[1.5px] border-border-color rounded-full btn2">
-              <span className="gradient-text">Sort by</span>
-              <Image src="/icons/up-down.svg" width={18} height={18} alt="" />
+            <button
+              className="flex items-center gap-1 bg-[#262626] py-2 px-4 border-[1.5px] border-border-color rounded-full btn2"
+              onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+              title="Sort by event date"
+            >
+              <span className="gradient-text">
+                Sort by: {sortOrder === 'desc' ? 'Newest' : 'Oldest'}
+              </span>
+              <Image
+                src="/icons/up-down.svg"
+                width={18}
+                height={18}
+                alt="Sort"
+                style={{ transform: sortOrder === 'desc' ? 'rotate(0deg)' : 'rotate(180deg)' }}
+              />
             </button>
           </div>
 
@@ -280,8 +291,15 @@ export default function ArtistDashboard() {
             {(
               ["APPROVED", "PENDING", "COMPLETED", "CANCELLED", "DECLINED"] as const
             ).map((status) => {
-              const bookingsList = bookings[status];
+              let bookingsList = bookings[status];
               if (bookingsList.length === 0) return null;
+
+              // Sort by eventDate
+              bookingsList = [...bookingsList].sort((a, b) => {
+                const dateA = new Date(a.eventDate).getTime();
+                const dateB = new Date(b.eventDate).getTime();
+                return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+              });
 
               const sectionTitle =
                 status.charAt(0) + status.slice(1).toLowerCase();
@@ -307,16 +325,16 @@ export default function ArtistDashboard() {
                         date={formatDate(booking.eventDate)}
                         eventType={booking.eventType}
                         description={booking.notes}
-                        onReject={() =>
-                          status === "PENDING"
-                            ? updateBookingStateLocal(booking.id, "DECLINED")
-                            : null
-                        }
-                        onAccept={() =>
-                          status === "PENDING"
-                            ? updateBookingStateLocal(booking.id, "APPROVED")
-                            : null
-                        }
+                        onReject={() => {
+                          if (booking.status === "PENDING") {
+                            updateBookingStateLocal(booking.id, "DECLINED");
+                          }
+                        }}
+                        onAccept={() => {
+                          if (booking.status === "PENDING") {
+                            updateBookingStateLocal(booking.id, "APPROVED");
+                          }
+                        }}
                       />
                     ))}
                   </div>

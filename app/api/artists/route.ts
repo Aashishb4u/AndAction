@@ -40,6 +40,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const lng = parseFloat(searchParams.get("lng") || "");
 
     // ---------------------------
+    // COUNT ONLY MODE (for filter preview)
+    // ---------------------------
+    const countOnly = searchParams.get("countOnly") === "true";
+
+    // ---------------------------
     // PAGINATION
     // ---------------------------
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
@@ -74,11 +79,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // ---------------------------
     const where: Prisma.ArtistWhereInput = {};
 
-    // 🔍 SEARCH (name or bio)
+    // 🔍 SEARCH (name, bio, or user firstName/lastName)
     if (search) {
       where.OR = [
         { stageName: { contains: search, mode: "insensitive" } },
         { shortBio: { contains: search, mode: "insensitive" } },
+        { user: { is: { firstName: { contains: search, mode: "insensitive" } } } },
+        { user: { is: { lastName: { contains: search, mode: "insensitive" } } } },
       ];
     }
 
@@ -184,6 +191,23 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // QUERY DATABASE
     // ---------------------------
     const totalArtists = await prisma.artist.count({ where });
+
+    // If countOnly mode, return just the count
+    if (countOnly) {
+      return successResponse(
+        {
+          count: totalArtists,
+          metadata: {
+            total: totalArtists,
+            page,
+            limit,
+            totalPages: Math.ceil(totalArtists / limit),
+          },
+        },
+        "Artist count retrieved successfully.",
+        200
+      );
+    }
 
     const artists = await prisma.artist.findMany({
       where,

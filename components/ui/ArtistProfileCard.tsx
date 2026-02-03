@@ -20,7 +20,6 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   className = "",
 }) => {
   const router = useRouter();
-  
   const formatPrice = (price: number) => {
     return `₹ ${price.toLocaleString()}`;
   };
@@ -41,16 +40,17 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         className={`md:bg-card relative rounded-2xl overflow-hidden hover:bg-gray-800/50 transition-all duration-300 cursor-pointer ${className}`}
         onClick={handleClick}
       >
-        <div className="flex p-4 gap-4">
+        <div className="flex py-4 px-2 gap-4 items-start">
           {/* Artist Image */}
           <div className="relative w-28 h-36 rounded-xl overflow-hidden flex-shrink-0">
             <Image
-
-                  src={
-                      artist.image && /^\d+$/.test(String(artist.image))
-                        ? `/avatars/${artist.image}.png`
-                        : artist.image || "/default-avatar.png"
-                    }
+              src={
+                artist.image && artist.image.trim() !== ""
+                  ? /^\d+$/.test(String(artist.image))
+                    ? `/avatars/${artist.image}.png`
+                    : artist.image
+                  : "/avatars/placeholder.png"
+              }
               alt={artist.name}
               fill
               className="object-cover"
@@ -61,18 +61,14 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
           {/* Artist Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between relative">
-              <h3 className="btn1 text-white truncate pr-2">
-                {artist.name}
-              </h3>
+            <div className="flex items-start justify-between mb-2 gap-2">
+              <h3 className="btn1 text-white flex-1 line-clamp-2 artist-name-multiline leading-tight">{artist.name}</h3>
               <button
                 onClick={handleBookmarkClick}
-                className="p-2 hover:bg-gray-700 rounded-full bg-card border border-border-color transition-colors flex-shrink-0 absolute top-0 right-0"
+                className="p-2 rounded-full bg-black/50 hover:bg-black/70 border border-gray-600 transition-colors flex-shrink-0 text-white"
+                style={{ minWidth: '36px', minHeight: '36px' }}
               >
-                <Bookmark
-                  className="w-5 h-5"
-                  active={artist.isBookmarked}
-                />
+                <Bookmark className="w-5 h-5" active={artist.isBookmarked} />
               </button>
             </div>
 
@@ -86,20 +82,25 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
             </div>
 
             <div className="flex items-center gap-1.5 mb-1 secondary-text text-text-gray">
+              <Image
+                src="/icons/ruppe.svg"
+                alt="Ruppe"
+                width={16}
+                height={16}
+              />
 
-              <Image src="/icons/ruppe.svg" alt="Ruppe" width={16} height={16} />
-
-              <span>
-                Starting price - {formatPrice(artist.startingPrice)}
-              </span>
+              <span>Starting price - {formatPrice(artist.startingPrice)}</span>
             </div>
 
             <div className="flex items-center gap-1.5 mb-1 secondary-text text-text-gray">
-              <Image src="/icons/language.svg" alt="Language" width={16} height={16} />
+              <Image
+                src="/icons/language.svg"
+                alt="Language"
+                width={16}
+                height={16}
+              />
 
-              <span>
-                {artist.languages.join(", ")}
-              </span>
+              <span>{artist.languages.join(", ")}</span>
             </div>
           </div>
         </div>
@@ -118,7 +119,13 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       {/* Artist Image - Full Background */}
       <div className="relative aspect-[6/8] overflow-hidden">
         <Image
-          src={artist.image}
+          src={
+            artist.image && artist.image.trim() !== ""
+              ? /^\d+$/.test(String(artist.image))
+                ? `/avatars/${artist.image}.png`
+                : artist.image
+              : "/avatars/placeholder.png"
+          }
           alt={artist.name}
           fill
           className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -131,10 +138,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
           onClick={handleBookmarkClick}
           className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full backdrop-blur-sm bookmark-btn z-10"
         >
-          <Bookmark
-            className="w-5 h-5"
-            active={artist.isBookmarked}
-          />
+          <Bookmark className="w-5 h-5" active={artist.isBookmarked} />
         </button>
 
         {/* Bottom Gradient Overlay */}
@@ -198,7 +202,13 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <Image src="/icons/language.svg" alt="Language" width={16} height={16} className="brightness-0 invert" />
+              <Image
+                src="/icons/language.svg"
+                alt="Language"
+                width={16}
+                height={16}
+                className="brightness-0 invert"
+              />
               <span className="secondary-text line-clamp-1">
                 {artist.languages.join(", ")}
               </span>

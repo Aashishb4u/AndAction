@@ -112,7 +112,6 @@ export async function GET(request: NextRequest) {
     }
 
     const tokens: TokenResponse = await tokenResponse.json();
-
     // Get the user's YouTube channel info
     const channelResponse = await fetch(
       "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true",
@@ -123,6 +122,7 @@ export async function GET(request: NextRequest) {
       }
     );
 
+    const channelData: YouTubeChannelResponse = await channelResponse.json();
     if (!channelResponse.ok) {
       console.error("Failed to fetch channel info");
       return NextResponse.redirect(
@@ -133,7 +133,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const channelData: YouTubeChannelResponse = await channelResponse.json();
     const channel = channelData.items?.[0];
 
     if (!channel) {

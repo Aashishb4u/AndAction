@@ -1,203 +1,466 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Select from '@/components/ui/Select';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
-import { Info } from 'lucide-react';
-import { Artist } from '@/types';
+import React, { useState } from "react";
+import Select from "@/components/ui/Select";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+import Tooltip from "@/components/ui/Tooltip";
+import { Info } from "lucide-react";
+import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
-import { mapUserForSession, updateArtistProfile } from '@/lib/helper';
+import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
+import { toast } from "react-toastify";
 
 interface PerformanceTabProps {
   artist: Artist;
 }
 
 const performingLanguageOptions = [
-  { value: 'hindi', label: 'Hindi' },
-  { value: 'english', label: 'English' },
-  { value: 'marathi', label: 'Marathi' },
-  { value: 'gujarati', label: 'Gujarati' },
-  { value: 'tamil', label: 'Tamil' },
-  { value: 'telugu', label: 'Telugu' },
-  { value: 'bengali', label: 'Bengali' },
-  { value: 'punjabi', label: 'Punjabi' }
+  { value: "hindi", label: "Hindi" },
+  { value: "english", label: "English" },
+  { value: "marathi", label: "Marathi" },
+  { value: "gujarati", label: "Gujarati" },
+  { value: "tamil", label: "Tamil" },
+  { value: "telugu", label: "Telugu" },
+  { value: "bengali", label: "Bengali" },
+  { value: "punjabi", label: "Punjabi" },
 ];
 
 const eventTypeOptions = [
-  { value: 'wedding', label: 'Wedding' },
-  { value: 'corporate', label: 'Corporate Event' },
-  { value: 'birthday', label: 'Birthday Party' },
-  { value: 'festival', label: 'Festival' },
-  { value: 'concert', label: 'Concert' },
-  { value: 'private-party', label: 'Private Party' },
-  { value: 'cultural', label: 'Cultural Event' },
-  { value: 'religious', label: 'Religious Event' }
+  { value: "wedding", label: "Wedding" },
+  { value: "corporate", label: "Corporate Event" },
+  { value: "birthday", label: "Birthday Party" },
+  { value: "festival", label: "Festival" },
+  { value: "concert", label: "Concert" },
+  { value: "private-party", label: "Private Party" },
+  { value: "cultural", label: "Cultural Event" },
+  { value: "religious", label: "Religious Event" },
 ];
 
 const performingStatesOptions = [
-  { value: 'gujarat-rajasthan-maharashtra', label: 'Gujarat, Rajasthan, Maharashtra' },
-  { value: 'gujarat-maharashtra', label: 'Gujarat, Maharashtra' },
-  { value: 'gujarat-rajasthan', label: 'Gujarat, Rajasthan' },
-  { value: 'gujarat', label: 'Gujarat' },
-  { value: 'rajasthan', label: 'Rajasthan' },
-  { value: 'maharashtra', label: 'Maharashtra' },
+  { value: "maharashtra", label: "Maharashtra" },
+  { value: "delhi", label: "Delhi" },
+  { value: "karnataka", label: "Karnataka" },
+  { value: "tamil-nadu", label: "Tamil Nadu" },
+  { value: "gujarat", label: "Gujarat" },
+  { value: "rajasthan", label: "Rajasthan" },
+  { value: "uttar-pradesh", label: "Uttar Pradesh" },
+  { value: "west-bengal", label: "West Bengal" },
+  { value: "punjab", label: "Punjab" },
+  { value: "haryana", label: "Haryana" },
 ];
 
 const performingMembersOptions = [
-  { value: '1', label: '1 member' },
-  { value: '2', label: '2 members' },
-  { value: '3', label: '3 members' },
-  { value: '4', label: '4 members' },
-  { value: '5', label: '5+ members' },
+  { value: "1", label: "1 member" },
+  { value: "2", label: "2 members" },
+  { value: "3", label: "3 members" },
+  { value: "4", label: "4 members" },
+  { value: "5", label: "5+ members" },
 ];
 
 const offStageMembersOptions = [
-  { value: '0', label: '0 members' },
-  { value: '1', label: '1 member' },
-  { value: '2', label: '2 members' },
-  { value: '3', label: '3 members' },
-  { value: '4', label: '4+ members' },
+  { value: "0", label: "0 members" },
+  { value: "1", label: "1 member" },
+  { value: "2", label: "2 members" },
+  { value: "3", label: "3 members" },
+  { value: "4", label: "4+ members" },
 ];
+
+// Helper function to parse comma-separated string to array
+const parseCSV = (value: string | undefined | null): string[] => {
+  if (!value) return [];
+  return value.split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
+};
 
 const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
   const { data: session, update } = useSession();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Dropdown visibility states
+  const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
+  const [showEventTypesDropdown, setShowEventTypesDropdown] = useState(false);
+  const [showStatesDropdown, setShowStatesDropdown] = useState(false);
+
   const [formData, setFormData] = useState({
-    performingLanguage: artist.performingLanguage || "",
-    eventType: artist.performingEventType || "",
-    performingStates: artist.performingStates
-    ? artist.performingStates.charAt(0).toUpperCase() +
-      artist.performingStates.slice(1).toLowerCase()
-    : "",
+    performingLanguages: parseCSV(artist.performingLanguage),
+    eventTypes: parseCSV(artist.performingEventType),
+    performingStates: parseCSV(artist.performingStates),
     minDuration: artist.performingDurationFrom || "",
     maxDuration: artist.performingDurationTo || "",
     performingMembers: artist.performingMembers || "",
     offStageMembers: artist.offStageMembers || "",
   });
 
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+  const handleInputChange = (field: string, value: string | string[]) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
-  const handleSave = async () => {
-  try {
-    if (!session?.user?.id) {
-      alert("Not authenticated");
-      return;
+  // Toggle language selection
+  const toggleLanguageSelection = (langValue: string) => {
+    const current = formData.performingLanguages;
+    let updated: string[];
+    if (current.includes(langValue)) {
+      updated = current.filter((l) => l !== langValue);
+    } else {
+      updated = [...current, langValue];
     }
+    handleInputChange("performingLanguages", updated);
+  };
 
-    const payload = {
-      userId: session.user.id,
+  // Toggle all languages
+  const toggleAllLanguages = () => {
+    const allValues = performingLanguageOptions.map((l) => l.value);
+    if (formData.performingLanguages.length === performingLanguageOptions.length) {
+      handleInputChange("performingLanguages", []);
+    } else {
+      handleInputChange("performingLanguages", allValues);
+    }
+  };
 
-      performingLanguage: formData.performingLanguage,
-      performingEventType: formData.eventType,
-      performingStates: formData.performingStates,
-      performingDurationFrom: formData.minDuration,
-      performingDurationTo: formData.maxDuration,
-      performingMembers: formData.performingMembers,
-      offStageMembers: formData.offStageMembers,
-    };
+  // Toggle event type selection
+  const toggleEventTypeSelection = (eventValue: string) => {
+    const current = formData.eventTypes;
+    let updated: string[];
+    if (current.includes(eventValue)) {
+      updated = current.filter((e) => e !== eventValue);
+    } else {
+      updated = [...current, eventValue];
+    }
+    handleInputChange("eventTypes", updated);
+  };
 
-    // 1️⃣ Update DB
-    const res = await updateArtistProfile(payload);
+  // Toggle all event types
+  const toggleAllEventTypes = () => {
+    const allValues = eventTypeOptions.map((e) => e.value);
+    if (formData.eventTypes.length === eventTypeOptions.length) {
+      handleInputChange("eventTypes", []);
+    } else {
+      handleInputChange("eventTypes", allValues);
+    }
+  };
 
-    const refreshedUser = res.data.user;
-    const refreshedArtist = res.data.artistProfile;
+  // Toggle state selection
+  const toggleStateSelection = (stateValue: string) => {
+    const current = formData.performingStates;
+    let updated: string[];
+    if (current.includes(stateValue)) {
+      updated = current.filter((s) => s !== stateValue);
+    } else {
+      updated = [...current, stateValue];
+    }
+    handleInputChange("performingStates", updated);
+  };
 
-    // 2️⃣ Build the correct NextAuth structure:
-    const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
+  // Toggle PAN India (all states)
+  const togglePanIndia = () => {
+    const allValues = performingStatesOptions.map((s) => s.value);
+    if (formData.performingStates.length === performingStatesOptions.length) {
+      handleInputChange("performingStates", []);
+    } else {
+      handleInputChange("performingStates", allValues);
+    }
+  };
 
-    // 3️⃣ Update session
-    await update({
-      update: sessionPayload
-    });
+  const handleSave = async () => {
+    try {
+      if (!session?.user?.id) {
+        toast.error("Not authenticated");
+        return;
+      }
 
-    alert("Performance details updated!");
+      setIsLoading(true);
 
-  } catch (error) {
-    console.error(error);
-    alert("Failed to update performance details");
-  }
-};
+      // Join arrays to comma-separated strings for storage
+      const payload = {
+        userId: session.user.id,
+        performingLanguage: formData.performingLanguages.join(","),
+        performingEventType: formData.eventTypes.join(","),
+        performingStates: formData.performingStates.join(","),
+        performingDurationFrom: formData.minDuration,
+        performingDurationTo: formData.maxDuration,
+        performingMembers: formData.performingMembers,
+        offStageMembers: formData.offStageMembers,
+      };
 
+      // 1️⃣ Update DB
+      const res = await updateArtistProfile(payload);
+
+      const refreshedUser = res.data.user;
+      const refreshedArtist = res.data.artistProfile;
+
+      // 2️⃣ Build the correct NextAuth structure:
+      const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
+
+      // 3️⃣ Update session
+      await update({
+        update: sessionPayload,
+      });
+
+      toast.success("Performance details updated!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update performance details");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleReset = () => {
     setFormData({
-      performingLanguage: 'english-hindi-gujarati',
-      eventType: 'party-concert-events',
-      performingStates: 'gujarat-rajasthan-maharashtra',
-      minDuration: '120',
-      maxDuration: '160',
-      performingMembers: '2',
-      offStageMembers: '0',
+      performingLanguages: ["english", "hindi", "gujarati"],
+      eventTypes: ["party", "concert", "events"],
+      performingStates: ["gujarat", "rajasthan", "maharashtra"],
+      minDuration: "120",
+      maxDuration: "160",
+      performingMembers: "2",
+      offStageMembers: "0",
     });
   };
 
   return (
     <div className="md:space-y-5 space-y-4 pb-24 md:pb-0">
-      {/* Performing Language */}
+      {/* Performing Language - Multi-select */}
       <div className="relative">
-        <Select
-          label="Performing language"
-          options={performingLanguageOptions}
-          value={formData.performingLanguage}
-          onChange={(value) => handleInputChange('performingLanguage', value)}
-          required
-        />
-        <Info size={16} className="absolute top-0 right-0 text-blue" />
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">Performing language*</label>
+          <Tooltip content="Select the languages you can perform in during your shows">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+        
+        {/* Selected values display */}
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+          <span className={formData.performingLanguages.length > 0 ? "text-white" : "text-text-gray"}>
+            {formData.performingLanguages.length > 0
+              ? formData.performingLanguages
+                  .map((val) => performingLanguageOptions.find((opt) => opt.value === val)?.label || val)
+                  .join(", ")
+              : "No languages selected"}
+          </span>
+        </div>
+
+        {/* Trigger button */}
+        <button
+          type="button"
+          onClick={() => setShowLanguagesDropdown(!showLanguagesDropdown)}
+          className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
+        >
+          <span className="text-text-gray">Select languages</span>
+          <svg
+            className={`w-5 h-5 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Dropdown */}
+        {showLanguagesDropdown && (
+          <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-64 overflow-auto">
+            {/* All Languages checkbox */}
+            <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
+              <input
+                type="checkbox"
+                checked={formData.performingLanguages.length === performingLanguageOptions.length}
+                onChange={toggleAllLanguages}
+                className="w-4 h-4 accent-primary-pink rounded"
+              />
+              <span className="text-white font-medium">All Languages</span>
+            </label>
+            
+            {/* Individual language checkboxes */}
+            {performingLanguageOptions.map((language) => (
+              <label
+                key={language.value}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.performingLanguages.includes(language.value)}
+                  onChange={() => toggleLanguageSelection(language.value)}
+                  className="w-4 h-4 accent-primary-pink rounded"
+                />
+                <span className="text-white text-sm">{language.label}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Performing Event Type */}
+      {/* Performing Event Type - Multi-select */}
       <div className="relative">
-        <Select
-          label="Performing event type"
-          options={eventTypeOptions}
-          value={formData.eventType}
-          onChange={(value) => handleInputChange('eventType', value)}
-          required
-        />
-        <Info size={16} className="absolute top-0 right-0 text-blue" />
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">Performing event type*</label>
+          <Tooltip content="Choose the types of events where you typically perform">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+        
+        {/* Selected values display */}
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+          <span className={formData.eventTypes.length > 0 ? "text-white" : "text-text-gray"}>
+            {formData.eventTypes.length > 0
+              ? formData.eventTypes
+                  .map((val) => eventTypeOptions.find((opt) => opt.value === val)?.label || val)
+                  .join(", ")
+              : "No event types selected"}
+          </span>
+        </div>
+
+        {/* Trigger button */}
+        <button
+          type="button"
+          onClick={() => setShowEventTypesDropdown(!showEventTypesDropdown)}
+          className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
+        >
+          <span className="text-text-gray">Select event types</span>
+          <svg
+            className={`w-5 h-5 text-text-gray transition-transform ${showEventTypesDropdown ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Dropdown */}
+        {showEventTypesDropdown && (
+          <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-64 overflow-auto">
+            {/* All Event Types checkbox */}
+            <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
+              <input
+                type="checkbox"
+                checked={formData.eventTypes.length === eventTypeOptions.length}
+                onChange={toggleAllEventTypes}
+                className="w-4 h-4 accent-primary-pink rounded"
+              />
+              <span className="text-white font-medium">All Event Types</span>
+            </label>
+            
+            {/* Individual event type checkboxes */}
+            {eventTypeOptions.map((eventType) => (
+              <label
+                key={eventType.value}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.eventTypes.includes(eventType.value)}
+                  onChange={() => toggleEventTypeSelection(eventType.value)}
+                  className="w-4 h-4 accent-primary-pink rounded"
+                />
+                <span className="text-white text-sm">{eventType.label}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Performing States */}
+      {/* Performing States - Multi-select */}
       <div className="relative">
-        <Input
-          label="Performing states"
-          value={formData.performingStates}
-          onChange={(e) => handleInputChange('performingStates', e.target.value)}
-          placeholder="Enter state(s)"
-          required
-        />
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">Performing states*</label>
+          <Tooltip content="Enter the states where you are willing to perform">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+        
+        {/* Selected values display */}
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+          <span className={formData.performingStates.length > 0 ? "text-white" : "text-text-gray"}>
+            {formData.performingStates.length > 0
+              ? formData.performingStates.length === performingStatesOptions.length
+                ? "PAN India (All States)"
+                : formData.performingStates
+                    .map((val) => performingStatesOptions.find((opt) => opt.value === val)?.label || val)
+                    .join(", ")
+              : "No states selected"}
+          </span>
+        </div>
 
-        <Info size={16} className="absolute top-0 right-0 text-blue" />
+        {/* Trigger button */}
+        <button
+          type="button"
+          onClick={() => setShowStatesDropdown(!showStatesDropdown)}
+          className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
+        >
+          <span className="text-text-gray">Select states</span>
+          <svg
+            className={`w-5 h-5 text-text-gray transition-transform ${showStatesDropdown ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Dropdown */}
+        {showStatesDropdown && (
+          <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-64 overflow-auto">
+            {/* PAN India checkbox */}
+            <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
+              <input
+                type="checkbox"
+                checked={formData.performingStates.length === performingStatesOptions.length}
+                onChange={togglePanIndia}
+                className="w-4 h-4 accent-primary-pink rounded"
+              />
+              <span className="text-white font-medium">PAN India</span>
+            </label>
+            
+            {/* Individual state checkboxes */}
+            {performingStatesOptions.map((state) => (
+              <label
+                key={state.value}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.performingStates.includes(state.value)}
+                  onChange={() => toggleStateSelection(state.value)}
+                  className="w-4 h-4 accent-primary-pink rounded"
+                />
+                <span className="text-white text-sm">{state.label}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Performing Duration */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-white">
-          Performing duration <span className="text-text-gray">(in minutes)</span>
+          Performing duration{" "}
+          <span className="text-text-gray">(in minutes)</span>
           <span className="text-red-500 ml-1">*</span>
         </label>
         <div className="relative">
           <div className="grid grid-cols-2 gap-6">
             <Input
               value={formData.minDuration}
-              onChange={(e) => handleInputChange('minDuration', e.target.value)}
+              onChange={(e) => handleInputChange("minDuration", e.target.value)}
               placeholder="120 mins"
               required
             />
             <Input
               value={formData.maxDuration}
-              onChange={(e) => handleInputChange('maxDuration', e.target.value)}
+              onChange={(e) => handleInputChange("maxDuration", e.target.value)}
               placeholder="160 mins"
               required
             />
           </div>
-          <Info size={16} className="absolute top-4 right-4 text-text-gray" />
+          <div className="absolute top-4 right-4">
+            <Tooltip content="Specify the minimum and maximum duration (in minutes) for your performances">
+              <Info size={16} className="text-text-gray" />
+            </Tooltip>
+          </div>
         </div>
       </div>
 
@@ -206,25 +469,33 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         {/* Performing Members */}
         <div className="relative">
           <Select
-            label="Performing members"
+            label="Performing members*"
             options={performingMembersOptions}
             value={formData.performingMembers}
-            onChange={(value) => handleInputChange('performingMembers', value)}
+            onChange={(value) => handleInputChange("performingMembers", value)}
             required
           />
-          <Info size={16} className="absolute top-0 right-0 text-blue" />
+          <div className="absolute top-0 right-0">
+            <Tooltip content="Number of people who will perform on stage">
+              <Info size={16} className="text-blue" />
+            </Tooltip>
+          </div>
         </div>
 
         {/* Off Stage Members */}
         <div className="relative">
           <Select
-            label="Off stage members"
+            label="Off stage members*"
             options={offStageMembersOptions}
             value={formData.offStageMembers}
-            onChange={(value) => handleInputChange('offStageMembers', value)}
+            onChange={(value) => handleInputChange("offStageMembers", value)}
             required
           />
-          <Info size={16} className="absolute top-0 right-0 text-blue" />
+          <div className="absolute top-0 right-0">
+            <Tooltip content="Number of support staff needed off-stage (sound engineers, assistants, etc.)">
+              <Info size={16} className="text-blue" />
+            </Tooltip>
+          </div>
         </div>
       </div>
 
@@ -233,18 +504,19 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         <Button
           variant="secondary"
           onClick={handleReset}
-          className='w-full md:w-auto text-xs! md:text-base'
-
+          disabled={isLoading}
+          className="w-full md:w-auto text-xs! md:text-base"
         >
-          <span className='gradient-text'>Reset</span>
+          <span className="gradient-text">Reset</span>
         </Button>
 
         <Button
           variant="primary"
           onClick={handleSave}
+          disabled={isLoading}
           className="w-full md:w-auto text-xs! md:text-base"
         >
-          Save Changes
+          {isLoading ? "Saving..." : "Save Changes"}
         </Button>
       </div>
     </div>

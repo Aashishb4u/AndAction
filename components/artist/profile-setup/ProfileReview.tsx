@@ -12,12 +12,30 @@ interface ProfileReviewProps {
   onEdit: (step: string) => void;
 }
 
+import { useState } from 'react';
+
 const ProfileReview: React.FC<ProfileReviewProps> = ({
   data,
   onNext,
   onBack,
   onEdit
 }) => {
+  const [error, setError] = useState<string | null>(null);
+
+  // Validate performance duration before submit
+  const handleNext = () => {
+    if (
+      data.performingDurationFrom &&
+      data.performingDurationTo &&
+      Number(data.performingDurationTo) < Number(data.performingDurationFrom)
+    ) {
+      setError('End time cannot be less than start time.');
+      return;
+    }
+    setError(null);
+    onNext();
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -39,6 +57,11 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
       {/* Content */}
       <div className="flex-1 md:px-6 pb-32">
         <div className="max-w-md mx-auto">
+          {error && (
+            <div className="mb-4 px-6">
+              <p className="text-red-500 text-sm font-semibold">{error}</p>
+            </div>
+          )}
           {/* Title */}
           <div className="md:text-center mb-8 px-6">
             <h2 className="h1 text-white mb-6">All done! Preview profile</h2>
@@ -257,7 +280,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div>
                   <p className="text-text-gray text-sm mb-1">Solo Charges</p>
                   <p className="text-white font-medium text-lg">
-                    ₹ {data.soloChargesFrom || '1,00,000'} - ₹ {data.soloChargesTo || '2,00,000'}
+                    Starting from ₹ {data.soloCharges || '1,00,000'}
                   </p>
                   <p className="text-twhite text-xs mt-1">
                     {data.soloDescription || 'Solo performance charges with sound system and lighting setup. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.'}
@@ -265,47 +288,12 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 </div>
 
                 <div>
-                  <p className="text-text-gray text-sm mb-1">Charges with backing</p>
+                  <p className="text-text-gray text-sm mb-1">Charges with backline</p>
                   <p className="text-white font-medium text-lg">
-                    ₹ {data.backingChargesFrom || '2,00,000'} - ₹ {data.backingChargesTo || '4,00,000'}
+                    Starting from ₹ {data.backingCharges || '2,00,000'}
                   </p>
                   <p className="text-white text-xs mt-1">
                     {data.backingDescription || 'Performance charges with full backing band, sound system and lighting setup. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Videos & Social Media Section */}
-            <div className="space-y-4">
-              {/* Section Header */}
-              <div className="bg-card border-y border-border-color px-6 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-white h2">Videos & Social media</h3>
-                  </div>
-                  <Image onClick={() => onEdit('videosSocial')} src="/icons/edit.svg" alt="Verified" width={25} height={25} />
-
-                </div>
-              </div>
-
-              {/* Social Media Content */}
-              <div className="space-y-3 text-sm px-6">
-                <div>
-                  <p className="text-text-gray mb-1">YouTube Channel</p>
-                  <p className="text-white">
-                    {data.youtubeConnected ? 'Connected' : 'Not connected'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-text-gray mb-1">Instagram Account</p>
-                  <p className="text-white">
-                    {data.instagramConnected ? 'Connected' : 'Not connected'}
                   </p>
                 </div>
               </div>
@@ -320,7 +308,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
           <Button
             variant="primary"
             size="md"
-            onClick={onNext}
+            onClick={handleNext}
             className="w-full"
           >
             Submit

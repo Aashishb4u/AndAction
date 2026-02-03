@@ -147,7 +147,7 @@ function ArtistAuthContent() {
 
         if (!codeToSend || !cleanedPhoneNumber) {
           throw new Error(
-            "Please enter a valid phone number and select a country code."
+            "Please enter a valid phone number and select a country code.",
           );
         }
 
@@ -162,7 +162,9 @@ function ArtistAuthContent() {
 
         const data = await response.json();
         if (!response.ok)
-          throw new Error(data.error || data.message || "Failed to send verification code.");
+          throw new Error(
+            data.error || data.message || "Failed to send verification code.",
+          );
         setStep("otp");
       } else {
         const emailToSend = email.toLowerCase().trim();
@@ -177,13 +179,15 @@ function ArtistAuthContent() {
 
         const data = await response.json();
         if (!response.ok)
-          throw new Error(data.error || data.message || "Failed to send verification email.");
+          throw new Error(
+            data.error || data.message || "Failed to send verification email.",
+          );
         setStep("otp");
       }
     } catch (err: any) {
       console.error("Send OTP error:", err);
       setError(
-        err.message || "Failed to send verification code. Please try again."
+        err.message || "Failed to send verification code. Please try again.",
       );
     } finally {
       setIsLoading(false);
@@ -210,7 +214,9 @@ function ArtistAuthContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || "Invalid verification code.");
+        throw new Error(
+          data.error || data.message || "Invalid verification code.",
+        );
       }
 
       // move to password step for artist (per requested flow)
@@ -301,7 +307,9 @@ function ArtistAuthContent() {
       console.log("📥 Signup response:", data);
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || data.message || "Failed to create artist account.");
+        throw new Error(
+          data.error || data.message || "Failed to create artist account.",
+        );
       }
 
       console.log("✅ Artist signup successful");
@@ -339,7 +347,7 @@ function ArtistAuthContent() {
         }
       } else {
         console.warn(
-          "⚠️ Missing contactIdentifier or password for auto Sign In."
+          "⚠️ Missing contactIdentifier or password for auto Sign In.",
         );
       }
 
@@ -348,7 +356,7 @@ function ArtistAuthContent() {
     } catch (err: any) {
       console.error("❌ Artist signup error:", err);
       setError(
-        err.message || "Failed to complete registration. Please try again."
+        err.message || "Failed to complete registration. Please try again.",
       );
     } finally {
       setIsLoading(false);
@@ -377,7 +385,7 @@ function ArtistAuthContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.error || data.message || "Failed to resend verification code."
+            data.error || data.message || "Failed to resend verification code.",
           );
         setError("A new verification code has been sent.");
         setOtp("");
@@ -391,7 +399,9 @@ function ArtistAuthContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.error || data.message || "Failed to resend verification email."
+            data.error ||
+              data.message ||
+              "Failed to resend verification email.",
           );
         setError("A new verification code has been sent to your email.");
         setOtp("");
@@ -399,7 +409,7 @@ function ArtistAuthContent() {
     } catch (err: any) {
       console.error("Resend OTP error:", err);
       setError(
-        err.message || "Failed to resend verification code. Please try again."
+        err.message || "Failed to resend verification code. Please try again.",
       );
     } finally {
       setIsLoading(false);
@@ -433,39 +443,35 @@ function ArtistAuthContent() {
 
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
-      {/* Close Button */}
-      <button
-        onClick={() => router.push("/")}
-        className="absolute top-6 right-6 p-2 text-white transition-colors duration-200"
-        aria-label="Close"
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      {/* Header with Logo and Close Button */}
+      <div className="flex justify-between items-center mr-4 ml-4 pt-4">
+        <Image
+          src="/logo.png"
+          alt="ANDACTION Logo"
+          className="h-8 object-contain" width={150} height={24}
+        />
+        <button
+          onClick={() => router.push("/")}
+          className="p-2 text-white transition-colors duration-200"
+          aria-label="Close"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
 
       <div className="md:p-8 p-5">
-        {/* Logo */}
-        <div className="mb-8">
-          <Image
-            src="/logo.png"
-            alt="ANDACTION Logo"
-            className="h-8 object-contain"
-            width={150}
-            height={32}
-          />
-        </div>
-
         {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
@@ -477,7 +483,7 @@ function ArtistAuthContent() {
         {step === "join" ? (
           <>
             {/* Title */}
-            <h1 className="h1 text-white mb-2">Join as a Artist</h1>
+            <h1 className="h1 text-white mb-2">Join as an Artist</h1>
 
             {/* Subtitle */}
             <p className="text-text-gray mb-8">
@@ -487,8 +493,9 @@ function ArtistAuthContent() {
             <div className="space-y-6">
               <form onSubmit={handleJoinSubmit} className="space-y-6">
                 {contactType === "phone" ? (
+                  <div>
+                    <label className="secondary-text  block mb-1">Mobile number</label>
                   <PhoneInput
-                    label="Mobile number"
                     placeholder="Enter mobile number"
                     value={phone}
                     onChange={setPhone}
@@ -500,9 +507,11 @@ function ArtistAuthContent() {
                     variant="filled"
                     id="phoneNumber"
                   />
+                  </div>
                 ) : (
+                  <div>
+                    <label className="secondary-text  block mb-1">Email</label>
                   <Input
-                    label="Email"
                     type="email"
                     placeholder="Enter your email"
                     value={email}
@@ -512,6 +521,7 @@ function ArtistAuthContent() {
                     variant="filled"
                     id="email"
                   />
+                  </div>
                 )}
 
                 <Button
@@ -526,11 +536,21 @@ function ArtistAuthContent() {
                 >
                   {isLoading ? "Sending..." : "Continue"}
                 </Button>
-
+                <div>
+                  <span className="secondary-text text-text-gray">
+                    Already have an account?{" "}
+                  </span>
+                  <Link
+                    href="/auth/signin"
+                    className="text-white underline hover:text-primary-pink transition-colors duration-200 btn2"
+                  >
+                    Sign In
+                  </Link>
+                </div>
                 {/* Divider */}
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border-color" />
+                    <div className="w-full border-t border-border-line" />
                   </div>
                   <div className="relative flex justify-center text-sm">
                     <span className="px-4 bg-background text-text-gray">
@@ -548,7 +568,7 @@ function ArtistAuthContent() {
                     className="w-full"
                     onClick={() =>
                       setContactType(
-                        contactType === "phone" ? "email" : "phone"
+                        contactType === "phone" ? "email" : "phone",
                       )
                     }
                     disabled={isLoading}
@@ -560,7 +580,7 @@ function ArtistAuthContent() {
                     type="button"
                     variant="secondary"
                     size="md"
-                    className="w-full flex items-center justify-center gap-3"
+                    className="w-full flex items-center justify-center gap-3 se"
                     onClick={() => handleSocialSignUp("google")}
                     disabled={isLoading}
                   >
@@ -582,7 +602,7 @@ function ArtistAuthContent() {
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                       />
                     </svg>
-                    Sign up with Google
+                    <span className="btn2">Sign up with Google</span>
                   </Button>
 
                   <Button
@@ -596,7 +616,7 @@ function ArtistAuthContent() {
                     <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
                       <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                     </svg>
-                    Sign up with Facebook
+                    <span className="btn2">Sign up with Facebook</span>
                   </Button>
                 </div>
               </form>
@@ -617,8 +637,8 @@ function ArtistAuthContent() {
                   <span className="text-text-gray section-text">
                     {contactType === "phone"
                       ? `${countryCode.replace("+", "")}******${phone.slice(
-                        -3
-                      )}`
+                          -3,
+                        )}`
                       : `${email.slice(0, 2)}****@${email.split("@")[1]}`}
                   </span>
                   <button
@@ -671,7 +691,7 @@ function ArtistAuthContent() {
             {/* Progress Indicator */}
             <div className="space-y-3">
               <div className="w-full bg-[#2D2D2D] rounded-full h-1">
-                <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-1/3"></div>
+                <div className="bg-linear-to-r from-primary-pink to-primary-orange h-1 rounded-full w-1/3"></div>
               </div>
               <div className="flex items-center gap-3 my-3">
                 <button
@@ -704,7 +724,7 @@ function ArtistAuthContent() {
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <PasswordInput
-                label="Password"
+                label="Password*"
                 placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -721,23 +741,26 @@ function ArtistAuthContent() {
                       Password Strength:
                     </span>
                     <span
-                      className={`text-sm font-medium ${getPasswordStrength(password).label === "Weak"
+                      className={`text-sm font-medium ${
+                        getPasswordStrength(password).label === "Weak"
                           ? "text-red-400"
                           : getPasswordStrength(password).label === "Medium"
                             ? "text-yellow-400"
                             : "text-green-400"
-                        }`}
+                      }`}
                     >
                       {getPasswordStrength(password).label}
                     </span>
                   </div>
                   <div className="w-full bg-[#2D2D2D] rounded-full h-1">
                     <div
-                      className={`${getPasswordStrength(password).color
-                        } h-1 rounded-full transition-all duration-300`}
+                      className={`${
+                        getPasswordStrength(password).color
+                      } h-1 rounded-full transition-all duration-300`}
                       style={{
-                        width: `${(getPasswordStrength(password).strength / 6) * 100
-                          }%`,
+                        width: `${
+                          (getPasswordStrength(password).strength / 6) * 100
+                        }%`,
                       }}
                     ></div>
                   </div>
@@ -745,7 +768,7 @@ function ArtistAuthContent() {
               )}
 
               <PasswordInput
-                label="Confirm Password"
+                label="Confirm Password*"
                 placeholder="Enter password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -773,7 +796,7 @@ function ArtistAuthContent() {
             {/* Progress Indicator */}
             <div className="space-y-3">
               <div className="w-full bg-[#2D2D2D] rounded-full h-1">
-                <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-1/2"></div>
+                <div className="bg-linear-to-r from-primary-pink to-primary-orange h-1 rounded-full w-1/2"></div>
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -835,6 +858,7 @@ function ArtistAuthContent() {
                   required
                   disabled={isLoading}
                   variant="filled"
+                  maxDate={new Date()}
                 />
 
                 <Select
@@ -919,7 +943,7 @@ function ArtistAuthContent() {
             {/* Progress Indicator */}
             <div className="space-y-3">
               <div className="w-full bg-[#2D2D2D] rounded-full h-1">
-                <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-full"></div>
+                <div className="bg-linear-to-r from-primary-pink to-primary-orange h-1 rounded-full w-full"></div>
               </div>
               <div className="flex items-center gap-3">
                 <button

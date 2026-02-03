@@ -43,21 +43,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL(redirect, request.url));
       }
 
+      // Update role to artist but don't create artist profile yet
+      // User should go through the full signup flow to provide required info
       await prisma.user.update({
         where: { id: session.user.id },
         data: { role: "artist" },
       });
 
-      if (!user.artist) {
-        await prisma.artist.create({
-          data: {
-            userId: session.user.id,
-          },
-        });
-      }
-
+      // Don't create artist profile yet - let them go through signup flow
+      // Redirect to artist auth page with OAuth success flag
+      // The page will detect they're logged in and show remaining fields
       return NextResponse.redirect(
-        new URL("/artist/profile-setup", request.url)
+        new URL("/artist/profile-setup?oauth=true", request.url)
       );
     }
 

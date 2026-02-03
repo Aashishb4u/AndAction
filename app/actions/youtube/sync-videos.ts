@@ -106,32 +106,52 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
       return { success: false, message: "Artist profile not found" };
     }
 
-    if (!artist.youtubeChannelId || !artist.youtubeAccessToken) {
+    if (!artist.youtubeChannelId) {
       return { success: false, message: "YouTube not connected" };
     }
 
-    // Get valid access token
-    const accessToken = await getValidYouTubeToken(artist.id);
+    // Determine whether to use OAuth or API key
+    const useOAuth = !!artist.youtubeAccessToken;
+    const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-    if (!accessToken) {
-      return {
-        success: false,
-        message: "Failed to get valid YouTube token. Please reconnect.",
-      };
+    let authHeader: Record<string, string> = {};
+    let apiKeyParam = "";
+
+    if (useOAuth) {
+      // Get valid access token for OAuth
+      const accessToken = await getValidYouTubeToken(artist.id);
+
+      if (!accessToken) {
+        return {
+          success: false,
+          message: "Failed to get valid YouTube token. Please reconnect.",
+        };
+      }
+      authHeader = { Authorization: `Bearer ${accessToken}` };
+    } else {
+      // Use API key for public data
+      if (!YOUTUBE_API_KEY) {
+        return {
+          success: false,
+          message: "YouTube API is not configured. Please contact support.",
+        };
+      }
+      apiKeyParam = `&key=${YOUTUBE_API_KEY}`;
     }
 
     // Get uploads playlist ID
-    const channelResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${artist.youtubeChannelId}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
+    const channelUrl = useOAuth
+      ? `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${artist.youtubeChannelId}`
+      : `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${artist.youtubeChannelId}${apiKeyParam}`;
+
+    const channelResponse = await fetch(channelUrl, { headers: authHeader });
 
     if (!channelResponse.ok) {
       return { success: false, message: "Failed to fetch channel info" };
     }
 
     const channelData = await channelResponse.json();
-    console.log(`shorts data : ${JSON.stringify(channelData)}`)
+    console.log(`shorts data : ${JSON.stringify(channelData)}`);
     const uploadsPlaylistId =
       channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
 
@@ -140,10 +160,11 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
     }
 
     // Fetch videos from playlist
-    const playlistResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
+    const playlistUrl = useOAuth
+      ? `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50`
+      : `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50${apiKeyParam}`;
+
+    const playlistResponse = await fetch(playlistUrl, { headers: authHeader });
 
     if (!playlistResponse.ok) {
       return { success: false, message: "Failed to fetch videos" };
@@ -167,10 +188,14 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
     const videoIds = videoItems
       .map((item) => item.snippet.resourceId.videoId)
       .join(",");
-    const videoDetailsResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${videoIds}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
+    
+    const videoDetailsUrl = useOAuth
+      ? `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${videoIds}`
+      : `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${videoIds}${apiKeyParam}`;
+
+    const videoDetailsResponse = await fetch(videoDetailsUrl, {
+      headers: authHeader,
+    });
 
     const videoDetailsData: YouTubeVideoDetailsResponse =
       await videoDetailsResponse.json();
@@ -321,9 +346,8 @@ export async function getYouTubeSyncStatus() {
       },
     });
 
-    const isConnected = !!(
-      artist?.youtubeChannelId && artist?.youtubeAccessToken
-    );
+    // Connected if channel ID exists (either via OAuth or manual connection)
+    const isConnected = !!artist?.youtubeChannelId;
 
     // Get video counts
     const [videoCount, shortCount] = await Promise.all([

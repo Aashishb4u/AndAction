@@ -89,7 +89,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
               disabled={disabled}
               className="flex items-center gap-2 pr-2 border-r border-[#404040] mr-2 hover:bg-[#404040] rounded-l-lg md:px-1 py-1 transition-colors duration-200"
             >
-              <span className="md:text-lg text-sm">{selectedCountry.flag}</span>
+              <span className="flex items-center justify-center" style={{ width: '17px', height: '17px', fontSize: '17px' }}>{selectedCountry.flag}</span>
               <span className="text-white text-sm">{selectedCountry.dialCode}</span>
               <svg className="w-4 h-4 text-text-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -106,7 +106,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
                     onClick={() => handleCountrySelect(country)}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#404040] transition-colors duration-200 text-left"
                   >
-                    <span className="text-lg">{country.flag}</span>
+                    <span className="flex items-center justify-center shrink-0" style={{ width: '17px', height: '17px', fontSize: '17px' }}>{country.flag}</span>
                     <span className="text-white text-sm flex-1">{country.name}</span>
                     <span className="text-text-gray text-sm">{country.dialCode}</span>
                   </button>
@@ -123,8 +123,10 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
             required={required}
-            className="flex-1 bg-transparent border-none outline-none text-white placeholder-text-gray"
+            className="flex-1 bg-transparent border-none outline-none text-white placeholder-text-gray autofill-fix"
             id={id}
+            autoComplete="tel"
+            style={{ WebkitTextFillColor: 'white' }}
           />
         </div>
 

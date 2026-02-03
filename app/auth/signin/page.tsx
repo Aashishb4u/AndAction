@@ -135,30 +135,7 @@ function SignInContent() {
 
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
-      {/* Close Button */}
-      <button
-        onClick={() => router.push("/")}
-        className="absolute top-6 right-6 p-2 text-white transition-colors duration-200"
-        aria-label="Close"
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
-
-      <div className="md:p-8 p-5">
-        {/* Logo */}
-        <div className="mb-8">
+      <div className="flex justify-between items-center mr-4 ml-4 pt-4">
           <Image
             src="/logo.png"
             alt="ANDACTION Logo"
@@ -166,7 +143,29 @@ function SignInContent() {
             width={150}
             height={24}
           />
+          <button
+            onClick={() => router.push("/")}
+            className="p-2 text-white transition-colors duration-200"
+            aria-label="Close"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
+      <div className="md:p-8 p-4">
+        {/* Header: Logo and Close Button */}
+        
 
         <h1 className="h1 text-white mb-2">Sign In to AndAction</h1>
 
@@ -186,6 +185,7 @@ function SignInContent() {
                 label="Email or Mobile number"
                 type="text"
                 placeholder="Enter email ID or mobile number"
+                className="bg-[#2D2D2D]"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 variant="filled"
@@ -208,16 +208,16 @@ function SignInContent() {
                   href={`/auth/signup${
                     searchParams.toString() ? `?${searchParams.toString()}` : ""
                   }`}
-                  className="text-white hover:text-primary-pink transition-colors duration-200 font-medium underline btn2"
+                  className="text-[var(--color-white)] hover:text-primary-pink transition-colors duration-200 font-medium underline btn2"
                 >
                   Sign up
                 </Link>
               </p>
 
               <div className="flex items-center my-6">
-                <div className="flex-1 border-t border-border-color"></div>
+                <div className="flex-1 border-t border-border-line"></div>
                 <span className="px-4 text-text-gray text-sm">Or</span>
-                <div className="flex-1 border-t border-border-color"></div>
+                <div className="flex-1 border-t border-border-line"></div>
               </div>
 
               {/* ✅ Social Sign In Buttons (unchanged UI) */}
@@ -248,7 +248,7 @@ function SignInContent() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  Continue with Google
+                  <span className="btn2">Continue with Google</span>
                 </Button>
 
                 <Button
@@ -265,7 +265,7 @@ function SignInContent() {
                       d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"
                     />
                   </svg>
-                  Continue with Facebook
+                  <span className="btn2">Continue with Facebook</span>
                 </Button>
               </div>
             </form>
@@ -274,7 +274,7 @@ function SignInContent() {
           /* Password Step */
           <form onSubmit={handlePasswordSubmit}>
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-text-gray secondary-text">{email}</span>
+              <span className="text-text-gray secondary-grey-text">{email}</span>
               <button
                 type="button"
                 onClick={handleChangeEmail}

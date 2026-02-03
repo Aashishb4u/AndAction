@@ -1,33 +1,33 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Input, { PasswordInput } from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
-import OTPInput from '@/components/ui/OTPInput';
-import Image from 'next/image';
-import { validatePassword } from '@/lib/validators';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Input, { PasswordInput } from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+import OTPInput from "@/components/ui/OTPInput";
+import Image from "next/image";
+import { validatePassword } from "@/lib/validators";
 
-type ForgotPasswordStep = 'email' | 'otp' | 'password';
+type ForgotPasswordStep = "email" | "otp" | "password";
 
 export default function ForgotPasswordPage() {
-  const [step, setStep] = useState<ForgotPasswordStep>('email');
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [step, setStep] = useState<ForgotPasswordStep>("email");
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const router = useRouter();
 
   // Simple password strength calculation (reused from signup)
   const getPasswordStrength = (password: string) => {
-    if (!password) return { strength: 0, label: '', color: '' };
+    if (!password) return { strength: 0, label: "", color: "" };
 
     let score = 0;
-    let label = '';
-    let color = '';
+    let label = "";
+    let color = "";
 
     // Length check
     if (password.length >= 8) score += 1;
@@ -41,14 +41,14 @@ export default function ForgotPasswordPage() {
 
     // Determine strength level
     if (score <= 2) {
-      label = 'Weak';
-      color = 'bg-red-400';
+      label = "Weak";
+      color = "bg-red-400";
     } else if (score <= 4) {
-      label = 'Medium';
-      color = 'bg-yellow-400';
+      label = "Medium";
+      color = "bg-yellow-400";
     } else {
-      label = 'Strong';
-      color = 'bg-green-400';
+      label = "Strong";
+      color = "bg-green-400";
     }
 
     return { strength: Math.min(score, 6), label, color };
@@ -59,26 +59,26 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     if (email.trim()) {
       setIsLoading(true);
-      setError('');
+      setError("");
 
       try {
-        const res = await fetch('/api/auth/forgot-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const res = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),
         });
 
         const data = await res.json();
-        console.log('Forgot Password Response:', data);
+        console.log("Forgot Password Response:", data);
 
         if (!res.ok) {
-          throw new Error(data.error || data.message || 'Failed to send OTP.');
+          throw new Error(data.error || data.message || "Failed to send OTP.");
         }
 
-        setStep('otp');
+        setStep("otp");
       } catch (err: any) {
-        setError(err.message || 'Failed to send OTP. Please try again.');
-        console.error('Email submit error:', err);
+        setError(err.message || "Failed to send OTP. Please try again.");
+        console.error("Email submit error:", err);
       } finally {
         setIsLoading(false);
       }
@@ -90,25 +90,25 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     if (otp.length === 6) {
       setIsLoading(true);
-      setError('');
+      setError("");
 
       try {
-        const res = await fetch('/api/auth/verify-otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const res = await fetch("/api/auth/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, otp }),
         });
 
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.error || data.message || 'Invalid OTP.');
+          throw new Error(data.error || data.message || "Invalid OTP.");
         }
 
-        setStep('password');
+        setStep("password");
       } catch (err: any) {
-        setError(err.message || 'Invalid OTP. Please try again.');
-        console.error('OTP verification error:', err);
+        setError(err.message || "Invalid OTP. Please try again.");
+        console.error("OTP verification error:", err);
       } finally {
         setIsLoading(false);
       }
@@ -120,7 +120,7 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     if (password.trim() && confirmPassword.trim()) {
       if (password !== confirmPassword) {
-        setError('Passwords do not match');
+        setError("Passwords do not match");
         return;
       }
 
@@ -131,55 +131,57 @@ export default function ForgotPasswordPage() {
       }
 
       setIsLoading(true);
-      setError('');
+      setError("");
 
       try {
-        const res = await fetch('/api/auth/reset-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const res = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, otp, newPassword: password }),
         });
 
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.error || data.message || 'Failed to reset password.');
+          throw new Error(
+            data.error || data.message || "Failed to reset password.",
+          );
         }
 
         // Redirect to login
-        router.push('/auth/signin');
+        router.push("/auth/signin");
       } catch (err: any) {
-        setError(err.message || 'Failed to reset password. Please try again.');
-        console.error('Password reset error:', err);
+        setError(err.message || "Failed to reset password. Please try again.");
+        console.error("Password reset error:", err);
       } finally {
         setIsLoading(false);
       }
     }
   };
 
-
   // Handle Resend OTP
   const handleResendOTP = async () => {
     if (email.trim()) {
       setIsLoading(true);
-      setError('');
+      setError("");
 
       try {
-        const res = await fetch('/api/auth/forgot-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const res = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),
         });
 
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.error || data.message || 'Failed to resend OTP.');
+          throw new Error(
+            data.error || data.message || "Failed to resend OTP.",
+          );
         }
-
       } catch (err: any) {
-        setError(err.message || 'Failed to resend OTP. Please try again.');
-        console.error('Resend OTP error:', err);
+        setError(err.message || "Failed to resend OTP. Please try again.");
+        console.error("Resend OTP error:", err);
       } finally {
         setIsLoading(false);
       }
@@ -188,31 +190,49 @@ export default function ForgotPasswordPage() {
 
   // Mask email for display
   const maskEmail = (email: string) => {
-    const [username, domain] = email.split('@');
+    const [username, domain] = email.split("@");
     if (username.length <= 3) return email;
-    const maskedUsername = username.charAt(0) + '*'.repeat(username.length - 2) + username.charAt(username.length - 1);
+    const maskedUsername =
+      username.charAt(0) +
+      "*".repeat(username.length - 2) +
+      username.charAt(username.length - 1);
     return `${maskedUsername}@${domain}`;
   };
 
   return (
-    <div className="min-h-screen bg-background flex md:items-center justify-center p-4">
-      <div className="w-full md:max-w-md bg-background md:border md:border-border-color md:rounded-2xl md:p-8 md:shadow-2xl relative">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          {/* Logo */}
-          <Image src="/logo.png" alt="ANDACTION Logo" className="h-8 object-contain" width={150} height={24} />
+    <div className="min-h-screen bg-background ">
+      {/* Header */}
+      <div className="flex items-center justify-between mr-4 ml-4 pt-4">
+        {/* Logo */}
+        <Image
+          src="/logo.png"
+          alt="ANDACTION Logo"
+          className="h-8 object-contain"
+          width={150}
+          height={24}
+        />
 
-          {/* Close Button */}
-          <button
-            onClick={() => router.push('/auth/signin')}
-            className="text-white hover:text-primary-pink transition-colors duration-200"
+        {/* Close Button */}
+        <button
+          onClick={() => router.push("/auth/signin")}
+          className="text-white hover:text-primary-pink transition-colors duration-200"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      <div className="w-full md:max-w-md bg-background md:border md:border-border-color md:rounded-2xl md:p-8 md:shadow-2xl relative flex md:items-center justify-center p-4">
         {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
@@ -220,22 +240,20 @@ export default function ForgotPasswordPage() {
           </div>
         )}
 
-        {step === 'email' ? (
+        {step === "email" ? (
           /* Email Step */
           <div className="space-y-6">
             {/* Title */}
             <div>
-              <h1 className="h1 text-white mb-2">
-                Reset Password
-              </h1>
+              <h1 className="h1 text-white mb-2">Reset Password</h1>
               <p className="text-text-gray">
                 Enter the email address associated with your AndAction account.
               </p>
             </div>
 
             <form onSubmit={handleEmailSubmit} className="space-y-6">
+              <label className="secondary-text  block mb-1">Email</label>
               <Input
-                label="Email"
                 type="email"
                 placeholder="Enter email ID"
                 value={email}
@@ -252,23 +270,22 @@ export default function ForgotPasswordPage() {
                 className="w-full"
                 disabled={!email.trim() || isLoading}
               >
-                {isLoading ? 'Sending...' : 'Continue'}
+                {isLoading ? "Sending..." : "Continue"}
               </Button>
             </form>
           </div>
-        ) : step === 'otp' ? (
+        ) : step === "otp" ? (
           /* OTP Verification Step */
           <div className="space-y-6">
             {/* Title */}
             <div>
-              <h1 className="h1 text-white mb-2">
-                OTP Verification
-              </h1>
+              <h1 className="h1 text-white mb-2">OTP Verification</h1>
               <p className="text-text-gray">
-                To continue, complete this verification step. We&apos;ve sent a One Time Password (OTP) to the email <br /> {maskEmail(email)}.{' '}
+                To continue, complete this verification step. We&apos;ve sent a
+                One Time Password (OTP) to the email <br /> {maskEmail(email)}.{" "}
                 <button
                   type="button"
-                  onClick={() => setStep('email')}
+                  onClick={() => setStep("email")}
                   className="text-white underline hover:text-primary-pink transition-colors duration-200 btn1"
                 >
                   Change
@@ -287,10 +304,12 @@ export default function ForgotPasswordPage() {
                 />
 
                 {/* Resend OTP */}
-                <span className="text-text-gray text-sm">Haven&apos;t received the OTP? </span>
+                <span className="text-text-gray text-sm">
+                  Haven&apos;t received the OTP?{" "}
+                </span>
                 <button
                   type="button"
-                  className="text-white underline hover:text-primary-pink transition-colors duration-200 btn1"
+                  className="text-white underline hover:text-primary-pink transition-colors duration-200 btn2"
                   onClick={handleResendOTP}
                   disabled={isLoading}
                 >
@@ -305,7 +324,7 @@ export default function ForgotPasswordPage() {
                 className="w-full"
                 disabled={isLoading || otp.length !== 6}
               >
-                {isLoading ? 'Verifying...' : 'Verify'}
+                {isLoading ? "Verifying..." : "Verify"}
               </Button>
             </form>
           </div>
@@ -314,9 +333,7 @@ export default function ForgotPasswordPage() {
           <div className="space-y-6">
             {/* Title */}
             <div>
-              <h1 className="h1 text-white mb-2">
-                Create new password
-              </h1>
+              <h1 className="h1 text-white mb-2">Create new password</h1>
               <p className="text-text-gray">
                 We&apos;ll ask for this password whenever you Sign In.
               </p>
@@ -324,8 +341,10 @@ export default function ForgotPasswordPage() {
 
             <form onSubmit={handlePasswordSubmit} className="space-y-6">
               <div className="space-y-4">
+                <label className="secondary-text block mb-1">
+                  New Password
+                </label>
                 <PasswordInput
-                  label="New Password*"
                   placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -340,23 +359,34 @@ export default function ForgotPasswordPage() {
                     <div className="w-full bg-[#2D2D2D] rounded-full h-1">
                       <div
                         className={`${getPasswordStrength(password).color} h-1 rounded-full transition-all duration-300`}
-                        style={{ width: `${(getPasswordStrength(password).strength / 6) * 100}%` }}
+                        style={{
+                          width: `${(getPasswordStrength(password).strength / 6) * 100}%`,
+                        }}
                       ></div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="footnote text-text-gray">Password Strength:</span>
-                      <span className={`footnote font-medium ${getPasswordStrength(password).label === 'Weak' ? 'text-red-400' :
-                        getPasswordStrength(password).label === 'Medium' ? 'text-yellow-400' :
-                          'text-green-400'
-                        }`}>
+                      <span className="footnote text-text-gray">
+                        Password Strength:
+                      </span>
+                      <span
+                        className={`footnote font-medium ${
+                          getPasswordStrength(password).label === "Weak"
+                            ? "text-red-400"
+                            : getPasswordStrength(password).label === "Medium"
+                              ? "text-yellow-400"
+                              : "text-green-400"
+                        }`}
+                      >
                         {getPasswordStrength(password).label}
                       </span>
                     </div>
                   </div>
                 )}
 
+                <label className="secondary-text block mb-1">
+                  Confirm Password
+                </label>
                 <PasswordInput
-                  label="Confirm Password*"
                   placeholder="Enter password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -371,9 +401,11 @@ export default function ForgotPasswordPage() {
                 variant="primary"
                 size="lg"
                 className="w-full"
-                disabled={isLoading || !password.trim() || !confirmPassword.trim()}
+                disabled={
+                  isLoading || !password.trim() || !confirmPassword.trim()
+                }
               >
-                {isLoading ? 'Saving...' : 'Save changes & Sign in'}
+                {isLoading ? "Saving..." : "Save changes & Sign in"}
               </Button>
             </form>
           </div>

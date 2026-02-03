@@ -1,178 +1,231 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import ArtistSection from './ArtistSection';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import ArtistSection from "./ArtistSection";
+import ArtistSectionSkeleton from "./ArtistSectionSkeleton";
+import { useAllArtists } from "@/hooks/use-artists";
 
-const mockVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+interface ArtistsProps {
+  location: { lat: number; lng: number } | null;
+}
 
-export default function Artists({ location }: { location: { lat: number; lng: number } | null }) {
-  const [singers, setSingers] = useState<any[]>([]);
-  const [dancers, setDancers] = useState<any[]>([]);
-  const [anchors, setAnchors] = useState<any[]>([]);
-  const [djs, setDJ] = useState<any[]>([]);
+// Known display titles for categories (fallback will prettify keys)
+const TITLE_MAP: Record<string, string> = {
+  singers: "Singer",
+  dancers: "Dancer / Dance Group",
+  anchors: "Anchor / Emcee / Host",
+  djs: "DJ",
+  bands: "Live Band / Group",
+  comedians: "Comedian",
+  musicians: "Musician / Instrumentalist",
+  magicians: "Magician / Illusionist",
+  actors: "Theatre Artist / Actor",
+  mimicry: "Mimicry / Impressionist",
+  specialAct: "Special Act Performer",
+  spiritual: "Spiritual / Devotional",
+  kidsEntertainers: "Kids Entertainer",
+};
 
-  const initialRender = useRef(true);
+// Preferred ordering for categories (unknown categories will be appended)
+const PREFERRED_ORDER = [
+  "singers",
+  "dancers",
+  "musicians",
+  "anchors",
+  "djs",
+  "bands",
+  "comedians",
+  "magicians",
+  "actors",
+  "mimicry",
+  "specialAct",
+  "spiritual",
+  "kidsEntertainers",
+];
 
+// Number of categories to display initially and per load
+const CATEGORIES_PER_LOAD = 5;
+
+// Helper function to prettify category key to display title
+function prettifyKey(key: string) {
+  const withoutS = key.replace(/s$/, "");
+  return withoutS
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export default function Artists({ location }: ArtistsProps) {
+  const { 
+    singers, 
+    dancers, 
+    anchors, 
+    djs, 
+    bands, 
+    comedians, 
+    musicians, 
+    magicians, 
+    actors, 
+    mimicry,
+    specialAct,
+    spiritual,
+    kidsEntertainers,
+    isLoading 
+  } = useAllArtists(location, false);
+
+  // Map category keys to their artist arrays (memoized to keep stable ref)
+  const categoryData: Record<string, any[]> = useMemo(
+    () => ({ 
+      singers, 
+      dancers, 
+      anchors, 
+      djs, 
+      bands, 
+      comedians, 
+      musicians, 
+      magicians, 
+      actors,
+      mimicry,
+      specialAct,
+      spiritual,
+      kidsEntertainers,
+    }),
+    [singers, dancers, anchors, djs, bands, comedians, musicians, magicians, actors, mimicry, specialAct, spiritual, kidsEntertainers]
+  );
+
+  // Derive categories dynamically from returned data keys and memoize
+  const categoriesWithArtists = useMemo(() => {
+    const derivedCategories = Object.keys(categoryData);
+    const ordered = [
+      ...PREFERRED_ORDER.filter((k) => derivedCategories.includes(k)),
+      ...derivedCategories.filter((k) => !PREFERRED_ORDER.includes(k)),
+    ];
+    return ordered
+      .map((key) => ({ key, title: TITLE_MAP[key] || prettifyKey(key) }))
+      .filter((category) => (categoryData[category.key] || []).length > 0);
+  }, [categoryData]);
+
+  // State to track how many categories to show
+  const [visibleCategoryCount, setVisibleCategoryCount] = useState(CATEGORIES_PER_LOAD);
+
+  // State to track if more categories are being loaded
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Observer ref for infinite scroll
+  const observerRef = useRef<HTMLDivElement | null>(null);
+
+  // Get visible categories based on current count
+  const visibleCategories = categoriesWithArtists.slice(0, visibleCategoryCount);
+
+  // Check if there are more categories to load
+  const hasMoreToLoad = visibleCategoryCount < categoriesWithArtists.length;
+
+  // Load more categories
+  const loadMoreCategories = useCallback(() => {
+    if (loadingMore || !hasMoreToLoad) return;
+
+    setLoadingMore(true);
+
+    // Small delay to simulate loading effect
+    setTimeout(() => {
+      setVisibleCategoryCount((prev) =>
+        Math.min(prev + CATEGORIES_PER_LOAD, categoriesWithArtists.length)
+      );
+      setLoadingMore(false);
+    }, 300);
+  }, [loadingMore, hasMoreToLoad, categoriesWithArtists.length]);
+
+  // Intersection observer for infinite scroll
   useEffect(() => {
-    if (initialRender.current) {
-      initialRender.current = false;
+    if (!observerRef.current || isLoading) return;
 
-      if (!location) return;
-    }
-
-    // If no location yet, wait for real update
-
-
-    async function fetchSingers() {
-      try {
-        let url = `/api/artists?type=singer&verified=false`;
-
-        if (location?.lat && location?.lng) {
-          url += `&lat=${location.lat}&lng=${location.lng}`;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMoreToLoad && !loadingMore) {
+          loadMoreCategories();
         }
+      },
+      { threshold: 0.1, rootMargin: "100px" }
+    );
 
-        const res = await fetch(url);
-        console.log("Fetching singers from URL:", url);
-        const json = await res.json();
+    const target = observerRef.current;
+    if (target) observer.observe(target);
 
-        const apiArtists = json?.data?.artists || [];
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [loadMoreCategories, hasMoreToLoad, loadingMore, isLoading]);
 
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setSingers(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
-      }
+  // Reset visible category count when data changes
+  useEffect(() => {
+    if (!isLoading) {
+      setVisibleCategoryCount(CATEGORIES_PER_LOAD);
     }
-    async function fetchDancers() {
-      try {
-        let url = `/api/artists?type=dancer&verified=false`;
-
-        if (location?.lat && location?.lng) {
-          url += `&lat=${location.lat}&lng=${location.lng}`;
-        }
-
-        const res = await fetch(url);
-        const json = await res.json();
-
-        const apiArtists = json?.data?.artists || [];
-
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setDancers(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
-      }
-    }
-
-    async function fetchAnchors() {
-      try {
-        let url = `/api/artists?type=anchor&verified=false`;
-
-        if (location?.lat && location?.lng) {
-          url += `&lat=${location.lat}&lng=${location.lng}`;
-        }
-
-        const res = await fetch(url);
-        const json = await res.json();
-
-        const apiArtists = json?.data?.artists || [];
-
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setAnchors(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
-      }
-    }
-    async function fetchDJ() {
-      try {
-        let url = `/api/artists?type=dj&verified=false`;
-
-        if (location?.lat && location?.lng) {
-          url += `&lat=${location.lat}&lng=${location.lng}`;
-        }
-
-        const res = await fetch(url);
-        const json = await res.json();
-
-        const apiArtists = json?.data?.artists || [];
-
-        const mapped = apiArtists.map((artist: any) => ({
-          id: artist.id,
-          name:
-            artist.stageName ||
-            `${artist.user.firstName} ${artist.user.lastName}`.trim(),
-          location: artist.user.city || "Unknown",
-          thumbnail: artist.user.avatar || "/icons/images.jpeg",
-          videoUrl: mockVideoUrl,
-        }));
-
-        setDJ(mapped);
-      } catch (err) {
-        console.error("Failed to load singers:", err);
-      }
-    }
-    fetchDJ();
-    fetchAnchors();
-    fetchDancers();
-    fetchSingers();
-  }, [location]);
-
-
-
-
-  const sampleArtists = {
-    singers,
-    dancers,
-    anchors,
-    djs
-  };
+  }, [isLoading]);
 
   return (
-    <section className="relative w-full pt-16">
-      {/* Background */}
-      <div className="absolute inset-0 -translate-y-32 z-0">
+    <section className="relative w-full pt-4 md:pt-16 pb-20 md:pb-8 overflow-hidden">
+      {/* Full-height Gradient Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        {/* Base background */}
+        <div className="absolute inset-0 bg-background" />
+
+        {/* Centered pink glow at top - matches the curve */}
         <div
-          className="w-full h-auto bg-cover bg-top bg-no-repeat md:block hidden"
-          style={{ backgroundImage: 'url(/home-bg.webp)', minHeight: '80vh' }}
-        />
-        <div
-          className="w-full h-auto bg-cover bg-top bg-no-repeat md:hidden"
-          style={{ backgroundImage: 'url(/home-bg-mobile.webp)', minHeight: '70vh' }}
+          className="absolute inset-x-0 top-0 h-96"
+          style={{
+            background: `
+              radial-gradient(
+                ellipse 60% 100% at 50% 0%,
+                rgba(255,45,122,0.25) 0%,
+                rgba(255,45,122,0.1) 40%,
+                transparent 70%
+              )
+            `,
+          }}
         />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto space-y-6 py-12">
-        <ArtistSection title="Singer" artists={sampleArtists.singers} />
-        <ArtistSection title="Dancers" artists={sampleArtists.dancers} />
-        <ArtistSection title="Anchor" artists={sampleArtists.anchors} />
-        <ArtistSection title="DJ / VJ" artists={sampleArtists.djs} />
+      <div className="relative z-20 max-w-7xl mx-auto space-y-6">
+        {isLoading ? (
+          <>
+            {PREFERRED_ORDER.slice(0, CATEGORIES_PER_LOAD).map((key) => (
+              <ArtistSectionSkeleton
+                key={key}
+                title={TITLE_MAP[key] || prettifyKey(key)}
+              />
+            ))}
+          </>
+        ) : (
+          <>
+            {visibleCategories.map((category) => {
+              const artists = categoryData[category.key] || [];
+
+              return (
+                <ArtistSection
+                  key={category.key}
+                  title={category.title}
+                  artists={artists}
+                />
+              );
+            })}
+
+            {/* Infinite scroll trigger */}
+            {hasMoreToLoad && (
+              <div ref={observerRef} className="h-1" />
+            )}
+
+            {/* Loading more indicator */}
+            {loadingMore && (
+              <div className="flex justify-center py-4">
+                <div className="flex items-center gap-2 text-gray-400">
+                  <div className="w-5 h-5 border-2 border-primary-pink border-t-transparent rounded-full animate-spin" />
+                  <span>Loading more categories...</span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </section>
   );

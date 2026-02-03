@@ -95,6 +95,21 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
   ];
 
   const handleInputChange = (field: keyof FormData, value: string) => {
+    // For eventDate, ensure only today or future dates are accepted
+    if (field === 'eventDate' && value) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const inputDate = new Date(value);
+      inputDate.setHours(0, 0, 0, 0);
+      if (inputDate < today) {
+        // Ignore or reset if past date
+        setFormData(prev => ({
+          ...prev,
+          [field]: '',
+        }));
+        return;
+      }
+    }
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -147,7 +162,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
         {/* Artist Category */}
         <Select
           label="Artist Category"
-          placeholder="Select Category"
+          placeholder="Select category"
           options={artistCategories}
           value={formData.artistCategory}
           onChange={(value) => handleInputChange('artistCategory', value)}
@@ -186,14 +201,14 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({ isOpen, onClose }) =>
         <div className="grid grid-cols-2 gap-4">
           <Select
             label="Event State"
-            placeholder="Select State"
+            placeholder="Select state"
             options={stateOptions}
             value={formData.eventState}
             onChange={(value) => handleInputChange('eventState', value)}
           />
 
           <DateInput
-            label="Event date"
+            label="Event date*"
             placeholder="DD/MM/YYYY"
             value={formData.eventDate || null}
             onChange={(value) => handleInputChange("eventDate", value)}

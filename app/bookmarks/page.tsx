@@ -5,7 +5,6 @@ import SiteLayout from '@/components/layout/SiteLayout';
 import ArtistGrid from '@/components/sections/ArtistGrid';
 import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
-import { Artist } from '@/types';
 
 type TabType = 'Artist' | 'Videos' | 'Shorts';
 
@@ -108,7 +107,11 @@ export default function BookmarksPage() {
     try {
       const res = await fetch(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
       const json = await res.json();
-      if (!json.success) return;
+      
+      if (!json.success) {
+        console.error("Failed to delete bookmark:", json.message || json.error);
+        return;
+      }
 
       if (type === "artist")
         setArtistBookmarks(prev => prev.filter(a => a.bookmarkId !== bookmarkId));
@@ -144,7 +147,7 @@ export default function BookmarksPage() {
             >
               {tab}
               {activeTab === tab && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-orange to-primary-pink" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r from-primary-orange to-primary-pink" />
               )}
             </button>
           ))}
@@ -186,12 +189,13 @@ export default function BookmarksPage() {
                     thumbnail={v.thumbnail}
                     videoUrl={v.videoUrl}
                     isBookmarked={true}
-                    onBookmark={() => deleteBookmark(v.bookmarkId, "video")}
+                    bookmarkId={v.bookmarkId}
+                    onBookmark={({ bookmarkId }) => bookmarkId && deleteBookmark(bookmarkId, "video")}
                     onShare={() => {}}
                   />
                 ))
               ) : (
-                <div className="text-center text-gray-400 py-12 w-full">No bookmarked videos.</div>
+                <div className="text-center text-gray-400 py-12 w-full col-span-full justify-self-center">No bookmarked videos.</div>
               )}
             </div>
           )}
@@ -209,12 +213,13 @@ export default function BookmarksPage() {
                     thumbnail={s.thumbnail}
                     videoUrl={s.videoUrl}
                     isBookmarked={true}
-                    onBookmark={() => deleteBookmark(s.bookmarkId, "short")}
+                    bookmarkId={s.bookmarkId}
+                    onBookmark={({ bookmarkId }) => bookmarkId && deleteBookmark(bookmarkId, "short")}
                     onShare={() => {}}
                   />
                 ))
               ) : (
-                <div className="text-center text-gray-400 py-12 w-full">No bookmarked shorts.</div>
+                <div className="text-center text-gray-400 py-12 w-full col-span-full justify-self-center">No bookmarked shorts.</div>
               )}
             </div>
           )}
