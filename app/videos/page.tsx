@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useInfiniteVideos, useToggleBookmark } from "@/hooks/use-videos";
+import { VIDEO_CATEGORIES } from "@/lib/constants";
 import {
   X,
   Copy,
@@ -17,16 +18,6 @@ import {
   Linkedin,
   Loader2,
 } from "lucide-react";
-
-const VIDEO_CATEGORIES = [
-  { value: "all", label: "All" },
-  { value: "musician", label: "Musician" },
-  { value: "dancer", label: "Dancer" },
-  { value: "dj", label: "DJ" },
-  { value: "speaker", label: "Speaker" },
-  { value: "comedian", label: "Comedian" },
-  { value: "actor", label: "Actor" },
-];
 
 export default function VideosPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
