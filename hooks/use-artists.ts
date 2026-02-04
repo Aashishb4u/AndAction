@@ -11,7 +11,7 @@ export interface Artist {
   distance?: number | null; // Distance from user in km
 }
 
-export type ArtistType = 
+export type ArtistType =
   | "singer"
   | "dancer"
   | "anchor"
@@ -72,12 +72,17 @@ export const artistKeys = {
     [...artistKeys.lists(), filters] as const,
   byType: (type: ArtistType) => [...artistKeys.all, type] as const,
   byTypeWithLocation: (type: ArtistType, location: LocationParams | null) =>
-    [...artistKeys.byType(type), location] as const,
+    [
+      ...artistKeys.byType(type),
+      location ? `${location.lat.toFixed(4)},${location.lng.toFixed(4)}` : null,
+    ] as const,
 };
 
 const mapArtistData = (artist: any): Artist => ({
   id: artist.id,
-  name: artist.stageName || `${artist.user.firstName} ${artist.user.lastName}`.trim(),
+  name:
+    artist.stageName ||
+    `${artist.user.firstName} ${artist.user.lastName}`.trim(),
   location: artist.user.city || "Unknown",
   thumbnail: artist.user.avatar || "/avatars/placeholder.png",
   videoUrl: mockVideoUrl,
@@ -90,7 +95,10 @@ async function fetchArtistsByType({
   verified = false,
   minResults = 10,
   maxRadius = 500,
-}: FetchArtistsParams): Promise<{ artists: Artist[]; metadata?: SearchMetadata }> {
+}: FetchArtistsParams): Promise<{
+  artists: Artist[];
+  metadata?: SearchMetadata;
+}> {
   let url = `/api/artists/nearby?type=${type}&verified=${verified}&minResults=${minResults}&maxRadius=${maxRadius}`;
 
   if (location?.lat && location?.lng) {
@@ -114,15 +122,18 @@ async function fetchArtistsByType({
 export function useArtistsByType(
   type: ArtistType,
   location: LocationParams | null = null,
-  verified: boolean = false
+  verified: boolean = false,
 ) {
   return useQuery({
     queryKey: artistKeys.byTypeWithLocation(type, location),
     queryFn: () => fetchArtistsByType({ type, location, verified }),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
-    retry: 2,
+    staleTime: 1000 * 60 * 10, // 10 minutes - data stays fresh longer
+    gcTime: 1000 * 60 * 30, // 30 minutes - keep in cache longer
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false, // Critical: don't refetch when component remounts
+    refetchIntervalInBackground: false,
+    retryOnMount: false,
   });
 }
 
@@ -145,7 +156,7 @@ export const ALL_ARTIST_TYPES: ArtistType[] = [
 
 export function useAllArtists(
   location: LocationParams | null = null,
-  verified: boolean = false
+  verified: boolean = false,
 ) {
   const singersQuery = useArtistsByType("singer", location, verified);
   const dancersQuery = useArtistsByType("dancer", location, verified);
@@ -159,7 +170,11 @@ export function useAllArtists(
   const mimicryQuery = useArtistsByType("mimicry", location, verified);
   const specialActQuery = useArtistsByType("special-act", location, verified);
   const spiritualQuery = useArtistsByType("spiritual", location, verified);
-  const kidsEntertainerQuery = useArtistsByType("kids-entertainer", location, verified);
+  const kidsEntertainerQuery = useArtistsByType(
+    "kids-entertainer",
+    location,
+    verified,
+  );
 
   return {
     singers: singersQuery.data?.artists || [],
@@ -175,7 +190,7 @@ export function useAllArtists(
     specialAct: specialActQuery.data?.artists || [],
     spiritual: spiritualQuery.data?.artists || [],
     kidsEntertainers: kidsEntertainerQuery.data?.artists || [],
-    
+
     // Metadata for each type
     singersMetadata: singersQuery.data?.metadata,
     dancersMetadata: dancersQuery.data?.metadata,
@@ -190,7 +205,7 @@ export function useAllArtists(
     specialActMetadata: specialActQuery.data?.metadata,
     spiritualMetadata: spiritualQuery.data?.metadata,
     kidsEntertainersMetadata: kidsEntertainerQuery.data?.metadata,
-    
+
     isLoading:
       singersQuery.isLoading ||
       dancersQuery.isLoading ||

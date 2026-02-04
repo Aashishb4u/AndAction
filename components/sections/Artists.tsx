@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ArtistSection from "./ArtistSection";
 import ArtistSectionSkeleton from "./ArtistSectionSkeleton";
 import { useAllArtists } from "@/hooks/use-artists";
@@ -49,47 +49,59 @@ const CATEGORIES_PER_LOAD = 5;
 // Helper function to prettify category key to display title
 function prettifyKey(key: string) {
   const withoutS = key.replace(/s$/, "");
-  return withoutS
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return withoutS.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export default function Artists({ location }: ArtistsProps) {
-  const { 
-    singers, 
-    dancers, 
-    anchors, 
-    djs, 
-    bands, 
-    comedians, 
-    musicians, 
-    magicians, 
-    actors, 
+  const {
+    singers,
+    dancers,
+    anchors,
+    djs,
+    bands,
+    comedians,
+    musicians,
+    magicians,
+    actors,
     mimicry,
     specialAct,
     spiritual,
     kidsEntertainers,
-    isLoading 
+    isLoading,
   } = useAllArtists(location, false);
 
   // Map category keys to their artist arrays (memoized to keep stable ref)
   const categoryData: Record<string, any[]> = useMemo(
-    () => ({ 
-      singers, 
-      dancers, 
-      anchors, 
-      djs, 
-      bands, 
-      comedians, 
-      musicians, 
-      magicians, 
+    () => ({
+      singers,
+      dancers,
+      anchors,
+      djs,
+      bands,
+      comedians,
+      musicians,
+      magicians,
       actors,
       mimicry,
       specialAct,
       spiritual,
       kidsEntertainers,
     }),
-    [singers, dancers, anchors, djs, bands, comedians, musicians, magicians, actors, mimicry, specialAct, spiritual, kidsEntertainers]
+    [
+      singers,
+      dancers,
+      anchors,
+      djs,
+      bands,
+      comedians,
+      musicians,
+      magicians,
+      actors,
+      mimicry,
+      specialAct,
+      spiritual,
+      kidsEntertainers,
+    ],
   );
 
   // Derive categories dynamically from returned data keys and memoize
@@ -105,7 +117,8 @@ export default function Artists({ location }: ArtistsProps) {
   }, [categoryData]);
 
   // State to track how many categories to show
-  const [visibleCategoryCount, setVisibleCategoryCount] = useState(CATEGORIES_PER_LOAD);
+  const [visibleCategoryCount, setVisibleCategoryCount] =
+    useState(CATEGORIES_PER_LOAD);
 
   // State to track if more categories are being loaded
   const [loadingMore, setLoadingMore] = useState(false);
@@ -114,7 +127,10 @@ export default function Artists({ location }: ArtistsProps) {
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   // Get visible categories based on current count
-  const visibleCategories = categoriesWithArtists.slice(0, visibleCategoryCount);
+  const visibleCategories = categoriesWithArtists.slice(
+    0,
+    visibleCategoryCount,
+  );
 
   // Check if there are more categories to load
   const hasMoreToLoad = visibleCategoryCount < categoriesWithArtists.length;
@@ -128,7 +144,7 @@ export default function Artists({ location }: ArtistsProps) {
     // Small delay to simulate loading effect
     setTimeout(() => {
       setVisibleCategoryCount((prev) =>
-        Math.min(prev + CATEGORIES_PER_LOAD, categoriesWithArtists.length)
+        Math.min(prev + CATEGORIES_PER_LOAD, categoriesWithArtists.length),
       );
       setLoadingMore(false);
     }, 300);
@@ -144,7 +160,7 @@ export default function Artists({ location }: ArtistsProps) {
           loadMoreCategories();
         }
       },
-      { threshold: 0.1, rootMargin: "100px" }
+      { threshold: 0.1, rootMargin: "100px" },
     );
 
     const target = observerRef.current;
@@ -211,9 +227,7 @@ export default function Artists({ location }: ArtistsProps) {
             })}
 
             {/* Infinite scroll trigger */}
-            {hasMoreToLoad && (
-              <div ref={observerRef} className="h-1" />
-            )}
+            {hasMoreToLoad && <div ref={observerRef} className="h-1" />}
 
             {/* Loading more indicator */}
             {loadingMore && (
