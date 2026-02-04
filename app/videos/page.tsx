@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import SiteLayout from "@/components/layout/SiteLayout";
 import VideoCard from "@/components/ui/VideoCard";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useInfiniteVideos, useToggleBookmark } from "@/hooks/use-videos";
 import {
   X,
   Copy,
@@ -14,6 +15,7 @@ import {
   Twitter,
   Mail,
   Linkedin,
+  Loader2,
 } from "lucide-react";
 
 const VIDEO_CATEGORIES = [
@@ -27,8 +29,6 @@ const VIDEO_CATEGORIES = [
 ];
 
 export default function VideosPage() {
-  const [videos, setVideos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [shareModal, setShareModal] = useState<{
     isOpen: boolean;
@@ -42,92 +42,82 @@ export default function VideosPage() {
 
   const { data: session } = useSession();
   const router = useRouter();
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // ---------- FETCH VIDEOS WITH BOOKMARK INFO ----------
-  useEffect(() => {
-    async function fetchVideos() {
-      try {
-        const res = await fetch("/api/videos?type=videos&withBookmarks=true");
-        const json = await res.json();
-
-        if (json.success) {
-          const mapped = json.data.videos.map((v: any) => ({
-            id: v.id,
-            title: v.title,
-            creator: `${v.user.firstName} ${v.user.lastName}`,
-            thumbnail: v.thumbnailUrl,
-            videoUrl: v.url,
-            category: v.category || "other",
-
-            // 🔥 bookmark data
-            isBookmarked: v.isBookmarked,
-            bookmarkId: v.bookmarkId,
-          }));
-
-          setVideos(mapped);
-        }
-      } catch (err) {
-        console.error("Error fetching videos:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchVideos();
-  }, []);
-
-  // Filter videos by category
-  const filteredVideos = videos.filter((video) => {
-    if (selectedCategory === "all") return true;
-    return video.category?.toLowerCase() === selectedCategory.toLowerCase();
+  // Use infinite query hook
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+  } = useInfiniteVideos({
+    type: "videos",
+    category: selectedCategory,
+    withBookmarks: true,
+    limit: 20,
   });
 
-  // ---------- TOGGLE BOOKMARK ----------
+  const toggleBookmarkMutation = useToggleBookmark();
+
+  // Flatten all pages into single array
+  const allVideos =
+    data?.pages.flatMap((page) =>
+      page.videos.map((v) => ({
+        id: v.id,
+        title: v.title,
+        creator: v.user.name
+          ? v.user.name
+          : `${v.user.firstName} ${v.user.lastName}`,
+        thumbnail: v.thumbnailUrl,
+        videoUrl: v.url,
+        category: "other",
+        isBookmarked: v.isBookmarked || false,
+        bookmarkId: v.bookmarkId || null,
+        creatorImage: v.user.avatar || v.user.image || undefined,
+      })),
+    ) || [];
+
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" },
+    );
+
+    const currentRef = loadMoreRef.current;
+    observer.observe(currentRef);
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  // Toggle bookmark handler
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
-    try {
-      // REMOVE bookmark
-
-      if (!session?.user) {
-        router.push("/auth/signin");
-        return;
-      }
-      if (isBookmarked && bookmarkId) {
-        await fetch(`/api/bookmarks/${bookmarkId}`, {
-          method: "DELETE",
-        });
-
-        setVideos((prev) =>
-          prev.map((v) =>
-            v.id === id ? { ...v, isBookmarked: false, bookmarkId: null } : v,
-          ),
-        );
-        return;
-      }
-
-      // CREATE bookmark
-      const res = await fetch(`/api/bookmarks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videoId: id }),
-      });
-
-      const json = await res.json();
-      const newBookmarkId = json?.data?.bookmark?.id;
-
-      setVideos((prev) =>
-        prev.map((v) =>
-          v.id === id
-            ? { ...v, isBookmarked: true, bookmarkId: newBookmarkId }
-            : v,
-        ),
-      );
-    } catch (err) {
-      console.error("Bookmark error:", err);
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
     }
+
+    toggleBookmarkMutation.mutate({
+      videoId: id,
+      bookmarkId,
+      isBookmarked,
+    });
   };
 
   const handleShare = async (videoId: string) => {
-    const video = videos.find((v) => v.id === videoId);
+    const video = allVideos.find((v) => v.id === videoId);
     const shareTitle = video?.title || "Check out this video";
     setShareModal({ isOpen: true, videoId, title: shareTitle });
   };
@@ -206,7 +196,7 @@ export default function VideosPage() {
       <div className="min-h-screen pt-20 lg:pt-24 pb-28">
         {/* Category Filter Chips */}
         <div
-          className="flex gap-2 mb-6 overflow-x-auto  scrollbar-hide bg-background-light p-4"
+          className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide bg-background-light p-4"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {VIDEO_CATEGORIES.map((category) => (
@@ -222,7 +212,7 @@ export default function VideosPage() {
               <span
                 className={
                   selectedCategory === category.value
-                    ? "text-transparent bg-clip-text bg-gradient-to-r from-[#ED4B22] to-[#E8047E]"
+                    ? "text-transparent bg-clip-text bg-linear-to-r from-[#ED4B22] to-[#E8047E]"
                     : ""
                 }
               >
@@ -233,36 +223,70 @@ export default function VideosPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Loading */}
-          {loading && (
-            <div className="text-center py-20 text-gray-400">
-              Loading videos...
+          {/* Initial Loading */}
+          {isLoading && (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-10 h-10 text-primary-pink animate-spin mb-4" />
+              <p className="text-gray-400">Loading videos...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {isError && (
+            <div className="text-center py-20">
+              <p className="text-red-400 text-lg">Failed to load videos</p>
+              <p className="text-gray-400 text-sm mt-2">
+                Please try again later
+              </p>
             </div>
           )}
 
           {/* Videos Grid */}
-          {!loading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
-              {filteredVideos.map((video) => (
-                <VideoCard
-                  key={video.id}
-                  id={video.id}
-                  title={video.title}
-                  creator={video.creator}
-                  creatorImage={video.creatorImage}
-                  thumbnail={video.thumbnail}
-                  videoUrl={video.videoUrl}
-                  isBookmarked={video.isBookmarked}
-                  bookmarkId={video.bookmarkId}
-                  onBookmark={(data) => toggleBookmark(data)}
-                  onShare={() => handleShare(video.id)}
-                />
-              ))}
-            </div>
+          {!isLoading && !isError && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
+                {allVideos.map((video, idx) => (
+                  <VideoCard
+                    key={`video-${video.id}-${idx}`}
+                    id={video.id}
+                    title={video.title}
+                    creator={video.creator}
+                    creatorImage={video.creatorImage}
+                    thumbnail={video.thumbnail}
+                    videoUrl={video.videoUrl}
+                    isBookmarked={video.isBookmarked}
+                    bookmarkId={video.bookmarkId}
+                    onBookmark={(data) => toggleBookmark(data)}
+                    onShare={() => handleShare(video.id)}
+                  />
+                ))}
+              </div>
+
+              {/* Infinite Scroll Trigger */}
+              {hasNextPage && (
+                <div ref={loadMoreRef} className="flex justify-center py-8">
+                  {isFetchingNextPage && (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary-pink" />
+                      <span>Loading more videos...</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* End of List */}
+              {!hasNextPage && allVideos.length > 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 text-sm">
+                    You've reached the end
+                  </p>
+                </div>
+              )}
+            </>
           )}
 
           {/* Empty State */}
-          {!loading && filteredVideos.length === 0 && (
+          {!isLoading && !isError && allVideos.length === 0 && (
             <div className="text-center py-16">
               <p className="text-gray-400 text-lg">
                 {selectedCategory === "all"

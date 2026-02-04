@@ -128,7 +128,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
         <div className="mt-3 px-1 flex justify-between items-start gap-3">
           <div className="flex gap-3 flex-1 min-w-0 items-center">
             <Image
-              src={ "/avatars/default-avatar.jpeg"}
+              src={"/avatars/default-avatar.jpeg"}
               alt={creator}
               width={32}
               height={32}

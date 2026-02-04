@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Image from 'next/image';
-import Bookmark from '@/components/icons/bookmark';
-import Share from '@/components/icons/share';
-import Link from 'next/link';
+import React from "react";
+import Image from "next/image";
+import Bookmark from "@/components/icons/bookmark";
+import Share from "@/components/icons/share";
+import Link from "next/link";
+import { buildArtishProfileUrl } from "@/lib/utils";
 
 interface ArtistInfoProps {
   artist: {
@@ -37,7 +38,7 @@ const ArtistInfo: React.FC<ArtistInfoProps> = ({
   isBookmarked = false,
   onBookmark,
   onShare,
-  className = '',
+  className = "",
 }) => {
   return (
     <div className={`${className}`}>
@@ -47,7 +48,7 @@ const ArtistInfo: React.FC<ArtistInfoProps> = ({
           <Link href={`/artists/${artist.id}`} className="shrink-0">
             <div className="relative w-8 h-8 rounded-full overflow-hidden">
               <Image
-                src={artist.avatar}
+                src={buildArtishProfileUrl(artist.avatar)}
                 alt={artist.name}
                 fill
                 className="object-cover"
@@ -57,9 +58,7 @@ const ArtistInfo: React.FC<ArtistInfoProps> = ({
           </Link>
 
           <div className="flex flex-col">
-            <h1 className="btn2 text-white line-clamp-2">
-              {video.title}
-            </h1>
+            <h1 className="btn2 text-white line-clamp-2">{video.title}</h1>
             <div className="flex items-center gap-2">
               <Link href={`/artists/${artist.id}`}>
                 <span className="footnote text-text-gray hover:text-white transition-colors">
@@ -76,15 +75,17 @@ const ArtistInfo: React.FC<ArtistInfoProps> = ({
         </div>
 
         {/* Right Side: Actions */}
-        <div className='flex items-center gap-2 lg:gap-3 shrink-0'>
+        <div className="flex items-center gap-2 lg:gap-3 shrink-0">
           <button
             onClick={onBookmark}
-            className={`rounded-full flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background ${isBookmarked
-              ? 'text-primary-pink' : ''
-              }`}
-            title={isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
+            className={`rounded-full flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background ${
+              isBookmarked ? "text-primary-pink" : ""
+            }`}
+            title={isBookmarked ? "Remove Bookmark" : "Bookmark"}
           >
-            <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-current' : ''}`} />
+            <Bookmark
+              className={`w-6 h-6 ${isBookmarked ? "fill-current" : ""}`}
+            />
           </button>
 
           <button

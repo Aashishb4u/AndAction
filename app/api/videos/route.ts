@@ -13,9 +13,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
+import { Prisma } from "@prisma/client";
 
 // --- Configuration ---
-const DEFAULT_LIMIT = 10;
+const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 
 export async function GET(request: NextRequest): Promise<NextResponse<any>> {
@@ -30,6 +31,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const type = url.searchParams.get("type"); // "shorts" | "videos" | null
     const artistId = url.searchParams.get("artistId"); // filter by artist
     const withBookmarks = url.searchParams.get("withBookmarks") === "true"; // NEW 🔥
+    const artistCategory = url.searchParams.get("category") || "all";
 
     // Check logged in user if bookmark details requested
     let userId: string | null = null;
@@ -40,8 +42,18 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     }
 
     // Build filters
-    const where: any = { isApproved: true };
+    const where: Prisma.VideoWhereInput = { isApproved: true };
 
+    if (artistCategory && artistCategory !== "all") {
+      where.user = {
+        artist: {
+          artistType: {
+            contains: artistCategory,
+            mode: "insensitive",
+          },
+        },
+      };
+    }
     // Type filter
     if (type === "shorts") where.isShort = true;
     if (type === "videos") where.isShort = false;
@@ -76,6 +88,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         user: {
           select: {
             id: true,
+            name: true,
             firstName: true,
             lastName: true,
             avatar: true,
