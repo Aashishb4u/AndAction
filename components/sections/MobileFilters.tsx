@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
+import { VIDEO_CATEGORIES } from "@/lib/constants";
 
 interface FilterOption {
   value: string;
@@ -19,15 +20,13 @@ interface MobileFiltersProps {
   className?: string;
 }
 
-// Filter options - matching desktop version exactly
+// Filter options - using VIDEO_CATEGORIES from constants
 const categoryOptions: FilterOption[] = [
   { value: "", label: "Select Category" },
-  { value: "singer", label: "Singer" },
-  { value: "anchor", label: "Anchor/emcee" },
-  { value: "band", label: "Live Band" },
-  { value: "dj", label: "DJ / VJ" },
-  { value: "dancer", label: "Dancer" },
-  { value: "comedian", label: "Comedian" },
+  ...VIDEO_CATEGORIES.filter((cat) => cat.value !== "all").map((cat) => ({
+    value: cat.value,
+    label: cat.label,
+  })),
 ];
 
 const subCategoryOptions: FilterOption[] = [
@@ -139,10 +138,11 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   }> = ({ label, isActive, onClick }) => (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2 rounded-full border filter-chip whitespace-nowrap flex-shrink-0 btn2 ${isActive
+      className={`flex items-center gap-2 px-4 py-2 rounded-full border filter-chip whitespace-nowrap flex-shrink-0 btn2 ${
+        isActive
           ? "bg-primary-pink border-primary-pink text-white"
           : "bg-background border-border-color text-gray-300 hover:border-gray-500"
-        }`}
+      }`}
     >
       <span>{label}</span>
       <svg
@@ -195,7 +195,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                 isActive={activeDropdown === chip.key}
                 onClick={() =>
                   setActiveDropdown(
-                    activeDropdown === chip.key ? null : chip.key
+                    activeDropdown === chip.key ? null : chip.key,
                   )
                 }
               />
@@ -216,13 +216,14 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                 <button
                   key={option.value}
                   onClick={() => {
-                    onFilterChange(activeDropdown, option.value);
+                    onFilterChange(activeDropdown as keyof Filters, option.value);
                     setActiveDropdown(null);
                   }}
-                  className={`w-full text-left px-4 py-3 hover:bg-background transition-colors first:rounded-t-lg last:rounded-b-lg ${filters[activeDropdown as keyof Filters] === option.value
+                  className={`w-full text-left px-4 py-3 hover:bg-background transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                    filters[activeDropdown as keyof Filters] === option.value
                       ? "bg-primary-pink/20 text-primary-pink"
                       : "text-white"
-                    }`}
+                  }`}
                 >
                   {option.label}
                 </button>
