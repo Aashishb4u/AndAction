@@ -20,17 +20,6 @@ export const metadata: Metadata = {
 const PrivacyPage = () => {
   const sections = [
     {
-      id: "company-info",
-      title: "Company Information",
-      icon: <Shield className="w-6 h-6" />,
-      content: [
-        {
-          subtitle: "",
-          text: "ANDACTION is a brand owned and operated by MINDFUL TECH INNOVATIONS (OPC) PVT LTD, a registered company under the laws of India.",
-        },
-      ],
-    },
-    {
       id: "information-collection",
       title: "Information We Collect",
       icon: <Eye className="w-6 h-6" />,
@@ -133,7 +122,8 @@ const PrivacyPage = () => {
         {/* Introduction */}
         <section>
           <p className="text-text-light-gray leading-relaxed mb-6">
-            ANDACTION is a brand owned and operated by MINDFUL TECH INNOVATIONS (OPC) PVT LTD, a registered company under the laws of India.
+            ANDACTION is a brand owned and operated by MINDFUL TECH INNOVATIONS
+            (OPC) PVT LTD, a registered company under the laws of India.
           </p>
           <p className="text-text-light-gray leading-relaxed mb-6">
             At ANDACTION, we are committed to protecting your privacy and
