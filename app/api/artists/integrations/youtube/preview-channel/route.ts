@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { syncYouTubeVideos } from "@/app/actions/youtube/sync-videos";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 /**
- * Connect YouTube channel by channel name or ID (without OAuth)
- * Artists just need to provide their channel name/ID to fetch public videos
+ * Preview YouTube channel details before connecting
+ * Fetches channel information without saving to database
  */
 export async function POST(request: NextRequest) {
   try {
@@ -17,17 +15,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 },
-      );
-    }
-
-    const artist = await prisma.artist.findUnique({
-      where: { userId: session.user.id },
-    });
-
-    if (!artist) {
-      return NextResponse.json(
-        { success: false, message: "Artist profile not found" },
-        { status: 404 },
       );
     }
 
@@ -48,13 +35,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Clean the input: remove @ symbol if present
     let cleanedInput = channelInput.trim().replace(/^@/, "");
     const originalInputWithAt = `@${cleanedInput}`.toLowerCase();
 
-    // Try to find channel by ID first (Channel IDs start with UC)
     let channelResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&id=${encodeURIComponent(
+      `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${encodeURIComponent(
         cleanedInput,
       )}&key=${YOUTUBE_API_KEY}`,
     );
@@ -62,10 +47,9 @@ export async function POST(request: NextRequest) {
     let channelData = await channelResponse.json();
     let foundChannel = null;
 
-    // If not found by ID, try forUsername (for legacy usernames)
     if (!channelData.items || channelData.items.length === 0) {
       channelResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&forUsername=${encodeURIComponent(
+        `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&forUsername=${encodeURIComponent(
           cleanedInput,
         )}&key=${YOUTUBE_API_KEY}`,
       );
@@ -73,7 +57,6 @@ export async function POST(request: NextRequest) {
       channelData = await channelResponse.json();
     }
 
-    // If still not found, use search
     if (!channelData.items || channelData.items.length === 0) {
       const searchResponse = await fetch(
         `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(
@@ -84,14 +67,12 @@ export async function POST(request: NextRequest) {
       const searchData = await searchResponse.json();
 
       if (searchData.items && searchData.items.length > 0) {
-        // Get all channel IDs from search results
         const channelIds = searchData.items
           .map((item: any) => item.snippet.channelId)
           .join(",");
 
-        // Fetch full details for all channels to get customUrl
         const detailsResponse = await fetch(
-          `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&id=${channelIds}&key=${YOUTUBE_API_KEY}`,
+          `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${channelIds}&key=${YOUTUBE_API_KEY}`,
         );
 
         const detailsData = await detailsResponse.json();
@@ -125,7 +106,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: `Channel "${channelInput}" not found. Please try:\n\n1. Using the exact handle (e.g., @username or username)\n2. Using the Channel ID (starts with UC) for 100% accuracy\n3. Using the exact channel name as shown on YouTube`,
+          message: `Channel "${channelInput}" not found. Please try:\n• Using the exact handle (e.g., @username)\n• Using the Channel ID (starts with UC)\n• Using the exact channel name`,
         },
         { status: 404 },
       );
@@ -133,40 +114,38 @@ export async function POST(request: NextRequest) {
 
     const channel = channelData.items[0];
 
-    // Update the artist profile with YouTube channel data (without OAuth tokens)
-    await prisma.artist.update({
-      where: { id: artist.id },
-      data: {
-        youtubeChannelId: channel.id,
-        youtubeChannelName: channel.snippet.title,
-        youtubeConnectedAt: new Date(),
-        // Clear any old OAuth tokens if they exist
-        youtubeAccessToken: null,
-        youtubeRefreshToken: null,
-        youtubeTokenExpiry: null,
-      },
-    });
+    // Format subscriber count
+    const formatCount = (count: string) => {
+      const num = parseInt(count);
+      if (num >= 1000000) {
+        return `${(num / 1000000).toFixed(1)}M`;
+      } else if (num >= 1000) {
+        return `${(num / 1000).toFixed(1)}K`;
+      }
+      return count;
+    };
 
-    // Auto-sync videos after connecting
-    try {
-      await syncYouTubeVideos();
-    } catch (syncError) {
-      console.error("Error auto-syncing videos:", syncError);
-      // Don't fail the connection if sync fails - it can be done manually
-    }
-
+    // Return channel preview data
     return NextResponse.json({
       success: true,
-      message: "YouTube channel connected successfully",
       data: {
         channelId: channel.id,
         channelName: channel.snippet.title,
+        customUrl: channel.snippet.customUrl,
+        description: channel.snippet.description,
+        thumbnailUrl:
+          channel.snippet.thumbnails?.high?.url ||
+          channel.snippet.thumbnails?.medium?.url,
+        subscriberCount: channel.statistics?.subscriberCount
+          ? formatCount(channel.statistics.subscriberCount)
+          : undefined,
+        videoCount: channel.statistics?.videoCount,
       },
     });
   } catch (error) {
-    console.error("Error connecting YouTube channel:", error);
+    console.error("Error previewing YouTube channel:", error);
     return NextResponse.json(
-      { success: false, message: "Failed to connect YouTube channel" },
+      { success: false, message: "Failed to preview YouTube channel" },
       { status: 500 },
     );
   }
