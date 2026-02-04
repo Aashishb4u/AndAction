@@ -51,12 +51,12 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-end md:justify-center items-center pb-20 md:pb-0">
         <div className="max-w-4xl mx-auto w-full">
           {/* Main Heading */}
-          <h1 className={`text-4xl leading-10 lg:leading-14 lg:text-5xl font-bold text-white mb-3 max-w-3xl ${isLoaded ? 'hero-title-animate' : 'opacity-0'}`}>
+          <h1 className={`t1 text-text-white mb-3 max-w-3xl ${isLoaded ? 'hero-title-animate' : 'opacity-0'}`}>
             Discover and Book Perfect Artists for your Events
           </h1>
 
           {/* Subtitle */}
-          <p className={`text-text-gray max-w-2xl mx-auto mb-5 ${isLoaded ? 'hero-subtitle-animate' : 'opacity-0'}`}>
+          <p className={`text-text-gray secondary-grey-text max-w-2xl mx-auto mb-5 ${isLoaded ? 'hero-subtitle-animate' : 'opacity-0'}`}>
             Connecting talent with unforgettable experiences, all in one place!
           </p>
 

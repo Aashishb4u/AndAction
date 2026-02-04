@@ -62,7 +62,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block section-text mb-1"
+            className="block section-text secondary-text mb-1"
           >
             {label}
           </label>

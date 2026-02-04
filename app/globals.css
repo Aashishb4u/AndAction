@@ -42,6 +42,12 @@
   /* Background */
   --background: var(--background-black);
   --foreground: var(--text-white);
+
+  /* gradient line in sidebar */
+  --border-gradient-dark: linear-gradient(90deg,
+      #0F0F0F 0%,
+      #2D2D2D 50%,
+      #0F0F0F 100%);
 }
 
 @theme inline {
@@ -84,8 +90,8 @@ input:-webkit-autofill:focus,
 input:-webkit-autofill:active,
 textarea:-webkit-autofill,
 textarea:-webkit-autofill:hover,
-textarea:-webkit-autofill:focus,s
-textarea:-webkit-autofill:active,
+textarea:-webkit-autofill:focus,
+s textarea:-webkit-autofill:active,
 select:-webkit-autofill,
 select:-webkit-autofill:hover,
 select:-webkit-autofill:focus,
@@ -746,6 +752,48 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .artist-card-hover:hover .artist-info-icon {
   color: #E8047E;
 }
+
+.card-border-gradient {
+  position: relative;
+}
+
+.card-border-gradient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(155.75deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 100.41%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.category-btn-gradient {
+  background: linear-gradient(135deg, rgba(237, 75, 34, 0.1) 0%, rgba(232, 4, 126, 0.1) 100%);
+  position: relative;
+  border: none; /* We handle border with pseudo element to support gradient + radius */
+}
+
+.category-btn-gradient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #ED4B22 0%, #E8047E 100%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
 
 /* Hero section entrance animations */
 @keyframes heroFadeInUp {

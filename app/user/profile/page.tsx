@@ -155,14 +155,14 @@ export default function UserProfilePage() {
   return (
     <div className="min-h-screen bg-background md:p-4 p-0 ">
       {/* Back Button and Title - Title Centered */}
-      <div className="relative flex items-center md:justify-center md:mb-8 mb-4 md:mt-4 mt-2 md:px-0 px-4">
+      <div className="relative flex items-center md:justify-center md:mb-8 md:mt-4 mt-2 md:px-0 px-4">
         <button
           onClick={() => router.back()}
-          className="absolute left-0 md:left-0 text-white m-3 hover:text-primary-pink transition-colors duration-200 flex items-center gap-2"
+          className="absolute left-0 md:left-0 text-white m-3 hover:text-primary-pink transition-colors duration-200 flex items-center gap-4"
           aria-label="Back"
         >
           <svg
-            className="w-6 h-6"
+            className="w-8 h-8"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -176,7 +176,7 @@ export default function UserProfilePage() {
           </svg>
           <span className="md:inline hidden">Back</span>
         </button>
-        <h1 className="h1 ml-6 font-semibold text-white">
+        <h1 className="h1 ml-6 font-semibold text-white gap-4 p-4">
           Edit your profile
         </h1>
       </div>
@@ -188,7 +188,7 @@ export default function UserProfilePage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Avatar Selection */}
             <div className="space-y-4">
-              <h3 className="text-white text-center text-lg font-medium">
+              <h3 className="text-white text-center text-lg font- secondary-text">
                 Choose avatar
               </h3>
               <div className="flex items-center justify-center md:gap-3 gap-2">

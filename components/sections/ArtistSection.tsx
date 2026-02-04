@@ -51,12 +51,12 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-1 px-6">
-        <h2 className="text-2xl font-semibold text-white">{title}</h2>
+      <div className="flex items-center justify-between mb-1 px-4">
+        <h2 className="h2 text-white">{title}</h2>
         <button
-          className="gradient-text hover:text-primary-orange transition-colors duration-300           font-bold
-          btn1 border-b 
-          border-primary-pink/80 leading-4!"
+          className="gradient-text hover:text-primary-orange transition-colors duration-300
+          border-b 
+          border-primary-pink/80 btn1"
           onClick={() => {
             if (artists.length === 0) {
               setShowNoArtistModal(true);
@@ -143,7 +143,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
           {/* Cards Container */}
           <div
             ref={scrollContainerRef}
-            className="flex gap-3 overflow-x-auto scrollbar-hide px-6 py-2 cursor-grab active:cursor-grabbing"
+            className="flex gap-[10px] overflow-x-auto scrollbar-hide px-4 py-2 cursor-grab active:cursor-grabbing"
             style={{
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',

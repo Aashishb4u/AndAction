@@ -98,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       >
         <div className="flex flex-col h-full min-h-0 overflow-y-auto">
           {/* Header Close */}
-          <div className="flex items-center justify-end px-6 pt-4">
+          <div className="flex items-center justify-end px-4 pt-4">
             <button
               onClick={onClose}
               className="p-2 text-text-light-gray hover:text-white transition-colors duration-200"
@@ -121,7 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           {/* Logged-in user section */}
           {user ? (
-            <div className="px-6 pt-2 pb-3">
+            <div className="px-4 pt-2 pb-3">
               <button
                 onClick={() => {
                   onClose();
@@ -177,32 +177,32 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </div>
           ) : (
             // Guest state - Match prototype design
-            <div className="px-6 pt-2 pb-3">
+            <div className="px-4 pt-2 pb-3">
               <button
                 onClick={() => {
                   router.push(createAuthRedirectUrl("/auth/signin", pathname));
                   onClose();
                 }}
-                className="text-white text-xl font-medium mb-2 hover:text-primary-pink transition-colors"
+                className="text-white h1 hover:text-primary-pink transition-colors mb-2"
               >
                 Sign-In / Sign-Up
               </button>
               <br />
               <button
                 onClick={handleJoinArtist}
-                className="block gradient-text hover:opacity-80 transition-opacity duration-200 text-lg"
+                className="block gradient-text hover:opacity-80 transition-opacity duration-200 h1"
               >
-                Join as a artist
+                Join as an artist
               </button>
             </div>
           )}
 
           {/* Divider */}
-          <div className="h-px bg-linear-to-r from-transparent via-gray-800 to-transparent" />
+          <div className="h-px [background:var(--border-gradient-dark)] mt-2" />
 
           {/* Navigation Links */}
-          <div className="flex-1 px-6 md:py-5 mt-3">
-            <div className="space-y-3">
+          <div className="flex-1 px-4 md:py-5 mt-4">
+            <div className="space-y-3 mb-6">
               {navigationItems.map((item) => (
                 <Link
                   key={item.label}
@@ -216,16 +216,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 </Link>
               ))}
             </div>
-
+            <div className="h-px [background:var(--border-gradient-dark)]" />
             {/* Contact Info - For any query */}
             <div className="mt-8 p-4 bg-card border border-border-color rounded-xl">
               <div className="flex items-center space-x-3 mb-2">
-                <Support className="size-5 text-text-gray" />
-                <span className="text-text-gray text-sm">For any query</span>
+                <Support className="size-6 text-text-gray" />
+                <span className="text-text-gray secondary-text">For any query</span>
               </div>
-              <p className="text-white text-sm">
-                Contact Us : 8860014889
-              </p>
+              <p className="text-white secondary-grey-text">Contact Us : 8860014889</p>
             </div>
           </div>
 

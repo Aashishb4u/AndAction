@@ -12,6 +12,7 @@ interface VideoCardProps {
   id: string;
   title: string;
   creator: string;
+  creatorImage?: string;
   thumbnail: string;
   videoUrl: string;
   className?: string;
@@ -101,7 +102,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-card transition-transform duration-300 ease-out hover:scale-105">
+        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-card transition-transform duration-300 ease-out hover:scale-105 card-border-gradient">
           <Image src={thumbnail} alt={title} fill className="object-cover" />
 
           <div
@@ -120,12 +121,19 @@ const VideoCard: React.FC<VideoCardProps> = ({
             </video>
           </div>
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300" />
         </div>
 
         {/* BOTTOM INFO */}
         <div className="mt-3 px-1 flex justify-between items-start gap-3">
-          <div className="flex gap-3 flex-1 min-w-0">
+          <div className="flex gap-3 flex-1 min-w-0 items-center">
+            <Image
+              src={ "/avatars/default-avatar.jpeg"}
+              alt={creator}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+            />
             <div className="flex-1 min-w-0">
               <h3 className="btn2 text-white line-clamp-2 group-hover:text-primary-pink transition-colors duration-300">
                 {title}
@@ -147,9 +155,9 @@ const VideoCard: React.FC<VideoCardProps> = ({
               <>
                 <button
                   onClick={handleMenuToggle}
-                  className="p-2 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 transition-colors"
+                  className="p-1 text-white hover:text-primary-pink transition-colors"
                 >
-                  <MoreVertical className="w-4 h-4" />
+                  <MoreVertical className="w-6 h-6" />
                 </button>
 
                 {showMenu && (
@@ -160,7 +168,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
                         isBookmarked ? "text-primary-pink" : "text-white"
                       }`}
                     >
-                      <Bookmark className="w-4 h-4" />
+                      <Bookmark className="w-6 h-6" />
                       {isBookmarked ? "Remove Bookmark" : "Bookmark"}
                     </button>
 
@@ -168,7 +176,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
                       onClick={handleShare}
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-background/50 transition-colors"
                     >
-                      <Share className="w-4 h-4" />
+                      <Share className="w-6 h-6" />
                       Share
                     </button>
                   </div>

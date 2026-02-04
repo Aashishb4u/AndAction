@@ -43,7 +43,7 @@ const Select: React.FC<SelectProps> = ({
     border rounded-lg transition-all duration-200
     focus:outline-none focus:ring-2 focus:ring-primary-pink/50
     disabled:opacity-50 disabled:cursor-not-allowed
-    appearance-none cursor-pointer font-normal
+    appearance-none cursor-pointer font-normal secondary-grey-text
   `;
 
   const stateClasses = disabled
@@ -101,7 +101,7 @@ const Select: React.FC<SelectProps> = ({
         {/* Custom dropdown arrow */}
         <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
           <svg
-            className={`w-5 h-5 ${disabled ? 'text-gray-600' : 'text-text-gray'}`}
+            className={`w-6 h-6 ${disabled ? 'text-gray-600' : 'text-text-gray'}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
