@@ -1,0 +1,16 @@
+export const VIDEO_CATEGORIES = [
+  { value: "all", label: "All" },
+  { value: "singer", label: "Singer" },
+  { value: "dancers", label: "Dancer" },
+  { value: "musicians", label: "Musician" },
+  { value: "anchors", label: "Anchor" },
+  { value: "djs", label: "DJ" },
+  { value: "bands", label: "Live Band " },
+  { value: "comedians", label: "Comedian" },
+  { value: "magicians", label: "Magician" },
+  { value: "actors", label: "Actor" },
+  { value: "mimicry", label: "Mimicry" },
+  { value: "specialAct", label: "Special Act Performer" },
+  { value: "spiritual", label: "Spiritual" },
+  { value: "kidsEntertainers", label: "Kids Entertainer" },
+];

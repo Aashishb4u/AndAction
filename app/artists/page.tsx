@@ -10,6 +10,7 @@ import LoadingSpinner from "@/components/ui/Loading";
 import { transformArtist } from "./transformArtist";
 import ClientWrapper from "@/components/ui/client-wrapper";
 import { Search } from "lucide-react";
+import { VIDEO_CATEGORIES } from "@/lib/constants";
 
 const DEFAULT_LIMIT = 12;
 
@@ -352,16 +353,11 @@ function ArtistsPageContent() {
                 {filters.category && (
                   <span className="ml-2 px-3 py-1 rounded bg-primary-pink/20 text-primary-pink font-semibold text-base capitalize flex-shrink-0">
                     {(() => {
-                      // Map filter value to display name
-                      switch (filters.category) {
-                        case 'singer': return 'Singer';
-                        case 'dj': return 'DJ / VJ';
-                        case 'anchor': return 'Anchor/emcee';
-                        case 'band': return 'Live Band';
-                        case 'dancer': return 'Dancer';
-                        case 'comedian': return 'Comedian';
-                        default: return filters.category;
-                      }
+                      // Find matching category from VIDEO_CATEGORIES (case-insensitive)
+                      const category = VIDEO_CATEGORIES.find(
+                        cat => cat.value.toLowerCase() === filters.category.toLowerCase()
+                      );
+                      return category?.label || filters.category;
                     })()}
                   </span>
                 )}

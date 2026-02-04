@@ -4,6 +4,7 @@ import React from 'react';
 import { Filters } from '@/types';
 import Select from '@/components/ui/Select';
 import Button from '../ui/Button';
+import { VIDEO_CATEGORIES } from '@/lib/constants';
 
 interface FilterOption {
   value: string;
@@ -19,14 +20,10 @@ interface ArtistFiltersProps {
   className?: string;
 }
 
-const categoryOptions: FilterOption[] = [
-  { value: 'singer', label: 'Singer' },
-  { value: 'anchor', label: 'Anchor/emcee' },
-  { value: 'band', label: 'Live Band' },
-  { value: 'dj', label: 'DJ / VJ' },
-  { value: 'dancer', label: 'Dancer' },
-  { value: 'comedian', label: 'Comedian' },
-];
+// Use categories from constants, excluding 'all'
+const categoryOptions: FilterOption[] = VIDEO_CATEGORIES
+  .filter(cat => cat.value !== 'all')
+  .map(cat => ({ value: cat.value, label: cat.label }));
 
 const subCategoryOptions: FilterOption[] = [
   { value: 'bollywood', label: 'Bollywood' },
