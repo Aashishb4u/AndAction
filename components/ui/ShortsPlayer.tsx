@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Bookmark from "@/components/icons/bookmark";
 import Share from "@/components/icons/share";
-import MoreVertical from "@/components/icons/more-vertical";
 import Play from "@/components/icons/play";
 import Pause from "@/components/icons/pause";
 import Link from "next/link";

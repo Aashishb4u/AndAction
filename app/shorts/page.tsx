@@ -35,7 +35,7 @@ import { toast } from "react-toastify";
 
 export default function ShortsPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [isDesktop, setIsDesktop] = useState(false);
   const queryClient = useQueryClient();
   const [shareModal, setShareModal] = useState<{
