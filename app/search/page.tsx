@@ -141,17 +141,17 @@ export default function MobileSearchPage() {
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Top Bar */}
       <div className="p-4 pb-2 mt-2 flex flex-col">
-        <div className="relative w-full">
+        <div className="relative w-full ">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
             {/* Fix 3 - when i type smthg the search icon must become white only when i type smthg in search box */}
-            <SearchIcon className={`w-5 h-5 ${search.trim() ? "text-white" : "text-gray-400"}`} />
+            <SearchIcon className={`w-6 h-6 ${search.trim() ? "text-white" : "text-gray-400"}`} />
           </span>
           <input
             type="text"
             value={search}
             onChange={handleSearch}
             placeholder="Search any artist..."
-            className="w-full rounded-full border border-[#333] bg-[#181818] pl-10 pr-12 py-2 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#333] text-base shadow-sm"
+            className="w-full rounded-full border border-[#333] bg-[#181818] pl-12 pr-12 py-3 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#333] text-base shadow-sm"
             style={{ boxShadow: "none" }}
           />
           {search.trim() && (
@@ -161,7 +161,7 @@ export default function MobileSearchPage() {
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none"
               onClick={() => setSearch("")}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6">
                 <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
               </svg>
             </button>
@@ -171,22 +171,26 @@ export default function MobileSearchPage() {
 
       {/* Category Filter Chips */}
       {(search.trim() || selectedCategory !== "all") && (
-        <div
-          className="flex gap-2 px-4 pb-2 overflow-x-auto scrollbar-hide"
-          style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {filterCategories.map((cat) => (
-            <button
-              key={cat.value}
-              onClick={() => setSelectedCategory(cat.value)}
-              // Fix 2 only the acive option's text must have gradient - linear gradient (#ED4B22 , #E8047E)
-              className={`px-4 py-1 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${selectedCategory === cat.value ? "bg-white border-white" : "bg-[#232323] text-white border-[#333]"}`}
-            >
-              <span className={selectedCategory === cat.value ? "bg-gradient-to-r from-[#ED4B22] to-[#E8047E] bg-clip-text text-transparent" : ""}>
-                {cat.label}
-              </span>
-            </button>
-          ))}
+        <div className="relative">
+          <div
+            className="flex gap-2 px-4 p-2 overflow-x-auto scrollbar-hide"
+            style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {filterCategories.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => setSelectedCategory(cat.value)}
+                // Fix 2 only the acive option's text must have gradient - linear gradient (#ED4B22 , #E8047E)
+                className={`px-4 py-1 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${selectedCategory === cat.value ? "bg-white border-white" : "bg-background-light text-white border-border-color"}`}
+              >
+                <span className={selectedCategory === cat.value ? "bg-gradient-to-r from-[#ED4B22] to-[#E8047E] bg-clip-text text-transparent" : ""}>
+                  {cat.label}
+                </span>
+              </button>
+            ))}
+          </div>
+          {/* Blur effect on the right */}
+          <div className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-black via-black/80 to-transparent pointer-events-none" />
         </div>
       )}
 
@@ -245,7 +249,7 @@ export default function MobileSearchPage() {
                 onClick={() =>
                   router.push(`/artists?type=${encodeURIComponent(cat.value)}`)
                 }
-                className="w-full flex justify-between items-center rounded-full border border-[#FF4B2B] bg-[#e8047e2a] px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:from-[#ED4B22] hover:to-[#E8047E] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/50"
+                className="w-full flex justify-between items-center rounded-full category-btn-gradient px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus:outline-none"
               >
                 <span className="text-[#F2F2F2]">{cat.label}</span>
                 <span className="text-[#F2F2F2] flex items-center">

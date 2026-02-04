@@ -41,57 +41,58 @@ const ArtistInfo: React.FC<ArtistInfoProps> = ({
 }) => {
   return (
     <div className={`${className}`}>
-      {/* Video Title */}
-      <div className="mb-4">
-        <h1 className="btn1 text-white mb-2 line-clamp-2">
-          {video.title}
-        </h1>
-      </div>
-
-      {/* Artist Info and Actions */}
-      <div className="flex items-center justify-between gap-4 mb-6">
-        {/* Artist Details */}
-        <Link href={`/artists/${artist.id}`} className="flex-1">
-          <div className='flex items-center gap-3'>
-            <div className="relative">
+      <div className="flex items-start justify-between gap-4 mb-6">
+        {/* Left Side: Avatar + Title + Artist Name */}
+        <div className="flex gap-3 flex-1">
+          <Link href={`/artists/${artist.id}`} className="shrink-0">
+            <div className="relative w-8 h-8 rounded-full overflow-hidden">
               <Image
                 src={artist.avatar}
                 alt={artist.name}
-                width={48}
-                height={48}
+                fill
+                className="object-cover"
                 unoptimized
-                className="rounded-full object-cover lg:w-[60px] lg:h-[60px]"
               />
             </div>
+          </Link>
 
-            <div>
-              <h2 className="btn2 font-semibold text-white -bottom-2">
-                {artist.name}
-              </h2>
-              <span className="capitalize footnote text-text-gray">{artist.category}</span>
+          <div className="flex flex-col">
+            <h1 className="btn2 text-white line-clamp-2">
+              {video.title}
+            </h1>
+            <div className="flex items-center gap-2">
+              <Link href={`/artists/${artist.id}`}>
+                <span className="footnote text-text-gray hover:text-white transition-colors">
+                  {artist.name}
+                </span>
+              </Link>
             </div>
+            {video.description && (
+              <p className="footnote text-text-gray mt-2 line-clamp-3">
+                {video.description}
+              </p>
+            )}
           </div>
-        </Link>
+        </div>
 
-        <div className='flex items-center gap-2 lg:gap-3'>
+        {/* Right Side: Actions */}
+        <div className='flex items-center gap-2 lg:gap-3 shrink-0'>
           <button
             onClick={onBookmark}
-            className={`rounded-full flex items-center gap-3 md:py-2 md:px-5 p-2.5 lg:p-3 border border-border-color bg-card text-white transition-all duration-300 hover:bg-background ${isBookmarked
-              ? 'bg-primary-pink text-white' : ''
+            className={`rounded-full flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background ${isBookmarked
+              ? 'text-primary-pink' : ''
               }`}
+            title={isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
           >
-            <Bookmark className="w-4 h-4 lg:w-5 lg:h-5" />
-            <span className="hidden md:inline">
-              {isBookmarked ? 'Bookmarked' : 'Bookmark'}
-            </span>
+            <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-current' : ''}`} />
           </button>
 
           <button
             onClick={onShare}
-            className="rounded-full flex items-center gap-3 md:py-2 md:px-5 p-2.5 lg:p-3 border border-border-color bg-card text-white transition-all duration-300 hover:bg-background"
+            className="rounded-full flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background"
+            title="Share"
           >
-            <Share className="w-4 h-4 lg:w-5 lg:h-5" />
-            <span className="hidden md:inline">Share</span>
+            <Share className="w-6 h-6" />
           </button>
         </div>
       </div>

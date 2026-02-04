@@ -67,7 +67,7 @@ const Modal: React.FC<ModalProps> = ({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+      className="fixed inset-0 z-50 flex items-center justify-center md:p-4 modal-backdrop"
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
@@ -85,17 +85,17 @@ const Modal: React.FC<ModalProps> = ({
         {showCloseButton && title && (
           <div className={`border-b border-border-color px-8 py-6 ${headerClassName}`}>
             <div className='flex justify-between items-center'>
-              <div className="absolute top-4 right-4 z-10">
-                <button
-                  onClick={onClose}
-                  className="p-2 text-white hover:text-white hover:bg-[#2D2D2D] rounded-full transition-all duration-200"
-                  aria-label="Close modal"
-                >
-                  <X size={20} />
-                </button>
-              </div>
               <div>
                 <h2 className='text-white h1'>{title}</h2>
+              </div>
+              <div className="z-10">
+                <button
+                  onClick={onClose}
+                  className="p-2 text-white hover:text-white hover:bg-[#2D2D2D] rounded-full justify-items-center items-center transition-all duration-200"
+                  aria-label="Close modal"
+                >
+                  <X size={24} />
+                </button>
               </div>
             </div>
           </div>
