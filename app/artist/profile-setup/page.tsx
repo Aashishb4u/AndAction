@@ -22,7 +22,21 @@ export default function ProfileSetupPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-  const { data: session, update } = useSession();
+  const { data: session, status, update } = useSession();
+
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (status === "unauthenticated") {
+      router.push("/auth/signin?redirect=/artist/profile-setup");
+      return;
+    }
+
+    if (session?.user?.role !== "artist") {
+      router.push("/");
+      return;
+    }
+  }, [status, session, router]);
 
   // Form data states
   const [profileData, setProfileData] = useState({
@@ -127,7 +141,7 @@ export default function ProfileSetupPage() {
         (profileData as any).avatarUrl &&
         (profileData as any).avatarUrl.trim() !== ""
           ? (profileData as any).avatarUrl
-          : session?.user?.avatar ?? null;
+          : (session?.user?.avatar ?? null);
 
       await update({
         avatar: avatarToUse,
@@ -307,6 +321,23 @@ export default function ProfileSetupPage() {
         );
     }
   };
+
+  // Show loading state while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-pink mx-auto mb-4"></div>
+          <p className="text-text-gray">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authorized (will redirect)
+  if (!session || session.user?.role !== "artist") {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
