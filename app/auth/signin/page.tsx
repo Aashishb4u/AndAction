@@ -22,6 +22,7 @@ function SignInContent() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,10 +47,36 @@ function SignInContent() {
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
-      setError("");
-      setStep("password");
+    setEmailError("");
+    setError("");
+
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      setEmailError("Email or phone number is required");
+      return;
     }
+
+    // Check if it's an email or phone number
+    const isEmail = trimmedEmail.includes("@");
+
+    if (isEmail) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedEmail)) {
+        setEmailError("Please enter a valid email address");
+        return;
+      }
+    } else {
+      // Validate phone number (should contain at least 10 digits)
+      const phoneDigits = trimmedEmail.replace(/\D/g, "");
+      if (phoneDigits.length < 10) {
+        setEmailError("Please enter a valid phone number (at least 10 digits)");
+        return;
+      }
+    }
+
+    setStep("password");
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -108,6 +135,7 @@ function SignInContent() {
     setStep("email");
     setPassword("");
     setError("");
+    setEmailError("");
   };
 
   const handleSocialSignIn = async (
@@ -180,16 +208,24 @@ function SignInContent() {
               Enter your email or mobile number to sign in.
             </p>
             <form onSubmit={handleEmailSubmit} className="space-y-6">
-              <Input
-                label="Email or Mobile number"
-                type="text"
-                placeholder="Enter email ID or mobile number"
-                className="bg-[#2D2D2D]"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                variant="filled"
-                required
-              />
+              <div>
+                <Input
+                  label="Email or Mobile number"
+                  type="text"
+                  placeholder="Enter email ID or mobile number"
+                  className="bg-[#2D2D2D]"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailError("");
+                  }}
+                  variant="filled"
+                  required
+                />
+                {emailError && (
+                  <p className="text-red-400 text-sm mt-2">{emailError}</p>
+                )}
+              </div>
 
               <Button
                 type="submit"

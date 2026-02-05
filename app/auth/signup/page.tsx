@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense, useMemo } from "react";
+import React, { useState, Suspense, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Input, { PasswordInput } from "@/components/ui/Input";
@@ -45,9 +45,18 @@ function SignUpContent() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resendTimer, setResendTimer] = useState(0);
 
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
 
   // Check for OAuth errors from URL
   const oauthError = useMemo(() => {
@@ -182,6 +191,7 @@ function SignUpContent() {
               "Failed to send verification code (Server Error).",
           );
         setStep("otp");
+        setResendTimer(30); // Start 30-second countdown
       } else {
         console.log(`Sending OTP to email: ${email}`);
         const response = await fetch("/api/users/send-otp", {
@@ -195,6 +205,7 @@ function SignUpContent() {
             data.error || data.message || "Failed to send verification email.",
           );
         setStep("otp");
+        setResendTimer(30); // Start 30-second countdown
       }
     } catch (err: any) {
       setError(err.message || "An unexpected network error occurred.");
@@ -293,6 +304,7 @@ function SignUpContent() {
           );
         setError("A new verification code has been sent.");
         setOtp("");
+        setResendTimer(30); // Start 30-second countdown
       } else {
         const response = await fetch("/api/users/send-otp", {
           method: "POST",
@@ -308,6 +320,7 @@ function SignUpContent() {
           );
         setError("A new verification code has been sent to your email.");
         setOtp("");
+        setResendTimer(30); // Start 30-second countdown
       }
     } catch (err: any) {
       setError(
@@ -610,10 +623,12 @@ function SignUpContent() {
                 <button
                   type="button"
                   onClick={handleResendOTP}
-                  disabled={isLoading}
-                  className="text-white hover:text-primary-pink transition-colors duration-200 text-sm font-medium underline"
+                  disabled={isLoading || resendTimer > 0}
+                  className="text-white hover:text-primary-pink transition-colors duration-200 text-sm font-medium underline disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Resend OTP
+                  {resendTimer > 0
+                    ? `Resend OTP (${resendTimer}s)`
+                    : "Resend OTP"}
                 </button>
               </div>
 
