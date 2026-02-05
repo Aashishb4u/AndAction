@@ -216,13 +216,13 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
   const handleReset = () => {
     setFormData({
-      performingLanguages: ["english", "hindi", "gujarati"],
-      eventTypes: ["party", "concert", "events"],
-      performingStates: ["gujarat", "rajasthan", "maharashtra"],
-      minDuration: "120",
-      maxDuration: "160",
-      performingMembers: "2",
-      offStageMembers: "0",
+      performingLanguages: parseCSV(artist.performingLanguage),
+      eventTypes: parseCSV(artist.performingEventType),
+      performingStates: parseCSV(artist.performingStates),
+      minDuration: artist.performingDurationFrom || "",
+      maxDuration: artist.performingDurationTo || "",
+      performingMembers: artist.performingMembers || "",
+      offStageMembers: artist.offStageMembers || "",
     });
   };
 
