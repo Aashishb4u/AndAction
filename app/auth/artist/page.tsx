@@ -448,7 +448,9 @@ function ArtistAuthContent() {
         <Image
           src="/logo.png"
           alt="ANDACTION Logo"
-          className="h-8 object-contain" width={150} height={24}
+          className="h-8 object-contain"
+          width={150}
+          height={24}
         />
         <button
           onClick={() => router.push("/")}
@@ -494,33 +496,35 @@ function ArtistAuthContent() {
               <form onSubmit={handleJoinSubmit} className="space-y-6">
                 {contactType === "phone" ? (
                   <div>
-                    <label className="secondary-text  block mb-1">Mobile number</label>
-                  <PhoneInput
-                    placeholder="Enter mobile number"
-                    value={phone}
-                    onChange={setPhone}
-                    onCountryChange={(country) =>
-                      setCountryCode(country.dialCode)
-                    }
-                    required
-                    disabled={isLoading}
-                    variant="filled"
-                    id="phoneNumber"
-                  />
+                    <label className="secondary-text  block mb-1">
+                      Mobile number
+                    </label>
+                    <PhoneInput
+                      placeholder="Enter mobile number"
+                      value={phone}
+                      onChange={setPhone}
+                      onCountryChange={(country) =>
+                        setCountryCode(country.dialCode)
+                      }
+                      required
+                      disabled={isLoading}
+                      variant="filled"
+                      id="phoneNumber"
+                    />
                   </div>
                 ) : (
                   <div>
                     <label className="secondary-text  block mb-1">Email</label>
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    variant="filled"
-                    id="email"
-                  />
+                    <Input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      variant="filled"
+                      id="email"
+                    />
                   </div>
                 )}
 
@@ -573,7 +577,8 @@ function ArtistAuthContent() {
                     }
                     disabled={isLoading}
                   >
-                    Sign up with {contactType === "phone" ? "Email" : "Mobile"}
+                    Sign up with{" "}
+                    {contactType === "phone" ? "Email" : "Mobile Number"}
                   </Button>
 
                   <Button

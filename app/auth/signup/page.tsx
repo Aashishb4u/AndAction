@@ -14,7 +14,6 @@ import {
   getRedirectUrl,
   signInWithGoogle,
   signInWithFacebook,
-  signInWithApple,
 } from "@/lib/auth";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
@@ -161,11 +160,11 @@ function SignUpContent() {
         const countryCodeToSend = countryCode.trim();
         if (!countryCodeToSend || !cleanedPhoneNumber) {
           throw new Error(
-            "Please enter a valid phone number and select a country code."
+            "Please enter a valid phone number and select a country code.",
           );
         }
         console.log(
-          `Sending OTP to: ${countryCodeToSend}${cleanedPhoneNumber}`
+          `Sending OTP to: ${countryCodeToSend}${cleanedPhoneNumber}`,
         );
         const response = await fetch("/api/users/send-otp", {
           method: "POST",
@@ -178,7 +177,9 @@ function SignUpContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.error || data.message || "Failed to send verification code (Server Error)."
+            data.error ||
+              data.message ||
+              "Failed to send verification code (Server Error).",
           );
         setStep("otp");
       } else {
@@ -190,7 +191,9 @@ function SignUpContent() {
         });
         const data = await response.json();
         if (!response.ok)
-          throw new Error(data.error || data.message || "Failed to send verification email.");
+          throw new Error(
+            data.error || data.message || "Failed to send verification email.",
+          );
         setStep("otp");
       }
     } catch (err: any) {
@@ -286,7 +289,7 @@ function SignUpContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.error || data.message || "Failed to resend verification code."
+            data.error || data.message || "Failed to resend verification code.",
           );
         setError("A new verification code has been sent.");
         setOtp("");
@@ -299,14 +302,16 @@ function SignUpContent() {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.error || data.message || "Failed to resend verification email."
+            data.error ||
+              data.message ||
+              "Failed to resend verification email.",
           );
         setError("A new verification code has been sent to your email.");
         setOtp("");
       }
     } catch (err: any) {
       setError(
-        err.message || "Failed to resend verification code. Please try again."
+        err.message || "Failed to resend verification code. Please try again.",
       );
       console.error("Resend OTP error:", err);
     } finally {
@@ -343,7 +348,6 @@ function SignUpContent() {
       noMarketing: noMarketing,
       shareData: shareData,
     };
-    
 
     try {
       const result = await signUp(userData); // calls /api/auth/signup
@@ -369,41 +373,39 @@ function SignUpContent() {
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
       <div className="flex justify-between items-center mr-4 ml-4 pt-4">
-          {/* Logo */}
-          <div>
-            <Image
-              src="/logo.png"
-              alt="ANDACTION Logo"
-              className="h-8 object-contain"
-              width={150}
-              height={24}
-            />
-          </div>
-
-          {/* Close Button */}
-          <button
-            onClick={() => router.push("/")}
-            className="p-2  transition-colors duration-200"
-            aria-label="Close"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+        {/* Logo */}
+        <div>
+          <Image
+            src="/logo.png"
+            alt="ANDACTION Logo"
+            className="h-8 object-contain"
+            width={150}
+            height={24}
+          />
         </div>
-      <div className="md:p-8 p-4">
-        
 
+        {/* Close Button */}
+        <button
+          onClick={() => router.push("/")}
+          className="p-2  transition-colors duration-200"
+          aria-label="Close"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      <div className="md:p-8 p-4">
         {step !== "otp" && (
           <>
             {/* Title */}
@@ -431,7 +433,9 @@ function SignUpContent() {
             <form onSubmit={handleContactSubmit} className="space-y-6">
               {contactType === "phone" ? (
                 <div>
-                  <label className="secondary-text  block mb-1">Mobile number</label>
+                  <label className="secondary-text  block mb-1">
+                    Mobile number
+                  </label>
                   <PhoneInput
                     placeholder="Enter mobile number"
                     value={phone}
@@ -502,8 +506,8 @@ function SignUpContent() {
                   }
                   disabled={isLoading}
                 >
-                  <span className="btn2">Sign up with Google</span>
-                  Sign up with {contactType === "phone" ? "Email" : "Phone"}
+                  Sign up with{" "}
+                  {contactType === "phone" ? "Email" : "Mobile Number"}
                 </Button>
 
                 <Button
@@ -569,9 +573,7 @@ function SignUpContent() {
           /* OTP Verification Step */
           <div className="space-y-6">
             <div className="space-y-2">
-              <h2 className="h1">
-                OTP Verification
-              </h2>
+              <h2 className="h1">OTP Verification</h2>
               <div className=" flex flex-col gap-2">
                 <p className="secondary-grey-text text-text-gray">
                   Enter the 6-digit code sent to you at{" "}
@@ -686,8 +688,8 @@ function SignUpContent() {
                         getPasswordStrength(password).label === "Weak"
                           ? "text-red-400"
                           : getPasswordStrength(password).label === "Medium"
-                          ? "text-yellow-400"
-                          : "text-green-400"
+                            ? "text-yellow-400"
+                            : "text-green-400"
                       }`}
                     >
                       {getPasswordStrength(password).label}
@@ -780,7 +782,9 @@ function SignUpContent() {
                     className="text-white hover:text-primary-pink transition-colors duration-200 p-2 hover:bg-white/5 rounded-full"
                     onClick={() =>
                       setSelectedAvatar(
-                        selectedAvatar > 1 ? selectedAvatar - 1 : avatars.length
+                        selectedAvatar > 1
+                          ? selectedAvatar - 1
+                          : avatars.length,
                       )
                     }
                   >
@@ -874,7 +878,9 @@ function SignUpContent() {
                     className="text-white hover:text-primary-pink transition-colors duration-200 p-2 hover:bg-white/5 rounded-full"
                     onClick={() =>
                       setSelectedAvatar(
-                        selectedAvatar < avatars.length ? selectedAvatar + 1 : 1
+                        selectedAvatar < avatars.length
+                          ? selectedAvatar + 1
+                          : 1,
                       )
                     }
                   >

@@ -70,13 +70,15 @@ function SignInContent() {
         body: JSON.stringify(
           contactIdentifier.includes("@")
             ? { email: contactIdentifier, password }
-            : { phone: contactIdentifier, countryCode: "+91", password }
+            : { phone: contactIdentifier, countryCode: "+91", password },
         ),
       });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data?.error || data?.message || "Invalid login credentials.");
+        throw new Error(
+          data?.error || data?.message || "Invalid login credentials.",
+        );
       }
 
       const result = await signIn("credentials", {
@@ -109,7 +111,7 @@ function SignInContent() {
   };
 
   const handleSocialSignIn = async (
-    provider: "google" | "apple" | "facebook"
+    provider: "google" | "apple" | "facebook",
   ) => {
     setIsLoading(true);
     setError("");
@@ -122,9 +124,7 @@ function SignInContent() {
       } else if (provider === "facebook") {
         await signInWithFacebook();
       }
-
-      const redirectUrl = getRedirectUrl(searchParams);
-      router.push(redirectUrl || "/");
+      // NextAuth will handle the redirect, no need to manually navigate
     } catch (err) {
       setError(`${provider} Sign In is not available yet.`);
       console.error(`${provider} Sign In error:`, err);
@@ -136,36 +136,35 @@ function SignInContent() {
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
       <div className="flex justify-between items-center mr-4 ml-4 pt-4">
-          <Image
-            src="/logo.png"
-            alt="ANDACTION Logo"
-            className="h-8 object-contain"
-            width={150}
-            height={24}
-          />
-          <button
-            onClick={() => router.push("/")}
-            className="p-2 text-white transition-colors duration-200"
-            aria-label="Close"
+        <Image
+          src="/logo.png"
+          alt="ANDACTION Logo"
+          className="h-8 object-contain"
+          width={150}
+          height={24}
+        />
+        <button
+          onClick={() => router.push("/")}
+          className="p-2 text-white transition-colors duration-200"
+          aria-label="Close"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
       <div className="md:p-8 p-4">
         {/* Header: Logo and Close Button */}
-        
 
         <h1 className="h1 text-white mb-2">Sign In to AndAction</h1>
 
@@ -274,7 +273,9 @@ function SignInContent() {
           /* Password Step */
           <form onSubmit={handlePasswordSubmit}>
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-text-gray secondary-grey-text">{email}</span>
+              <span className="text-text-gray secondary-grey-text">
+                {email}
+              </span>
               <button
                 type="button"
                 onClick={handleChangeEmail}
