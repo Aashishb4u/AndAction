@@ -87,8 +87,8 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Enable Location</h2>
-              <p className="text-text-gray text-sm leading-relaxed">
+              <h2 className="text-xl font-bold text-white mb-2 h1">Enable Location</h2>
+              <p className="text-text-light-gray text-base leading-relaxed">
                 For better artist recommendations, please enable location access. This helps us show you artists near your area.
               </p>
             </div>
@@ -99,13 +99,13 @@ export default function Home() {
                 variant="primary"
                 size="md"
                 onClick={handleEnableLocation}
-                className="w-full"
+                className="w-full btn1"
               >
                 Enable Location
               </Button>
               <button
                 onClick={handleSkipLocation}
-                className="w-full py-3 text-text-gray hover:text-white transition-colors text-sm"
+                className="w-full py-3 text-text-gray hover:text-white transition-colors btn2"
               >
                 Maybe Later
               </button>

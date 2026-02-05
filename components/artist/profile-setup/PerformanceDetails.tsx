@@ -221,7 +221,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                 <h2 className="text-white h3">Performance Details</h2>
               </div>
             </div>
-            <p className="text-text-gray text-sm text-left">
+            <p className="text-text-gray secondary-grey-text text-left">
               Tell us about your performance preferences, including languages, event types, and team size.
             </p>
           </div>
@@ -231,7 +231,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
             {/* Performing Languages - Multi-select */}
             <div className="relative">
               <div className="flex items-center gap-2 mb-1">
-                <label className="block section-text">Performing language*</label>
+                <label className="block section-text secondary-text">Performing language*</label>
                 <Tooltip content="Select all the languages in which you can perform. This helps clients find artists who can perform in their preferred language.">
                   <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -299,7 +299,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
             {/* Performing Event Type - Multi-select */}
             <div className="relative">
               <div className="flex items-center gap-2 mb-1">
-                <label className="block section-text">Performing event type*</label>
+                <label className="block section-text secondary-text">Performing event type*</label>
                 <Tooltip content="Select all the types of events you are available to perform at, such as weddings, corporate events, concerts, etc.">
                   <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -367,7 +367,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
             {/* Performing States - Multi-select */}
             <div className="relative">
               <div className="flex items-center gap-2 mb-1">
-                <label className="block section-text">Performing states*</label>
+                <label className="block section-text secondary-text">Performing states*</label>
                 <Tooltip content="Select the states where you are available to perform. Choose 'PAN India' if you can perform anywhere in India.">
                   <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -433,7 +433,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
             {/* Performing Duration */}
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
-                <label className="block text-sm font-medium text-white">Performing duration (in minutes)</label>
+                <label className="block secondary-text text-white">Performing duration <span className="footnote text-text-gray">(in minutes)</span></label>
                 <Tooltip content="Enter the typical duration range of your performances in minutes. For example, 30-60 minutes for short sets or 60-120 minutes for full shows.">
                   <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -464,7 +464,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
             {/* Performing Members */}
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <label className="block section-text">Performing members</label>
+                <label className="block section-text secondary-text">Performing members</label>
                 <Tooltip content="Select the number of artists/performers who will be on stage during your performance. This helps clients plan the event space and logistics.">
                   <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -482,7 +482,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
             {/* Off Stage Members */}
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <label className="block section-text">Off stage members</label>
+                <label className="block section-text secondary-text">Off stage members</label>
                 <Tooltip content="Select the number of crew members who support your performance (sound engineers, managers, technicians, etc.) but don't perform on stage.">
                   <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

@@ -327,16 +327,16 @@ function ArtistsPageContent() {
       <SiteLayout showPreloader={false} hideNavbar={false} hideBottomBar={true} className="lg:pt-20">
         <div className="min-h-screen lg:pt-4 overflow-x-hidden">
           {/* Header */}
-          <div className="w-full px-4 lg:px-8 py-4 border-b border-gray-800">
+          <div className="w-full px-4 lg:px-8 py-4 border-b border-[var(--border-color)]">
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 md:gap-4 overflow-hidden">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => router.back()}
-                  className="p-2 text-white transition-colors flex-shrink-0"
+                  className=" text-white transition-colors flex-shrink-0"
                   aria-label="Go back"
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-8 h-8"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -351,7 +351,7 @@ function ArtistsPageContent() {
                 </button>
                 {/* Show active filter name if set */}
                 {filters.category && (
-                  <span className="ml-2 px-3 py-1 rounded bg-primary-pink/20 text-primary-pink font-semibold text-base capitalize flex-shrink-0">
+                  <span className=" py-1 h3 text-white flex-shrink-0">
                     {(() => {
                       // Find matching category from VIDEO_CATEGORIES (case-insensitive)
                       const category = VIDEO_CATEGORIES.find(

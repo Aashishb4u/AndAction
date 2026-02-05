@@ -141,8 +141,8 @@ export default function BookmarksPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 px-4 text-base font-medium transition-colors relative ${
-                activeTab === tab ? 'gradient-text' : 'text-text-gray hover:text-gray-300'
+              className={`flex-1 py-3 px-4 btn1 transition-colors relative ${
+                activeTab === tab ? 'text-white' : 'text-text-gray hover:text-gray-300'
               }`}
             >
               {tab}
@@ -161,7 +161,7 @@ export default function BookmarksPage() {
           {activeTab === "Artist" && !loading && (
             <>
               {artistBookmarks.length > 0 ? (
-                <ArtistGrid
+                <ArtistGrid className='px-4'
                   artists={artistBookmarks}
                   onBookmark={(artistId: string) => {
                     const a = artistBookmarks.find(x => x.id === artistId);
@@ -178,7 +178,7 @@ export default function BookmarksPage() {
 
           {/* VIDEOS */}
           {activeTab === "Videos" && !loading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 px-4">
               {videoBookmarks.length > 0 ? (
                 videoBookmarks.map((v) => (
                   <VideoCard
@@ -202,7 +202,7 @@ export default function BookmarksPage() {
 
           {/* SHORTS */}
           {activeTab === "Shorts" && !loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 px-4">
               {shortBookmarks.length > 0 ? (
                 shortBookmarks.map((s) => (
                   <ShortsCard
