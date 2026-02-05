@@ -214,8 +214,6 @@ async function fetchArtistsWithProgressiveSearch(
       verified,
     );
 
-    console.log(`   Found ${count} artists in ${radius}km`);
-
     // If we have enough, fetch them
     if (count >= minResults) {
       const artists = await fetchArtistsInRadius(

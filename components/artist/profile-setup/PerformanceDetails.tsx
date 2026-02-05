@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import Button from '@/components/ui/Button';
-import Tooltip from '@/components/ui/Tooltip';
-import Image from 'next/image';
-import { ArtistProfileSetupData } from '@/types';
+import React, { useState } from "react";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import Button from "@/components/ui/Button";
+import Tooltip from "@/components/ui/Tooltip";
+import Image from "next/image";
+import { ArtistProfileSetupData } from "@/types";
 
 interface PerformanceDetailsProps {
   data: ArtistProfileSetupData;
@@ -21,16 +21,16 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
   onNext,
   onSkip,
   onBack,
-  onUpdateData
+  onUpdateData,
 }) => {
   const [formData, setFormData] = useState({
     performingLanguages: data.performingLanguages || [],
     performingEventTypes: data.performingEventTypes || [],
     performingStates: data.performingStates || [],
-    performingDurationFrom: data.performingDurationFrom || '',
-    performingDurationTo: data.performingDurationTo || '',
-    performingMembers: data.performingMembers || '',
-    offStageMembers: data.offStageMembers || ''
+    performingDurationFrom: data.performingDurationFrom || "",
+    performingDurationTo: data.performingDurationTo || "",
+    performingMembers: data.performingMembers || "",
+    offStageMembers: data.offStageMembers || "",
   });
 
   // State dropdown visibility
@@ -40,46 +40,46 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const languages = [
-    { value: 'hindi', label: 'Hindi' },
-    { value: 'english', label: 'English' },
-    { value: 'marathi', label: 'Marathi' },
-    { value: 'gujarati', label: 'Gujarati' },
-    { value: 'tamil', label: 'Tamil' },
-    { value: 'telugu', label: 'Telugu' },
-    { value: 'bengali', label: 'Bengali' },
-    { value: 'punjabi', label: 'Punjabi' }
+    { value: "hindi", label: "Hindi" },
+    { value: "english", label: "English" },
+    { value: "marathi", label: "Marathi" },
+    { value: "gujarati", label: "Gujarati" },
+    { value: "tamil", label: "Tamil" },
+    { value: "telugu", label: "Telugu" },
+    { value: "bengali", label: "Bengali" },
+    { value: "punjabi", label: "Punjabi" },
   ];
 
   const eventTypes = [
-    { value: 'wedding', label: 'Wedding' },
-    { value: 'corporate', label: 'Corporate Event' },
-    { value: 'birthday', label: 'Birthday Party' },
-    { value: 'festival', label: 'Festival' },
-    { value: 'concert', label: 'Concert' },
-    { value: 'private-party', label: 'Private Party' },
-    { value: 'cultural', label: 'Cultural Event' },
-    { value: 'religious', label: 'Religious Event' }
+    { value: "wedding", label: "Wedding" },
+    { value: "corporate", label: "Corporate Event" },
+    { value: "birthday", label: "Birthday Party" },
+    { value: "festival", label: "Festival" },
+    { value: "concert", label: "Concert" },
+    { value: "private-party", label: "Private Party" },
+    { value: "cultural", label: "Cultural Event" },
+    { value: "religious", label: "Religious Event" },
   ];
 
   const states = [
-    { value: 'maharashtra', label: 'Maharashtra' },
-    { value: 'delhi', label: 'Delhi' },
-    { value: 'karnataka', label: 'Karnataka' },
-    { value: 'tamil-nadu', label: 'Tamil Nadu' },
-    { value: 'gujarat', label: 'Gujarat' },
-    { value: 'rajasthan', label: 'Rajasthan' },
-    { value: 'uttar-pradesh', label: 'Uttar Pradesh' },
-    { value: 'west-bengal', label: 'West Bengal' },
-    { value: 'punjab', label: 'Punjab' },
-    { value: 'haryana', label: 'Haryana' }
+    { value: "maharashtra", label: "Maharashtra" },
+    { value: "delhi", label: "Delhi" },
+    { value: "karnataka", label: "Karnataka" },
+    { value: "tamil-nadu", label: "Tamil Nadu" },
+    { value: "gujarat", label: "Gujarat" },
+    { value: "rajasthan", label: "Rajasthan" },
+    { value: "uttar-pradesh", label: "Uttar Pradesh" },
+    { value: "west-bengal", label: "West Bengal" },
+    { value: "punjab", label: "Punjab" },
+    { value: "haryana", label: "Haryana" },
   ];
 
   const memberOptions = [
-    { value: '1', label: '1 Member' },
-    { value: '2-5', label: '2-5 Members' },
-    { value: '6-10', label: '6-10 Members' },
-    { value: '11-20', label: '11-20 Members' },
-    { value: '20+', label: '20+ Members' }
+    { value: "1", label: "1 Member" },
+    { value: "2-5", label: "2-5 Members" },
+    { value: "6-10", label: "6-10 Members" },
+    { value: "11-20", label: "11-20 Members" },
+    { value: "20+", label: "20+ Members" },
   ];
 
   const handleInputChange = (field: string, value: string | string[]) => {
@@ -97,7 +97,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
     } else {
       updated = [...current, stateValue];
     }
-    handleInputChange('performingStates', updated);
+    handleInputChange("performingStates", updated);
   };
 
   // Toggle PAN India (all states)
@@ -105,10 +105,10 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
     const allValues = states.map((s) => s.value);
     if (formData.performingStates.length === states.length) {
       // Deselect all
-      handleInputChange('performingStates', []);
+      handleInputChange("performingStates", []);
     } else {
       // Select all
-      handleInputChange('performingStates', allValues);
+      handleInputChange("performingStates", allValues);
     }
   };
 
@@ -121,7 +121,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
     } else {
       updated = [...current, eventValue];
     }
-    handleInputChange('performingEventTypes', updated);
+    handleInputChange("performingEventTypes", updated);
   };
 
   // Toggle all event types
@@ -129,10 +129,10 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
     const allValues = eventTypes.map((e) => e.value);
     if (formData.performingEventTypes.length === eventTypes.length) {
       // Deselect all
-      handleInputChange('performingEventTypes', []);
+      handleInputChange("performingEventTypes", []);
     } else {
       // Select all
-      handleInputChange('performingEventTypes', allValues);
+      handleInputChange("performingEventTypes", allValues);
     }
   };
 
@@ -145,7 +145,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
     } else {
       updated = [...current, langValue];
     }
-    handleInputChange('performingLanguages', updated);
+    handleInputChange("performingLanguages", updated);
   };
 
   // Toggle all languages
@@ -153,29 +153,67 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
     const allValues = languages.map((l) => l.value);
     if (formData.performingLanguages.length === languages.length) {
       // Deselect all
-      handleInputChange('performingLanguages', []);
+      handleInputChange("performingLanguages", []);
     } else {
       // Select all
-      handleInputChange('performingLanguages', allValues);
+      handleInputChange("performingLanguages", allValues);
     }
   };
 
   const handleNext = () => {
+    // Close all dropdowns first
+    setShowStatesDropdown(false);
+    setShowEventTypesDropdown(false);
+    setShowLanguagesDropdown(false);
+
     // Validate required fields
     const newErrors: Record<string, string> = {};
-    
-    if (!formData.performingLanguages || formData.performingLanguages.length === 0) {
-      newErrors.performingLanguages = 'Performing language is required';
+
+    if (
+      !formData.performingLanguages ||
+      formData.performingLanguages.length === 0
+    ) {
+      newErrors.performingLanguages = "Performing language is required";
     }
-    if (!formData.performingEventTypes || formData.performingEventTypes.length === 0) {
-      newErrors.performingEventTypes = 'Performing event type is required';
+    if (
+      !formData.performingEventTypes ||
+      formData.performingEventTypes.length === 0
+    ) {
+      newErrors.performingEventTypes = "Performing event type is required";
     }
     if (!formData.performingStates || formData.performingStates.length === 0) {
-      newErrors.performingStates = 'Performing states is required';
+      newErrors.performingStates = "Performing states is required";
     }
-    
+
+    // Validate duration fields
+    const minDuration = parseInt(formData.performingDurationFrom);
+    const maxDuration = parseInt(formData.performingDurationTo);
+
+    if (
+      formData.performingDurationFrom &&
+      (minDuration < 15 || minDuration > 600)
+    ) {
+      newErrors.performingDurationFrom =
+        "Duration should be between 15 and 600 minutes";
+    }
+    if (
+      formData.performingDurationTo &&
+      (maxDuration < 15 || maxDuration > 600)
+    ) {
+      newErrors.performingDurationTo =
+        "Duration should be between 15 and 600 minutes";
+    }
+    if (
+      formData.performingDurationFrom &&
+      formData.performingDurationTo &&
+      minDuration >= maxDuration
+    ) {
+      newErrors.performingDurationTo =
+        "Max duration must be greater than min duration";
+    }
+
     setErrors(newErrors);
-    
+
     if (Object.keys(newErrors).length > 0) {
       return; // Don't proceed if there are errors
     }
@@ -192,11 +230,21 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
           onClick={onBack}
           className="flex items-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
-          <span className='hidden md:block'>Back</span>
-          <span className='md:hidden h2'>Profile Setup</span>
+          <span className="hidden md:block">Back</span>
+          <span className="md:hidden h2">Profile Setup</span>
         </button>
       </div>
 
@@ -205,7 +253,9 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
         <div className="max-w-md mx-auto">
           {/* Title */}
           <div className="text-center mb-8">
-            <h1 className="h2 text-white mb-2 hidden md:block">Profile setup</h1>
+            <h1 className="h2 text-white mb-2 hidden md:block">
+              Profile setup
+            </h1>
 
             {/* Progress Bar */}
             <div className="w-full bg-[#2D2D2D] rounded-full h-1 mb-6">
@@ -215,7 +265,12 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
             {/* Step Info */}
             <div className="flex items-center gap-3 mb-2">
               <div className="flex-shrink-0">
-                <Image src="/icons/play.svg" alt="Artist Profile" width={25} height={25} />
+                <Image
+                  src="/icons/play.svg"
+                  alt="Artist Profile"
+                  width={25}
+                  height={25}
+                />
               </div>
               <div className="text-left">
                 <h2 className="text-white h3">Performance Details</h2>
@@ -233,32 +288,53 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
               <div className="flex items-center gap-2 mb-1">
                 <label className="block section-text secondary-text">Performing language*</label>
                 <Tooltip content="Select all the languages in which you can perform. This helps clients find artists who can perform in their preferred language.">
-                  <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-4 h-4 text-blue cursor-help"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </Tooltip>
               </div>
-              
+
               {/* Trigger button */}
               <button
                 type="button"
                 onClick={() => setShowLanguagesDropdown(!showLanguagesDropdown)}
                 className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
               >
-                <span className={formData.performingLanguages.length > 0 ? 'text-white' : 'text-text-gray'}>
+                <span
+                  className={
+                    formData.performingLanguages.length > 0
+                      ? "text-white"
+                      : "text-text-gray"
+                  }
+                >
                   {formData.performingLanguages.length > 0
                     ? formData.performingLanguages.length === languages.length
-                      ? 'All Languages'
-                      : `${formData.performingLanguages.length} language${formData.performingLanguages.length > 1 ? 's' : ''} selected`
-                    : 'Select languages'}
+                      ? "All Languages"
+                      : `${formData.performingLanguages.length} language${formData.performingLanguages.length > 1 ? "s" : ""} selected`
+                    : "Select languages"}
                 </span>
                 <svg
-                  className={`w-5 h-5 text-text-gray transition-transform ${showLanguagesDropdown ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
 
@@ -269,13 +345,17 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                   <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
                     <input
                       type="checkbox"
-                      checked={formData.performingLanguages.length === languages.length}
+                      checked={
+                        formData.performingLanguages.length === languages.length
+                      }
                       onChange={toggleAllLanguages}
                       className="w-4 h-4 accent-primary-pink rounded"
                     />
-                    <span className="text-white font-medium">All Languages</span>
+                    <span className="text-white font-medium">
+                      All Languages
+                    </span>
                   </label>
-                  
+
                   {/* Individual language checkboxes */}
                   {languages.map((language) => (
                     <label
@@ -284,16 +364,24 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     >
                       <input
                         type="checkbox"
-                        checked={formData.performingLanguages.includes(language.value)}
+                        checked={formData.performingLanguages.includes(
+                          language.value,
+                        )}
                         onChange={() => toggleLanguageSelection(language.value)}
                         className="w-4 h-4 accent-primary-pink rounded"
                       />
-                      <span className="text-white text-sm">{language.label}</span>
+                      <span className="text-white text-sm">
+                        {language.label}
+                      </span>
                     </label>
                   ))}
                 </div>
               )}
-              {errors.performingLanguages && <p className="text-red-500 text-sm mt-1">{errors.performingLanguages}</p>}
+              {errors.performingLanguages && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.performingLanguages}
+                </p>
+              )}
             </div>
 
             {/* Performing Event Type - Multi-select */}
@@ -301,32 +389,55 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
               <div className="flex items-center gap-2 mb-1">
                 <label className="block section-text secondary-text">Performing event type*</label>
                 <Tooltip content="Select all the types of events you are available to perform at, such as weddings, corporate events, concerts, etc.">
-                  <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-4 h-4 text-blue cursor-help"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </Tooltip>
               </div>
-              
+
               {/* Trigger button */}
               <button
                 type="button"
-                onClick={() => setShowEventTypesDropdown(!showEventTypesDropdown)}
+                onClick={() =>
+                  setShowEventTypesDropdown(!showEventTypesDropdown)
+                }
                 className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
               >
-                <span className={formData.performingEventTypes.length > 0 ? 'text-white' : 'text-text-gray'}>
+                <span
+                  className={
+                    formData.performingEventTypes.length > 0
+                      ? "text-white"
+                      : "text-text-gray"
+                  }
+                >
                   {formData.performingEventTypes.length > 0
                     ? formData.performingEventTypes.length === eventTypes.length
-                      ? 'All Event Types'
-                      : `${formData.performingEventTypes.length} event type${formData.performingEventTypes.length > 1 ? 's' : ''} selected`
-                    : 'Select event types'}
+                      ? "All Event Types"
+                      : `${formData.performingEventTypes.length} event type${formData.performingEventTypes.length > 1 ? "s" : ""} selected`
+                    : "Select event types"}
                 </span>
                 <svg
-                  className={`w-5 h-5 text-text-gray transition-transform ${showEventTypesDropdown ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 text-text-gray transition-transform ${showEventTypesDropdown ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
 
@@ -337,13 +448,18 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                   <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
                     <input
                       type="checkbox"
-                      checked={formData.performingEventTypes.length === eventTypes.length}
+                      checked={
+                        formData.performingEventTypes.length ===
+                        eventTypes.length
+                      }
                       onChange={toggleAllEventTypes}
                       className="w-4 h-4 accent-primary-pink rounded"
                     />
-                    <span className="text-white font-medium">All Event Types</span>
+                    <span className="text-white font-medium">
+                      All Event Types
+                    </span>
                   </label>
-                  
+
                   {/* Individual event type checkboxes */}
                   {eventTypes.map((eventType) => (
                     <label
@@ -352,16 +468,26 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     >
                       <input
                         type="checkbox"
-                        checked={formData.performingEventTypes.includes(eventType.value)}
-                        onChange={() => toggleEventTypeSelection(eventType.value)}
+                        checked={formData.performingEventTypes.includes(
+                          eventType.value,
+                        )}
+                        onChange={() =>
+                          toggleEventTypeSelection(eventType.value)
+                        }
                         className="w-4 h-4 accent-primary-pink rounded"
                       />
-                      <span className="text-white text-sm">{eventType.label}</span>
+                      <span className="text-white text-sm">
+                        {eventType.label}
+                      </span>
                     </label>
                   ))}
                 </div>
               )}
-              {errors.performingEventTypes && <p className="text-red-500 text-sm mt-1">{errors.performingEventTypes}</p>}
+              {errors.performingEventTypes && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.performingEventTypes}
+                </p>
+              )}
             </div>
 
             {/* Performing States - Multi-select */}
@@ -369,32 +495,53 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
               <div className="flex items-center gap-2 mb-1">
                 <label className="block section-text secondary-text">Performing states*</label>
                 <Tooltip content="Select the states where you are available to perform. Choose 'PAN India' if you can perform anywhere in India.">
-                  <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-4 h-4 text-blue cursor-help"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </Tooltip>
               </div>
-              
+
               {/* Trigger button */}
               <button
                 type="button"
                 onClick={() => setShowStatesDropdown(!showStatesDropdown)}
                 className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
               >
-                <span className={formData.performingStates.length > 0 ? 'text-white' : 'text-text-gray'}>
+                <span
+                  className={
+                    formData.performingStates.length > 0
+                      ? "text-white"
+                      : "text-text-gray"
+                  }
+                >
                   {formData.performingStates.length > 0
                     ? formData.performingStates.length === states.length
-                      ? 'PAN India'
-                      : `${formData.performingStates.length} state${formData.performingStates.length > 1 ? 's' : ''} selected`
-                    : 'Select states'}
+                      ? "PAN India"
+                      : `${formData.performingStates.length} state${formData.performingStates.length > 1 ? "s" : ""} selected`
+                    : "Select states"}
                 </span>
                 <svg
-                  className={`w-5 h-5 text-text-gray transition-transform ${showStatesDropdown ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 text-text-gray transition-transform ${showStatesDropdown ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
 
@@ -405,13 +552,15 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                   <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
                     <input
                       type="checkbox"
-                      checked={formData.performingStates.length === states.length}
+                      checked={
+                        formData.performingStates.length === states.length
+                      }
                       onChange={togglePanIndia}
                       className="w-4 h-4 accent-primary-pink rounded"
                     />
                     <span className="text-white font-medium">PAN India</span>
                   </label>
-                  
+
                   {/* Individual state checkboxes */}
                   {states.map((state) => (
                     <label
@@ -420,7 +569,9 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     >
                       <input
                         type="checkbox"
-                        checked={formData.performingStates.includes(state.value)}
+                        checked={formData.performingStates.includes(
+                          state.value,
+                        )}
                         onChange={() => toggleStateSelection(state.value)}
                         className="w-4 h-4 accent-primary-pink rounded"
                       />
@@ -428,15 +579,31 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     </label>
                   ))}
                 </div>
-              )}              {errors.performingStates && <p className="text-red-500 text-sm mt-1">{errors.performingStates}</p>}            </div>
+              )}
+              {errors.performingStates && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.performingStates}
+                </p>
+              )}
+            </div>
 
             {/* Performing Duration */}
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
                 <label className="block secondary-text text-white">Performing duration <span className="footnote text-text-gray">(in minutes)</span></label>
                 <Tooltip content="Enter the typical duration range of your performances in minutes. For example, 30-60 minutes for short sets or 60-120 minutes for full shows.">
-                  <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-4 h-4 text-blue cursor-help"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </Tooltip>
               </div>
@@ -445,20 +612,40 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                   <Input
                     placeholder="From"
                     value={formData.performingDurationFrom}
-                    onChange={(e) => handleInputChange('performingDurationFrom', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Only allow digits
+                      if (value === "" || /^[0-9]*$/.test(value)) {
+                        handleInputChange("performingDurationFrom", value);
+                      }
+                    }}
                     variant="filled"
                   />
                 </div>
-                <span className="mx-2 text-lg text-gray-400 select-none">—</span>
+                <span className="mx-2 text-lg text-gray-400 select-none">
+                  —
+                </span>
                 <div className="flex-1">
                   <Input
                     placeholder="To"
                     value={formData.performingDurationTo}
-                    onChange={(e) => handleInputChange('performingDurationTo', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Only allow digits
+                      if (value === "" || /^[0-9]*$/.test(value)) {
+                        handleInputChange("performingDurationTo", value);
+                      }
+                    }}
                     variant="filled"
                   />
                 </div>
               </div>
+              {(errors.performingDurationTo ||
+                errors.performingDurationFrom) && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.performingDurationTo || errors.performingDurationFrom}
+                </p>
+              )}{" "}
             </div>
 
             {/* Performing Members */}
@@ -466,15 +653,27 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
               <div className="flex items-center gap-2 mb-1">
                 <label className="block section-text secondary-text">Performing members</label>
                 <Tooltip content="Select the number of artists/performers who will be on stage during your performance. This helps clients plan the event space and logistics.">
-                  <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-4 h-4 text-blue cursor-help"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </Tooltip>
               </div>
               <Select
                 placeholder="Select members"
                 value={formData.performingMembers}
-                onChange={(value) => handleInputChange('performingMembers', value)}
+                onChange={(value) =>
+                  handleInputChange("performingMembers", value)
+                }
                 options={memberOptions}
               />
             </div>
@@ -484,15 +683,27 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
               <div className="flex items-center gap-2 mb-1">
                 <label className="block section-text secondary-text">Off stage members</label>
                 <Tooltip content="Select the number of crew members who support your performance (sound engineers, managers, technicians, etc.) but don't perform on stage.">
-                  <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-4 h-4 text-blue cursor-help"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </Tooltip>
               </div>
               <Select
                 placeholder="Select members"
                 value={formData.offStageMembers}
-                onChange={(value) => handleInputChange('offStageMembers', value)}
+                onChange={(value) =>
+                  handleInputChange("offStageMembers", value)
+                }
                 options={memberOptions}
               />
             </div>
@@ -511,11 +722,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
           >
             Skip & Next
           </Button>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleNext}
-          >
+          <Button variant="primary" size="md" onClick={handleNext}>
             Save & Next
           </Button>
         </div>

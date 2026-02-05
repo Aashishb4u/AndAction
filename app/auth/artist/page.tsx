@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense, useMemo } from "react";
+import React, { useState, Suspense, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -49,9 +49,27 @@ function ArtistAuthContent() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resendTimer, setResendTimer] = useState(0);
 
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const stepParam = searchParams.get("step");
+    const oauthParam = searchParams.get("oauth");
+
+    if (stepParam === "userInfo" && oauthParam === "true") {
+      setStep("userInfo");
+    }
+  }, [searchParams]);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
 
   // Check for OAuth errors from URL
   const oauthError = useMemo(() => {
@@ -166,6 +184,7 @@ function ArtistAuthContent() {
             data.error || data.message || "Failed to send verification code.",
           );
         setStep("otp");
+        setResendTimer(30); // Start 30-second countdown
       } else {
         const emailToSend = email.toLowerCase().trim();
         if (!emailToSend)
@@ -183,6 +202,7 @@ function ArtistAuthContent() {
             data.error || data.message || "Failed to send verification email.",
           );
         setStep("otp");
+        setResendTimer(30); // Start 30-second countdown
       }
     } catch (err: any) {
       console.error("Send OTP error:", err);
@@ -253,29 +273,14 @@ function ArtistAuthContent() {
     setStep("userInfo");
   };
 
-  const handleUserInfoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      // Simulate API call for user info saving (keeps existing behavior)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setStep("terms");
-    } catch {
-      setError("Failed to save user information. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleTermsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      // ✅ Prepare artist signup payload
+      const isOAuthSignup = searchParams.get("oauth") === "true";
+
       const artistData = {
         email: contactType === "email" ? email : undefined,
         phoneNumber:
@@ -292,35 +297,37 @@ function ArtistAuthContent() {
         city,
         noMarketing,
         shareData,
+        isOAuthSignup, // Flag to indicate OAuth user
       };
 
-      console.log("📤 Sending artist signup data:", artistData);
+      const apiEndpoint = isOAuthSignup
+        ? "/api/auth/artist/update-profile"
+        : "/api/auth/artist/signup";
 
-      // ✅ Call signup API
-      const response = await fetch("/api/auth/artist/signup", {
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(artistData),
       });
 
       const data = await response.json();
-      console.log("📥 Signup response:", data);
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.error || data.message || "Failed to create artist account.",
+          data.error || data.message || "Failed to complete registration.",
         );
       }
 
-      console.log("✅ Artist signup successful");
+      if (isOAuthSignup) {
+        router.push("/artist/profile-setup");
+        return;
+      }
 
-      // ✅ Construct contact identifier for auto-signin
       let contactIdentifier: string | null = null;
 
       if (data?.data?.user?.email) {
         contactIdentifier = data.data.user.email;
       } else if (data?.data?.user?.phoneNumber) {
-        // ✅ Remove country code — backend will handle phone normalization
         contactIdentifier = data.data.user.phoneNumber;
       } else if (artistData.email) {
         contactIdentifier = artistData.email;
@@ -354,7 +361,7 @@ function ArtistAuthContent() {
       // ✅ Redirect to profile setup (session will now exist)
       router.push("/artist/profile-setup");
     } catch (err: any) {
-      console.error("❌ Artist signup error:", err);
+      console.error("Registration error:", err);
       setError(
         err.message || "Failed to complete registration. Please try again.",
       );
@@ -389,6 +396,7 @@ function ArtistAuthContent() {
           );
         setError("A new verification code has been sent.");
         setOtp("");
+        setResendTimer(30); // Start 30-second countdown
       } else {
         const response = await fetch("/api/users/send-otp", {
           method: "POST",
@@ -405,6 +413,7 @@ function ArtistAuthContent() {
           );
         setError("A new verification code has been sent to your email.");
         setOtp("");
+        setResendTimer(30); // Start 30-second countdown
       }
     } catch (err: any) {
       console.error("Resend OTP error:", err);
@@ -448,7 +457,9 @@ function ArtistAuthContent() {
         <Image
           src="/logo.png"
           alt="ANDACTION Logo"
-          className="h-8 object-contain" width={150} height={24}
+          className="h-8 object-contain"
+          width={150}
+          height={24}
         />
         <button
           onClick={() => router.push("/")}
@@ -494,33 +505,35 @@ function ArtistAuthContent() {
               <form onSubmit={handleJoinSubmit} className="space-y-6">
                 {contactType === "phone" ? (
                   <div>
-                    <label className="secondary-text  block mb-1">Mobile number</label>
-                  <PhoneInput
-                    placeholder="Enter mobile number"
-                    value={phone}
-                    onChange={setPhone}
-                    onCountryChange={(country) =>
-                      setCountryCode(country.dialCode)
-                    }
-                    required
-                    disabled={isLoading}
-                    variant="filled"
-                    id="phoneNumber"
-                  />
+                    <label className="secondary-text  block mb-1">
+                      Mobile number
+                    </label>
+                    <PhoneInput
+                      placeholder="Enter mobile number"
+                      value={phone}
+                      onChange={setPhone}
+                      onCountryChange={(country) =>
+                        setCountryCode(country.dialCode)
+                      }
+                      required
+                      disabled={isLoading}
+                      variant="filled"
+                      id="phoneNumber"
+                    />
                   </div>
                 ) : (
                   <div>
                     <label className="secondary-text  block mb-1">Email</label>
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    variant="filled"
-                    id="email"
-                  />
+                    <Input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      variant="filled"
+                      id="email"
+                    />
                   </div>
                 )}
 
@@ -573,7 +586,8 @@ function ArtistAuthContent() {
                     }
                     disabled={isLoading}
                   >
-                    Sign up with {contactType === "phone" ? "Email" : "Mobile"}
+                    Sign up with{" "}
+                    {contactType === "phone" ? "Email" : "Mobile Number"}
                   </Button>
 
                   <Button
@@ -670,7 +684,9 @@ function ArtistAuthContent() {
                   disabled={isLoading}
                   className="text-white hover:text-primary-pink transition-colors duration-200 secondary-text underline"
                 >
-                  Resend OTP
+                  {resendTimer > 0
+                    ? `Resend OTP (${resendTimer}s)`
+                    : "Resend OTP"}
                 </button>
               </div>
 
@@ -825,7 +841,13 @@ function ArtistAuthContent() {
               </div>
             </div>
 
-            <form onSubmit={handleUserInfoSubmit} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setStep("terms");
+              }}
+              className="space-y-4"
+            >
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <Input

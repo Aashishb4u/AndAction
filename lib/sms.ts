@@ -1,14 +1,14 @@
 export async function sendOtpSms(
   countryCode: string,
   phoneNumber: string,
-  otp: string
+  otp: string,
 ) {
   try {
     const url = "https://smsapi.edumarcsms.com/api/v1/sendsms";
 
     const body = {
       number: [phoneNumber],
-      message: `Your OTP Verification Code is ${otp}. Do not share it with anyone. with anyone. AndAction.`,
+      message: `Your OTP Verification Code is ${otp}. Do not share it with anyone. with anyone. Myorderslip.`,
       senderId: process.env.EDUMARC_SENDER_ID!,
       templateId: process.env.EDUMARC_TEMPLATE_ID!,
     };

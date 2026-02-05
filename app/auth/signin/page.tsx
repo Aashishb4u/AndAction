@@ -22,6 +22,7 @@ function SignInContent() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,10 +47,36 @@ function SignInContent() {
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
-      setError("");
-      setStep("password");
+    setEmailError("");
+    setError("");
+
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      setEmailError("Email or phone number is required");
+      return;
     }
+
+    // Check if it's an email or phone number
+    const isEmail = trimmedEmail.includes("@");
+
+    if (isEmail) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedEmail)) {
+        setEmailError("Please enter a valid email address");
+        return;
+      }
+    } else {
+      // Validate phone number (should contain at least 10 digits)
+      const phoneDigits = trimmedEmail.replace(/\D/g, "");
+      if (phoneDigits.length < 10) {
+        setEmailError("Please enter a valid phone number (at least 10 digits)");
+        return;
+      }
+    }
+
+    setStep("password");
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -70,13 +97,15 @@ function SignInContent() {
         body: JSON.stringify(
           contactIdentifier.includes("@")
             ? { email: contactIdentifier, password }
-            : { phone: contactIdentifier, countryCode: "+91", password }
+            : { phone: contactIdentifier, countryCode: "+91", password },
         ),
       });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data?.error || data?.message || "Invalid login credentials.");
+        throw new Error(
+          data?.error || data?.message || "Invalid login credentials.",
+        );
       }
 
       const result = await signIn("credentials", {
@@ -106,10 +135,11 @@ function SignInContent() {
     setStep("email");
     setPassword("");
     setError("");
+    setEmailError("");
   };
 
   const handleSocialSignIn = async (
-    provider: "google" | "apple" | "facebook"
+    provider: "google" | "apple" | "facebook",
   ) => {
     setIsLoading(true);
     setError("");
@@ -122,9 +152,7 @@ function SignInContent() {
       } else if (provider === "facebook") {
         await signInWithFacebook();
       }
-
-      const redirectUrl = getRedirectUrl(searchParams);
-      router.push(redirectUrl || "/");
+      // NextAuth will handle the redirect, no need to manually navigate
     } catch (err) {
       setError(`${provider} Sign In is not available yet.`);
       console.error(`${provider} Sign In error:`, err);
@@ -136,36 +164,35 @@ function SignInContent() {
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
       <div className="flex justify-between items-center mr-4 ml-4 pt-4">
-          <Image
-            src="/logo.png"
-            alt="ANDACTION Logo"
-            className="h-8 object-contain"
-            width={150}
-            height={24}
-          />
-          <button
-            onClick={() => router.push("/")}
-            className="p-2 text-white transition-colors duration-200"
-            aria-label="Close"
+        <Image
+          src="/logo.png"
+          alt="ANDACTION Logo"
+          className="h-8 object-contain"
+          width={150}
+          height={24}
+        />
+        <button
+          onClick={() => router.push("/")}
+          className="p-2 text-white transition-colors duration-200"
+          aria-label="Close"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
       <div className="md:p-8 p-4">
         {/* Header: Logo and Close Button */}
-        
 
         <h1 className="h1 text-white mb-2">Sign In to AndAction</h1>
 
@@ -181,16 +208,24 @@ function SignInContent() {
               Enter your email or mobile number to sign in.
             </p>
             <form onSubmit={handleEmailSubmit} className="space-y-6">
-              <Input
-                label="Email or Mobile number"
-                type="text"
-                placeholder="Enter email ID or mobile number"
-                className="bg-[#2D2D2D]"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                variant="filled"
-                required
-              />
+              <div>
+                <Input
+                  label="Email or Mobile number"
+                  type="text"
+                  placeholder="Enter email ID or mobile number"
+                  className="bg-[#2D2D2D]"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailError("");
+                  }}
+                  variant="filled"
+                  required
+                />
+                {emailError && (
+                  <p className="text-red-400 text-sm mt-2">{emailError}</p>
+                )}
+              </div>
 
               <Button
                 type="submit"
@@ -274,7 +309,9 @@ function SignInContent() {
           /* Password Step */
           <form onSubmit={handlePasswordSubmit}>
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-text-gray secondary-grey-text">{email}</span>
+              <span className="text-text-gray secondary-grey-text">
+                {email}
+              </span>
               <button
                 type="button"
                 onClick={handleChangeEmail}

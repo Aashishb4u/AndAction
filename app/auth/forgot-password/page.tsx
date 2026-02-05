@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Input, { PasswordInput } from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -18,8 +18,16 @@ export default function ForgotPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resendTimer, setResendTimer] = useState(0);
 
   const router = useRouter();
+
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
 
   // Simple password strength calculation (reused from signup)
   const getPasswordStrength = (password: string) => {
@@ -76,6 +84,7 @@ export default function ForgotPasswordPage() {
         }
 
         setStep("otp");
+        setResendTimer(30);
       } catch (err: any) {
         setError(err.message || "Failed to send OTP. Please try again.");
         console.error("Email submit error:", err);
@@ -179,6 +188,7 @@ export default function ForgotPasswordPage() {
             data.error || data.message || "Failed to resend OTP.",
           );
         }
+        setResendTimer(30); // Start 30-second countdown
       } catch (err: any) {
         setError(err.message || "Failed to resend OTP. Please try again.");
         console.error("Resend OTP error:", err);
@@ -309,11 +319,13 @@ export default function ForgotPasswordPage() {
                 </span>
                 <button
                   type="button"
-                  className="text-white underline hover:text-primary-pink transition-colors duration-200 btn2"
+                  className="text-white underline hover:text-primary-pink transition-colors duration-200 btn2 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleResendOTP}
-                  disabled={isLoading}
+                  disabled={isLoading || resendTimer > 0}
                 >
-                  Resend OTP
+                  {resendTimer > 0
+                    ? `Resend OTP (${resendTimer}s)`
+                    : "Resend OTP"}
                 </button>
               </div>
 

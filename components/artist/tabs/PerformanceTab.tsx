@@ -69,13 +69,16 @@ const offStageMembersOptions = [
 // Helper function to parse comma-separated string to array
 const parseCSV = (value: string | undefined | null): string[] => {
   if (!value) return [];
-  return value.split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
+  return value
+    .split(",")
+    .map((v) => v.trim().toLowerCase())
+    .filter(Boolean);
 };
 
 const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
   const { data: session, update } = useSession();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Dropdown visibility states
   const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
   const [showEventTypesDropdown, setShowEventTypesDropdown] = useState(false);
@@ -113,7 +116,9 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
   // Toggle all languages
   const toggleAllLanguages = () => {
     const allValues = performingLanguageOptions.map((l) => l.value);
-    if (formData.performingLanguages.length === performingLanguageOptions.length) {
+    if (
+      formData.performingLanguages.length === performingLanguageOptions.length
+    ) {
       handleInputChange("performingLanguages", []);
     } else {
       handleInputChange("performingLanguages", allValues);
@@ -171,9 +176,13 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         return;
       }
 
+      // close all dropdowns before saving
+      setShowLanguagesDropdown(false);
+      setShowEventTypesDropdown(false);
+      setShowStatesDropdown(false);
+
       setIsLoading(true);
 
-      // Join arrays to comma-separated strings for storage
       const payload = {
         userId: session.user.id,
         performingLanguage: formData.performingLanguages.join(","),
@@ -185,16 +194,13 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         offStageMembers: formData.offStageMembers,
       };
 
-      // 1️⃣ Update DB
       const res = await updateArtistProfile(payload);
 
       const refreshedUser = res.data.user;
       const refreshedArtist = res.data.artistProfile;
 
-      // 2️⃣ Build the correct NextAuth structure:
       const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
 
-      // 3️⃣ Update session
       await update({
         update: sessionPayload,
       });
@@ -210,13 +216,13 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
   const handleReset = () => {
     setFormData({
-      performingLanguages: ["english", "hindi", "gujarati"],
-      eventTypes: ["party", "concert", "events"],
-      performingStates: ["gujarat", "rajasthan", "maharashtra"],
-      minDuration: "120",
-      maxDuration: "160",
-      performingMembers: "2",
-      offStageMembers: "0",
+      performingLanguages: parseCSV(artist.performingLanguage),
+      eventTypes: parseCSV(artist.performingEventType),
+      performingStates: parseCSV(artist.performingStates),
+      minDuration: artist.performingDurationFrom || "",
+      maxDuration: artist.performingDurationTo || "",
+      performingMembers: artist.performingMembers || "",
+      offStageMembers: artist.offStageMembers || "",
     });
   };
 
@@ -225,18 +231,30 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       {/* Performing Language - Multi-select */}
       <div className="relative">
         <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm font-medium text-white">Performing language*</label>
+          <label className="block text-sm font-medium text-white">
+            Performing language*
+          </label>
           <Tooltip content="Select the languages you can perform in during your shows">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        
+
         {/* Selected values display */}
         <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
-          <span className={formData.performingLanguages.length > 0 ? "text-white" : "text-text-gray"}>
+          <span
+            className={
+              formData.performingLanguages.length > 0
+                ? "text-white"
+                : "text-text-gray"
+            }
+          >
             {formData.performingLanguages.length > 0
               ? formData.performingLanguages
-                  .map((val) => performingLanguageOptions.find((opt) => opt.value === val)?.label || val)
+                  .map(
+                    (val) =>
+                      performingLanguageOptions.find((opt) => opt.value === val)
+                        ?.label || val,
+                  )
                   .join(", ")
               : "No languages selected"}
           </span>
@@ -255,7 +273,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
 
@@ -266,13 +289,16 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
               <input
                 type="checkbox"
-                checked={formData.performingLanguages.length === performingLanguageOptions.length}
+                checked={
+                  formData.performingLanguages.length ===
+                  performingLanguageOptions.length
+                }
                 onChange={toggleAllLanguages}
                 className="w-4 h-4 accent-primary-pink rounded"
               />
               <span className="text-white font-medium">All Languages</span>
             </label>
-            
+
             {/* Individual language checkboxes */}
             {performingLanguageOptions.map((language) => (
               <label
@@ -281,7 +307,9 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               >
                 <input
                   type="checkbox"
-                  checked={formData.performingLanguages.includes(language.value)}
+                  checked={formData.performingLanguages.includes(
+                    language.value,
+                  )}
                   onChange={() => toggleLanguageSelection(language.value)}
                   className="w-4 h-4 accent-primary-pink rounded"
                 />
@@ -295,18 +323,28 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       {/* Performing Event Type - Multi-select */}
       <div className="relative">
         <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm font-medium text-white">Performing event type*</label>
+          <label className="block text-sm font-medium text-white">
+            Performing event type*
+          </label>
           <Tooltip content="Choose the types of events where you typically perform">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        
+
         {/* Selected values display */}
         <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
-          <span className={formData.eventTypes.length > 0 ? "text-white" : "text-text-gray"}>
+          <span
+            className={
+              formData.eventTypes.length > 0 ? "text-white" : "text-text-gray"
+            }
+          >
             {formData.eventTypes.length > 0
               ? formData.eventTypes
-                  .map((val) => eventTypeOptions.find((opt) => opt.value === val)?.label || val)
+                  .map(
+                    (val) =>
+                      eventTypeOptions.find((opt) => opt.value === val)
+                        ?.label || val,
+                  )
                   .join(", ")
               : "No event types selected"}
           </span>
@@ -325,7 +363,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
 
@@ -342,7 +385,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               />
               <span className="text-white font-medium">All Event Types</span>
             </label>
-            
+
             {/* Individual event type checkboxes */}
             {eventTypeOptions.map((eventType) => (
               <label
@@ -365,20 +408,33 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       {/* Performing States - Multi-select */}
       <div className="relative">
         <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm font-medium text-white">Performing states*</label>
+          <label className="block text-sm font-medium text-white">
+            Performing states*
+          </label>
           <Tooltip content="Enter the states where you are willing to perform">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        
+
         {/* Selected values display */}
         <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
-          <span className={formData.performingStates.length > 0 ? "text-white" : "text-text-gray"}>
+          <span
+            className={
+              formData.performingStates.length > 0
+                ? "text-white"
+                : "text-text-gray"
+            }
+          >
             {formData.performingStates.length > 0
-              ? formData.performingStates.length === performingStatesOptions.length
+              ? formData.performingStates.length ===
+                performingStatesOptions.length
                 ? "PAN India (All States)"
                 : formData.performingStates
-                    .map((val) => performingStatesOptions.find((opt) => opt.value === val)?.label || val)
+                    .map(
+                      (val) =>
+                        performingStatesOptions.find((opt) => opt.value === val)
+                          ?.label || val,
+                    )
                     .join(", ")
               : "No states selected"}
           </span>
@@ -397,7 +453,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
 
@@ -408,13 +469,16 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
               <input
                 type="checkbox"
-                checked={formData.performingStates.length === performingStatesOptions.length}
+                checked={
+                  formData.performingStates.length ===
+                  performingStatesOptions.length
+                }
                 onChange={togglePanIndia}
                 className="w-4 h-4 accent-primary-pink rounded"
               />
               <span className="text-white font-medium">PAN India</span>
             </label>
-            
+
             {/* Individual state checkboxes */}
             {performingStatesOptions.map((state) => (
               <label
