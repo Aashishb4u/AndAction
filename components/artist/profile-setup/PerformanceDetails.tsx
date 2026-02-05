@@ -185,6 +185,33 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
       newErrors.performingStates = "Performing states is required";
     }
 
+    // Validate duration fields
+    const minDuration = parseInt(formData.performingDurationFrom);
+    const maxDuration = parseInt(formData.performingDurationTo);
+
+    if (
+      formData.performingDurationFrom &&
+      (minDuration < 15 || minDuration > 600)
+    ) {
+      newErrors.performingDurationFrom =
+        "Duration should be between 15 and 600 minutes";
+    }
+    if (
+      formData.performingDurationTo &&
+      (maxDuration < 15 || maxDuration > 600)
+    ) {
+      newErrors.performingDurationTo =
+        "Duration should be between 15 and 600 minutes";
+    }
+    if (
+      formData.performingDurationFrom &&
+      formData.performingDurationTo &&
+      minDuration >= maxDuration
+    ) {
+      newErrors.performingDurationTo =
+        "Max duration must be greater than min duration";
+    }
+
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
@@ -592,12 +619,13 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                   <Input
                     placeholder="From"
                     value={formData.performingDurationFrom}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "performingDurationFrom",
-                        e.target.value,
-                      )
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Only allow digits
+                      if (value === "" || /^[0-9]*$/.test(value)) {
+                        handleInputChange("performingDurationFrom", value);
+                      }
+                    }}
                     variant="filled"
                   />
                 </div>
@@ -608,13 +636,23 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                   <Input
                     placeholder="To"
                     value={formData.performingDurationTo}
-                    onChange={(e) =>
-                      handleInputChange("performingDurationTo", e.target.value)
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Only allow digits
+                      if (value === "" || /^[0-9]*$/.test(value)) {
+                        handleInputChange("performingDurationTo", value);
+                      }
+                    }}
                     variant="filled"
                   />
                 </div>
               </div>
+              {(errors.performingDurationTo ||
+                errors.performingDurationFrom) && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.performingDurationTo || errors.performingDurationFrom}
+                </p>
+              )}{" "}
             </div>
 
             {/* Performing Members */}
