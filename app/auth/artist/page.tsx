@@ -54,6 +54,15 @@ function ArtistAuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  useEffect(() => {
+    const stepParam = searchParams.get("step");
+    const oauthParam = searchParams.get("oauth");
+
+    if (stepParam === "userInfo" && oauthParam === "true") {
+      setStep("userInfo");
+    }
+  }, [searchParams]);
+
   // Timer countdown effect
   useEffect(() => {
     if (resendTimer > 0) {
@@ -264,29 +273,14 @@ function ArtistAuthContent() {
     setStep("userInfo");
   };
 
-  const handleUserInfoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      // Simulate API call for user info saving (keeps existing behavior)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setStep("terms");
-    } catch {
-      setError("Failed to save user information. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleTermsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      // ✅ Prepare artist signup payload
+      const isOAuthSignup = searchParams.get("oauth") === "true";
+
       const artistData = {
         email: contactType === "email" ? email : undefined,
         phoneNumber:
@@ -303,35 +297,37 @@ function ArtistAuthContent() {
         city,
         noMarketing,
         shareData,
+        isOAuthSignup, // Flag to indicate OAuth user
       };
 
-      console.log("📤 Sending artist signup data:", artistData);
+      const apiEndpoint = isOAuthSignup
+        ? "/api/auth/artist/update-profile"
+        : "/api/auth/artist/signup";
 
-      // ✅ Call signup API
-      const response = await fetch("/api/auth/artist/signup", {
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(artistData),
       });
 
       const data = await response.json();
-      console.log("📥 Signup response:", data);
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.error || data.message || "Failed to create artist account.",
+          data.error || data.message || "Failed to complete registration.",
         );
       }
 
-      console.log("✅ Artist signup successful");
+      if (isOAuthSignup) {
+        router.push("/artist/profile-setup");
+        return;
+      }
 
-      // ✅ Construct contact identifier for auto-signin
       let contactIdentifier: string | null = null;
 
       if (data?.data?.user?.email) {
         contactIdentifier = data.data.user.email;
       } else if (data?.data?.user?.phoneNumber) {
-        // ✅ Remove country code — backend will handle phone normalization
         contactIdentifier = data.data.user.phoneNumber;
       } else if (artistData.email) {
         contactIdentifier = artistData.email;
@@ -365,7 +361,7 @@ function ArtistAuthContent() {
       // ✅ Redirect to profile setup (session will now exist)
       router.push("/artist/profile-setup");
     } catch (err: any) {
-      console.error("❌ Artist signup error:", err);
+      console.error("Registration error:", err);
       setError(
         err.message || "Failed to complete registration. Please try again.",
       );
@@ -845,7 +841,13 @@ function ArtistAuthContent() {
               </div>
             </div>
 
-            <form onSubmit={handleUserInfoSubmit} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setStep("terms");
+              }}
+              className="space-y-4"
+            >
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
