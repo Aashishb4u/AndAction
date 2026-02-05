@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Button from '@/components/ui/Button';
-import Image from 'next/image';
-import { ArtistProfileSetupData } from '@/types';
+import React from "react";
+import Button from "@/components/ui/Button";
+import Image from "next/image";
+import { ArtistProfileSetupData } from "@/types";
 
 interface ProfileReviewProps {
   data: ArtistProfileSetupData;
@@ -12,13 +12,13 @@ interface ProfileReviewProps {
   onEdit: (step: string) => void;
 }
 
-import { useState } from 'react';
+import { useState } from "react";
 
 const ProfileReview: React.FC<ProfileReviewProps> = ({
   data,
   onNext,
   onBack,
-  onEdit
+  onEdit,
 }) => {
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +29,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
       data.performingDurationTo &&
       Number(data.performingDurationTo) < Number(data.performingDurationFrom)
     ) {
-      setError('End time cannot be less than start time.');
+      setError("End time cannot be less than start time.");
       return;
     }
     setError(null);
@@ -44,11 +44,21 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
           onClick={onBack}
           className="flex items-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
-          <span className='hidden md:block'>Back</span>
-          <span className='md:hidden h2'>Profile Setup</span>
+          <span className="hidden md:block">Back</span>
+          <span className="md:hidden h2">Profile Setup</span>
         </button>
         <h1 className="h2 hidden md:block text-white">Profile Setup</h1>
         <div className="w-12"></div>
@@ -68,13 +78,19 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
 
             {/* Success Badge */}
             <div className="flex justify-center mb-6">
-              <Image src="/complete-illustration.svg" alt="Success" width={200} height={200} />
+              <Image
+                src="/complete-illustration.svg"
+                alt="Success"
+                width={200}
+                height={200}
+              />
             </div>
 
             <div className="mb-6">
               <p className="text-white btn1 mb-1">Looking good, Harsh!</p>
               <p className="text-text-gray secondary-text">
-                Here&apos;s how your profile looks to users. You can edit it anytime.
+                Here&apos;s how your profile looks to users. You can edit it
+                anytime.
               </p>
             </div>
           </div>
@@ -88,11 +104,22 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex-shrink-0">
-                      <Image src="/icons/user.svg" alt="Artist Profile" width={25} height={25} />
+                      <Image
+                        src="/icons/user.svg"
+                        alt="Artist Profile"
+                        width={25}
+                        height={25}
+                      />
                     </div>
                     <h3 className="text-white h2">Artist Profile</h3>
                   </div>
-                  <Image onClick={() => onEdit('artistDetails')} src="/icons/edit.svg" alt="Verified" width={25} height={25} />
+                  <Image
+                    onClick={() => onEdit("artistDetails")}
+                    src="/icons/edit.svg"
+                    alt="Verified"
+                    width={25}
+                    height={25}
+                  />
                 </div>
               </div>
 
@@ -109,45 +136,76 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                       unoptimized
                     />
                   ) : (
-                    <Image src="/user.png" alt="Artist Profile" width={96} height={96} className="rounded-xl" />
+                    <Image
+                      src="/user.png"
+                      alt="Artist Profile"
+                      width={96}
+                      height={96}
+                      className="rounded-xl"
+                    />
                   )}
                 </div>
               </div>
 
-
               {/* Details List */}
               <div className="space-y-3 text-sm px-6">
                 <div className="flex flex-col gap-1">
-                  <span className="text-text-gray secondary-text">Stage Name</span>
-                  <span className="text-white">{data.stageName || 'MJ Singer'}</span>
+                  <span className="text-text-gray secondary-text">
+                    Stage Name
+                  </span>
+                  <span className="text-white">
+                    {data.stageName || "MJ Singer"}
+                  </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-text-gray secondary-text">Artist type</span>
+                  <span className="text-text-gray secondary-text">
+                    Artist type
+                  </span>
                   <div className="flex gap-2 flex-wrap">
-                    <Button variant="secondary" size="xs" className='px-4 font-normal! text-white! text-sm'>
-                      {data.artistType || 'Singer'}
+                    <Button
+                      variant="secondary"
+                      size="xs"
+                      className="px-4 font-normal! text-white! text-sm"
+                    >
+                      {data.artistType || "Singer"}
                     </Button>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-text-gray secondary-text">Sub artist type</span>
+                  <span className="text-text-gray secondary-text">
+                    Sub artist type
+                  </span>
                   <div className="flex gap-2 flex-wrap">
-                    <Button variant="secondary" size="xs" className='px-4 font-normal! text-white! text-sm'>
-                      {data.subArtistType || 'DJ'}
+                    <Button
+                      variant="secondary"
+                      size="xs"
+                      className="px-4 font-normal! text-white! text-sm"
+                    >
+                      {data.subArtistType || "DJ"}
                     </Button>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-text-gray secondary-text">Achievements / Awards</span>
+                  <span className="text-text-gray secondary-text">
+                    Achievements / Awards
+                  </span>
                   <div className="flex gap-2 flex-wrap">
-                    <Button variant="secondary" size="xs" className='px-4 font-normal! text-white! text-sm'>
-                      {data.achievements || 'Singer'}
+                    <Button
+                      variant="secondary"
+                      size="xs"
+                      className="px-4 font-normal! text-white! text-sm"
+                    >
+                      {data.achievements || "Singer"}
                     </Button>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-text-gray secondary-text">Years of experience</span>
-                  <span className="text-white">{data.yearsOfExperience || '4 years'}</span>
+                  <span className="text-text-gray secondary-text">
+                    Years of experience
+                  </span>
+                  <span className="text-white">
+                    {data.yearsOfExperience || "4 years"}
+                  </span>
                 </div>
               </div>
 
@@ -155,7 +213,8 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
               <div className="space-y-2 px-6">
                 <p className="text-text-gray text-sm">Short bio</p>
                 <p className="text-white text-sm leading-relaxed">
-                  {data.shortBio || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.'}
+                  {data.shortBio ||
+                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."}
                 </p>
               </div>
             </div>
@@ -167,15 +226,30 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex-shrink-0">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M15 14h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="w-5 h-5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M15 14h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                     </div>
                     <h3 className="text-white h2">Performance Details</h3>
                   </div>
 
-                  <Image onClick={() => onEdit('performanceDetails')} src="/icons/edit.svg" alt="Verified" width={25} height={25} />
-
+                  <Image
+                    onClick={() => onEdit("performanceDetails")}
+                    src="/icons/edit.svg"
+                    alt="Verified"
+                    width={25}
+                    height={25}
+                  />
                 </div>
               </div>
 
@@ -184,41 +258,81 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div>
                   <p className="text-text-gray mb-1">Performing Languages</p>
                   <div className="flex gap-2 flex-wrap">
-                    {data.performingLanguages?.length ? data.performingLanguages?.map((language, index) => (
-                      <Button key={index} variant="secondary" size="xs" className='px-4 font-normal! text-white! text-sm'>
-                        {language}
-                      </Button>
-                    )) : ['English', 'Hindi', 'Gujarati'].map((language, index) => (
-                      <Button key={index} variant="secondary" size="xs" className='px-4 font-normal! text-white! text-sm'>
-                        {language}
-                      </Button>
-                    ))}
+                    {data.performingLanguages?.length
+                      ? data.performingLanguages?.map((language, index) => (
+                          <Button
+                            key={index}
+                            variant="secondary"
+                            size="xs"
+                            className="px-4 font-normal! text-white! text-sm"
+                          >
+                            {language}
+                          </Button>
+                        ))
+                      : ["English", "Hindi", "Gujarati"].map(
+                          (language, index) => (
+                            <Button
+                              key={index}
+                              variant="secondary"
+                              size="xs"
+                              className="px-4 font-normal! text-white! text-sm"
+                            >
+                              {language}
+                            </Button>
+                          ),
+                        )}
                   </div>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Performing Event types</p>
-                  {data.performingEventTypes?.length ? data.performingEventTypes?.map((language, index) => (
-                    <Button key={index} variant="secondary" size="xs" className='px-4 font-normal! text-white! text-sm'>
-                      {language}
-                    </Button>
-                  )) : ['Concert', 'Party', 'Events'].map((language, index) => (
-                    <Button key={index} variant="secondary" size="xs" className='px-4 font-normal! text-white! text-sm'>
-                      {language}
-                    </Button>
-                  ))}
+                  {data.performingEventTypes?.length
+                    ? data.performingEventTypes?.map((language, index) => (
+                        <Button
+                          key={index}
+                          variant="secondary"
+                          size="xs"
+                          className="px-4 font-normal! text-white! text-sm"
+                        >
+                          {language}
+                        </Button>
+                      ))
+                    : ["Concert", "Party", "Events"].map((language, index) => (
+                        <Button
+                          key={index}
+                          variant="secondary"
+                          size="xs"
+                          className="px-4 font-normal! text-white! text-sm"
+                        >
+                          {language}
+                        </Button>
+                      ))}
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Performing States</p>
                   <div className="flex gap-2 flex-wrap">
-                    {data.performingStates?.length ? data.performingStates?.map((language, index) => (
-                      <Button key={index} variant="secondary" size="xs" className='px-4 font-normal! text-white! text-sm'>
-                        {language}
-                      </Button>
-                    )) : ['Gujarat', 'Maharashtra', 'Rajasthan'].map((language, index) => (
-                      <Button key={index} variant="secondary" size="xs" className='px-4 font-normal! text-white! text-sm'>
-                        {language}
-                      </Button>
-                    ))}
+                    {data.performingStates?.length
+                      ? data.performingStates?.map((language, index) => (
+                          <Button
+                            key={index}
+                            variant="secondary"
+                            size="xs"
+                            className="px-4 font-normal! text-white! text-sm"
+                          >
+                            {language}
+                          </Button>
+                        ))
+                      : ["Gujarat", "Maharashtra", "Rajasthan"].map(
+                          (language, index) => (
+                            <Button
+                              key={index}
+                              variant="secondary"
+                              size="xs"
+                              className="px-4 font-normal! text-white! text-sm"
+                            >
+                              {language}
+                            </Button>
+                          ),
+                        )}
                   </div>
                 </div>
                 <div>
@@ -226,17 +340,18 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <p className="text-white">
                     {data.performingDurationFrom && data.performingDurationTo
                       ? `${data.performingDurationFrom} - ${data.performingDurationTo} mins`
-                      : '45 - 90 mins'
-                    }
+                      : "45 - 90 mins"}
                   </p>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Performing members</p>
-                  <p className="text-white">{data.performingMembers || '1 - members'}</p>
+                  <p className="text-white">
+                    {data.performingMembers || "1 - members"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Off stage members</p>
-                  <p className="text-white">{data.offStageMembers || 'N/A'}</p>
+                  <p className="text-white">{data.offStageMembers || "N/A"}</p>
                 </div>
               </div>
             </div>
@@ -248,14 +363,29 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex-shrink-0">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      <svg
+                        className="w-5 h-5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        />
                       </svg>
                     </div>
                     <h3 className="text-white h2">Contact & Pricing Details</h3>
                   </div>
-                  <Image onClick={() => onEdit('contactPricing')} src="/icons/edit.svg" alt="Verified" width={25} height={25} />
-
+                  <Image
+                    onClick={() => onEdit("contactPricing")}
+                    src="/icons/edit.svg"
+                    alt="Verified"
+                    width={25}
+                    height={25}
+                  />
                 </div>
               </div>
 
@@ -263,15 +393,21 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
               <div className="space-y-3 text-sm px-6">
                 <div>
                   <p className="text-text-gray mb-1">Contact number</p>
-                  <p className="text-white">+91 - {data.contactNumber || '7226038336'}</p>
+                  <p className="text-white">
+                    +91 - {data.contactNumber || "7226038336"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">WhatsApp number</p>
-                  <p className="text-white">+91 - {data.whatsappNumber || '7226038336'}</p>
+                  <p className="text-white">
+                    +91 - {data.whatsappNumber || "7226038336"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Email ID</p>
-                  <p className="text-white">{data.email || 'andactionapp@gmail.com'}</p>
+                  <p className="text-white">
+                    {data.email || "andactionapp@gmail.com"}
+                  </p>
                 </div>
               </div>
 
@@ -280,20 +416,24 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div>
                   <p className="text-text-gray text-sm mb-1">Solo Charges</p>
                   <p className="text-white font-medium text-lg">
-                    Starting from ₹ {data.soloCharges || '1,00,000'}
+                    Starting from ₹ {data.soloCharges || "N/A"}
                   </p>
                   <p className="text-twhite text-xs mt-1">
-                    {data.soloDescription || 'Solo performance charges with sound system and lighting setup. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.'}
+                    {data.soloDescription ||
+                      "Solo performance charges with sound system and lighting setup. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-text-gray text-sm mb-1">Charges with backline</p>
+                  <p className="text-text-gray text-sm mb-1">
+                    Charges with backline
+                  </p>
                   <p className="text-white font-medium text-lg">
-                    Starting from ₹ {data.backingCharges || '2,00,000'}
+                    Starting from ₹ {data.backingCharges || "N/A"}
                   </p>
                   <p className="text-white text-xs mt-1">
-                    {data.backingDescription || 'Performance charges with full backing band, sound system and lighting setup. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.'}
+                    {data.backingDescription ||
+                      "Performance charges with full backing band, sound system and lighting setup. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."}
                   </p>
                 </div>
               </div>
