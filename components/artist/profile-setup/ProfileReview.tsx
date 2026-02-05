@@ -22,6 +22,18 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
 }) => {
   const [error, setError] = useState<string | null>(null);
 
+  // Map experience values to labels
+  const getExperienceLabel = (value: string) => {
+    const experienceMap: Record<string, string> = {
+      "1": "0-1 years",
+      "2": "1-3 years",
+      "3": "3-5 years",
+      "4": "5-10 years",
+      "5": "10+ years",
+    };
+    return experienceMap[value] || value;
+  };
+
   // Validate performance duration before submit
   const handleNext = () => {
     if (
@@ -204,7 +216,9 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                     Years of experience
                   </span>
                   <span className="text-white">
-                    {data.yearsOfExperience || "4 years"}
+                    {data.yearsOfExperience
+                      ? getExperienceLabel(data.yearsOfExperience)
+                      : "4 years"}
                   </span>
                 </div>
               </div>
