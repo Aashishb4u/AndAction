@@ -164,28 +164,77 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   return (
     <>
       <div className={`relative ${className}`} ref={dropdownRef}>
-        <div className="px-4 py-4 border-b border-gray-800 bg-card">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        <div className=" border-y border-[var(--border-color)] bg-card">
+          <div
+            className="flex px-4 py-4 items-center gap-2 overflow-x-auto scrollbar-hide"
+            style={{
+              maskImage: "linear-gradient(to right, black 85%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to right, black 85%, transparent 100%)",
+            }}
+          >
             {/* Filter Button */}
             <button
               onClick={() => setShowFilterModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-white rounded-full text-primary-pink whitespace-nowrap flex-shrink-0 btn2"
+              className="flex items-center gap-1 px-4 py-2 bg-white rounded-full whitespace-nowrap flex-shrink-0 btn2"
             >
               <svg
-                className="w-4 h-4"
+                className="w-4.5 h-4.5"
                 fill="none"
-                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path
+                <defs>
+                  <linearGradient
+                    id="mobileFilterIconGradient"
+                    x1="0"
+                    y1="0"
+                    x2="24"
+                    y2="24"
+                    gradientUnits="userSpaceOnUse"
+                  >
+                    <stop offset="0%" stopColor="var(--primary-orange)" />
+                    <stop offset="100%" stopColor="var(--primary-pink)" />
+                  </linearGradient>
+                </defs>
+                <line
+                  x1="4"
+                  y1="8"
+                  x2="20"
+                  y2="8"
+                  stroke="url(#mobileFilterIconGradient)"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z"
+                />
+                <circle
+                  cx="16"
+                  cy="8"
+                  r="3"
+                  fill="white"
+                  stroke="url(#mobileFilterIconGradient)"
+                  strokeWidth={2}
+                />
+                <line
+                  x1="4"
+                  y1="16"
+                  x2="20"
+                  y2="16"
+                  stroke="url(#mobileFilterIconGradient)"
+                  strokeLinecap="round"
+                  strokeWidth={2}
+                />
+                <circle
+                  cx="8"
+                  cy="16"
+                  r="3"
+                  fill="white"
+                  stroke="url(#mobileFilterIconGradient)"
+                  strokeWidth={2}
                 />
               </svg>
-              Filter
+              <span className="gradient-text">Filter</span>
             </button>
+
+            {/* Divider */}
+            <div className="h-8 w-px bg-[var(--border-color)] mx-1 flex-shrink-0" />
 
             {/* Filter Chips */}
             {filterChips.map((chip) => (

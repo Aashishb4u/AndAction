@@ -40,11 +40,12 @@ const Checkbox: React.FC<CheckboxProps> = ({
         />
         <div
           onClick={() => !disabled && onChange(!checked)}
+          style={{ background: checked ? 'var(--gradient-primary)' : undefined }}
           className={`
             w-5 h-5 rounded border-2 cursor-pointer transition-all duration-200
             flex items-center justify-center
             ${checked 
-              ? 'bg-primary-pink border-primary-pink' 
+              ? 'border-transparent' 
               : 'bg-transparent border-[#404040] hover:border-[#606060]'
             }
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
