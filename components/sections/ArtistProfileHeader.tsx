@@ -174,7 +174,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
             </button>
 
             <div className="flex-1 flex gap-3 justify-end">
-              {(artist.phone && artist.phone.trim() !== "") && (
+              {(artist.contactNumber && artist.contactNumber.trim() !== "") && (
                 <button
                   onClick={onCall}
                   className="bg-[#007AFF] text-white size-12 shrink-0 rounded-full font-medium hover:bg-blue-600 transition-colors flex items-center justify-center shadow-lg shadow-blue-500/20"
@@ -185,7 +185,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
                 </button>
               )}
 
-              {(artist.whatsapp && artist.whatsapp.trim() !== "") && (
+              {(artist.whatsappNumber && artist.whatsappNumber.trim() !== "") && (
                 <button
                   onClick={onWhatsApp}
                   className="bg-[#25D366] text-white size-12 shrink-0 rounded-full font-medium hover:bg-[#20bd5a] transition-colors flex items-center justify-center shadow-lg shadow-green-500/20"
@@ -271,7 +271,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
               </button>
 
               <div className="flex gap-3">
-              {(artist.phone && artist.phone.trim() !== "") && (
+              {(artist.contactNumber && artist.contactNumber.trim() !== "") && (
                 <button
                   onClick={onCall}
                   className="bg-[#007AFF] text-white size-10 shrink-0 rounded-full font-medium hover:bg-blue-600 transition-colors flex items-center justify-center shadow-lg shadow-blue-500/20"
@@ -282,7 +282,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
                 </button>
               )}
 
-              {(artist.whatsapp && artist.whatsapp.trim() !== "") && (
+              {(artist.whatsappNumber && artist.whatsappNumber.trim() !== "") && (
                 <button
                   onClick={onWhatsApp}
                   className="bg-[#25D366] text-white size-10 shrink-0 rounded-full font-medium hover:bg-[#20bd5a] transition-colors flex items-center justify-center shadow-lg shadow-green-500/20"

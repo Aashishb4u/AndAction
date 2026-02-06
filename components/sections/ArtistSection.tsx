@@ -61,14 +61,22 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
             if (artists.length === 0) {
               setShowNoArtistModal(true);
             } else {
-              // Map section title to correct filter value
+              // Map section title to correct filter value (must match VIDEO_CATEGORIES values)
               let typeParam = title.toLowerCase();
-              if (typeParam.includes('dj')) typeParam = 'dj';
+              if (typeParam.includes('dj')) typeParam = 'DJ';
               else if (typeParam.includes('anchor')) typeParam = 'anchor';
               else if (typeParam.includes('band')) typeParam = 'band';
+              else if (typeParam.includes('actor')) typeParam = 'actor';
               else if (typeParam.includes('singer')) typeParam = 'singer';
               else if (typeParam.includes('dancer')) typeParam = 'dancer';
               else if (typeParam.includes('comedian')) typeParam = 'comedian';
+              else if (typeParam.includes('musician')) typeParam = 'musicians';
+              else if (typeParam.includes('magician')) typeParam = 'magician';
+              else if (typeParam.includes('mimicry')) typeParam = 'mimicry';
+              else if (typeParam.includes('special act')) typeParam = 'specialAct';
+              else if (typeParam.includes('spiritual')) typeParam = 'spiritual';
+              else if (typeParam.includes('kids entertainer')) typeParam = 'kidsEntertainer';
+
               router.push(`/artists?type=${encodeURIComponent(typeParam)}`);
             }
           }}
