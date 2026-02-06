@@ -180,6 +180,11 @@ export interface Artist {
   chargesWithBacklineFrom?: number;
   chargesWithBacklineTo?: number;
   chargesWithBacklineDescription?: string;
+  
+  // Contact fields
+  contactNumber?: string;
+  whatsappNumber?: string;
+  
   userId: string
 }
 

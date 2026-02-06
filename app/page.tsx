@@ -15,7 +15,7 @@ export default function Home() {
   // Check if we should show the location modal on mount
   useEffect(() => {
     // Check if user has already responded to location request
-    const locationPreference = sessionStorage.getItem('locationPermissionAsked');
+    const locationPreference = localStorage.getItem('locationPermissionAsked');
     if (locationPreference) {
       setLocationAsked(true);
       // If they previously allowed, try to get location silently
@@ -43,14 +43,14 @@ export default function Home() {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
-        sessionStorage.setItem('locationPermissionAsked', 'allowed');
+        localStorage.setItem('locationPermissionAsked', 'allowed');
         setShowLocationModal(false);
         setLocationAsked(true);
       },
       (err) => {
         console.error("Location permission denied", err);
         setLocation(null);
-        sessionStorage.setItem('locationPermissionAsked', 'denied');
+        localStorage.setItem('locationPermissionAsked', 'denied');
         setShowLocationModal(false);
         setLocationAsked(true);
       },
@@ -63,7 +63,7 @@ export default function Home() {
   };
 
   const handleSkipLocation = () => {
-    sessionStorage.setItem('locationPermissionAsked', 'denied');
+    localStorage.setItem('locationPermissionAsked', 'denied');
     setShowLocationModal(false);
     setLocationAsked(true);
   };

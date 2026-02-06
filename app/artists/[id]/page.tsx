@@ -106,6 +106,7 @@ export default function ArtistDetailPage() {
       try {
         const res = await fetch(`/api/artists/${artistId}`);
         const json = await res.json();
+        console.log("Fetched artist data:", json);  
 
         if (!json.success || !json.data?.artist) {
           setArtist(null);
@@ -149,8 +150,8 @@ export default function ArtistDetailPage() {
           duration: `${a.performingDurationFrom || ""} - ${a.performingDurationTo || ""} minutes`,
           startingPrice: Number(a.soloChargesFrom) || 0,
 
-          phone: a.contactNumber || "+918248621277", // Fallback for testing
-          whatsapp: a.whatsappNumber || "+918248621277", // Fallback for testing
+          contactNumber: a.contactNumber || "",
+          whatsappNumber: a.whatsappNumber || "",
           userId: a.user.id,
 
           // 🔥 bookmark state restored on reload
@@ -273,14 +274,14 @@ export default function ArtistDetailPage() {
 
   const handleRequestBooking = () => console.log("Request booking");
   const handleCall = () => {
-    if (artist.phone) {
-      window.open(`tel:${artist.phone}`, "_self");
+    if (artist.contactNumber) {
+      window.open(`tel:${artist.contactNumber}`, "_self");
     }
   };
   const handleWhatsApp = () => {
-    if (artist.whatsapp) {
+    if (artist.whatsappNumber) {
       window.open(
-        `https://wa.me/${artist.whatsapp.replace(/[^0-9]/g, "")}`,
+        `https://wa.me/${artist.whatsappNumber.replace(/[^0-9]/g, "")}`,
         "_blank"
       );
     }
