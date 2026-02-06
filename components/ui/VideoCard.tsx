@@ -102,7 +102,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-card transition-transform duration-300 ease-out hover:scale-105 card-border-gradient">
+        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-card transition-transform duration-300 ease-out hover:scale-105 card-border-gradient ">
           <Image src={thumbnail} alt={title} fill className="object-cover" />
 
           <div

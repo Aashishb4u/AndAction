@@ -133,57 +133,65 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   ];
 
   const renderAboutContent = () => (
-    <div className="space-y-4 max-w-4xl">
-      <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
-        <h3 className="text-text-gray secondary-text mb-1">Bio</h3>
-        <p 
-          ref={bioRef}
-          className={`leading-relaxed text-sm ${isBioExpanded ? '' : 'line-clamp-2'}`}
-        >
-          {artist.bio || 'Borem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero Borem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero'}
-        </p>
-        {showBioMoreButton && (
-          <button 
-            onClick={() => setIsBioExpanded(!isBioExpanded)}
-            className="text-blue hover:text-primary-pink transition-colors font-medium text-sm mt-1"
+   <div className="space-y-4 max-w-4xl">
+      {artist.bio && artist.bio.trim() !== "" && (
+        <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
+          <h3 className="text-text-gray secondary-text mb-2">Bio</h3>
+          <p 
+            ref={bioRef}
+            className={`leading-relaxed secondary-grey-text ${isBioExpanded ? '' : 'line-clamp-2'}`}
           >
-            {isBioExpanded ? 'less' : 'more...'}
-          </button>
-        )}
-      </div>
-
-      <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
-        <h3 className="text-text-gray secondary-text mb-1">Years of experience</h3>
-        <p className="footnote">{artist.yearsOfExperience || 4} Years</p>
-      </div>
-
-      <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
-        <h3 className="text-text-gray secondary-text mb-1">Sub-Artist Type</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {(artist.subArtistTypes || ['Singer', 'DJ', 'Anker']).map((type, index) => (
-            <span
-              key={index}
-              className="px-3 py-1.5 text-gray-300 rounded-full border border-border-color text-xs font-medium bg-background"
+            {artist.bio}
+          </p>
+          {showBioMoreButton && (
+            <button 
+              onClick={() => setIsBioExpanded(!isBioExpanded)}
+              className="text-blue hover:text-primary-pink transition-colors font-medium text-sm mt-1"
             >
-              {type}
-            </span>
-          ))}
+              {isBioExpanded ? 'less' : 'more...'}
+            </button>
+          )}
         </div>
-      </div>
+      )}
 
-      <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
-        <h3 className="text-text-gray secondary-text mb-1">Achievements / Awards</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {(artist.achievements || ['Singer', 'DJ', 'Anker']).map((achievement, index) => (
-            <span
-              key={index}
-              className="px-3 py-1.5 text-gray-300 rounded-full border border-border-color text-xs font-medium bg-background"
-            >
-              {achievement}
-            </span>
-          ))}
+      {(artist.yearsOfExperience !== undefined && artist.yearsOfExperience !== null) && (
+        <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
+          <h3 className="text-text-gray secondary-text mb-2">Years of experience</h3>
+          <p className="secondary-grey-text">{artist.yearsOfExperience} Years</p>
         </div>
-      </div>
+      )}
+
+      {artist.subArtistTypes && artist.subArtistTypes.length > 0 && (
+        <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
+          <h3 className="text-text-gray secondary-text mb-2">Sub-Artist Type</h3>
+          <div className="flex flex-wrap gap-1.5">
+            {artist.subArtistTypes.map((type, index) => (
+              <span
+                key={index}
+                className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
+              >
+                {type || "N/A"}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {artist.achievements && artist.achievements.length > 0 && (
+        <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
+          <h3 className="text-text-gray secondary-text mb-2">Achievements / Awards</h3>
+          <div className="flex flex-wrap gap-1.5">
+            {artist.achievements.map((achievement, index) => (
+              <span
+                key={index}
+                className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
+              >
+                {achievement || "N/A"}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -234,16 +242,16 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
       <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
         <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex  flex-wrap gap-1.5">
           {(artist.languages?.length
             ? artist.languages.flatMap((lang: string) => lang.split(',').map((l: string) => l.trim())).filter((l: string) => l)
             : ["N/A"]
           ).map((language: string, index: number) => (
             <span
               key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
+              className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
             >
-              {language}
+              {language || "N/A"}
             </span>
           ))}
         </div>
@@ -258,9 +266,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           ).map((eventType: string, index: number) => (
             <span
               key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
+              className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
             >
-              {eventType}
+              {eventType || "N/A"}
             </span>
           ))}
         </div>
@@ -278,9 +286,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           })().map((state: string, index: number) => (
             <span
               key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
+              className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
             >
-              {state}
+              {state || "N/A"}
             </span>
           ))}
         </div>
@@ -332,7 +340,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     }
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {artistShorts.map((short) => (
           <ShortsCard
             key={short.id}
@@ -377,7 +385,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 py-4 px-4 text-base font-medium transition-colors relative ${activeTab === tab.id
-                  ? 'gradient-text'
+                  ? 'text-white'
                   : 'text-text-gray hover:text-gray-300'
                   }`}
               >

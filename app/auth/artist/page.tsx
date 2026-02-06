@@ -640,7 +640,7 @@ function ArtistAuthContent() {
           /* OTP Verification Step */
           <div className="space-y-6">
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold text-white h1">
                 OTP Verification
               </h2>
               <div className="flex flex-col gap-2">
@@ -675,14 +675,14 @@ function ArtistAuthContent() {
               />
 
               <div>
-                <span className="text-text-gray section-text">
+                <span className="text-text-gray section-text secondary-text">
                   Haven&apos;t received the OTP?{" "}
                 </span>
                 <button
                   type="button"
                   onClick={handleResendOTP}
-                  disabled={isLoading || resendTimer > 0}
-                  className="text-white btn1 hover:text-primary-pink transition-colors duration-200 font-medium underline disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoading}
+                  className="text-white hover:text-primary-pink transition-colors duration-200 secondary-text underline"
                 >
                   {resendTimer > 0
                     ? `Resend OTP (${resendTimer}s)`
@@ -716,7 +716,7 @@ function ArtistAuthContent() {
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -730,8 +730,8 @@ function ArtistAuthContent() {
                   </svg>
                 </button>
                 <div>
-                  <p className="text-xs text-text-gray">Step 1 of 3</p>
-                  <h2 className="text-lg font-semibold text-white">
+                  <p className="secondary-text text-text-gray">Step 1 of 3</p>
+                  <h2 className="btn1  text-white">
                     Create Password
                   </h2>
                 </div>
@@ -821,7 +821,7 @@ function ArtistAuthContent() {
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -835,7 +835,7 @@ function ArtistAuthContent() {
                   </svg>
                 </button>
                 <div>
-                  <p className="text-xs text-text-gray">Step 1 of 2</p>
+                  <p className="secondary-text text-text-gray">Step 1 of 2</p>
                   <h2 className="btn1 text-white">Tell us about yourself</h2>
                 </div>
               </div>
@@ -974,7 +974,7 @@ function ArtistAuthContent() {
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -988,8 +988,8 @@ function ArtistAuthContent() {
                   </svg>
                 </button>
                 <div>
-                  <p className="text-xs text-text-gray">Step 2 of 2</p>
-                  <h2 className="text-lg font-semibold text-white">
+                  <p className="secondary-text text-text-gray">Step 2 of 2</p>
+                  <h2 className="btn1 font-semibold text-white">
                     Terms & Conditions
                   </h2>
                 </div>
@@ -1003,19 +1003,19 @@ function ArtistAuthContent() {
                   checked={noMarketing}
                   onChange={setNoMarketing}
                   label="I would prefer not to receive marketing messages from AndAction"
-                  className="p-4 bg-card border border-border-color rounded-lg"
+                  className="p-4 secondary-text bg-card border border-border-color rounded-lg"
                 />
 
                 <Checkbox
                   checked={shareData}
                   onChange={setShareData}
                   label="Share my registration data with AndAction's content providers for marketing purposes."
-                  className="p-4 bg-card border border-border-color rounded-lg"
+                  className="p-4 secondary-text bg-card border border-border-color rounded-lg"
                 />
               </div>
 
               {/* Terms Text */}
-              <div className="space-y-4 section-text">
+              <div className="space-y-4  secondary-text">
                 <p>
                   By clicking on sign-up, you agree to AndAction&apos;s{" "}
                   <Link
