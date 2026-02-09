@@ -51,12 +51,12 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-1 px-4">
+      <div className="flex items-center justify-between mb-1 px-4 ">
         <h2 className="h2 text-white">{title}</h2>
-        <button
+        <button 
           className="gradient-text hover:text-primary-orange transition-colors duration-300
-          border-b 
-          border-primary-pink/80 btn1"
+          border-b cursor-pointer 
+          border-primary-pink/80 btn1-responsive"
           onClick={() => {
             if (artists.length === 0) {
               setShowNoArtistModal(true);
@@ -107,7 +107,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
       {artists.length > 0 && (
         <div className="relative group">
           {/* Left Scroll Button */}
-          <button
+          {/* <button
             onClick={scrollLeft}
             className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm hover:scale-110"
             aria-label="Scroll left"
@@ -125,10 +125,10 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-          </button>
+          </button> */}
 
           {/* Right Scroll Button */}
-          <button
+          {/* <button
             onClick={scrollRight}
             className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm hover:scale-110"
             aria-label="Scroll right"
@@ -146,12 +146,12 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
                 d="M9 5l7 7-7 7"
               />
             </svg>
-          </button>
+          </button> */}
 
           {/* Cards Container */}
           <div
             ref={scrollContainerRef}
-            className="flex gap-[10px] overflow-x-auto scrollbar-hide px-4 py-2 cursor-grab active:cursor-grabbing"
+            className="flex gap-[10px] overflow-x-auto scrollbar-hide px-4  py-2 md:pb-8 cursor-grab active:cursor-grabbing"
             style={{
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',

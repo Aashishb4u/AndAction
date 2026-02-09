@@ -385,13 +385,13 @@ function SignUpContent() {
 
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
-      <div className="flex justify-between items-center mr-4 ml-4 pt-4">
+      <div className="flex justify-between items-center mr-4 ml-4 pt-4 md:pt-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
         {/* Logo */}
         <div>
           <Image
             src="/logo.png"
             alt="ANDACTION Logo"
-            className="h-8 object-contain"
+            className="h-8 w-[150px] md:w-[215px] object-contain"
             width={150}
             height={24}
           />
@@ -400,11 +400,11 @@ function SignUpContent() {
         {/* Close Button */}
         <button
           onClick={() => router.push("/")}
-          className="p-2  transition-colors duration-200"
+          className="transition-colors duration-200"
           aria-label="Close"
         >
           <svg
-            className="w-6 h-6"
+            className="w-6 h-6 md:w-8 md:h-8"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -418,11 +418,12 @@ function SignUpContent() {
           </svg>
         </button>
       </div>
-      <div className="md:p-8 p-4">
+      <div className="hidden md:block h-px bg-border-line " />
+      <div className="p-4 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
         {step !== "otp" && (
           <>
             {/* Title */}
-            <h1 className="h1 font-semibold text-white mb-2">
+            <h1 className="h1 text-white mb-2">
               Sign up to AndAction
             </h1>
 
@@ -588,7 +589,7 @@ function SignUpContent() {
             <div className="space-y-2">
               <h2 className="h1">OTP Verification</h2>
               <div className=" flex flex-col gap-2">
-                <p className="secondary-grey-text text-text-gray">
+                <p className="text-text-gray section-text">
                   Enter the 6-digit code sent to you at{" "}
                 </p>
                 <div className="flex items-center gap-2">
@@ -658,7 +659,7 @@ function SignUpContent() {
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -672,7 +673,7 @@ function SignUpContent() {
                   </svg>
                 </button>
                 <div>
-                  <p className="text-xs text-text-gray">Step 1 of 3</p>
+                  <p className="text-xs md:text-sm text-text-gray">Step 1 of 3</p>
                   <h2 className="text-lg font-semibold text-white">
                     Create Password
                   </h2>
@@ -763,7 +764,7 @@ function SignUpContent() {
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -777,7 +778,7 @@ function SignUpContent() {
                   </svg>
                 </button>
                 <div>
-                  <p className="text-xs text-text-gray">Step 2 of 3</p>
+                  <p className="text-xs md:text-sm text-text-gray">Step 2 of 3</p>
                   <h2 className="text-lg font-semibold text-white">
                     Tell us about yourself
                   </h2>
@@ -804,7 +805,7 @@ function SignUpContent() {
                     }
                   >
                     <svg
-                      className="w-6 h-6"
+                      className="w-6 h-6 md:w-12 md:h-12"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -869,7 +870,7 @@ function SignUpContent() {
                           {avatar.isCenter && (
                             <div className="absolute -bottom-1 -right-1 md:size-6 size-5 bg-primary-pink rounded-full flex items-center justify-center border-2 border-background">
                               <svg
-                                className="w-3 h-3 text-white"
+                                className="w-3 h-3  text-white"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -900,7 +901,7 @@ function SignUpContent() {
                     }
                   >
                     <svg
-                      className="w-6 h-6"
+                      className="w-6 h-6 md:w-12 md:h-12"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -946,7 +947,7 @@ function SignUpContent() {
               </div>
 
               {/* Location Fields */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 <Select
                   label="State*"
                   placeholder="Select"
@@ -997,7 +998,7 @@ function SignUpContent() {
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1011,7 +1012,7 @@ function SignUpContent() {
                   </svg>
                 </button>
                 <div>
-                  <p className="text-xs text-text-gray">Step 3 of 3</p>
+                  <p className="text-xs md:text-sm text-text-gray">Step 3 of 3</p>
                   <h2 className="text-lg font-semibold text-white">
                     Terms & Conditions
                   </h2>

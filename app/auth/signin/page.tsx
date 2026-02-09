@@ -163,21 +163,22 @@ function SignInContent() {
 
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
-      <div className="flex justify-between items-center mr-4 ml-4 pt-4">
+      <div className="flex justify-between items-center mr-4 ml-4 pt-4 md:pt-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
         <Image
           src="/logo.png"
           alt="ANDACTION Logo"
-          className="h-8 object-contain"
-          width={150}
+          className="h-8 w-[150px] md:w-[215px] object-contain"
+          width={215}
           height={24}
         />
+
         <button
           onClick={() => router.push("/")}
-          className="p-2 text-white transition-colors duration-200"
+          className="text-white transition-colors duration-200"
           aria-label="Close"
         >
           <svg
-            className="w-6 h-6"
+            className="w-6 h-6 md:w-8 md:h-8"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -191,9 +192,10 @@ function SignInContent() {
           </svg>
         </button>
       </div>
-      <div className="md:p-8 p-4">
-        {/* Header: Logo and Close Button */}
+      <div className="hidden md:block h-px bg-border-line " />
 
+      <div className="p-4 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
+        {/* Header: Logo and Close Button */}
         <h1 className="h1 text-white mb-2">Sign In to AndAction</h1>
 
         {error && (
@@ -243,7 +245,7 @@ function SignInContent() {
                   href={`/auth/signup${
                     searchParams.toString() ? `?${searchParams.toString()}` : ""
                   }`}
-                  className="text-[var(--color-white)] hover:text-primary-pink transition-colors duration-200 font-medium underline btn2"
+                  className="text-[var(--color-white)] hover:text-primary-pink transition-colors duration-200 underline btn2"
                 >
                   Sign up
                 </Link>
@@ -309,7 +311,7 @@ function SignInContent() {
           /* Password Step */
           <form onSubmit={handlePasswordSubmit}>
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-text-gray secondary-grey-text">
+              <span className="text-text-gray">
                 {email}
               </span>
               <button

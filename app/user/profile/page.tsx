@@ -176,7 +176,7 @@ export default function UserProfilePage() {
           </svg>
           <span className="md:inline hidden">Back</span>
         </button>
-        <h1 className="h1 ml-6 font-semibold text-white gap-4 p-4">
+        <h1 className="h1 ml-6 font-semibold text-white gap-4 p-4 md:text-3xl">
           Edit your profile
         </h1>
       </div>
