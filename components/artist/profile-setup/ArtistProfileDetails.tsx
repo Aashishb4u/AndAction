@@ -332,11 +332,11 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
       {/* Content */}
       <div className="flex-1 px-6 pb-32">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-2xl mx-auto">
 
           {/* Title */}
           <div className="text-center mb-8">
-            <h1 className="h2 text-white mb-2 hidden md:block">Profile setup</h1>
+            <h1 className="h1-heading text-white mb-2 md:mb-8 hidden md:block">Profile setup</h1>
 
             <div className="w-full bg-[#2D2D2D] rounded-full h-1 mb-6">
               <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-1/4"></div>
@@ -399,7 +399,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
             {/* Stage Name */}
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center justify-between mb-1">
                 <label className="block secondary-text text-white">Stage name*</label>
                 <Tooltip content="Your stage name or artist alias that fans will recognize you by. This will be displayed on your public profile.">
                   <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -418,7 +418,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
             {/* Artist Type */}
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center justify-between mb-1">
                 <label className="block secondary-text text-white">Artist type*</label>
                 <Tooltip content="Select the primary category that best describes your art form, such as Singer, Dancer, Musician, etc.">
                   <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -437,7 +437,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
             {/* Sub Artist Type (text input with suggestions) */}
             <div className="relative">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-between mb-2">
                 <label className="block secondary-text text-white">Sub-Artist type</label>
                 <Tooltip content="Specify your specialty within your art form. For example, if you're a singer, you might specialize in Classical, Bollywood, or Fusion music.">
                   <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -489,7 +489,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
             {/* Achievements + Experience */}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center justify-between mb-1">
                   <label className="block secondary-text text-white">Achievements / Awards</label>
                   <Tooltip content="List any notable achievements, awards, or recognitions you have received in your career. This helps build credibility with potential clients.">
                     <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -506,7 +506,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
               </div>
 
               <div>
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center justify-between mb-1">
                   <label className="block secondary-text text-white">Years of experience*</label>
                   <Tooltip content="Select how many years you have been performing professionally. This helps clients understand your experience level.">
                     <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -526,7 +526,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
             {/* Short Bio */}
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-between mb-2">
                 <label className="block secondary-text text-white">Short bio*</label>
                 <Tooltip content="Write a compelling description about yourself, your journey, and what makes you unique. This is your chance to tell your story to potential clients.">
                   <svg className="w-4 h-4 text-blue cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -548,8 +548,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       </div>
 
       {/* Bottom Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color md:px-6 px-5 py-4">
-        <div className="max-w-md mx-auto flex items-center justify-between gap-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color px-5 md:px-0 py-4">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
           <Button variant="secondary" size="md" onClick={onSkip} className="gradient-text hover:bg-card">
             Skip & Next
           </Button>

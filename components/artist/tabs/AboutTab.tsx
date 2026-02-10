@@ -214,7 +214,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       </div>
 
       {/* Date of Birth and Gender */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <DateInput
           label="Date of birth*"
           value={formData.dateOfBirth}
@@ -241,7 +241,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       />
 
       {/* PIN Code, State, City */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
         <Input
           label="PIN code*"
           value={formData.pinCode}
@@ -265,7 +265,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       </div>
 
       {/* Sub-Artist Type */}
-      <div className="relative">
+      <div className="relative text-sm">
         <Select
           label="Sub-Artist type*"
           options={subArtistTypeOptions}
@@ -273,15 +273,15 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
           onChange={(value) => handleInputChange("subArtistType", value)}
           required
         />
-        <div className="absolute top-11 right-11">
+        <div className="absolute top-0 right-0">
           <Tooltip content="Specify your performance style or specialization">
-            <Info size={16} className="text-text-gray" />
+            <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
       </div>
 
       {/* Achievements and Years of Experience */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <Input
           label="Achievements / Awards"
           value={formData.achievements}
@@ -295,9 +295,9 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
             onChange={(value) => handleInputChange("yearsOfExperience", value)}
             required
           />
-          <div className="absolute top-11 right-11">
+          <div className="absolute top-0 right-0">
             <Tooltip content="Total years of professional performing experience">
-              <Info size={16} className="text-text-gray" />
+              <Info size={16} className="text-blue" />
             </Tooltip>
           </div>
         </div>
@@ -314,7 +314,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         />
         <div className="absolute top-0 right-0">
           <Tooltip content="Write a brief description about yourself and your artistic journey">
-            <Info size={16} className="text-text-gray" />
+            <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
       </div>
@@ -325,7 +325,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
           variant="secondary"
           onClick={handleReset}
           disabled={isLoading}
-          className="w-full md:w-auto text-xs! md:text-base"
+          className="w-full md:w-auto text-sm! md:text-base!"
         >
           <span className="gradient-text">Reset</span>
         </Button>
@@ -333,7 +333,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
           variant="primary"
           onClick={handleSave}
           disabled={isLoading}
-          className="w-full md:w-auto text-xs! md:text-base"
+          className="w-full md:w-auto text-xs! md:text-base!"
         >
           {isLoading ? "Saving..." : "Save Changes"}
         </Button>

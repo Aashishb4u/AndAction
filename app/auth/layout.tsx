@@ -35,7 +35,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Main Content */}
         <main className="flex-1 flex md:items-center justify-center md:p-8">
-          <div className="w-full md:max-w-xl">
+          <div className="w-full md:max-w-2xl">
             {children}
           </div>
         </main>

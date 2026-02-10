@@ -453,21 +453,21 @@ function ArtistAuthContent() {
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
       {/* Header with Logo and Close Button */}
-      <div className="flex justify-between items-center mr-4 ml-4 pt-4">
+      <div className="flex justify-between items-center mr-4 ml-4 pt-4 md:pt-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
         <Image
           src="/logo.png"
           alt="ANDACTION Logo"
-          className="h-8 object-contain"
-          width={150}
+          className="h-8 w-[150px] md:w-[215px] object-contain"
+          width={215}
           height={24}
         />
         <button
           onClick={() => router.push("/")}
-          className="p-2 text-white transition-colors duration-200"
+          className="text-white transition-colors duration-200"
           aria-label="Close"
         >
           <svg
-            className="w-6 h-6"
+            className="w-6 h-6 md:w-8 md:h-8"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -481,11 +481,11 @@ function ArtistAuthContent() {
           </svg>
         </button>
       </div>
-
+      <div className="hidden md:block h-px bg-border-line " />
       <div className="md:p-8 p-5">
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <div className="p-4 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6 bg-red-500/10 border border-red-500/20 rounded-lg">
             <p className="text-red-400 text-sm text-center">{error}</p>
           </div>
         )}
@@ -871,7 +871,7 @@ function ArtistAuthContent() {
               </div>
 
               {/* Date of Birth and Gender */}
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <DateInput
                   label="Date of birth*"
                   placeholder="DD / MM / YYYY"
@@ -917,7 +917,7 @@ function ArtistAuthContent() {
               />
 
               {/* State and City */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 <Select
                   label="State*"
                   placeholder="Select"

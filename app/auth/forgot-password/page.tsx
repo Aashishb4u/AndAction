@@ -210,25 +210,25 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background ">
+    <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
       {/* Header */}
-      <div className="flex items-center justify-between mr-4 ml-4 pt-4">
+      <div className="flex justify-between items-center mr-4 ml-4 pt-4 md:pt-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
         {/* Logo */}
         <Image
           src="/logo.png"
           alt="ANDACTION Logo"
-          className="h-8 object-contain"
-          width={150}
+          className="h-8 w-[150px] md:w-[215px] object-contain"
+          width={215}
           height={24}
         />
 
-        {/* Close Button */}
         <button
-          onClick={() => router.push("/auth/signin")}
-          className="text-white hover:text-primary-pink transition-colors duration-200"
+          onClick={() => router.push("/")}
+          className="text-white transition-colors duration-200"
+          aria-label="Close"
         >
           <svg
-            className="w-6 h-6"
+            className="w-6 h-6 md:w-8 md:h-8"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -242,7 +242,9 @@ export default function ForgotPasswordPage() {
           </svg>
         </button>
       </div>
-      <div className="w-full md:max-w-md bg-background md:border md:border-border-color md:rounded-2xl md:p-8 md:shadow-2xl relative flex md:items-center justify-center p-4">
+      <div className="hidden md:block h-px bg-border-line " />
+
+      <div className="p-4 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
         {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">

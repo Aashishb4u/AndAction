@@ -29,7 +29,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
 
   return (
     <div className={`flex gap-3 ${className}`}>
-      <div className="relative flex-shrink-0 md:mt-1">
+      <div className="relative flex-shrink-0">
         <input
           id={id}
           type="checkbox"

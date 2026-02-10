@@ -250,10 +250,10 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
       {/* Content */}
       <div className="flex-1 px-6 pb-32">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-2xl mx-auto">
           {/* Title */}
           <div className="text-center mb-8">
-            <h1 className="h2 text-white mb-2 hidden md:block">
+            <h1 className="text-white mb-2 h1-heading md:mb-8 hidden md:block">
               Profile setup
             </h1>
 
@@ -268,8 +268,8 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                 <Image
                   src="/icons/play.svg"
                   alt="Artist Profile"
-                  width={25}
-                  height={25}
+                  width={32}
+                  height={32}
                 />
               </div>
               <div className="text-left">
@@ -712,8 +712,8 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
       </div>
 
       {/* Fixed Bottom Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color md:px-6 px-5 py-4">
-        <div className="max-w-md mx-auto flex items-center justify-between gap-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color px-5 md:px-0 py-4">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
           <Button
             variant="secondary"
             size="md"

@@ -268,7 +268,7 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
       </div>
 
       {/* Shorts Grid - 4 columns for vertical videos */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 lg:grid-cols-4 gap-2">
         {shorts.map((short) => (
           <ShortsCard
             key={short.id}

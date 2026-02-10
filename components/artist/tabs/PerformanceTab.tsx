@@ -529,7 +529,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       </div>
 
       {/* Performing Members and Off Stage Members */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         {/* Performing Members */}
         <div className="relative">
           <Select
