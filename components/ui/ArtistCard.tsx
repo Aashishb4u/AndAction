@@ -29,19 +29,19 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    if (videoRef.current) {
-      videoRef.current.play().catch(() => {
-        // Handle play error silently
-      });
-    }
+    // if (videoRef.current) {
+    //   videoRef.current.play().catch(() => {
+    //     // Handle play error silently
+    //   });
+    // }
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
+    // if (videoRef.current) {
+    //   videoRef.current.pause();
+    //   videoRef.current.currentTime = 0;
+    // }
   };
 
   const handleVideoLoad = () => {
@@ -55,7 +55,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   return (
     <div
       key={id}
-      className={`relative flex-shrink-0 w-[150px] h-[225px] rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 ${className}`}
+      className={`relative flex-shrink-0 w-[150px] h-[225px] md:w-[200px] md:h-[300px] rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
@@ -75,7 +75,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
 
       {/* Video Overlay */}
       <div
-        className={`absolute inset-0 transition-opacity duration-500 ${isHovered && isVideoLoaded ? 'opacity-100' : 'opacity-0'
+        className={`absolute inset-0 transition-opacity duration-500 ${/*isHovered && isVideoLoaded ? 'opacity-100' : */'opacity-0'
           }`}
       >
         <video
@@ -96,7 +96,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
 
       {/* Content */}
       <div className="absolute bottom-0 left-0 right-0 p-3 text-white transform transition-transform duration-300 select-none">
-        <h3 className={`font-semibold btn2 line-clamp-1 transition-colors duration-300 ${isHovered ? 'text-primary-pink' : 'text-white'}`}>
+        <h3 className={`font-semibold signup line-clamp-1 transition-colors duration-300 ${isHovered ? 'text-primary-pink' : 'text-white'}`}>
           {name}
         </h3>
         <p className={`footnote line-clamp-1 transition-colors duration-300 text-white`}>

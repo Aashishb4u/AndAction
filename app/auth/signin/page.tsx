@@ -163,21 +163,22 @@ function SignInContent() {
 
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
-      <div className="flex justify-between items-center mr-4 ml-4 pt-4">
+      <div className="flex justify-between items-center mr-4 ml-4 pt-4 md:pt-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
         <Image
           src="/logo.png"
           alt="ANDACTION Logo"
-          className="h-8 object-contain"
-          width={150}
+          className="h-8 w-[150px] md:w-[215px] object-contain"
+          width={215}
           height={24}
         />
+
         <button
           onClick={() => router.push("/")}
-          className="p-2 text-white transition-colors duration-200"
+          className="text-white transition-colors duration-200"
           aria-label="Close"
         >
           <svg
-            className="w-6 h-6"
+            className="w-6 h-6 md:w-8 md:h-8"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -191,9 +192,10 @@ function SignInContent() {
           </svg>
         </button>
       </div>
-      <div className="md:p-8 p-4">
-        {/* Header: Logo and Close Button */}
+      <div className="hidden md:block h-px bg-border-line " />
 
+      <div className="p-4 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
+        {/* Header: Logo and Close Button */}
         <h1 className="h1 text-white mb-2">Sign In to AndAction</h1>
 
         {error && (
@@ -243,7 +245,7 @@ function SignInContent() {
                   href={`/auth/signup${
                     searchParams.toString() ? `?${searchParams.toString()}` : ""
                   }`}
-                  className="text-[var(--color-white)] hover:text-primary-pink transition-colors duration-200 font-medium underline btn2"
+                  className="text-[var(--color-white)] hover:text-primary-pink transition-colors duration-200 underline btn2"
                 >
                   Sign up
                 </Link>
@@ -265,7 +267,7 @@ function SignInContent() {
                   size="md"
                   className="w-full flex gap-3 items-center justify-center"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24">
                     <path
                       fill="#4285F4"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -294,7 +296,7 @@ function SignInContent() {
                   size="md"
                   className="w-full flex gap-3 items-center justify-center"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24">
                     <path
                       fill="#1877F2"
                       d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"
@@ -309,7 +311,7 @@ function SignInContent() {
           /* Password Step */
           <form onSubmit={handlePasswordSubmit}>
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-text-gray secondary-grey-text">
+              <span className="text-text-gray">
                 {email}
               </span>
               <button

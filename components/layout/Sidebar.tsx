@@ -148,7 +148,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   />
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="text-white font-medium">
+                  <h3 className="text-white font-medium text-xl ">
                     {user.firstName} {user.lastName}
                   </h3>
                   {user?.email ? (
@@ -162,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     </p>
                   )}
                 </div>
-                <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
+                <ChevronRight className="w-6 h-6 text-white group-hover:text-primary-pink transition-colors duration-300" />
               </button>
 
               {/* Join as artist - Only show for non-artist users */}
@@ -232,9 +232,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             {user && (
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-start gap-2 text-white hover:text-primary-pink transition-colors duration-200 mb-4"
+                className="w-full flex items-start gap-2 text-white hover:text-primary-pink transition-colors duration-200 mb-4 md:text-base"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-6 h-6" />
                 <span>Signout</span>
               </button>
             )}
@@ -245,7 +245,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-card border border-border-color rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
               >
                 <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
-                <span className="gradient-text text-sm">
+                <span className="gradient-text text-bold text-sm md:text-base">
                   Install our web application
                 </span>
               </button>

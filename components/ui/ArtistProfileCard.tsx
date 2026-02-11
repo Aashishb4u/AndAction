@@ -45,7 +45,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
     // Mobile list layout
     return (
       <div
-        className={`md:bg-card relative rounded-2xl overflow-hidden hover:bg-gray-800/50 transition-all duration-300 cursor-pointer ${className}`}
+        className={`md:bg-card relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer ${className}`}
         onClick={handleClick}
       >
         <div className="flex py-4 gap-4 items-start">
@@ -151,7 +151,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
           onClick={handleBookmarkClick}
           className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full backdrop-blur-sm bookmark-btn z-10"
         >
-          <Bookmark className="w-5 h-5" active={artist.isBookmarked} />
+          <Bookmark className="w-6 h-6" active={artist.isBookmarked} />
         </button>
 
         {/* Bottom Gradient Overlay */}

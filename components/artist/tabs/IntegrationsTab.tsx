@@ -122,7 +122,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
               <td className="py-4 px-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
-                    <Youtube className="w-5 h-5 text-white" />
+                    <Youtube className="w-6 h-6 text-white" />
                   </div>
                   <div>
                     <p className="font-medium text-white">YouTube</p>
@@ -206,7 +206,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
               <td className="py-4 px-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-lg flex items-center justify-center">
-                    <Instagram className="w-5 h-5 text-white" />
+                    <Instagram className="w-6 h-6 text-white" />
                   </div>
                   <div>
                     <p className="font-medium text-white">Instagram</p>
@@ -293,7 +293,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
           <div className="bg-background/50 border-b border-border-color rounded-lg p-4 flex flex-col gap-2">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
-                <Youtube className="w-5 h-5 text-white" />
+                <Youtube className="w-6 h-6 text-white" />
               </div>
               <div>
                 <p className="font-medium text-white">YouTube</p>
@@ -373,7 +373,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
           <div className="bg-background/50 border-b border-border-color rounded-lg p-4 flex flex-col gap-2">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-lg flex items-center justify-center">
-                <Instagram className="w-5 h-5 text-white" />
+                <Instagram className="w-6 h-6 text-white" />
               </div>
               <div>
                 <p className="font-medium text-white">Instagram</p>

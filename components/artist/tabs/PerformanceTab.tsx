@@ -268,7 +268,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         >
           <span className="text-text-gray">Select languages</span>
           <svg
-            className={`w-5 h-5 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
+            className={`w-6 h-6 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -358,7 +358,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         >
           <span className="text-text-gray">Select event types</span>
           <svg
-            className={`w-5 h-5 text-text-gray transition-transform ${showEventTypesDropdown ? "rotate-180" : ""}`}
+            className={`w-6 h-6 text-text-gray transition-transform ${showEventTypesDropdown ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -448,7 +448,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         >
           <span className="text-text-gray">Select states</span>
           <svg
-            className={`w-5 h-5 text-text-gray transition-transform ${showStatesDropdown ? "rotate-180" : ""}`}
+            className={`w-6 h-6 text-text-gray transition-transform ${showStatesDropdown ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -529,7 +529,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       </div>
 
       {/* Performing Members and Off Stage Members */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         {/* Performing Members */}
         <div className="relative">
           <Select

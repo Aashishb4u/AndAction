@@ -246,7 +246,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
 
       {/* Content Overlay */}
       <div className="absolute inset-0 flex z-20 pointer-events-none">
-        <div className="flex-1 flex flex-col justify-end p-4 pb-20 md:pb-8">
+        <div className="flex-1 flex flex-col justify-end p-4 pb-4 md:pb-8">
           <Link
             href={`/artists/${short.creatorId}`}
             className="pointer-events-auto"
@@ -267,7 +267,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
           </Link>
         </div>
 
-        <div className="flex flex-col items-center justify-end space-y-4 p-4 pb-24 md:pb-8">
+        <div className="flex flex-col items-center justify-end space-y-4 p-4 pb-4 md:pb-8">
           {/* Sound button (above Share) */}
 
           <button

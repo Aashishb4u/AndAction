@@ -43,7 +43,7 @@ const Select: React.FC<SelectProps> = ({
     border rounded-lg transition-all duration-200
     focus:outline-none focus:ring-2 focus:ring-primary-pink/50
     disabled:opacity-50 disabled:cursor-not-allowed
-    appearance-none cursor-pointer font-normal secondary-grey-text
+    appearance-none cursor-pointer font-normal 
   `;
 
   const stateClasses = disabled
@@ -62,7 +62,7 @@ const Select: React.FC<SelectProps> = ({
       {label && (
         <label
           htmlFor={selectId}
-          className="block section-text mb-1 font-normal"
+          className="block section-text mb-1 text-sm"
         >
           {label}
         </label>

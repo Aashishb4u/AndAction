@@ -54,7 +54,7 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({ categories }) => {
                   >
                     <h3 className="md:text-lg text-sm font-semibold text-white pr-4">{faq.question}</h3>
                     <div className="text-primary-pink flex-shrink-0">
-                      {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                      {isOpen ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
                     </div>
                   </button>
                   

@@ -100,7 +100,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
   };
 
   return (
-    <div className="min-h-screen px-2 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-6">
         <button
@@ -108,7 +108,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
           className="flex items-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
         >
           <svg
-            className="w-5 h-5"
+            className="w-6 h-6"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -133,10 +133,10 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
       {/* Content */}
       <div className="flex-1 px-6 pb-32">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-2xl mx-auto">
           {/* Title */}
           <div className="text-center mb-8">
-            <h1 className="h2 text-white mb-2 hidden md:block">
+            <h1 className="h1-heading md:mb-8 text-white mb-2 hidden md:block">
               Profile setup
             </h1>
 
@@ -151,15 +151,15 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                 <Image
                   src="/icons/phone.svg"
                   alt="Contact & Pricing"
-                  width={25}
-                  height={25}
+                  width={32}
+                  height={32}
                 />
               </div>
               <div className="text-left">
                 <h2 className="text-white h3">Contact & Pricing Details</h2>
               </div>
             </div>
-            <p className="text-text-gray text-sm text-left">
+            <p className="text-text-gray secondary-grey-text text-left">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc
             </p>
           </div>
@@ -168,34 +168,36 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
           <div className="space-y-8">
             {/* Contact Details Section */}
             <div>
-              <h3 className="text-white h2 mb-4">Contact Details</h3>
+              <h3 className="text-white h2 mb-1">Contact Details</h3>
 
               <div className="space-y-6">
                 {/* Contact Number */}
                 <div className="relative">
-                  <Tooltip
-                    content="Your primary contact number for clients to reach you. This will be verified via OTP to ensure authenticity."
-                    position="right"
-                  >
-                    <button className="absolute top-0 right-0 text-blue p-2">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </button>
-                  </Tooltip>
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="block section-text secondary-text">Contact number*</label>
+                    <Tooltip
+                      content="Your primary contact number for clients to reach you. This will be verified via OTP to ensure authenticity."
+                      position="right"
+                    >
+                      <button className="text-blue">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </button>
+                    </Tooltip>
+                  </div>
                   <div className="relative">
                     <PhoneInput
-                      label="Contact number*"
                       placeholder="Enter contact number"
                       value={formData.contactNumber}
                       onChange={(value) =>
@@ -208,12 +210,12 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                     {formData.contactNumber && !isContactEditing ? (
                       <button
                         onClick={() => setIsContactEditing(true)}
-                        className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1"
+                        className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-1 gradient-text btn1"
                       >
                         Edit
                       </button>
                     ) : (
-                      <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-10 gradient-text btn1">
+                      <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-1 gradient-text btn1">
                         Verify
                       </button>
                     )}
@@ -226,50 +228,54 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                 </div>
                 {/* WhatsApp Number */}
                 <div className="relative">
-                  <Tooltip
-                    content="Your WhatsApp number for quick communication with clients. Many clients prefer WhatsApp for booking inquiries."
-                    position="right"
-                  >
-                    <button className="absolute top-0 right-0 text-blue p-2">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </button>
-                  </Tooltip>
-
-                  <PhoneInput
-                    label="WhatsApp number*"
-                    placeholder="Enter whatsApp number"
-                    value={formData.whatsappNumber}
-                    onChange={(value) =>
-                      handleInputChange("whatsappNumber", value)
-                    }
-                    variant="filled"
-                    disabled={!isWhatsappEditing && !!formData.whatsappNumber}
-                  />
-                  {/* Show Edit or Verify based on editing state */}
-                  {formData.whatsappNumber && !isWhatsappEditing ? (
-                    <button
-                      onClick={() => setIsWhatsappEditing(true)}
-                      className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-16 gradient-text btn1"
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="block section-text secondary-text">WhatsApp number*</label>
+                    <Tooltip
+                      content="Your WhatsApp number for quick communication with clients. Many clients prefer WhatsApp for booking inquiries."
+                      position="right"
                     >
-                      Edit
-                    </button>
-                  ) : (
-                    <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-16 gradient-text btn1">
-                      Verify
-                    </button>
-                  )}
+                      <button className="text-blue">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </button>
+                    </Tooltip>
+                  </div>
+
+                  <div className="relative">
+                    <PhoneInput
+                      placeholder="Enter whatsApp number"
+                      value={formData.whatsappNumber}
+                      onChange={(value) =>
+                        handleInputChange("whatsappNumber", value)
+                      }
+                      variant="filled"
+                      disabled={!isWhatsappEditing && !!formData.whatsappNumber}
+                    />
+                    {/* Show Edit or Verify based on editing state */}
+                    {formData.whatsappNumber && !isWhatsappEditing ? (
+                      <button
+                        onClick={() => setIsWhatsappEditing(true)}
+                        className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-1 gradient-text btn1"
+                      >
+                        Edit
+                      </button>
+                    ) : (
+                      <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-1 gradient-text btn1">
+                        Verify
+                      </button>
+                    )}
+                  </div>
                   {errors.whatsappNumber && (
                     <p className="text-red-500 text-sm mt-1">
                       {errors.whatsappNumber}
@@ -292,34 +298,36 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
                 {/* Email */}
                 <div className="relative">
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="block section-text secondary-text">Email</label>
+                    <Tooltip
+                      content="Your professional email address for formal communications, contracts, and booking confirmations."
+                      position="right"
+                    >
+                      <button className="text-blue">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </button>
+                    </Tooltip>
+                  </div>
                   <Input
-                    label="Email"
                     placeholder="Enter contact email ID"
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     variant="filled"
                     type="email"
                   />
-                  <Tooltip
-                    content="Your professional email address for formal communications, contracts, and booking confirmations."
-                    position="right"
-                  >
-                    <button className="absolute top-0 right-0 text-blue p-2">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </button>
-                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -454,7 +462,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
       </div>
 
       {/* Fixed Bottom Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color md:px-6 px-5 py-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color px-5 md:px-0 py-4">
         <div className="max-w-md mx-auto">
           <Button
             variant="primary"

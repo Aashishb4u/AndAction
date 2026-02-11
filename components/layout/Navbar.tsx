@@ -65,8 +65,8 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
         isScrolled
-          ? "bg-background/80 backdrop-blur-md border-b border-background-light"
-          : "bg-background/60 backdrop-blur-sm border-b border-transparent"
+          ? " border-b border-background-light"
+          : " border-b border-transparent"
       } ${
         isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
       } ${className}`}
@@ -92,7 +92,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`px-3 py-3 text-sm font-medium transition-colors duration-200 relative ${
+                  className={`px-3 py-3 btn1 transition-colors duration-200 relative ${
                     item.isActive
                       ? "gradient-text nav-active-underline text-center"
                       : "text-text-light-gray hover:text-white"
@@ -111,7 +111,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
               onClick={() => router.push("/artists")}
               className="p-2 text-text-light-gray hover:text-white transition-colors duration-200"
             >
-              <Search className="size-5" />
+              <Search className="size-6" />
             </button>
 
             {/* Sign In (only show when logged out) */}
@@ -122,7 +122,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                 onClick={() =>
                   router.push(createAuthRedirectUrl("/auth/signin", pathname))
                 }
-                className="btn2"
+                className="signup"
               >
                 Sign In
               </Button>
@@ -137,7 +137,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                   router.push(createAuthRedirectUrl("/auth/artist", pathname))
                 }
               >
-                <span className="gradient-text btn2">Join as an Artist</span>
+                <span className="gradient-text signup">Join as an Artist</span>
               </Button>
             )}
 
@@ -162,7 +162,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                 className="p-2 text-text-light-gray hover:text-white transition-colors duration-200"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-6 h-6 md:w-8 md:h-8"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

@@ -119,7 +119,7 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({
             {/* Instructions */}
             <div className="bg-card border border-border-color rounded-lg p-4 space-y-3">
               <div className="flex items-start gap-3">
-                <Youtube className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                <Youtube className="w-6 h-6 text-red-500 mt-0.5 flex-shrink-0" />
                 <div className="space-y-2">
                   <h3 className="text-white font-medium text-sm">
                     How to find your Channel ID
@@ -224,7 +224,7 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({
                         <h3 className="text-white font-semibold text-lg truncate">
                           {channelPreview.channelName}
                         </h3>
-                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
                       </div>
                       {channelPreview.customUrl && (
                         <p className="text-text-gray text-sm">

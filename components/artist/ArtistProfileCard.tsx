@@ -115,7 +115,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         {/* Artist Info (unchanged UI) */}
         <div className="p-6 space-y-4">
           <div>
-            <h2 className="t1 text-white mb-2 drop-shadow-lg">{artist.name}</h2>
+            <h2 className="t1-heading text-white mb-2 drop-shadow-lg">{artist.name}</h2>
 
             <div className="flex justify-between gap-4 flex-col">
               <div className="flex flex-wrap gap-2">

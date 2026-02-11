@@ -57,7 +57,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
           className="flex items-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
         >
           <svg
-            className="w-5 h-5"
+            className="w-6 h-6"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -72,21 +72,23 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
           <span className="hidden md:block">Back</span>
           <span className="md:hidden h2">Profile Setup</span>
         </button>
-        <h1 className="h2 hidden md:block text-white">Profile Setup</h1>
+        <h1 className="h1-heading hidden md:block text-white">Profile Setup</h1>
         <div className="w-12"></div>
       </div>
 
       {/* Content */}
       <div className="flex-1 md:px-6 pb-32">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-xl mx-auto">
           {error && (
             <div className="mb-4 px-6">
               <p className="text-red-500 text-sm font-semibold">{error}</p>
             </div>
           )}
           {/* Title */}
-          <div className="md:text-center mb-8 px-6">
-            <h2 className="h1 text-white mb-6">All done! Preview profile</h2>
+          <div className=" mb-8 px-6">
+            <h2 className="h1 text-white mb-6 md:mb-8">
+              All done! Preview profile
+            </h2>
 
             {/* Success Badge */}
             <div className="flex justify-center mb-6">
@@ -165,7 +167,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <span className="text-text-gray secondary-text">
                     Stage Name
                   </span>
-                  <span className="text-white">
+                  <span className="text-white text-base">
                     {data.stageName || "MJ Singer"}
                   </span>
                 </div>
@@ -177,7 +179,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                     <Button
                       variant="secondary"
                       size="xs"
-                      className="px-4 font-normal! text-white! text-sm"
+                      className="px-4 font-normal! text-white! text-base"
                     >
                       {data.artistType || "Singer"}
                     </Button>
@@ -215,7 +217,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <span className="text-text-gray secondary-text">
                     Years of experience
                   </span>
-                  <span className="text-white">
+                  <span className="text-white text-base">
                     {data.yearsOfExperience
                       ? getExperienceLabel(data.yearsOfExperience)
                       : "4 years"}
@@ -226,7 +228,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
               {/* Short Bio */}
               <div className="space-y-2 px-6">
                 <p className="text-text-gray text-sm">Short bio</p>
-                <p className="text-white text-sm leading-relaxed">
+                <p className="text-white text-base leading-relaxed">
                   {data.shortBio ||
                     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."}
                 </p>
@@ -241,7 +243,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <div className="flex items-center gap-3">
                     <div className="flex-shrink-0">
                       <svg
-                        className="w-5 h-5 text-white"
+                        className="w-6 h-6 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -268,7 +270,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
               </div>
 
               {/* Performance Details Content */}
-              <div className="space-y-3 text-sm px-6">
+              <div className="space-y-3 md:space-y-4 text-sm px-6">
                 <div>
                   <p className="text-text-gray mb-1">Performing Languages</p>
                   <div className="flex gap-2 flex-wrap">
@@ -299,27 +301,31 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Performing Event types</p>
-                  {data.performingEventTypes?.length
-                    ? data.performingEventTypes?.map((language, index) => (
-                        <Button
-                          key={index}
-                          variant="secondary"
-                          size="xs"
-                          className="px-4 font-normal! text-white! text-sm"
-                        >
-                          {language}
-                        </Button>
-                      ))
-                    : ["Concert", "Party", "Events"].map((language, index) => (
-                        <Button
-                          key={index}
-                          variant="secondary"
-                          size="xs"
-                          className="px-4 font-normal! text-white! text-sm"
-                        >
-                          {language}
-                        </Button>
-                      ))}
+                  <div className="flex gap-2 flex-wrap">
+                    {data.performingEventTypes?.length
+                      ? data.performingEventTypes?.map((language, index) => (
+                          <Button
+                            key={index}
+                            variant="secondary"
+                            size="xs"
+                            className="px-4 font-normal! text-white! text-sm"
+                          >
+                            {language}
+                          </Button>
+                        ))
+                      : ["Concert", "Party", "Events"].map(
+                          (language, index) => (
+                            <Button
+                              key={index}
+                              variant="secondary"
+                              size="xs"
+                              className="px-4 font-normal! text-white! text-sm"
+                            >
+                              {language}
+                            </Button>
+                          ),
+                        )}
+                  </div>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Performing States</p>
@@ -351,7 +357,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Performing Duration</p>
-                  <p className="text-white">
+                  <p className="text-white text-base">
                     {data.performingDurationFrom && data.performingDurationTo
                       ? `${data.performingDurationFrom} - ${data.performingDurationTo} mins`
                       : "45 - 90 mins"}
@@ -359,13 +365,13 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Performing members</p>
-                  <p className="text-white">
+                  <p className="text-white text-base">
                     {data.performingMembers || "1 - members"}
                   </p>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Off stage members</p>
-                  <p className="text-white">{data.offStageMembers || "N/A"}</p>
+                  <p className="text-white text-base">{data.offStageMembers || "N/A"}</p>
                 </div>
               </div>
             </div>
@@ -378,7 +384,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <div className="flex items-center gap-3">
                     <div className="flex-shrink-0">
                       <svg
-                        className="w-5 h-5 text-white"
+                        className="w-6 h-6 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -404,22 +410,22 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
               </div>
 
               {/* Contact Details */}
-              <div className="space-y-3 text-sm px-6">
+              <div className="space-y-3 md:space-y-4 text-sm px-6">
                 <div>
                   <p className="text-text-gray mb-1">Contact number</p>
-                  <p className="text-white">
+                  <p className="text-white text-base">
                     +91 - {data.contactNumber || "7226038336"}
                   </p>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">WhatsApp number</p>
-                  <p className="text-white">
+                  <p className="text-white text-base">
                     +91 - {data.whatsappNumber || "7226038336"}
                   </p>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Email ID</p>
-                  <p className="text-white">
+                  <p className="text-white text-base">
                     {data.email || "andactionapp@gmail.com"}
                   </p>
                 </div>
@@ -457,7 +463,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
       </div>
 
       {/* Fixed Bottom Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color p-6">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color px-5 md:px-0 py-4">
         <div className="max-w-md mx-auto">
           <Button
             variant="primary"

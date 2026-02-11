@@ -29,7 +29,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
 
   return (
     <div className={`flex gap-3 ${className}`}>
-      <div className="relative flex-shrink-0 md:mt-1">
+      <div className="relative flex-shrink-0">
         <input
           id={id}
           type="checkbox"
@@ -42,7 +42,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
           onClick={() => !disabled && onChange(!checked)}
           style={{ background: checked ? 'var(--gradient-primary)' : undefined }}
           className={`
-            w-5 h-5 rounded border-2 cursor-pointer transition-all duration-200
+            w-6 h-6 rounded border-2 cursor-pointer transition-all duration-200
             flex items-center justify-center
             ${checked 
               ? 'border-transparent' 

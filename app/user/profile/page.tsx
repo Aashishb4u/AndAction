@@ -176,7 +176,7 @@ export default function UserProfilePage() {
           </svg>
           <span className="md:inline hidden">Back</span>
         </button>
-        <h1 className="h1 ml-6 font-semibold text-white gap-4 p-4">
+        <h1 className="h1 ml-6 text-white gap-4 p-4 md:text-3xl">
           Edit your profile
         </h1>
       </div>
@@ -188,7 +188,7 @@ export default function UserProfilePage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Avatar Selection */}
             <div className="space-y-4">
-              <h3 className="text-white text-center text-lg font- secondary-text">
+              <h3 className="text-white text-center md:text-lg font- secondary-text">
                 Choose avatar
               </h3>
               <div className="flex items-center justify-center md:gap-3 gap-2">
@@ -202,7 +202,7 @@ export default function UserProfilePage() {
                   }
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-6 h-6 md:w-12 md:h-12"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -296,7 +296,7 @@ export default function UserProfilePage() {
                   }
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-6 h-6 md:w-12 md:h-12"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -338,7 +338,7 @@ export default function UserProfilePage() {
 
             {/* Mobile Number with Country Code */}
             <div className="space-y-1">
-              <label className="block section-text mb-1">
+              <label className="block section-text mb-1 text-sm">
                 Mobile number*
               </label>
               <div className="flex gap-2">
@@ -369,7 +369,7 @@ export default function UserProfilePage() {
             />
 
             {/* Location Fields */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
               {/* State Dropdown */}
               <div className="relative">
                 <label className="block section-text mb-1">State*</label>
@@ -382,7 +382,7 @@ export default function UserProfilePage() {
                   <span className={formData.state ? "text-white" : "text-text-gray"}>
                     {formData.state ? INDIAN_STATES.find(s => s.value === formData.state)?.label : "Select state"}
                   </span>
-                  <svg className="w-5 h-5 text-text-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-text-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
@@ -421,7 +421,7 @@ export default function UserProfilePage() {
                   <span className={formData.city ? "text-white" : "text-text-gray"}>
                     {formData.city ? CITIES.find(c => c.value === formData.city)?.label : "Select city"}
                   </span>
-                  <svg className="w-5 h-5 text-text-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-text-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
