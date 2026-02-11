@@ -91,10 +91,10 @@ const Modal: React.FC<ModalProps> = ({
               <div className="z-10">
                 <button
                   onClick={onClose}
-                  className="p-2 text-white hover:text-white hover:bg-[#2D2D2D] rounded-full justify-items-center items-center transition-all duration-200"
+                  className="text-white hover:text-white hover:bg-[#2D2D2D] rounded-full justify-items-center items-center transition-all duration-200"
                   aria-label="Close modal"
                 >
-                  <X size={24} />
+                  <X className="w-6 h-6 md:w-8 md:h-8" />
                 </button>
               </div>
             </div>

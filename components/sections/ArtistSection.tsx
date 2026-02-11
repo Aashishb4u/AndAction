@@ -113,7 +113,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
             aria-label="Scroll left"
           >
             <svg
-              className="w-5 h-5"
+              className="w-6 h-6"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -134,7 +134,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
             aria-label="Scroll right"
           >
             <svg
-              className="w-5 h-5"
+              className="w-6 h-6"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

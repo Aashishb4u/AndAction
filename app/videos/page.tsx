@@ -183,11 +183,11 @@ export default function VideosPage() {
   ];
 
   return (
-    <SiteLayout showPreloader={false}>
-      <div className="min-h-screen pt-20 lg:pt-24 pb-28">
+    <SiteLayout showPreloader={false} hideNavbar={true}>
+      <div className="min-h-screen pt-4 pb-28">
         {/* Category Filter Chips */}
         <div
-          className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide bg-background-light p-4"
+          className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide bg-background-light p-4 border-y border-border-line sticky top-0 z-10"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {VIDEO_CATEGORIES.map((category) => (
@@ -258,7 +258,7 @@ export default function VideosPage() {
                 <div ref={loadMoreRef} className="flex justify-center py-8">
                   {isFetchingNextPage && (
                     <div className="flex items-center gap-2 text-gray-400">
-                      <Loader2 className="w-5 h-5 animate-spin text-primary-pink" />
+                      <Loader2 className="w-6 h-6 animate-spin text-primary-pink" />
                       <span>Loading more videos...</span>
                     </div>
                   )}
@@ -310,7 +310,7 @@ export default function VideosPage() {
                 }
                 className="p-2 rounded-full hover:bg-gray-700 transition-colors"
               >
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-6 h-6 text-gray-400" />
               </button>
             </div>
 

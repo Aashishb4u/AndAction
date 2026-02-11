@@ -231,7 +231,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
           className="flex items-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
         >
           <svg
-            className="w-5 h-5"
+            className="w-6 h-6"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -324,7 +324,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     : "Select languages"}
                 </span>
                 <svg
-                  className={`w-5 h-5 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
+                  className={`w-6 h-6 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -427,7 +427,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     : "Select event types"}
                 </span>
                 <svg
-                  className={`w-5 h-5 text-text-gray transition-transform ${showEventTypesDropdown ? "rotate-180" : ""}`}
+                  className={`w-6 h-6 text-text-gray transition-transform ${showEventTypesDropdown ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -531,7 +531,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     : "Select states"}
                 </span>
                 <svg
-                  className={`w-5 h-5 text-text-gray transition-transform ${showStatesDropdown ? "rotate-180" : ""}`}
+                  className={`w-6 h-6 text-text-gray transition-transform ${showStatesDropdown ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

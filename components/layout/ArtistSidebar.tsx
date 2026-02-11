@@ -125,7 +125,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
                 <p className="text-text-gray secondary-text">{displayRole}</p>
               </div>
 
-              <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
+              <ChevronRight className="w-6 h-6 text-white group-hover:text-primary-pink transition-colors duration-300" />
             </button>
           </div>
 
@@ -169,7 +169,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
               onClick={handleSignOut}
               className="w-full flex items-center justify-center gap-3 text-white hover:text-red-400 transition-colors duration-200 h3"
             >
-              <LogOut className="w-5 h-5 rotate-180" />
+              <LogOut className="w-6 h-6 rotate-180" />
               <span>Sign out</span>
             </button>
 

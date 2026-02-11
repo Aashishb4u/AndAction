@@ -38,7 +38,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
                 onClick={handleBack}
                 className="flex items-center gap-2 text-text-light-gray hover:text-white transition-colors duration-200 mb-6 group"
               >
-                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
+                <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform duration-200" />
                 <span className="text-sm font-medium">Back</span>
               </button>
             )}

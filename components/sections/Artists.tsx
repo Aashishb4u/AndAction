@@ -233,7 +233,7 @@ export default function Artists({ location }: ArtistsProps) {
             {loadingMore && (
               <div className="flex justify-center py-4">
                 <div className="flex items-center gap-2 text-gray-400">
-                  <div className="w-5 h-5 border-2 border-primary-pink border-t-transparent rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-primary-pink border-t-transparent rounded-full animate-spin" />
                   <span>Loading more categories...</span>
                 </div>
               </div>

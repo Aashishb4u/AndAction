@@ -108,7 +108,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
           className="flex items-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
         >
           <svg
-            className="w-5 h-5"
+            className="w-6 h-6"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

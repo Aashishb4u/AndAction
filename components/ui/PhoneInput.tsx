@@ -74,7 +74,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   return (
     <div className={`space-y-2 ${className}`}>
       {label && (
-        <label className="block secotion-text text-white">
+        <label className="block secotion-text text-white text-sm">
           {label}
         </label>
       )}
@@ -123,7 +123,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
             required={required}
-            className="flex-1 bg-transparent border-none outline-none text-text-gray placeholder-text-gray autofill-fix secondary-grey-text"
+            className="flex-1 bg-transparent border-none outline-none text-text-gray placeholder-text-gray autofill-fix "
             id={id}
             autoComplete="tel"
             

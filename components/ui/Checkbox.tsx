@@ -42,7 +42,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
           onClick={() => !disabled && onChange(!checked)}
           style={{ background: checked ? 'var(--gradient-primary)' : undefined }}
           className={`
-            w-5 h-5 rounded border-2 cursor-pointer transition-all duration-200
+            w-6 h-6 rounded border-2 cursor-pointer transition-all duration-200
             flex items-center justify-center
             ${checked 
               ? 'border-transparent' 

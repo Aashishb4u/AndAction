@@ -1,7 +1,14 @@
 "use client";
 
-const fetchShortsPage = async ({ pageParam = 1 }) => {
-  const res = await fetch(`/api/videos?type=shorts&page=${pageParam}`);
+import { VIDEO_CATEGORIES } from "@/lib/constants";
+
+const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
+  const [_key, { category }] = queryKey;
+  const url = category && category !== 'all'
+    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}`
+    : `/api/videos?type=shorts&page=${pageParam}`;
+  
+  const res = await fetch(url);
   const json = await res.json();
 
   return json.data.videos.map((v: any) => ({
@@ -34,6 +41,7 @@ import {
 import { toast } from "react-toastify";
 
 export default function ShortsPage() {
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -60,7 +68,7 @@ export default function ShortsPage() {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ["shorts"],
+      queryKey: ["shorts", { category: selectedCategory }],
       queryFn: fetchShortsPage,
       initialPageParam: 1,
       getNextPageParam: (lastPage, allPages) => {
@@ -405,32 +413,64 @@ export default function ShortsPage() {
   const visibleVideos = getVisibleVideos();
 
   return (
-    <SiteLayout showPreloader={false}>
+    <SiteLayout showPreloader={false} hideNavbar={true}>
+      {/* Category Filter Header */}
+      <div
+        className="fixed top-0 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-black/80 backdrop-blur-sm p-4 border-y border-border-line"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {VIDEO_CATEGORIES.map((category) => (
+          <button
+            key={category.value}
+            onClick={() => {
+              setSelectedCategory(category.value);
+              setCurrentIndex(0);
+            }}
+            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${
+              selectedCategory === category.value
+                ? "bg-white border-white"
+                : "bg-transparent text-white border-gray-600 hover:border-gray-400"
+            }`}
+          >
+            <span
+              className={
+                selectedCategory === category.value
+                  ? "text-transparent bg-clip-text bg-linear-to-r from-[#ED4B22] to-[#E8047E]"
+                  : ""
+              }
+            >
+              {category.label}
+            </span>
+          </button>
+        ))}
+      </div>
+
       {/* MOBILE */}
       <div className="md:hidden">
         <div
           ref={mobileContainerRef}
-          className="fixed inset-0 bg-black overflow-hidden shorts-scrollbar-hide"
+          className="fixed left-0 right-0 bg-black overflow-hidden shorts-scrollbar-hide"
           style={{
-            height: "100vh",
-            width: "100vw",
+            top: 0,
+            bottom: "4rem", // Leave space for bottom bar
             zIndex: 0,
-            paddingTop: "4rem",
-          }} // Add top padding for navbar height
+            paddingTop: "4.5rem", // Add top padding for category header
+          }}
         >
           <div
-            className="relative h-full pb-16" // Only bottom padding, top handled by parent
+            className="relative h-full"
             style={{
-              transform: `translateY(-${currentIndex * 100}vh)`,
+              transform: `translateY(-${currentIndex * 100}%)`,
               transition: "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
               willChange: "transform",
+              height: "100%", // Ensure container takes full height of parent
             }}
           >
             {visibleVideos.map((video) => (
               <div
                 key={`${video.id}-${video.absoluteIndex}`}
                 className="absolute inset-0 w-full h-full"
-                style={{ top: `${video.absoluteIndex * 100}vh` }}
+                style={{ top: `${video.absoluteIndex * 100}%` }}
               >
                 <ShortsPlayer
                   short={video}
@@ -512,7 +552,7 @@ export default function ShortsPage() {
                 }
                 className="p-2 rounded-full hover:bg-gray-700 transition-colors"
               >
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-6 h-6 text-gray-400" />
               </button>
             </div>
 

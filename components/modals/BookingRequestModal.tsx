@@ -182,14 +182,14 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
       onClose={handleRequestClose}
       title="Request booking"
       size="lg"
-      className="max-h-[90vh]"
+      className="max-h-[90vh] mx-4!"
       headerClassName="md:px-8 md:py-6 px-4! py-4!"
     >
       <form onSubmit={handleSubmit} className="flex flex-col h-full">
         {/* Scrollable Content */}
         <div className="flex-1 md:px-8 px-4 md:py-6 py-4 space-y-6 overflow-y-auto md:max-h-[calc(100vh-300px)] max-h-[calc(90vh-180px)]">
           {/* Name Fields */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <Input
               label="First name*"
               placeholder="First name"
@@ -219,7 +219,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
           />
 
           {/* Location Fields */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <Select
               label="State*"
               placeholder="Select"
@@ -252,7 +252,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
           />
 
           {/* Date and Time */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <DateInput
               label="Event date*"
               placeholder="DD/MM/YYYY"
