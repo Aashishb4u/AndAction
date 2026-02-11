@@ -183,11 +183,11 @@ export default function VideosPage() {
   ];
 
   return (
-    <SiteLayout showPreloader={false} hideNavbar={true}>
-      <div className="min-h-screen pt-4 pb-28">
+    <SiteLayout showPreloader={false} hideNavbarOnMobile={true}>
+      <div className="min-h-screen pt-4 md:pt-20 pb-28">
         {/* Category Filter Chips */}
         <div
-          className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide bg-background-light p-4 border-y border-border-line sticky top-0 z-10"
+          className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide bg-background-light p-4 border-y border-border-line sticky top-0 md:static z-10"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {VIDEO_CATEGORIES.map((category) => (

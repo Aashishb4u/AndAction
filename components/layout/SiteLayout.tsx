@@ -12,6 +12,7 @@ interface SiteLayoutProps {
   className?: string;
   hideNavbar?: boolean;
   hideBottomBar?: boolean;
+  hideNavbarOnMobile?: boolean;
 }
 
 const SiteLayout: React.FC<SiteLayoutProps> = ({
@@ -20,6 +21,7 @@ const SiteLayout: React.FC<SiteLayoutProps> = ({
   className = '',
   hideNavbar = false,
   hideBottomBar = false,
+  hideNavbarOnMobile = false,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(showPreloader);
@@ -47,7 +49,11 @@ const SiteLayout: React.FC<SiteLayoutProps> = ({
       {(!isLoading || !showPreloader) && (
         <div className={`min-h-screen bg-background ${className}`}>
           {/* Navigation */}
-          {!hideNavbar && <Navbar onToggleSidebar={toggleSidebar} />}
+          {!hideNavbar && (
+            <div className={hideNavbarOnMobile ? "hidden md:block" : ""}>
+              <Navbar onToggleSidebar={toggleSidebar} />
+            </div>
+          )}
 
           {/* Sidebar */}
           <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />

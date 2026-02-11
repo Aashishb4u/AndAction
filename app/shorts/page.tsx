@@ -413,10 +413,10 @@ export default function ShortsPage() {
   const visibleVideos = getVisibleVideos();
 
   return (
-    <SiteLayout showPreloader={false} hideNavbar={true}>
+    <SiteLayout showPreloader={false} hideNavbarOnMobile={true}>
       {/* Category Filter Header */}
       <div
-        className="fixed top-0 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-black/80 backdrop-blur-sm p-4 border-y border-border-line"
+        className="fixed top-0 md:static md:mt-16 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-black/80 backdrop-blur-sm p-4 border-y border-border-line"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {VIDEO_CATEGORIES.map((category) => (
@@ -494,7 +494,7 @@ export default function ShortsPage() {
       </div>
 
       {/* DESKTOP */}
-      <div className="hidden md:block pt-20 lg:pt-24 min-h-screen bg-black">
+      <div className="hidden md:block pt-4 min-h-screen bg-black">
         <div className="max-w-md mx-auto">
           <div
             ref={desktopContainerRef}
