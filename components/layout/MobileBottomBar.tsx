@@ -113,11 +113,14 @@ const MobileBottomBar = () => {
 
   return (
     <div className={`
-      fixed bottom-0 left-0 right-0 z-50 md:hidden transition-all duration-300 ease-out
-      ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
+      fixed bottom-0 left-0 right-0 z-50 md:hidden transition-transform duration-300 ease-out
+      ${isVisible ? 'translate-y-0' : 'translate-y-full'}
     `}>
-      {/* Blurred glass background */}
-      <div className="bg-black/10 backdrop-blur-xl border-t border-white/10">
+      {/* Blurred glass background with custom semi-transparent color (#0F0F0F CC = 80% opacity) */}
+      <div
+        className="backdrop-blur-xl border-t border-white/10"
+        style={{ backgroundColor: '#0F0F0FCC', WebkitBackdropFilter: 'blur(12px)', backdropFilter: 'blur(12px)' }}
+      >
         {/* Navigation items */}
         <nav className="flex items-center justify-around px-3 py-2">
           {bottomBarItems.map((item) => {
@@ -130,19 +133,13 @@ const MobileBottomBar = () => {
               >
                 {/* Icon */}
                 <div className="mb-1.5">
-                  <div className={`
-                    transition-colors duration-200
-                    ${active ? 'text-white' : 'text-text-gray'}
-                  `}>
+                  <div className={`transition-colors duration-200 ${active ? 'text-white' : 'text-[#7F7F7F]'}`}>
                     {item.icon}
                   </div>
                 </div>
 
                 {/* Label */}
-                <span className={`
-                  text-sm leading-none transition-colors duration-200
-                  ${active ? 'text-white' : 'text-text-gray'}
-                `}>
+                <span className={`text-sm leading-none transition-colors duration-200 ${active ? 'text-white' : 'text-[#7F7F7F]'}`}>
                   {item.label}
                 </span>
               </Link>

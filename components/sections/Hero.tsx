@@ -48,7 +48,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
       />
 
       {/* Content - centered in the video area */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-end md:justify-center items-center pb-20 md:pb-0">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-end md:justify-center items-center pb-12 md:pb-6">
         <div className="max-w-4xl mx-auto w-full">
           {/* Main Heading */}
           <h1 className={`t1 text-text-white mb-3 max-w-3xl md:max-w-4xl ${isLoaded ? 'hero-title-animate' : 'opacity-0'}`}>
@@ -61,7 +61,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           </p>
 
           {/* CTA Button */}
-          <div className={`flex justify-center ${isLoaded ? 'hero-button-animate' : 'opacity-0'}`}>
+          <div className={`flex justify-center ${isLoaded ? 'hero-button-animate translate-y-6 md:translate-y-12' : 'opacity-0'}`}>
             <Button
               variant="primary"
               size="md"
@@ -75,7 +75,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
       </div>
 
       {/* Curve - positioned at the bottom of hero section */}
-      <div className="absolute left-0 right-0 bottom-0 z-50 pointer-events-none select-none">
+      <div className="absolute left-0 right-0 bottom-0 z-0 pointer-events-none select-none">
         <svg
           viewBox="0 0 1400 80"
           width="100%"

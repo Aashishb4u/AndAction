@@ -168,29 +168,31 @@ function SignInContent() {
           src="/logo.png"
           alt="ANDACTION Logo"
           className="h-8 w-[150px] md:w-[215px] object-contain"
-          width={215}
-          height={24}
+          width={150}
+          height={32}
         />
 
-        <button
-          onClick={() => router.push("/")}
-          className="text-white transition-colors duration-200"
-          aria-label="Close"
-        >
-          <svg
-            className="w-6 h-6 md:w-8 md:h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {step !== 'password' && (
+          <button
+            onClick={() => router.push("/")}
+            className="text-white transition-colors duration-200"
+            aria-label="Close"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-6 h-6 md:w-8 md:h-8"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        )}
       </div>
       <div className="hidden md:block h-px bg-border-line " />
 

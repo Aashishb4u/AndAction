@@ -26,7 +26,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   const router = useRouter();
   const { data: session, status } = useSession();
   const user = session?.user;
-  useEffect(() => {
+useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
     const handleScroll = () => {
@@ -46,6 +46,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
     };
   }, [lastScrollY]);
 
+
   const navItems: NavItem[] = [
     { label: "Home", href: "/", isActive: pathname === "/" },
     { label: "Videos", href: "/videos", isActive: pathname === "/videos" },
@@ -64,12 +65,14 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
-        isScrolled
-          ? " border-b border-background-light"
-          : " border-b border-transparent"
-      } ${
-        isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
-      } ${className}`}
+        // glass blur only when the page is scrolled AND the navbar is visible
+        isScrolled && isVisible ? "backdrop-blur-xl" : ""
+      } ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"} ${className}`}
+      style={
+        isScrolled && isVisible
+          ? { backgroundColor: '#0F0F0F1A', WebkitBackdropFilter: 'blur(2px)', backdropFilter: 'blur(2px)' }
+          : undefined
+      }
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 lg:h-16">

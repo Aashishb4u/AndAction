@@ -482,7 +482,7 @@ function ArtistAuthContent() {
         </button>
       </div>
       <div className="hidden md:block h-px bg-border-line " />
-      <div className="md:p-8 p-5">
+      <div className="md:p-8 p-5 overflow-visible">
         {/* Error Message */}
         {error && (
           <div className="p-4 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6 bg-red-500/10 border border-red-500/20 rounded-lg">
@@ -881,6 +881,7 @@ function ArtistAuthContent() {
                   disabled={isLoading}
                   variant="filled"
                   maxDate={new Date()}
+                  className="z-50"
                 />
 
                 <Select

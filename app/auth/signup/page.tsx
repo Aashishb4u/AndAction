@@ -420,17 +420,13 @@ function SignUpContent() {
       </div>
       <div className="hidden md:block h-px bg-border-line " />
       <div className="p-4 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
-        {step !== "otp" && (
+        {step === "contact" && (
           <>
             {/* Title */}
-            <h1 className="h1 text-white mb-2">
-              Sign up to AndAction
-            </h1>
+            <h1 className="h1 text-white mb-2">Sign up to AndAction</h1>
 
             {/* Subtitle */}
-            <p className="text-text-gray mb-8">
-              Create your account to discover and book perfect artists
-            </p>
+            <p className="text-text-gray mb-8">Create your account to discover and book perfect artists</p>
           </>
         )}
 
@@ -916,12 +912,7 @@ function SignUpContent() {
                   </button>
                 </div>
 
-                {/* Avatar counter */}
-                <div className="text-center">
-                  <span className="text-sm text-text-gray">
-                    {selectedAvatar} of {avatars.length}
-                  </span>
-                </div>
+                {/* Avatar counter removed per design — do not display */}
               </div>
 
               {/* Name Fields */}
