@@ -84,7 +84,7 @@ const mapArtistData = (artist: any): Artist => ({
     artist.stageName ||
     `${artist.user.firstName} ${artist.user.lastName}`.trim(),
   location: artist.user.city || "Unknown",
-  thumbnail: artist.user.avatar || "/avatars/placeholder.png",
+  thumbnail: artist.user.avatar || "/avatars/default.jpg",
   videoUrl: mockVideoUrl,
   distance: artist.distance !== undefined ? artist.distance : null,
 });

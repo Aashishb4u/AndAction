@@ -77,11 +77,11 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
       {/* Full Background Image */}
       <div className="absolute inset-0">
-        <Image
+          <Image
           src={
             artist.image && /^\d+$/.test(String(artist.image))
               ? `/avatars/${artist.image}.png`
-              : artist.image || "/avatars/placeholder.png"
+              : artist.image || "/avatars/default.jpg"
           }
           alt={artist.name}
           fill

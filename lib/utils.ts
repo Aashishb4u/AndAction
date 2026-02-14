@@ -100,7 +100,7 @@ export function isTokenExpired(expiryDate: Date | null): boolean {
 }
 
 export function buildArtishProfileUrl(avatar:string) {
-  if (!avatar) return '/avatars/placeholder.png';
+  if (!avatar) return '/avatars/default.jpg';
   
   if (!isNaN(Number(avatar))) {
     return `/avatars/${avatar}.png`;
