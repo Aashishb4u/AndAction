@@ -416,7 +416,7 @@ export default function ShortsPage() {
     <SiteLayout showPreloader={false} hideNavbarOnMobile={true}>
       {/* Category Filter Header */}
       <div
-        className="fixed top-0 md:static md:mt-16 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-black/80 backdrop-blur-sm p-4 border-y border-border-line"
+        className="fixed top-0 md:static md:mt-16 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-background-light backdrop-blur-sm p-4 border-y border-border-line"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {VIDEO_CATEGORIES.map((category) => (
@@ -429,7 +429,7 @@ export default function ShortsPage() {
             className={`px-4 py-2 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${
               selectedCategory === category.value
                 ? "bg-white border-white"
-                : "bg-transparent text-white border-gray-600 hover:border-gray-400"
+                : "bg-transparent text-white border-[#2D2D2D] hover:border-gray-400"
             }`}
           >
             <span

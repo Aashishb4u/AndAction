@@ -35,7 +35,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           className={`object-cover object-center w-full h-full ${isLoaded ? 'hero-bg-animate' : ''}`}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
         >
-          <source src="/file.mp4" type="video/mp4" />
+          <source src=" /file.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
         {/* Dark Overlay */}
@@ -48,7 +48,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
       />
 
       {/* Content - centered in the video area */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-end md:justify-center items-center pb-12 md:pb-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-end md:justify-center items-center pb-20 md:pb-6">
         <div className="max-w-4xl mx-auto w-full">
           {/* Main Heading */}
           <h1 className={`t1 text-text-white mb-3 max-w-3xl md:max-w-4xl ${isLoaded ? 'hero-title-animate' : 'opacity-0'}`}>
@@ -61,7 +61,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           </p>
 
           {/* CTA Button */}
-          <div className={`flex justify-center ${isLoaded ? 'hero-button-animate translate-y-6 md:translate-y-12' : 'opacity-0'}`}>
+          <div className={`flex justify-center ${isLoaded ? 'hero-button-animate translate-y-0 md:translate-y-12' : 'opacity-0'}`}>
             <Button
               variant="primary"
               size="md"

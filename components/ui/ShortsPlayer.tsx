@@ -9,14 +9,14 @@ import Pause from "@/components/icons/pause";
 import Link from "next/link";
 
 const SoundOnIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
     <path d="M5 9v6h4l5 5V4L9 9H5z"></path>
     <path d="M16.5 12c0-1.77-.77-3.29-2-4.3v8.59c1.23-1.01 2-2.53 2-4.29z"></path>
   </svg>
 );
 
 const SoundOffIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
     <path d="M16.5 12c0-1.77-.77-3.29-2-4.3v2.59l2 2v-.29z"></path>
     <path d="M5 9v6h4l5 5V4L9 9H5z"></path>
     <path d="M19 13.59L17.59 15 15 12.41 12.41 15 11 13.59 13.59 11 11 8.41 12.41 7 15 9.59 17.59 7 19 8.41 16.41 11 19 13.59z"></path>
@@ -296,7 +296,8 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
               e.stopPropagation();
               handleSoundToggle();
             }}
-            className="p-3 rounded-full bg-white/30 text-white pointer-events-auto"
+            className="p-3 rounded-full text-white pointer-events-auto"
+            aria-label={soundEnabled ? "Sound on" : "Sound off"}
           >
             {soundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
           </button>

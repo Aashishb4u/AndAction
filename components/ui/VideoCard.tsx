@@ -16,6 +16,7 @@ interface VideoCardProps {
   thumbnail: string;
   videoUrl: string;
   className?: string;
+  artistType?: string;
 
   // ⭐ NEW: bookmarkId passed from API so UI knows what to delete
   bookmarkId?: string | null;
@@ -37,6 +38,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   id,
   title,
   creator,
+  artistType,
   thumbnail,
   videoUrl,
   className = "",
@@ -102,8 +104,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-card transition-transform duration-300 ease-out hover:scale-105 card-border-gradient ">
-          <Image src={thumbnail} alt={title} fill className="object-cover" />
+        <div className="relative w-full aspect-video rounded-lg overflow-hidden transition-transform duration-300 ease-out hover:scale-105">
+          <Image src={thumbnail} alt={title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" className="object-cover" />
 
           <div
             className={`absolute inset-0 transition-opacity duration-500 ${isHovered && isVideoLoaded ? "opacity-100" : "opacity-0"}`}
@@ -135,10 +137,18 @@ const VideoCard: React.FC<VideoCardProps> = ({
               className="w-8 h-8 rounded-full object-cover flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
-              <h3 className="btn2 text-white line-clamp-2 group-hover:text-primary-pink transition-colors duration-300">
+              <h3 className="btn2 text-white line-clamp-2 transition-colors duration-300" style={{ fontSize: '16px' }}>
                 {title}
               </h3>
-              <p className="text-text-gray footnote line-clamp-1">{creator}</p>
+              <p className="text-text-gray footnote line-clamp-1" style={{ fontSize: '14px' }}>
+                <span className="align-middle">{creator}</span>
+                {artistType ? (
+                  <span className="inline-flex items-center ml-2 text-text-gray">
+                    <span className="w-2 h-2 bg-text-gray rounded-full inline-block mr-2" aria-hidden="true" />
+                    <span className="align-middle">{artistType}</span>
+                  </span>
+                ) : null}
+              </p>
             </div>
           </div>
 

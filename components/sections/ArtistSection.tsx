@@ -53,36 +53,42 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
       {/* Section Header */}
       <div className="flex items-center justify-between mb-1 px-4 ">
         <h2 className="h2 text-white">{title}</h2>
-        <button 
-          className="gradient-text hover:text-primary-orange transition-colors duration-300
-          border-b cursor-pointer 
-          border-primary-pink/80 btn1-responsive"
-          onClick={() => {
-            if (artists.length === 0) {
-              setShowNoArtistModal(true);
-            } else {
-              // Map section title to correct filter value (must match VIDEO_CATEGORIES values)
-              let typeParam = title.toLowerCase();
-              if (typeParam.includes('dj')) typeParam = 'DJ';
-              else if (typeParam.includes('anchor')) typeParam = 'anchor';
-              else if (typeParam.includes('band')) typeParam = 'band';
-              else if (typeParam.includes('actor')) typeParam = 'actor';
-              else if (typeParam.includes('singer')) typeParam = 'singer';
-              else if (typeParam.includes('dancer')) typeParam = 'dancer';
-              else if (typeParam.includes('comedian')) typeParam = 'comedian';
-              else if (typeParam.includes('musician')) typeParam = 'musicians';
-              else if (typeParam.includes('magician')) typeParam = 'magician';
-              else if (typeParam.includes('mimicry')) typeParam = 'mimicry';
-              else if (typeParam.includes('special act')) typeParam = 'specialAct';
-              else if (typeParam.includes('spiritual')) typeParam = 'spiritual';
-              else if (typeParam.includes('kids entertainer')) typeParam = 'kidsEntertainer';
+        <div className="relative inline-flex">
+          <button
+            className="gradient-text hover:text-primary-orange transition-colors duration-300 btn1-responsive"
+            onClick={() => {
+              if (artists.length === 0) {
+                setShowNoArtistModal(true);
+              } else {
+                // Map section title to correct filter value (must match VIDEO_CATEGORIES values)
+                let typeParam = title.toLowerCase();
+                if (typeParam.includes('dj')) typeParam = 'DJ';
+                else if (typeParam.includes('anchor')) typeParam = 'anchor';
+                else if (typeParam.includes('band')) typeParam = 'band';
+                else if (typeParam.includes('actor')) typeParam = 'actor';
+                else if (typeParam.includes('singer')) typeParam = 'singer';
+                else if (typeParam.includes('dancer')) typeParam = 'dancer';
+                else if (typeParam.includes('comedian')) typeParam = 'comedian';
+                else if (typeParam.includes('musician')) typeParam = 'musicians';
+                else if (typeParam.includes('magician')) typeParam = 'magician';
+                else if (typeParam.includes('mimicry')) typeParam = 'mimicry';
+                else if (typeParam.includes('special act')) typeParam = 'specialAct';
+                else if (typeParam.includes('spiritual')) typeParam = 'spiritual';
+                else if (typeParam.includes('kids entertainer')) typeParam = 'kidsEntertainer';
 
-              router.push(`/artists?type=${encodeURIComponent(typeParam)}`);
-            }
-          }}
-        >
-          View all
-        </button>
+                router.push(`/artists?type=${encodeURIComponent(typeParam)}`);
+              }
+            }}
+          >
+            View all
+          </button>
+
+          {/* Gradient underline matching View all gradient */}
+          <div
+            className="absolute left-0 right-0 -bottom-1 h-[2px] rounded"
+            style={{ background: 'linear-gradient(90deg,#FF6A3D,#FF2A8E)' }}
+          />
+        </div>
       </div>
 
       {/* Modal for no artists found */}

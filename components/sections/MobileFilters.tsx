@@ -141,7 +141,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
       className={`flex items-center gap-2 px-4 py-2 rounded-full border filter-chip whitespace-nowrap flex-shrink-0 btn2 ${
         isActive
           ? "bg-primary-pink border-primary-pink text-white"
-          : "bg-background border-border-color text-gray-300 hover:border-gray-500"
+          : "bg-background border-[#2D2D2D] text-gray-300 hover:border-gray-500"
       }`}
     >
       <span>{label}</span>
@@ -164,7 +164,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   return (
     <>
       <div className={`relative ${className}`} ref={dropdownRef}>
-        <div className=" border-y border-[var(--border-color)] bg-card">
+        <div className=" border-b border-[var(--border-color)] bg-card">
           <div
             className="flex px-4 py-4 items-center gap-2 overflow-x-auto scrollbar-hide"
             style={{

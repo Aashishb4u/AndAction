@@ -1,6 +1,8 @@
-'use client';
+"use client";
 
 import React, { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import SiteLayout from '@/components/layout/SiteLayout';
 import ArtistGrid from '@/components/sections/ArtistGrid';
 import VideoCard from '@/components/ui/VideoCard';
@@ -9,6 +11,8 @@ import ShortsCard from '@/components/ui/ShortsCard';
 type TabType = 'Artist' | 'Videos' | 'Shorts';
 
 export default function BookmarksPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('Artist');
 
   const [artistBookmarks, setArtistBookmarks] = useState<any[]>([]);
@@ -100,6 +104,24 @@ export default function BookmarksPage() {
     fetchBookmarks();
   }, []);
 
+  // Redirect unauthenticated users to the signin page (no modal)
+  React.useEffect(() => {
+    if (status !== 'loading' && !session) {
+      router.push('/auth/signin');
+    }
+  }, [status, session, router]);
+
+  // While session is loading or redirecting, show a small placeholder
+  if (status === 'loading' || !session) {
+    return (
+      <SiteLayout showPreloader={false}>
+        <div className="min-h-screen pt-14 lg:pt-24 bg-background flex items-center justify-center">
+          <div className="text-white">Redirecting to sign in...</div>
+        </div>
+      </SiteLayout>
+    );
+  }
+
   // ------------------------------------------------------
   // REMOVE BOOKMARK — WORKS FOR ARTIST + VIDEO + SHORT
   // ------------------------------------------------------
@@ -133,7 +155,7 @@ export default function BookmarksPage() {
 
   return (
     <SiteLayout showPreloader={false}>
-      <div className="min-h-screen pt-20 lg:pt-24 bg-background">
+      <div className="min-h-screen pt-14 lg:pt-24 bg-background">
 
         {/* Tabs */}
         <div className="flex bg-card border-b border-b-[#2D2D2D]">
@@ -169,8 +191,10 @@ export default function BookmarksPage() {
                   }}
                 />
               ) : (
-                <div className="text-center text-gray-400 py-12">
-                  No bookmarked artists.
+                <div className="w-full min-h-[50vh] flex items-center justify-center">
+                  <div className="text-center text-gray-400">
+                    No bookmarked artists.
+                  </div>
                 </div>
               )}
             </>
@@ -195,7 +219,9 @@ export default function BookmarksPage() {
                   />
                 ))
               ) : (
-                <div className="text-center text-gray-400 py-12 w-full col-span-full justify-self-center">No bookmarked videos.</div>
+                <div className="w-full min-h-[50vh] flex items-center justify-center col-span-full">
+                  <div className="text-center text-gray-400">No bookmarked videos.</div>
+                </div>
               )}
             </div>
           )}
@@ -219,7 +245,9 @@ export default function BookmarksPage() {
                   />
                 ))
               ) : (
-                <div className="text-center text-gray-400 py-12 w-full col-span-full justify-self-center">No bookmarked shorts.</div>
+                <div className="w-full min-h-[50vh] flex items-center justify-center col-span-full">
+                  <div className="text-center text-gray-400">No bookmarked shorts.</div>
+                </div>
               )}
             </div>
           )}

@@ -67,6 +67,7 @@ export default function VideosPage() {
         isBookmarked: v.isBookmarked || false,
         bookmarkId: v.bookmarkId || null,
         creatorImage: v.user.avatar || v.user.image || undefined,
+        artistType: v.user.artist?.artistType || "",
       })),
     ) || [];
 
@@ -184,10 +185,10 @@ export default function VideosPage() {
 
   return (
     <SiteLayout showPreloader={false} hideNavbarOnMobile={true}>
-      <div className="min-h-screen pt-4 md:pt-20 pb-28">
+      <div className="min-h-screen md:pt-20 pb-28">
         {/* Category Filter Chips */}
         <div
-          className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide bg-background-light p-4 border-y border-border-line sticky top-0 md:static z-10"
+          className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide bg-background-light p-4 border-y border-border-line sticky top-0 md:static z-10"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {VIDEO_CATEGORIES.map((category) => (
@@ -197,7 +198,7 @@ export default function VideosPage() {
               className={`px-4 py-2 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${
                 selectedCategory === category.value
                   ? "bg-white border-white"
-                  : "bg-transparent text-white border-gray-600 hover:border-gray-400"
+                  : "bg-transparent text-white border-[#2D2D2D] hover:border-gray-400"
               }`}
             >
               <span
@@ -242,6 +243,7 @@ export default function VideosPage() {
                     id={video.id}
                     title={video.title}
                     creator={video.creator}
+                    artistType={video.artistType}
                     creatorImage={video.creatorImage}
                     thumbnail={video.thumbnail}
                     videoUrl={video.videoUrl}
@@ -269,7 +271,7 @@ export default function VideosPage() {
               {!hasNextPage && allVideos.length > 0 && (
                 <div className="text-center py-8">
                   <p className="text-gray-500 text-sm">
-                    You've reached the end
+                    You&apos;ve reached the end
                   </p>
                 </div>
               )}
