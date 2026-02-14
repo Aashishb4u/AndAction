@@ -193,6 +193,7 @@ export default function BookmarksPage() {
               ) : (
                 <div className="w-full min-h-[50vh] flex items-center justify-center">
                   <div className="text-center text-gray-400">
+                    <img src="/blank.png" alt="No bookmarks" className="w-48 h-48 mx-auto mb-4" />
                     No bookmarked artists.
                   </div>
                 </div>
@@ -220,7 +221,10 @@ export default function BookmarksPage() {
                 ))
               ) : (
                 <div className="w-full min-h-[50vh] flex items-center justify-center col-span-full">
-                  <div className="text-center text-gray-400">No bookmarked videos.</div>
+                  <div className="text-center text-gray-400">
+                    <img src="/blank.png" alt="No bookmarks" className="w-48 h-48 mx-auto mb-4" />
+                    No bookmarked videos.
+                  </div>
                 </div>
               )}
             </div>
@@ -246,7 +250,10 @@ export default function BookmarksPage() {
                 ))
               ) : (
                 <div className="w-full min-h-[50vh] flex items-center justify-center col-span-full">
-                  <div className="text-center text-gray-400">No bookmarked shorts.</div>
+                  <div className="text-center text-gray-400">
+                    <img src="/blank.png" alt="No bookmarks" className="w-48 h-48 mx-auto mb-4" />
+                    No bookmarked shorts.
+                  </div>
                 </div>
               )}
             </div>

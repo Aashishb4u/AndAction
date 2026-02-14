@@ -281,6 +281,7 @@ export default function VideosPage() {
           {/* Empty State */}
           {!isLoading && !isError && allVideos.length === 0 && (
             <div className="text-center py-16">
+              <img src="/blank.png" alt="No videos" className="w-48 h-48 mx-auto mb-6" />
               <p className="text-gray-400 text-lg">
                 {selectedCategory === "all"
                   ? "No videos found."

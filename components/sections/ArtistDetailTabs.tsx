@@ -110,7 +110,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     const checkBioOverflow = () => {
       if (bioRef.current) {
         const lineHeight = parseFloat(getComputedStyle(bioRef.current).lineHeight) || 20;
-        const maxHeight = lineHeight * 2; // 2 lines
+        const maxHeight = lineHeight * 4; // 4 lines
         setShowBioMoreButton(bioRef.current.scrollHeight > maxHeight + 2);
       }
     };
@@ -135,11 +135,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const renderAboutContent = () => (
    <div className="space-y-4 max-w-4xl">
       {artist.bio && artist.bio.trim() !== "" && (
-        <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
+        <div className='p-4 md:bg-background bg-card border rounded-xl' style={{ borderColor: '#232323' }}>
           <h3 className="text-text-gray secondary-text mb-2">Bio</h3>
           <p 
             ref={bioRef}
-            className={`leading-relaxed secondary-grey-text ${isBioExpanded ? '' : 'line-clamp-2'}`}
+            className={`leading-relaxed secondary-grey-text ${isBioExpanded ? '' : 'line-clamp-4'}`}
           >
             {artist.bio}
           </p>
@@ -153,42 +153,48 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           )}
         </div>
       )}
-
-      {(artist.yearsOfExperience !== undefined && artist.yearsOfExperience !== null) && (
-        <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
+      {/* Years of experience: show only when a positive number is provided */}
+      {(typeof artist.yearsOfExperience === 'number' && artist.yearsOfExperience > 0) && (
+        <div className='p-4 md:bg-background bg-card border rounded-xl' style={{ borderColor: '#232323' }}>
           <h3 className="text-text-gray secondary-text mb-2">Years of experience</h3>
           <p className="secondary-grey-text">{artist.yearsOfExperience} Years</p>
         </div>
       )}
 
-      {artist.subArtistTypes && artist.subArtistTypes.length > 0 && (
-        <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
+      {/* Sub-artist types: filter out empty / N/A values */}
+      {Array.isArray(artist.subArtistTypes) && artist.subArtistTypes.filter((t: string) => t && t.trim() && t.toLowerCase() !== 'n/a').length > 0 && (
+        <div className='p-4 md:bg-background bg-card border rounded-xl' style={{ borderColor: '#232323' }}>
           <h3 className="text-text-gray secondary-text mb-2">Sub-Artist Type</h3>
           <div className="flex flex-wrap gap-1.5">
-            {artist.subArtistTypes.map((type, index) => (
-              <span
-                key={index}
-                className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
-              >
-                {type || "N/A"}
-              </span>
-            ))}
+            {artist.subArtistTypes
+              .filter((t: string) => t && t.trim() && t.toLowerCase() !== 'n/a')
+              .map((type: string, index: number) => (
+                <span
+                  key={index}
+                  className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
+                >
+                  {type}
+                </span>
+              ))}
           </div>
         </div>
       )}
 
-      {artist.achievements && artist.achievements.length > 0 && (
-        <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
+      {/* Achievements: filter out empty / N/A values */}
+      {Array.isArray(artist.achievements) && artist.achievements.filter((a: string) => a && a.trim() && a.toLowerCase() !== 'n/a').length > 0 && (
+        <div className='p-4 md:bg-background bg-card border rounded-xl' style={{ borderColor: '#232323' }}>
           <h3 className="text-text-gray secondary-text mb-2">Achievements / Awards</h3>
           <div className="flex flex-wrap gap-1.5">
-            {artist.achievements.map((achievement, index) => (
-              <span
-                key={index}
-                className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
-              >
-                {achievement || "N/A"}
-              </span>
-            ))}
+            {artist.achievements
+              .filter((a: string) => a && a.trim() && a.toLowerCase() !== 'n/a')
+              .map((achievement: string, index: number) => (
+                <span
+                  key={index}
+                  className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
+                >
+                  {achievement}
+                </span>
+              ))}
           </div>
         </div>
       )}
@@ -197,42 +203,36 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
   const renderPerformanceContent = () => (
     <div className="space-y-4 max-w-4xl">
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
-        <div className="text-white mb-1">
-          Starting from ₹ {artist.soloChargesFrom || 0}
+      <div className="md:bg-background bg-card border rounded-lg md:p-6 p-4" style={{ borderColor: '#232323' }}>
+        <div className="mb-6">
+          <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
+          <div className="text-white mb-1">Starting from ₹ {artist.soloChargesFrom || 0}</div>
+          <p className="footnote">{artist.soloChargesDescription?.trim() || "No description provided."}</p>
         </div>
-        <p className="footnote">
-          {artist.soloChargesDescription?.trim() || "No description provided."}
-        </p>
-      </div>
 
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
-        <div className="text-white mb-1">
-          Starting from ₹ {artist.chargesWithBacklineFrom || 0}
+        <div>
+          <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
+          <div className="text-white mb-1">Starting from ₹ {artist.chargesWithBacklineFrom || 0}</div>
+          <p className="footnote">{artist.chargesWithBacklineDescription?.trim() || "No description provided."}</p>
         </div>
-        <p className="footnote">
-          {artist.chargesWithBacklineDescription?.trim() || "No description provided."}
-        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
+        <div className="md:bg-background bg-card border rounded-lg p-4" style={{ borderColor: '#232323' }}>
           <h4 className="text-text-gray secondary-text mb-1">Performing duration</h4>
           <p className="text-white text-sm">
             {artist.performingDurationFrom || "N/A"} - {artist.performingDurationTo || "N/A"} mins
           </p>
         </div>
 
-        <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
+        <div className="md:bg-background bg-card border rounded-lg p-4" style={{ borderColor: '#232323' }}>
           <h4 className="text-text-gray secondary-text mb-1">Performing members</h4>
           <p className="text-white text-sm">
             {artist.performingMembers || "N/A"} members
           </p>
         </div>
 
-        <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
+        <div className="md:bg-background bg-card border rounded-lg p-4" style={{ borderColor: '#232323' }}>
           <h4 className="text-text-gray secondary-text mb-1">Off stage members</h4>
           <p className="text-white text-sm">
             {artist.offStageMembers || "N/A"}
@@ -240,7 +240,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         </div>
       </div>
 
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
+      <div className="md:bg-background bg-card border rounded-lg md:p-6 p-4" style={{ borderColor: '#232323' }}>
         <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
         <div className="flex  flex-wrap gap-1.5">
           {(artist.languages?.length
@@ -257,7 +257,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         </div>
       </div>
 
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
+      <div className="md:bg-background bg-card border rounded-lg md:p-6 p-4" style={{ borderColor: '#232323' }}>
         <h3 className="text-text-gray secondary-text mb-1">Performing event type</h3>
         <div className="flex flex-wrap gap-1.5">
           {(artist.performingEventType
@@ -274,7 +274,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         </div>
       </div>
 
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
+      <div className="md:bg-background bg-card border rounded-lg md:p-6 p-4" style={{ borderColor: '#232323' }}>
         <h3 className="text-text-gray secondary-text mb-1">Performing States</h3>
         <div className="flex flex-wrap gap-1.5">
           {(() => {
@@ -378,7 +378,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   if (isMobile) {
     return (
       <div className="bg-background min-h-screen">
-        <div className="sticky top-0 bg-background border-b border-border-color z-40">
+        <div className="sticky top-0 bg-background border-b z-40" style={{ borderColor: '#232323' }}>
           <div className="flex bg-card overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
@@ -391,7 +391,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               >
                 {tab.label}
                 {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-orange to-primary-pink" />
+                  <div
+                    className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-primary-orange to-primary-pink z-50"
+                    style={{ bottom: '-1px' }}
+                  />
                 )}
               </button>
             ))}
@@ -406,7 +409,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-card rounded-2xl border border-border-color">
+    <div className="min-h-screen bg-card rounded-2xl border" style={{ borderColor: '#232323' }}>
       <div className="border-b border-border-color">
         <div className="flex px-8">
           {tabs.map((tab) => (
@@ -419,9 +422,12 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 }`}
             >
               {tab.label}
-              {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-orange to-primary-pink" />
-              )}
+                {activeTab === tab.id && (
+                  <div
+                    className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-primary-orange to-primary-pink z-50"
+                    style={{ bottom: '-1px' }}
+                  />
+                )}
             </button>
           ))}
         </div>
