@@ -74,8 +74,8 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         </div>
       </div>
 
-      {/* Curve - positioned at the bottom of hero section */}
-      <div className="absolute left-0 right-0 bottom-0 z-0 pointer-events-none select-none">
+{/* Curve - positioned at the bottom of hero section */}
+      <div className="absolute left-0 right-0 bottom-0 z-50 pointer-events-none select-none">
         <svg
           viewBox="0 0 1400 80"
           width="100%"
@@ -86,46 +86,20 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           className="block"
         >
           <defs>
-            {/* Pink glow gradient under curve stroke - centered 40% width, fades vertically */}
-            {/* <linearGradient id="pinkGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
-              <stop offset="20%" stopColor="#FF2D7A" stopOpacity="0.18" />
-              <stop offset="30%" stopColor="#FF2D7A" stopOpacity="0.2" />
-              <stop offset="40%" stopColor="#FF2D7A" stopOpacity="0.3" />
-              <stop offset="50%" stopColor="#FF2D7A" stopOpacity="0.3" />
-              <stop offset="60%" stopColor="#FF2D7A" stopOpacity="0.3" />
-              <stop offset="70%" stopColor="#FF2D7A" stopOpacity="0.2" />
-              <stop offset="80%" stopColor="#FF2D7A" stopOpacity="0.18" />
-              <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
-            </linearGradient> */}
-
-            {/* Combined radial gradient - centered horizontally, fades down */}
-            <radialGradient id="pinkGlow" cx="50%" cy="0%" r="60%" fx="50%" fy="0%">
-              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0.3" />
-              <stop offset="80%" stopColor="#FF2D7A" stopOpacity="0.24" />
-              <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
-            </radialGradient>
-
             {/* Main curve stroke gradient */}
             <linearGradient id="strokeFade" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
-              <stop offset="15%" stopColor="#FF2D7A" stopOpacity="0.6" />
+              <stop offset="15%" stopColor="#FF2D7A" stopOpacity="0.5" />
               <stop offset="50%" stopColor="#FF2D7A" stopOpacity="1" />
-              <stop offset="85%" stopColor="#FF2D7A" stopOpacity="0.6" />
+              <stop offset="85%" stopColor="#FF2D7A" stopOpacity="0.5" />
               <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
             </linearGradient>
           </defs>
 
-          {/* Black curve fill that creates the transition */}
+          {/* Dark curve fill */}
           <path
             d="M0,80 Q720,10 1440,80 L1440,80 L0,80 Z"
-            fill="black"
-          />
-
-          {/* Pink gradient overlay slightly inside black curve */}
-          <path
-            d="M0,80 Q720,10 1440,80 L1440,160 L0,80 Z"
-            fill="url(#pinkGlow)"
+            fill="#0A0A0A"
           />
 
           {/* Main curve stroke */}
@@ -133,7 +107,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
             d="M0,80 Q720,10 1440,80"
             fill="none"
             stroke="url(#strokeFade)"
-            strokeWidth="3"
+            strokeWidth="2.5"
             strokeLinecap="round"
           />
 
@@ -142,12 +116,24 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
             d="M0,80 Q720,10 1440,80"
             fill="none"
             stroke="#FF2D7A"
-            strokeWidth="1.5"
+            strokeWidth="1"
             strokeLinecap="round"
-            opacity="0.6"
+            opacity="0.4"
           />
         </svg>
       </div>
+
+      {/* Pink spotlight — originates from curve center, extends into Artists section */}
+      <div
+        className="absolute left-1/2 bottom-0 pointer-events-none"
+        style={{
+          width: '65%',
+          height: '350px',
+          transform: 'translate(-50%, 90%)',
+          background: 'radial-gradient(ellipse 55% 65% at 50% 0%, rgba(255,45,122,0.32) 0%, rgba(255,45,122,0.16) 30%, rgba(255,45,122,0.05) 55%, transparent 80%)',
+          zIndex: 100,
+        }}
+      />
 
 
 

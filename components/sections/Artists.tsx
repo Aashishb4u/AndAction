@@ -185,16 +185,18 @@ export default function Artists({ location }: ArtistsProps) {
         {/* Base background */}
         <div className="absolute inset-0 bg-background" />
 
-        {/* Centered pink glow at top - matches the curve */}
+        {/* Centered pink spotlight at top — connects with Hero curve glow */}
         <div
-          className="absolute inset-x-0 top-0 h-96"
+          className="absolute inset-x-0 top-0"
           style={{
+            height: '450px',
             background: `
               radial-gradient(
-                ellipse 60% 100% at 50% 0%,
+                ellipse 40% 75% at 50% 0%,
                 rgba(255,45,122,0.25) 0%,
-                rgba(255,45,122,0.1) 40%,
-                transparent 70%
+                rgba(255,45,122,0.12) 30%,
+                rgba(255,45,122,0.04) 55%,
+                transparent 80%
               )
             `,
           }}
