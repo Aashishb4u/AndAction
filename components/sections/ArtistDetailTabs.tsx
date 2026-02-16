@@ -134,14 +134,21 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
   const renderAboutContent = () => (
    <div className="space-y-4 max-w-4xl">
-      {artist.bio && artist.bio.trim() !== "" && (
+      {artist.bio && artist.bio.trim() !== "" && (() => {
+        const sanitizedBio = artist.bio
+          .replaceAll('\\r\\n', '\n')
+          .replaceAll('\\r', '')
+          .replaceAll('\\n', '\n')
+          .replace(/\r\n/g, '\n')
+          .replace(/\r/g, '');
+        return (
         <div className='p-4 md:bg-background bg-card border rounded-xl' style={{ borderColor: '#232323' }}>
           <h3 className="text-text-gray secondary-text mb-2">Bio</h3>
           <p 
             ref={bioRef}
-            className={`leading-relaxed secondary-grey-text ${isBioExpanded ? '' : 'line-clamp-4'}`}
+            className={`leading-relaxed secondary-grey-text whitespace-pre-line ${isBioExpanded ? '' : 'line-clamp-4'}`}
           >
-            {artist.bio}
+            {sanitizedBio}
           </p>
           {showBioMoreButton && (
             <button 
@@ -152,7 +159,8 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             </button>
           )}
         </div>
-      )}
+        );
+      })()}
       {/* Years of experience: show only when a positive number is provided */}
       {(typeof artist.yearsOfExperience === 'number' && artist.yearsOfExperience > 0) && (
         <div className='p-4 md:bg-background bg-card border rounded-xl' style={{ borderColor: '#232323' }}>
