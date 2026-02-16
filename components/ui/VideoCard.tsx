@@ -113,7 +113,6 @@ const VideoCard: React.FC<VideoCardProps> = ({
             <video
               ref={videoRef}
               className="w-full h-full object-cover"
-              muted
               loop
               playsInline
               preload="metadata"

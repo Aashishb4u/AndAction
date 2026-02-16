@@ -272,13 +272,27 @@ export default function ArtistDetailPage() {
     alert("Profile link copied!");
   };
 
-  const handleRequestBooking = () => console.log("Request booking");
+  const handleRequestBooking = () => {
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
+    }
+    console.log("Request booking");
+  };
   const handleCall = () => {
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
+    }
     if (artist.contactNumber) {
       window.open(`tel:${artist.contactNumber}`, "_self");
     }
   };
   const handleWhatsApp = () => {
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
+    }
     if (artist.whatsappNumber) {
       window.open(
         `https://wa.me/${artist.whatsappNumber.replace(/[^0-9]/g, "")}`,

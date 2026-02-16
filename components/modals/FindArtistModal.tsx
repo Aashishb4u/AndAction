@@ -46,6 +46,11 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     { value: "musician", label: "Musician" },
     { value: "comedian", label: "Comedian" },
     { value: "magician", label: "Magician" },
+    { value: "actor", label: "Actor" },
+    { value: "anchor", label: "Anchor" },
+    { value: "band", label: "Live Band" },
+    { value: "dj", label: "DJ" },
+    { value: "other", label: "Other" },
   ];
 
   const subCategories = [
