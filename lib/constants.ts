@@ -1,16 +1,22 @@
-export const VIDEO_CATEGORIES = [
-  { value: "all", label: "All" },
+// Artist categories aligned with database and API mapping
+export const ARTIST_CATEGORIES = [
   { value: "singer", label: "Singer" },
+  { value: "spiritual", label: "Spiritual / Devotional" },
   { value: "dancer", label: "Dancer" },
-  { value: "musicians", label: "Musician" },
-  { value: "anchor", label: "Anchor" },
-  { value: "DJ", label: "DJ" },
-  { value: "band", label: "Live Band " },
+  { value: "musician", label: "Musician" },
   { value: "comedian", label: "Comedian" },
+  { value: "mimicry", label: "Mimicry Artist" },
   { value: "magician", label: "Magician" },
   { value: "actor", label: "Actor" },
-  { value: "mimicry", label: "Mimicry" },
-  { value: "specialAct", label: "Special Act Performer" },
-  { value: "spiritual", label: "Spiritual" },
-  { value: "kidsEntertainer", label: "Kids Entertainer" },
+  { value: "anchor", label: "Anchor / Host" },
+  { value: "band", label: "Live Band" },
+  { value: "dj", label: "DJ" },
+  { value: "special-act", label: "Special Act" },
+  { value: "kids-entertainer", label: "Kids Entertainer" },
+];
+
+// Video categories (includes "All" option)
+export const VIDEO_CATEGORIES = [
+  { value: "all", label: "All" },
+  ...ARTIST_CATEGORIES,
 ];

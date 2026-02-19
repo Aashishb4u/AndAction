@@ -6,6 +6,7 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
+import { ARTIST_CATEGORIES } from "@/lib/constants";
 
 export interface FindArtistModalProps {
   isOpen: boolean;
@@ -40,19 +41,6 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
   });
 
   // Form options
-  const artistCategories = [
-    { value: "singer", label: "Singer" },
-    { value: "dancer", label: "Dancer" },
-    { value: "musician", label: "Musician" },
-    { value: "comedian", label: "Comedian" },
-    { value: "magician", label: "Magician" },
-    { value: "actor", label: "Actor" },
-    { value: "anchor", label: "Anchor" },
-    { value: "band", label: "Live Band" },
-    { value: "dj", label: "DJ" },
-    { value: "other", label: "Other" },
-  ];
-
   const subCategories = [
     { value: "bollywood", label: "Bollywood" },
     { value: "classical", label: "Classical" },
@@ -170,13 +158,13 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
         {/* Artist Category */}
         <div>
           <label className="secondary-text  block mb-1">Artist Category</label>
-        <Select
-          placeholder="Select category"
-          options={artistCategories}
-          value={formData.artistCategory}
-          onChange={(value) => handleInputChange("artistCategory", value)}
-          required
-        />
+          <Select
+            placeholder="Select category"
+            options={ARTIST_CATEGORIES}
+            value={formData.artistCategory}
+            onChange={(value) => handleInputChange("artistCategory", value)}
+            required
+          />
         </div>
 
         {/* Sub-Category */}
