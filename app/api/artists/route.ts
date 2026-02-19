@@ -9,6 +9,27 @@ import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { Prisma } from "@prisma/client";
 
+// Map query types to actual database artistType values
+function getArtistTypeMatches(queryType: string): string[] {
+  const typeMap: Record<string, string[]> = {
+    singer: ["singer", "Singer"],
+    spiritual: ["Devotional / Spiritual Singer"],
+    dancer: ["dancer", "Dancer / Dance Group"],
+    dj: ["DJ / VJ", "Dj Percussionist"],
+    band: ["band", "Live Band"],
+    magician: ["Magician / Illusionist"],
+    anchor: ["Anchor / Emcee / Host"],
+    comedian: ["Comedian / Mimicry"],
+    actor: ["actor"],
+    mimicry: ["Comedian / Mimicry"],
+    musician: ["musician", "Musician"],
+    "special-act": ["Special Act", "Special Act Performer"],
+    "kids-entertainer": ["Kids Entertainer"],
+  };
+
+  return typeMap[queryType.toLowerCase()] || [queryType];
+}
+
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
@@ -31,7 +52,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
   try {
     const url = new URL(request.url);
     const searchParams = url.searchParams;
-    console.log("Received GET /api/artists with params:", Object.fromEntries(searchParams.entries()));
+    console.log(
+      "Received GET /api/artists with params:",
+      Object.fromEntries(searchParams.entries()),
+    );
 
     // ---------------------------
     // LOCATION (lat/lng → state)
@@ -48,7 +72,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // PAGINATION
     // ---------------------------
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    let limit = parseInt(searchParams.get("limit") || DEFAULT_PAGE_SIZE.toString());
+    let limit = parseInt(
+      searchParams.get("limit") || DEFAULT_PAGE_SIZE.toString(),
+    );
 
     if (limit > MAX_PAGE_SIZE) limit = MAX_PAGE_SIZE;
     if (limit < 1) limit = DEFAULT_PAGE_SIZE;
@@ -84,8 +110,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       where.OR = [
         { stageName: { contains: search, mode: "insensitive" } },
         { shortBio: { contains: search, mode: "insensitive" } },
-        { user: { is: { firstName: { contains: search, mode: "insensitive" } } } },
-        { user: { is: { lastName: { contains: search, mode: "insensitive" } } } },
+        {
+          user: {
+            is: { firstName: { contains: search, mode: "insensitive" } },
+          },
+        },
+        {
+          user: { is: { lastName: { contains: search, mode: "insensitive" } } },
+        },
       ];
     }
 
@@ -93,7 +125,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // REQUIRED FILTER: artistType
     // ---------------------------
     if (type) {
-      where.artistType = { contains: type, mode: "insensitive" };
+      const typeMatches = getArtistTypeMatches(type);
+      where.artistType = { in: typeMatches };
     }
 
     // ---------------------------
@@ -120,7 +153,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     }
 
     // Only apply state filter if location is provided
-    if (state && (lat && lng)) {
+    if (state && lat && lng) {
       dynamicOrFilters.push({
         performingStates: { contains: state, mode: "insensitive" },
       });
@@ -146,7 +179,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
           {
             AND: [
               { soloChargesFrom: { gte: min } },
-              { OR: [{ soloChargesTo: null }, { soloChargesTo: { lte: max } }] },
+              {
+                OR: [{ soloChargesTo: null }, { soloChargesTo: { lte: max } }],
+              },
             ],
           },
 
@@ -205,7 +240,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
           },
         },
         "Artist count retrieved successfully.",
-        200
+        200,
       );
     }
 
@@ -243,7 +278,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       },
     });
 
-    console.log(`Fetched ${artists.length} artists (Page: ${page}, Limit: ${limit})`);
+    console.log(
+      `Fetched ${artists.length} artists (Page: ${page}, Limit: ${limit})`,
+    );
 
     return successResponse(
       {
@@ -256,10 +293,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         },
       },
       "Artist list retrieved successfully.",
-      200
+      200,
     );
   } catch (error) {
     console.error("GET Artists API Error:", error);
-    return ApiErrors.internalError("An unexpected error occurred while fetching artists.");
+    return ApiErrors.internalError(
+      "An unexpected error occurred while fetching artists.",
+    );
   }
 }

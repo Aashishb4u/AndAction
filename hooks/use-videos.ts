@@ -25,7 +25,7 @@ interface Video {
     avatar: string | null;
     image: string | null;
     isArtistVerified: boolean;
-    artist: { id: string } | null;
+    artist: { id: string; artistType: string } | null;
   };
 }
 
