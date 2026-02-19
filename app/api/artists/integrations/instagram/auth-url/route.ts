@@ -8,13 +8,7 @@ const INSTAGRAM_REDIRECT_URI =
   `${process.env.NEXTAUTH_URL}/api/artists/integrations/instagram/callback`;
 
 // Instagram Business API scopes
-const SCOPES = [
-  "instagram_business_basic",
-  "instagram_business_manage_messages",
-  "instagram_business_manage_comments",
-  "instagram_business_content_publish",
-  "instagram_business_manage_insights",
-].join(",");
+const SCOPES = ["instagram_business_basic"].join(",");
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +17,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -34,14 +28,14 @@ export async function GET(request: NextRequest) {
     if (!artist) {
       return NextResponse.json(
         { success: false, message: "Artist profile not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (!INSTAGRAM_CLIENT_ID) {
       return NextResponse.json(
         { success: false, message: "Instagram integration is not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -55,7 +49,7 @@ export async function GET(request: NextRequest) {
         userId: session.user.id,
         timestamp: Date.now(),
         returnUrl,
-      })
+      }),
     ).toString("base64");
 
     // Instagram Business API OAuth URL
@@ -75,7 +69,7 @@ export async function GET(request: NextRequest) {
     console.error("Error generating Instagram auth URL:", error);
     return NextResponse.json(
       { success: false, message: "Failed to generate authorization URL" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
