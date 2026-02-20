@@ -881,7 +881,7 @@ function ArtistAuthContent() {
                   disabled={isLoading}
                   variant="filled"
                   maxDate={new Date()}
-                  className="z-50"
+                  className=""
                 />
 
                 <Select
