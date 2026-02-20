@@ -170,23 +170,34 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       )}
 
       {/* Sub-artist types: filter out empty / N/A values */}
-      {Array.isArray(artist.subArtistTypes) && artist.subArtistTypes.filter((t: string) => t && t.trim() && t.toLowerCase() !== 'n/a').length > 0 && (
-        <div className='p-4 md:bg-background bg-card border rounded-xl' style={{ borderColor: '#232323' }}>
-          <h3 className="text-text-gray secondary-text mb-2">Sub-Artist Type</h3>
-          <div className="flex flex-wrap gap-1.5">
-            {artist.subArtistTypes
-              .filter((t: string) => t && t.trim() && t.toLowerCase() !== 'n/a')
-              .map((type: string, index: number) => (
-                <span
-                  key={index}
-                  className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
-                >
-                  {type}
-                </span>
-              ))}
-          </div>
-        </div>
-      )}
+        {/* Resolve sub-artist types whether provided as array or CSV string */}
+        {(() => {
+          const a: any = artist as any;
+          const artistSubTypes = Array.isArray(a.subArtistTypes)
+            ? a.subArtistTypes
+            : (a.subArtistType ? (a.subArtistType as string).split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+
+          if (artistSubTypes.filter((t: string) => t && t.trim() && t.toLowerCase() !== 'n/a').length === 0) return null;
+
+          return (
+            <div className='p-4 md:bg-background bg-card border rounded-xl' style={{ borderColor: '#232323' }}>
+              <h3 className="text-text-gray secondary-text mb-2">Sub-Artist Type</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {artistSubTypes
+                  .filter((t: string) => t && t.trim() && t.toLowerCase() !== 'n/a')
+                  .map((type: string, index: number) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
+                    >
+                      {type}
+                    </span>
+                  ))}
+              </div>
+            </div>
+          );
+        })()}
+      
 
       {/* Achievements: filter out empty / N/A values */}
       {Array.isArray(artist.achievements) && artist.achievements.filter((a: string) => a && a.trim() && a.toLowerCase() !== 'n/a').length > 0 && (

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
 
@@ -70,6 +70,17 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
     },
   ];
 
+  const [savedFirstName, setSavedFirstName] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("firstName") || localStorage.getItem("first_name");
+      if (stored) setSavedFirstName(stored);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -95,30 +106,35 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
           <span className="md:hidden h2">Profile Setup</span>
         </button>
       </div>
+      <div className="h-px bg-border-line" />
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center md:justify-center px-6 pb-32">
+      <div className="flex-1 flex flex-col items-center md:justify-center pl-6 pr-4 pb-32">
         <div className="max-w-lg w-full md:text-center space-y-8">
           {/* Title */}
           <div className="space-y-6">
             <h1 className="text-2xl h1-heading font-semibold text-white hidden md:block">
               Profile setup
             </h1>
-            <p className="h1">Hello are you ready to Setup your profile</p>
+            <p className="h1 mt-6">
+              Hello{savedFirstName ? `, ${savedFirstName}` : ""} are you ready to Setup your profile
+            </p>
           </div>
 
           {/* Profile Steps */}
           <div className="space-y-5">
             {profileSteps.map((step, index) => (
               <div key={index}>
-                <div className="flex items-start gap-4 text-left">
+                <div className="flex items-center gap-4 text-left">
                   <div className="flex-shrink-0">{step.icon}</div>
                   <div className="flex-1">
                     <h3 className="text-white h3 mb-1">{step.title}</h3>
                     <p className="text-text-gray text-sm">{step.description}</p>
                   </div>
                 </div>
-                <div className="h-px border-gradient-dark-bg mt-5" />
+                {index !== profileSteps.length - 1 && (
+                  <div className="h-px border-gradient-dark-bg mt-5" />
+                )}
               </div>
             ))}
           </div>
@@ -126,18 +142,18 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
       </div>
 
       {/* Fixed Bottom Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color px-5 md:px-0 py-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color pl-5 pr-4 md:px-0 py-4">
         <p className="text-text-gray footnote mb-4 md:hidden">
           It only takes 5–10 min and you can edit it later. We’ll save as you
           go.
         </p>
 
         <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
-          <Button variant="secondary" size="md" onClick={onSkip}>
-            <span className="gradient-text">Skip & Next</span>
+          <Button variant="secondary" size="md" onClick={onSkip} className="w-1/2">
+            <span className="gradient-text">Skip for now</span>
           </Button>
-          <Button variant="primary" size="md" onClick={onNext}>
-            Save & Next
+          <Button variant="primary" size="md" onClick={onNext} className="w-1/2">
+            Get started
           </Button>
         </div>
       </div>

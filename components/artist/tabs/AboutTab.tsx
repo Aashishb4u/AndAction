@@ -102,6 +102,14 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
     shortBio: artist.bio || "",
   });
 
+  // Multi-select UI for sub-artist types (stores as CSV for backend)
+  const initialSelectedSubTypes = (artist as ExtendedArtist).subArtistType
+    ? (artist as ExtendedArtist).subArtistType.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+  const [selectedSubTypes, setSelectedSubTypes] = useState<string[]>(initialSelectedSubTypes);
+  const [subTypeInput, setSubTypeInput] = useState<string>('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -133,7 +141,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         shortBio: formData.shortBio,
         achievements: formData.achievements,
         yearsOfExperience: formData.yearsOfExperience,
-        subArtistType: formData.subArtistType,
+        subArtistType: selectedSubTypes.join(','),
       };
 
       // Update DB
@@ -178,6 +186,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       yearsOfExperience: artist.yearsOfExperience?.toString() || "4",
       shortBio: artist.bio || "",
     });
+    setSelectedSubTypes((artist as ExtendedArtist).subArtistType ? (artist as ExtendedArtist).subArtistType.split(',').map(s => s.trim()).filter(Boolean) : []);
   };
 
   return (
@@ -264,20 +273,82 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         />
       </div>
 
-      {/* Sub-Artist Type */}
+      {/* Sub-Artist Type (tag-style multi-select) */}
       <div className="relative text-sm">
-        <Select
-          label="Sub-Artist type*"
-          options={subArtistTypeOptions}
-          value={formData.subArtistType}
-          onChange={(value) => handleInputChange("subArtistType", value)}
-          required
-        />
+        <label className="block secondary-text text-white mb-1">Sub-Artist type*</label>
+        <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
+          {selectedSubTypes.map((tag, idx) => (
+            <span key={tag + idx} className="inline-flex items-center gap-2 bg-background px-3 py-1 rounded-full text-sm">
+              <span>{tag}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = selectedSubTypes.filter(t => t !== tag);
+                  setSelectedSubTypes(next);
+                }}
+                className="text-text-gray hover:text-white"
+                aria-label={`Remove ${tag}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+
+          <input
+            className="flex-1 bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-text-gray"
+            placeholder="e.g. Classical, Bollywood, Fusion"
+            value={subTypeInput}
+            onChange={(e) => setSubTypeInput(e.target.value)}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const v = subTypeInput.trim().replace(/,$/, '');
+                if (v && !selectedSubTypes.includes(v)) {
+                  setSelectedSubTypes([v, ...selectedSubTypes]);
+                }
+                setSubTypeInput('');
+              } else if (e.key === 'Backspace' && !subTypeInput) {
+                setSelectedSubTypes(selectedSubTypes.slice(0, -1));
+              }
+            }}
+          />
+        </div>
         <div className="absolute top-0 right-0">
           <Tooltip content="Specify your performance style or specialization">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
+
+        {/* Suggestions dropdown */}
+        {showSuggestions && (
+          <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
+            {subArtistTypeOptions.filter(o => o.label.toLowerCase().includes((subTypeInput || '').toLowerCase())).length === 0 ? (
+              <div className="px-3 py-2 text-sm text-text-gray">No suggestions</div>
+            ) : (
+              subArtistTypeOptions
+                .filter(o => o.label.toLowerCase().includes((subTypeInput || '').toLowerCase()))
+                .map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); }}
+                    onClick={() => {
+                      if (!selectedSubTypes.includes(o.label)) {
+                        setSelectedSubTypes([o.label, ...selectedSubTypes]);
+                      }
+                      setSubTypeInput('');
+                      setShowSuggestions(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
+                  >
+                    {o.label}
+                  </button>
+                ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Achievements and Years of Experience */}

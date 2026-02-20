@@ -176,28 +176,34 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                     Artist type
                   </span>
                   <div className="flex gap-2 flex-wrap">
-                    <Button
-                      variant="secondary"
-                      size="xs"
-                      className="px-4 font-normal! text-white! text-base"
-                    >
-                      {data.artistType || "Singer"}
-                    </Button>
-                  </div>
+                      <Button
+                        variant="secondary"
+                        size="xs"
+                        className="px-4 font-normal! text-white! text-base"
+                      >
+                        {data.artistType || "Singer"}
+                      </Button>
+                    </div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="text-text-gray secondary-text">
                     Sub artist type
                   </span>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button
-                      variant="secondary"
-                      size="xs"
-                      className="px-4 font-normal! text-white! text-sm"
-                    >
-                      {data.subArtistType || "DJ"}
-                    </Button>
-                  </div>
+                    <div className="flex gap-2 flex-wrap">
+                      {(data.subArtistType
+                        ? data.subArtistType.split(',').map((s) => s.trim()).filter(Boolean)
+                        : ["DJ"]
+                      ).map((tag, i) => (
+                        <Button
+                          key={i}
+                          variant="secondary"
+                          size="xs"
+                          className="px-4 font-normal! text-white! text-sm"
+                        >
+                          {tag}
+                        </Button>
+                      ))}
+                    </div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="text-text-gray secondary-text">
