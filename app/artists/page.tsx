@@ -126,6 +126,7 @@ function ArtistsPageContent() {
   const [query, setQuery] = useState(searchParams.get("search") || "");
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -148,6 +149,17 @@ function ArtistsPageContent() {
     updateURL();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, JSON.stringify(filters)]);
+
+  // Detect mobile viewport to control spinner presentation
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Debounce search input - wait 2 seconds after user stops typing
   useEffect(() => {
@@ -423,7 +435,11 @@ function ArtistsPageContent() {
             {/* Artists Grid */}
             <div className="flex-1">
               {loading ? (
-                <LoadingSpinner fullScreen={false} text="Loading artists..." />
+                isMobile ? (
+                  <LoadingSpinner fullScreen={true} text="Loading artists..." />
+                ) : (
+                  <LoadingSpinner fullScreen={false} text="Loading artists..." />
+                )
               ) : (
                 <>
                   <ArtistGrid artists={artists} onBookmark={handleBookmark} />
