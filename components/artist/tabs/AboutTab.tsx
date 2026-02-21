@@ -353,11 +353,18 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
 
       {/* Achievements and Years of Experience */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-        <Input
-          label="Achievements / Awards"
-          value={formData.achievements}
-          onChange={(e) => handleInputChange("achievements", e.target.value)}
-        />
+        <div className="relative">
+          <Input
+            label="Achievements / Awards"
+            value={formData.achievements}
+            onChange={(e) => handleInputChange("achievements", e.target.value)}
+          />
+          <div className="absolute top-0 right-0">
+            <Tooltip content="List notable achievements or awards separated by commas">
+              <Info size={16} className="text-blue" />
+            </Tooltip>
+          </div>
+        </div>
         <div className="relative">
           <Select
             label="Years of experience*"
@@ -391,7 +398,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       </div>
 
       {/* Save Button */}
-      <div className="flex md:justify-end gap-4 items-center md:pt-5 p-4 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent z-50">
+      <div className="flex md:justify-end gap-4 items-center md:pt-5 py-2 px-3 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent z-50">
         <Button
           variant="secondary"
           onClick={handleReset}

@@ -165,7 +165,85 @@ export default function ArtistDashboard() {
              LEFT SIDEBAR
         ---------------------------------------------------- */}
         <div className="md:w-80 p-5">
-          <div className="relative rounded-2xl overflow-hidden mb-3 bg-card border border-border-color">
+          {/* Mobile compact profile card */}
+          <div className="md:hidden bg-card border border-border-color rounded-xl p-4 mb-3">
+            <div className="flex items-center">
+              <div className="relative w-[100px] h-[140px] rounded-xl overflow-hidden flex-shrink-0 border border-[#e6d7c8]">
+                <Image
+                  src={session?.user?.avatar || "/icons/images.jpeg"}
+                  alt={artist?.stageName || fullName || "Artist"}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+              </div>
+
+              <div className="ml-4 flex-1">
+                <h2 className="text-xl font-semibold text-white leading-tight">
+                  {artist?.stageName || fullName}
+                </h2>
+                <p className="text-md text-text-gray">{session?.user?.email}</p>
+                <p className="text-lg mt-1">{artist?.artistType || "Signer"}</p>
+
+                <div className="mt-3 w-full">
+                  <Button
+                    onClick={() => router.push("/artist/profile")}
+                    variant="secondary"
+                    size="sm"
+                    className="w-full flex items-center justify-center border-[1.5px] border-border-color rounded-full px-6 py-3"
+                  >
+                    <Pencil className="w-4 h-4 mr-2 text-primary-orange" />
+                    <span className="gradient-text">Edit Profile</span>
+                  </Button>
+                </div>
+                </div>
+            </div>
+          </div>
+
+          {/* Mobile profile progress (50%) */}
+          <div className="md:hidden bg-card border border-border-color rounded-xl p-4 mb-3 flex items-start">
+            <div className="relative w-28 h-28 mr-4 flex-shrink-0">
+              <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 36 36">
+                <defs>
+                  <linearGradient id="progressGradientMobile">
+                    <stop offset="0%" stopColor="#E8047E" />
+                    <stop offset="100%" stopColor="#ED4B22" />
+                  </linearGradient>
+                </defs>
+
+                <path
+                  strokeWidth="3"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32"
+                  className="text-[#404040]"
+                />
+                <path
+                  stroke="url(#progressGradientMobile)"
+                  strokeWidth="3.5"
+                  strokeDasharray="50, 100"
+                  strokeLinecap="round"
+                  fill="none"
+                  d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32"
+                />
+              </svg>
+
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <span className="text-2xl font-bold text-white">50%</span>
+                  <div className="text-[10px] text-text-gray">Completed</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <h3 className="text-white font-semibold text-lg">Profile Progress</h3>
+              <p className="text-text-gray text-sm mt-1">Your overall profile progress is showing here.</p>
+            </div>
+          </div>
+
+          {/* Desktop / tablet large profile card (unchanged, show on md+ only) */}
+          <div className="hidden md:block relative rounded-2xl overflow-hidden mb-3 bg-card border border-border-color">
             <div className="relative aspect-[4/5]">
               <Image
                 src={session?.user?.avatar || "/icons/images.jpeg"}
@@ -208,8 +286,8 @@ export default function ArtistDashboard() {
             </div>
           </div>
 
-          {/* Profile Progress Box (unchanged) */}
-          <div className="bg-card border border-border-color rounded-xl p-4 text-center">
+          {/* Profile Progress Box (unchanged for md+) */}
+          <div className="hidden md:block bg-card border border-border-color rounded-xl p-4 text-center">
             <div className="relative w-28 h-28 mx-auto mb-4">
               <svg
                 className="w-28 h-28 transform -rotate-90"

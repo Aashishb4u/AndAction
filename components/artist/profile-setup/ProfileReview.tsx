@@ -22,6 +22,70 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
 }) => {
   const [error, setError] = useState<string | null>(null);
 
+  const [greetingName, setGreetingName] = useState<string>(data.stageName || "");
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const avatarUrl = (data as any)?.avatarUrl;
+    if (avatarUrl) {
+      setPreviewUrl(avatarUrl);
+      return;
+    }
+
+    if (!data?.profilePhoto) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    try {
+      // profilePhoto can be a File/Blob or a string URL
+      const url = typeof data.profilePhoto === "string" ? data.profilePhoto : URL.createObjectURL(data.profilePhoto as Blob);
+      setPreviewUrl(url);
+      return () => {
+        if (typeof data.profilePhoto !== "string") {
+          URL.revokeObjectURL(url);
+        }
+      };
+    } catch (e) {
+      setPreviewUrl(null);
+    }
+  }, [data.profilePhoto, (data as any)?.avatarUrl]);
+
+  React.useEffect(() => {
+    if (greetingName) return;
+    try {
+      const stored = localStorage.getItem("firstName");
+      if (stored) setGreetingName(stored);
+    } catch (e) {
+      // ignore
+    }
+  }, [greetingName]);
+
+  // Helper to parse values saved as array, CSV string, or JSON array string
+  const parseList = (value: any): string[] => {
+    if (!value && value !== 0) return [];
+    if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      // JSON array string like '["A","B"]'
+      if ((trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) return parsed.map((v) => String(v).trim()).filter(Boolean);
+        } catch (e) {
+          // fallthrough to CSV parsing
+        }
+      }
+      // CSV separated
+      return trimmed.split(",").map((s) => s.replace(/^[\[\]"]+/g, "").replace(/[\[\]"]+$/g, "").trim()).filter(Boolean);
+    }
+    return [String(value)];
+  };
+
+  const subArtistTypes = parseList((data as any).subArtistTypes ?? data.subArtistType);
+  const achievementsList = parseList((data as any).achievements ?? data.achievements);
+
   // Map experience values to labels
   const getExperienceLabel = (value: string) => {
     const experienceMap: Record<string, string> = {
@@ -76,16 +140,18 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
         <div className="w-12"></div>
       </div>
 
+      <div className="h-px bg-border-line mb-6" />
+
       {/* Content */}
-      <div className="flex-1 md:px-6 pb-32">
+      <div className="flex-1 md:px-4 pb-32">
         <div className="max-w-xl mx-auto">
           {error && (
-            <div className="mb-4 px-6">
+            <div className="mb-4 px-4">
               <p className="text-red-500 text-sm font-semibold">{error}</p>
             </div>
           )}
           {/* Title */}
-          <div className=" mb-8 px-6">
+          <div className=" mb-8 px-4">
             <h2 className="h1 text-white mb-6 md:mb-8">
               All done! Preview profile
             </h2>
@@ -101,7 +167,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
             </div>
 
             <div className="mb-6">
-              <p className="text-white btn1 mb-1">Looking good, Harsh!</p>
+              <p className="text-white btn1 mb-1">Looking good, {greetingName || 'there'}!</p>
               <p className="text-text-gray secondary-text">
                 Here&apos;s how your profile looks to users. You can edit it
                 anytime.
@@ -138,23 +204,21 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
               </div>
 
               {/* Profile Photo - Full Width */}
-              <div className="flex justify-center px-6">
-                <div className="w-28 h-40 brounded-xl flex items-center justify-center overflow-hidden">
-                  {data.profilePhoto ? (
-                    <Image
-                      src={URL.createObjectURL(data.profilePhoto)}
+              <div className="flex justify-center px-4">
+                <div className="w-36 h-52 rounded-xl flex items-center justify-center overflow-hidden">
+                  {previewUrl ? (
+                    // Use native img for blob/object URLs to avoid Next/Image optimization issues
+                    <img
+                      src={previewUrl}
                       alt="Profile"
                       className="w-full h-full object-cover object-center"
-                      width={350}
-                      height={650}
-                      unoptimized
                     />
                   ) : (
                     <Image
                       src="/user.png"
                       alt="Artist Profile"
-                      width={96}
-                      height={96}
+                      width={128}
+                      height={128}
                       className="rounded-xl"
                     />
                   )}
@@ -162,7 +226,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
               </div>
 
               {/* Details List */}
-              <div className="space-y-3 text-sm px-6">
+              <div className="space-y-3 text-sm px-4">
                 <div className="flex flex-col gap-1">
                   <span className="text-text-gray secondary-text">
                     Stage Name
@@ -175,49 +239,36 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <span className="text-text-gray secondary-text">
                     Artist type
                   </span>
-                  <div className="flex gap-2 flex-wrap">
-                      <Button
-                        variant="secondary"
-                        size="xs"
-                        className="px-4 font-normal! text-white! text-base"
-                      >
-                        {data.artistType || "Singer"}
-                      </Button>
-                    </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <span className="text-white text-base">{data.artistType || "Singer"}</span>
+                      </div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="text-text-gray secondary-text">
                     Sub artist type
                   </span>
-                    <div className="flex gap-2 flex-wrap">
-                      {(data.subArtistType
-                        ? data.subArtistType.split(',').map((s) => s.trim()).filter(Boolean)
-                        : ["DJ"]
-                      ).map((tag, i) => (
-                        <Button
-                          key={i}
-                          variant="secondary"
-                          size="xs"
-                          className="px-4 font-normal! text-white! text-sm"
-                        >
-                          {tag}
-                        </Button>
-                      ))}
-                    </div>
+                      <div className="flex gap-2 flex-wrap">
+                        {subArtistTypes.length > 0 && subArtistTypes.map((tag, i) => (
+                          <Button
+                            key={i}
+                            variant="secondary"
+                            size="xs"
+                            className="px-2 py-1 !font-normal text-white text-xs"
+                          >
+                            {tag}
+                          </Button>
+                        ))}
+                      </div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="text-text-gray secondary-text">
                     Achievements / Awards
                   </span>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button
-                      variant="secondary"
-                      size="xs"
-                      className="px-4 font-normal! text-white! text-sm"
-                    >
-                      {data.achievements || "Singer"}
-                    </Button>
-                  </div>
+                    <div>
+                      <p className="text-white text-base">
+                        {achievementsList.length ? achievementsList.join(", ") : String(data.achievements || "N/A")}
+                      </p>
+                    </div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="text-text-gray secondary-text">
@@ -232,7 +283,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
               </div>
 
               {/* Short Bio */}
-              <div className="space-y-2 px-6">
+              <div className="space-y-2 px-4">
                 <p className="text-text-gray text-sm">Short bio</p>
                 <p className="text-white text-base leading-relaxed">
                   {data.shortBio ||
@@ -276,7 +327,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
               </div>
 
               {/* Performance Details Content */}
-              <div className="space-y-3 md:space-y-4 text-sm px-6">
+              <div className="space-y-3 md:space-y-4 text-sm px-4">
                 <div>
                   <p className="text-text-gray mb-1">Performing Languages</p>
                   <div className="flex gap-2 flex-wrap">
@@ -286,7 +337,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                             key={index}
                             variant="secondary"
                             size="xs"
-                            className="px-4 font-normal! text-white! text-sm"
+                            className="px-2 py-1 !font-normal text-white text-xs"
                           >
                             {language}
                           </Button>
@@ -297,7 +348,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                               key={index}
                               variant="secondary"
                               size="xs"
-                              className="px-4 font-normal! text-white! text-sm"
+                              className="px-2 py-1 !font-normal text-white text-xs"
                             >
                               {language}
                             </Button>
@@ -314,7 +365,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                             key={index}
                             variant="secondary"
                             size="xs"
-                            className="px-4 font-normal! text-white! text-sm"
+                            className="px-2 py-1 !font-normal text-white text-xs"
                           >
                             {language}
                           </Button>
@@ -325,7 +376,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                               key={index}
                               variant="secondary"
                               size="xs"
-                              className="px-4 font-normal! text-white! text-sm"
+                              className="px-2 py-1 !font-normal text-white text-xs"
                             >
                               {language}
                             </Button>
@@ -342,7 +393,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                             key={index}
                             variant="secondary"
                             size="xs"
-                            className="px-4 font-normal! text-white! text-sm"
+                            className="px-2 py-1 !font-normal text-white text-xs"
                           >
                             {language}
                           </Button>
@@ -353,7 +404,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                               key={index}
                               variant="secondary"
                               size="xs"
-                              className="px-4 font-normal! text-white! text-sm"
+                              className="px-2 py-1 !font-normal text-white text-xs"
                             >
                               {language}
                             </Button>
@@ -372,12 +423,20 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div>
                   <p className="text-text-gray mb-1">Performing members</p>
                   <p className="text-white text-base">
-                    {data.performingMembers || "1 - members"}
+                    {(data.performingMembers !== undefined && data.performingMembers !== null && String(data.performingMembers).trim() !== "")
+                      ? `${data.performingMembers} members`
+                      : `0 members`}
+                    
                   </p>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Off stage members</p>
-                  <p className="text-white text-base">{data.offStageMembers || "N/A"}</p>
+                  <p className="text-white text-base">
+                    {(data.offStageMembers !== undefined && data.offStageMembers !== null && String(data.offStageMembers).trim() !== "")
+                      ? `${data.offStageMembers} members`
+                      : `0 members`}
+                   
+                  </p>
                 </div>
               </div>
             </div>
@@ -416,7 +475,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
               </div>
 
               {/* Contact Details */}
-              <div className="space-y-3 md:space-y-4 text-sm px-6">
+              <div className="space-y-3 md:space-y-4 text-sm px-4">
                 <div>
                   <p className="text-text-gray mb-1">Contact number</p>
                   <p className="text-white text-base">
@@ -436,18 +495,19 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   </p>
                 </div>
               </div>
+              <div className="h-px border-gradient-dark-bg mt-6" />
+
 
               {/* Pricing */}
-              <div className="space-y-4 px-6">
+              <div className="space-y-4 px-4">
                 <div>
                   <p className="text-text-gray text-sm mb-1">Solo Charges</p>
                   <p className="text-white font-medium text-lg">
                     Starting from ₹ {data.soloCharges || "N/A"}
                   </p>
-                  <p className="text-twhite text-xs mt-1">
-                    {data.soloDescription ||
-                      "Solo performance charges with sound system and lighting setup. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."}
-                  </p>
+                  {data.soloDescription && data.soloDescription.trim() && (
+                    <p className="text-twhite text-xs mt-1">{data.soloDescription}</p>
+                  )}
                 </div>
 
                 <div>
@@ -457,10 +517,9 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <p className="text-white font-medium text-lg">
                     Starting from ₹ {data.backingCharges || "N/A"}
                   </p>
-                  <p className="text-white text-xs mt-1">
-                    {data.backingDescription ||
-                      "Performance charges with full backing band, sound system and lighting setup. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."}
-                  </p>
+                  {data.backingDescription && data.backingDescription.trim() && (
+                    <p className="text-white text-xs mt-1">{data.backingDescription}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -469,13 +528,16 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
       </div>
 
       {/* Fixed Bottom Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color px-5 md:px-0 py-4">
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 px-3 py-2`}
+        style={{ backgroundColor: '#0F0F0FCC', WebkitBackdropFilter: 'blur(12px)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.1)' }}
+      >
         <div className="max-w-md mx-auto">
           <Button
             variant="primary"
             size="md"
             onClick={handleNext}
-            className="w-full"
+            className="w-full py-3"
           >
             Submit
           </Button>

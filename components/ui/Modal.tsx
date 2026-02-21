@@ -14,6 +14,7 @@ export interface ModalProps {
   showCloseButton?: boolean;
   closeOnBackdropClick?: boolean;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  variant?: 'center' | 'bottom-sheet';
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -26,6 +27,7 @@ const Modal: React.FC<ModalProps> = ({
   closeOnBackdropClick = true,
   size = 'md',
   headerClassName = '',
+  variant = 'center',
 }) => {
   // Handle escape key press
   useEffect(() => {
@@ -63,11 +65,13 @@ const Modal: React.FC<ModalProps> = ({
     full: 'max-w-full mx-4',
   };
 
+  const isBottomSheet = (variant === 'bottom-sheet');
+
   if (!isOpen) return null;
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center md:p-4 modal-backdrop"
+      className={`fixed inset-0 z-50 flex ${isBottomSheet ? 'items-end' : 'items-center'} justify-center md:p-4 modal-backdrop`}
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
@@ -76,11 +80,12 @@ const Modal: React.FC<ModalProps> = ({
       {/* Modal Content */}
       <div
         className={`
-          relative w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden
-          bg-background border border-border-color rounded-2xl shadow-2xl
+          relative w-full ${sizeClasses[size]} ${isBottomSheet ? 'max-h-[90vh] rounded-t-2xl' : 'max-h-[90vh] rounded-2xl'} overflow-hidden
+          bg-background border border-border-color shadow-2xl
           modal-content
           ${className}
         `}
+        style={isBottomSheet ? { borderTopLeftRadius: '1rem', borderTopRightRadius: '1rem' } : undefined}
       >
         {showCloseButton && title && (
           <div className={`border-b border-border-color px-8 py-6 ${headerClassName}`}>
@@ -102,7 +107,7 @@ const Modal: React.FC<ModalProps> = ({
         )}
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-60px)] modal-scroll">
+        <div className={`overflow-y-auto ${isBottomSheet ? 'max-h-[calc(90vh-60px)]' : 'max-h-[calc(90vh-60px)]'} modal-scroll`}>
           {children}
         </div>
       </div>

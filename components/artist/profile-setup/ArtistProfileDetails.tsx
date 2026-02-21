@@ -483,8 +483,10 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                       onClick={() => {
                         const next = selectedSubTypes.filter(t => t !== tag);
                         setSelectedSubTypes(next);
-                        // update parent as comma-separated string
-                        onUpdateData({ subArtistType: next.join(',') });
+                        // update local formData and parent as comma-separated string
+                        const csv = next.length ? next.join(',') : '';
+                        setFormData(prev => ({ ...prev, subArtistType: csv }));
+                        onUpdateData({ subArtistType: csv });
                         // persist suggestion list
                         persistSuggestions(next);
                       }}
@@ -511,7 +513,10 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                         if (!selectedSubTypes.includes(v)) {
                           const next = [v, ...selectedSubTypes];
                           setSelectedSubTypes(next);
-                          onUpdateData({ subArtistType: next.join(',') });
+                          const csv = next.join(',');
+                          // update local formData and parent
+                          setFormData(prev => ({ ...prev, subArtistType: csv }));
+                          onUpdateData({ subArtistType: csv });
                           addSuggestionIfNew(v);
                         }
                         setSubTypeInput('');
@@ -520,7 +525,9 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                       // remove last tag
                       const next = selectedSubTypes.slice(0, -1);
                       setSelectedSubTypes(next);
-                      onUpdateData({ subArtistType: next.join(',') });
+                      const csv = next.length ? next.join(',') : '';
+                      setFormData(prev => ({ ...prev, subArtistType: csv }));
+                      onUpdateData({ subArtistType: csv });
                     }
                   }}
                   className="flex-1 bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-text-gray"
@@ -545,7 +552,9 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                             if (!selectedSubTypes.includes(s)) {
                               const next = [s, ...selectedSubTypes];
                               setSelectedSubTypes(next);
-                              onUpdateData({ subArtistType: next.join(',') });
+                              const csv = next.join(',');
+                              setFormData(prev => ({ ...prev, subArtistType: csv }));
+                              onUpdateData({ subArtistType: csv });
                               addSuggestionIfNew(s);
                             }
                             setSubTypeInput('');

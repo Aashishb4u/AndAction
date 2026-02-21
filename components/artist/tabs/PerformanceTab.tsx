@@ -500,11 +500,17 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
       {/* Performing Duration */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-white">
+        
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">
           Performing duration{" "}
           <span className="text-text-gray">(in minutes)</span>
           <span className="text-red-500 ml-1">*</span>
         </label>
+          <Tooltip content="Specify the minimum and maximum duration (in minutes) for your performances">
+              <Info size={16} className="text-blue" />
+            </Tooltip>
+        </div>
         <div className="relative">
           <div className="grid grid-cols-2 gap-6">
             <Input
@@ -519,11 +525,6 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               placeholder="160 mins"
               required
             />
-          </div>
-          <div className="absolute top-4 right-4">
-            <Tooltip content="Specify the minimum and maximum duration (in minutes) for your performances">
-              <Info size={16} className="text-text-gray" />
-            </Tooltip>
           </div>
         </div>
       </div>
@@ -564,7 +565,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex md:justify-end gap-4 items-center md:pt-5 p-4 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent">
+      <div className="flex md:justify-end gap-4 items-center md:pt-5 py-2 px-3 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent z-50">
         <Button
           variant="secondary"
           onClick={handleReset}
