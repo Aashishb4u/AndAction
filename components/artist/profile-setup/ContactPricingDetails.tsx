@@ -130,6 +130,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
           Skip
         </button>
       </div>
+      <div className="h-px bg-border-line mb-4" />
 
       {/* Content */}
       <div className="flex-1 px-6 pb-32">
@@ -151,8 +152,8 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                 <Image
                   src="/icons/phone.svg"
                   alt="Contact & Pricing"
-                  width={32}
-                  height={32}
+                  width={24}
+                  height={24}
                 />
               </div>
               <div className="text-left">
@@ -160,7 +161,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
               </div>
             </div>
             <p className="text-text-gray secondary-grey-text text-left">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc
+              Provide your contact info & pricing details
             </p>
           </div>
 
@@ -168,34 +169,33 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
           <div className="space-y-8">
             {/* Contact Details Section */}
             <div>
-              <h3 className="text-white h2 mb-1">Contact Details</h3>
+              <h3 className="text-white h2 mb-4">Contact Details</h3>
 
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Contact Number */}
                 <div className="relative">
-                  <div className="flex items-center gap-2 mb-1">
-                    <label className="block section-text secondary-text">Contact number*</label>
-                    <Tooltip
-                      content="Your primary contact number for clients to reach you. This will be verified via OTP to ensure authenticity."
-                      position="right"
-                    >
-                      <button className="text-blue">
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                  <div className="relative mb-1">
+                      <label className="block section-text secondary-text">Contact number*</label>
+                      <div className="absolute top-0 right-0">
+                        <Tooltip
+                          content="Your primary contact number for clients to reach you. This will be verified via OTP to ensure authenticity."
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      </button>
-                    </Tooltip>
-                  </div>
+                          <svg
+                            className="w-4 h-4 text-blue cursor-help"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </Tooltip>
+                      </div>
+                    </div>
                   <div className="relative">
                     <PhoneInput
                       placeholder="Enter contact number"
@@ -228,15 +228,14 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                 </div>
                 {/* WhatsApp Number */}
                 <div className="relative">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="relative mb-1">
                     <label className="block section-text secondary-text">WhatsApp number*</label>
-                    <Tooltip
-                      content="Your WhatsApp number for quick communication with clients. Many clients prefer WhatsApp for booking inquiries."
-                      position="right"
-                    >
-                      <button className="text-blue">
+                    <div className="absolute top-0 right-0">
+                      <Tooltip
+                        content="Your WhatsApp number for quick communication with clients. Many clients prefer WhatsApp for booking inquiries."
+                      >
                         <svg
-                          className="w-4 h-4"
+                          className="w-4 h-4 text-blue cursor-help"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -248,8 +247,8 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                      </button>
-                    </Tooltip>
+                      </Tooltip>
+                    </div>
                   </div>
 
                   <div className="relative">
@@ -293,20 +292,20 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                     label="Same as Contact number"
                     className="text-white"
                     id="sameAsContact"
+                    small
                   />
                 </div>
 
                 {/* Email */}
                 <div className="relative">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="relative mb-1">
                     <label className="block section-text secondary-text">Email</label>
-                    <Tooltip
-                      content="Your professional email address for formal communications, contracts, and booking confirmations."
-                      position="right"
-                    >
-                      <button className="text-blue">
+                    <div className="absolute top-0 right-0">
+                      <Tooltip
+                        content="Your professional email address for formal communications, contracts, and booking confirmations."
+                      >
                         <svg
-                          className="w-4 h-4"
+                          className="w-4 h-4 text-blue cursor-help"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -318,8 +317,8 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                      </button>
-                    </Tooltip>
+                      </Tooltip>
+                    </div>
                   </div>
                   <Input
                     placeholder="Enter contact email ID"
@@ -328,6 +327,8 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                     variant="filled"
                     type="email"
                   />
+                  <div className="h-px border-gradient-dark-bg mt-6" />
+
                 </div>
               </div>
             </div>
@@ -336,31 +337,11 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
             <div>
               <h3 className="text-white h2 mb-4">Pricing Details</h3>
 
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Solo Charges */}
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <label className="text-white font-medium">
-                      Solo charges
-                    </label>
-                    <Tooltip
-                      content="Enter your starting price when performing alone without any supporting equipment. This gives clients a baseline for your rates."
-                      position="bottom"
-                    >
-                      <svg
-                        className="w-4 h-4 text-blue cursor-help"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </Tooltip>
+                  <div className="mb-1">
+                    <label className="text-white font-medium">Solo charges*</label>
                   </div>
                   <p className="text-text-gray text-sm mb-3">
                     (Amount you usually charge when you perform solo)
@@ -384,9 +365,12 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                       style={{ paddingLeft: "2rem" }}
                     />
                   </div>
+                  {errors.soloCharges && (
+                    <p className="text-red-500 text-sm mt-1">{errors.soloCharges}</p>
+                  )}
 
                   <textarea
-                    placeholder="Solo charges like Sound system, stage, Chorus"
+                    placeholder="What services do you provide usually while charging solo"
                     value={formData.soloDescription}
                     onChange={(e) =>
                       handleInputChange("soloDescription", e.target.value)
@@ -398,28 +382,8 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
                 {/* Charges with Backing */}
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <label className="text-white font-medium">
-                      Charges with backline
-                    </label>
-                    <Tooltip
-                      content="Enter your price when you provide the complete setup including sound system, stage equipment, chorus singers, etc. This is your all-inclusive rate."
-                      position="bottom"
-                    >
-                      <svg
-                        className="w-4 h-4 text-blue cursor-help"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </Tooltip>
+                  <div className="mb-1">
+                    <label className="text-white font-medium">Charges with backline</label>
                   </div>
                   <p className="text-text-gray text-sm mb-3">
                     (Amount you usually charge including backline like sound
@@ -446,7 +410,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                   </div>
 
                   <textarea
-                    placeholder="Backline like Sound system, stage, Chorus"
+                    placeholder="Please Backline like Sound system, stage, Chorus etc.,"
                     value={formData.backingDescription}
                     onChange={(e) =>
                       handleInputChange("backingDescription", e.target.value)

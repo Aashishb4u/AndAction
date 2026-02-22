@@ -11,12 +11,8 @@ import Checkbox from "@/components/ui/Checkbox";
 import PhoneInput from "@/components/ui/PhoneInput";
 import OTPInput from "@/components/ui/OTPInput";
 import DateInput from "@/components/ui/DateInput";
-import {
-  signInWithGoogleAsArtist,
-  signInWithFacebookAsArtist,
-} from "@/lib/auth";
+import { signInWithGoogleAsArtist } from "@/lib/auth";
 import { signIn } from "next-auth/react";
-import { validatePassword } from "@/lib/validators";
 
 type ArtistSignUpStep = "join" | "otp" | "password" | "userInfo" | "terms";
 type ContactType = "phone" | "email";
@@ -45,7 +41,7 @@ function ArtistAuthContent() {
 
   // Terms step state
   const [noMarketing, setNoMarketing] = useState(true);
-  const [shareData, setShareData] = useState(false);
+  const [shareData, setShareData] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -119,38 +115,9 @@ function ArtistAuthContent() {
   const genderOptions = [
     { value: "male", label: "Male" },
     { value: "female", label: "Female" },
-    { value: "other", label: "Other" },
-    { value: "prefer-not-to-say", label: "Prefer not to say" },
   ];
 
-  // Simple password strength calculation (same as user signup)
-  const getPasswordStrength = (pwd: string) => {
-    if (!pwd) return { strength: 0, label: "", color: "" };
-
-    let score = 0;
-    let label = "";
-    let color = "";
-
-    if (pwd.length >= 8) score += 1;
-    if (pwd.length >= 12) score += 1;
-    if (/[a-z]/.test(pwd)) score += 1;
-    if (/[A-Z]/.test(pwd)) score += 1;
-    if (/[0-9]/.test(pwd)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
-
-    if (score <= 2) {
-      label = "Weak";
-      color = "bg-red-400";
-    } else if (score <= 4) {
-      label = "Medium";
-      color = "bg-yellow-400";
-    } else {
-      label = "Strong";
-      color = "bg-green-400";
-    }
-
-    return { strength: Math.min(score, 6), label, color };
-  };
+  // Password strength removed — allow any password (simple non-empty + match validation)
 
   // Send OTP (matches user flow — no extra fields)
   const handleJoinSubmit = async (e: React.FormEvent) => {
@@ -263,13 +230,7 @@ function ArtistAuthContent() {
       return;
     }
 
-    const validation = validatePassword(password);
-    if (!validation.isValid) {
-      setError(validation.message || "Invalid password.");
-      return;
-    }
-
-    // Optionally: you could validate strength here; but keep same as user flow
+    // No strict password validation: accept any non-empty password (matching confirm)
     setStep("userInfo");
   };
 
@@ -439,8 +400,8 @@ function ArtistAuthContent() {
     try {
       if (provider === "google") {
         await signInWithGoogleAsArtist();
-      } else if (provider === "facebook") {
-        await signInWithFacebookAsArtist();
+      } else {
+        throw new Error(`${provider} sign-up is not implemented yet.`);
       }
     } catch (err) {
       setError(`${provider} sign-up is not available yet.`);
@@ -457,9 +418,9 @@ function ArtistAuthContent() {
         <Image
           src="/logo.png"
           alt="ANDACTION Logo"
-          className="h-8 w-[150px] md:w-[215px] object-contain"
-          width={215}
-          height={24}
+          width={180}
+          height={20}
+          className="object-contain"
         />
         <button
           onClick={() => router.push("/")}
@@ -482,10 +443,10 @@ function ArtistAuthContent() {
         </button>
       </div>
       <div className="hidden md:block h-px bg-border-line " />
-      <div className="md:p-8 p-5 overflow-visible">
+      <div className="md:p-8 p-5 overflow-visible mt-6">
         {/* Error Message */}
         {error && (
-          <div className="p-4 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <div className="p-4 mb-6 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-8 bg-red-500/10 border border-red-500/20 rounded-lg">
             <p className="text-red-400 text-sm text-center">{error}</p>
           </div>
         )}
@@ -619,19 +580,7 @@ function ArtistAuthContent() {
                     <span className="btn2">Sign up with Google</span>
                   </Button>
 
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="md"
-                    className="w-full flex items-center justify-center gap-3"
-                    onClick={() => handleSocialSignUp("facebook")}
-                    disabled={isLoading}
-                  >
-                    <svg className="w-6 h-6" fill="#1877F2" viewBox="0 0 24 24">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                    </svg>
-                    <span className="btn2">Sign up with Facebook</span>
-                  </Button>
+                  {/* Facebook signup removed per design request */}
                 </div>
               </form>
             </div>
@@ -660,7 +609,7 @@ function ArtistAuthContent() {
                     onClick={handleChangeContact}
                     className="text-white btn1 hover:text-primary-pink transition-colors duration-200 underline"
                   >
-                    Change number
+                    Change {contactType === "phone" ? "number" : "email"}
                   </button>
                 </div>
               </div>
@@ -749,39 +698,7 @@ function ArtistAuthContent() {
                 variant="filled"
               />
 
-              {/* Password Strength Indicator */}
-              {password && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-text-gray">
-                      Password Strength:
-                    </span>
-                    <span
-                      className={`text-sm font-medium ${
-                        getPasswordStrength(password).label === "Weak"
-                          ? "text-red-400"
-                          : getPasswordStrength(password).label === "Medium"
-                            ? "text-yellow-400"
-                            : "text-green-400"
-                      }`}
-                    >
-                      {getPasswordStrength(password).label}
-                    </span>
-                  </div>
-                  <div className="w-full bg-[#2D2D2D] rounded-full h-1">
-                    <div
-                      className={`${
-                        getPasswordStrength(password).color
-                      } h-1 rounded-full transition-all duration-300`}
-                      style={{
-                        width: `${
-                          (getPasswordStrength(password).strength / 6) * 100
-                        }%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              )}
+              {/* Password strength removed: no UI shown */}
 
               <PasswordInput
                 label="Confirm Password*"
@@ -881,7 +798,7 @@ function ArtistAuthContent() {
                   disabled={isLoading}
                   variant="filled"
                   maxDate={new Date()}
-                  className="z-50"
+                  className=""
                 />
 
                 <Select

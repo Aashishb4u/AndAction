@@ -396,6 +396,32 @@ h6 {
   border-radius: 2px;
 }
 
+/* Gradient border for inputs, selects and textareas on hover/focus
+   Uses border-image to render the --gradient-primary as a border.
+   Added !important to ensure it overrides Tailwind's focus:border utilities. */
+input:hover,
+textarea:hover,
+select:hover,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  /* Use two-layer backgrounds: inner layer matches element background, outer layer is the gradient border. */
+  background-image: linear-gradient(var(--background), var(--background)), var(--gradient-primary) !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.6) inset, 0 0 0 4px rgba(232,4,126,0.06) !important;
+}
+
+/* For inputs using the filled variant which may rely on background, ensure focus shows gradient outline */
+.bg-card input:focus,
+.bg-card textarea:focus,
+.bg-card select:focus {
+  box-shadow: 0 0 0 4px rgba(232,4,126,0.06) !important;
+}
+
 
 
 /* Scrollbar Styling */

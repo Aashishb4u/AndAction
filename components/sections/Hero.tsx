@@ -131,7 +131,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           height: '350px',
           transform: 'translate(-50%, 90%)',
           background: 'radial-gradient(ellipse 55% 65% at 50% 0%, rgba(255,45,122,0.32) 0%, rgba(255,45,122,0.16) 30%, rgba(255,45,122,0.05) 55%, transparent 80%)',
-          zIndex: 100,
+          zIndex: 50,
         }}
       />
 

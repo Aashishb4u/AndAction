@@ -40,7 +40,23 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     performingLanguage: "",
   });
 
-  // Form options
+  // Form options (updated mapping)
+  const artistCategories = [
+    { value: "singers", label: "Singer" },
+    { value: "dancers", label: "Dancer / Dance Group" },
+    { value: "anchors", label: "Anchor / Emcee / Host" },
+    { value: "djs", label: "DJ" },
+    { value: "bands", label: "Live Band / Group" },
+    { value: "comedians", label: "Comedian" },
+    { value: "musicians", label: "Musician / Instrumentalist" },
+    { value: "magicians", label: "Magician / Illusionist" },
+    { value: "actors", label: "Theatre Artist / Actor" },
+    { value: "mimicry", label: "Mimicry / Impressionist" },
+    { value: "specialAct", label: "Special Act Performer" },
+    { value: "spiritual", label: "Spiritual / Devotional" },
+    { value: "kidsEntertainers", label: "Kids Entertainer" },
+  ];
+
   const subCategories = [
     { value: "bollywood", label: "Bollywood" },
     { value: "classical", label: "Classical" },
@@ -48,6 +64,11 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     { value: "western", label: "Western" },
     { value: "fusion", label: "Fusion" },
   ];
+  // Sub-category search UI state
+  const [subInput, setSubInput] = useState<string>(
+    subCategories.find((s) => s.value === "") ? "" : "",
+  );
+  const [showSubSuggestions, setShowSubSuggestions] = useState(false);
 
   const genderOptions = [
     { value: "male", label: "Male" },
@@ -150,9 +171,10 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Find your artist"
-      size="lg"
-      className="max-w-2xl border-none bg-background !h-screen !max-h-screen md:!h-auto md:!max-h-[90vh] mt-4!"
-      headerClassName="md:px-8 md:py-6 px-4! py-4!"
+      size="full"
+      variant="bottom-sheet"
+      className="max-w-2xl border-none bg-background h-[90vh] md:!h-auto md:!max-h-[90vh]"
+      headerClassName="md:px-8 md:py-4 px-4 py-3"
     >
       <div className="md:px-8 px-4 md:pb-8 pb-4 md:pt-4 pt-4 md:space-y-6 space-y-4">
         {/* Artist Category */}
@@ -167,15 +189,62 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
           />
         </div>
 
-        {/* Sub-Category */}
-        <div>
-          <label className="secondary-text  block mb-1">Sub-Category</label>
-          <Select
-            placeholder="Select sub-category"
-            options={subCategories}
-            value={formData.subCategory}
-            onChange={(value) => handleInputChange("subCategory", value)}
+        {/* Sub-Category (searchable with recommendations) */}
+        <div className="relative">
+          <label className="secondary-text block mb-1">Sub-Category</label>
+          <input
+            type="text"
+            value={
+              // show label if selected value present, otherwise show typed text
+              subInput ||
+              subCategories.find((s) => s.value === formData.subCategory)
+                ?.label ||
+              ""
+            }
+            onChange={(e) => {
+              const v = e.target.value;
+              setSubInput(v);
+              // clear actual stored subCategory until user selects a suggestion
+              handleInputChange("subCategory", "");
+              setShowSubSuggestions(true);
+            }}
+            onFocus={() => setShowSubSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
+            placeholder="Type to search sub-category"
+            className="w-full px-3 py-2 bg-card border border-border-color rounded-lg text-white placeholder-gray-400"
           />
+
+          {showSubSuggestions && (
+            <div className="absolute z-40 left-0 right-0 mt-1 bg-background border border-border-color rounded-lg max-h-48 overflow-auto">
+              {subCategories
+                .filter((s) =>
+                  s.label
+                    .toLowerCase()
+                    .includes((subInput || "").toLowerCase()),
+                )
+                .map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      // set value (used in query) and display label
+                      handleInputChange("subCategory", s.value);
+                      setSubInput(s.label);
+                      setShowSubSuggestions(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white"
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              {subCategories.filter((s) =>
+                s.label.toLowerCase().includes((subInput || "").toLowerCase()),
+              ).length === 0 && (
+                <div className="px-3 py-2 text-gray-400">No suggestions</div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Artist Gender and Budget - Row */}
@@ -202,7 +271,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
         </div>
 
         {/* Event State and Event Date - Row */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="secondary-text  block mb-1">Event State</label>
             <Select

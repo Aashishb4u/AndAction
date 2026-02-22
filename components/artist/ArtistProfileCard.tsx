@@ -2,10 +2,11 @@
 
 import React, { useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, Edit, Pencil } from "lucide-react";
+import { ArrowLeft, Edit, Pencil, Plus } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
+import { buildArtishProfileUrl } from '@/lib/utils';
 
 interface ArtistProfileCardProps {
   artist: any;
@@ -78,11 +79,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       {/* Full Background Image */}
       <div className="absolute inset-0">
           <Image
-          src={
-            artist.image && /^\d+$/.test(String(artist.image))
-              ? `/avatars/${artist.image}.png`
-              : artist.image || "/avatars/default.jpg"
-          }
+          src={buildArtishProfileUrl(artist.image || '')}
           alt={artist.name}
           fill
           unoptimized
@@ -117,32 +114,41 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
           <div>
             <h2 className="t1-heading text-white mb-2 drop-shadow-lg">{artist.name}</h2>
 
-            <div className="flex justify-between gap-4 flex-col">
-              <div className="flex flex-wrap gap-2">
-                {[artist.category, artist.subCategory]
-                  .filter((tag): tag is string => Boolean(tag))
-                  .map((tag, index) => (
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex flex-wrap gap-2 items-center">
+                {(() => {
+                  const parts: string[] = [];
+                  if (artist.category) {
+                    parts.push(...artist.category.split(",").map((s: string) => s.trim()));
+                  }
+                  if (artist.subCategory) {
+                    parts.push(...artist.subCategory.split(",").map((s: string) => s.trim()));
+                  }
+                  // remove duplicates and empty strings
+                  const tags = Array.from(new Set(parts.filter(Boolean)));
+                  return tags.map((tag, index) => (
                     <span
                       key={index}
                       className={`px-4 md:py-2 py-1.5 rounded-full btn2 backdrop-blur-sm ${
-                        tag === artist.category
+                        tag === (artist.category || "")
                           ? "bg-white text-primary-pink"
                           : "bg-card border border-border-color text-white"
                       }`}
                     >
                       {tag}
                     </span>
-                  ))}
+                  ));
+                })()}
               </div>
 
               <Button
                 variant="primary"
                 size="sm"
                 onClick={onEdit}
-                className="w-full md:w-auto"
+                className="ml-2 md:ml-4 px-3 py-1.5 rounded-full"
               >
-                <Pencil className="w-4 h-4 mr-2" />
-                Edit Profile
+                <Plus className="w-4 h-4 mr-2" />
+                Add Profile
               </Button>
             </div>
           </div>

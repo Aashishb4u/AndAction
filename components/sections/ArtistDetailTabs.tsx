@@ -170,23 +170,34 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       )}
 
       {/* Sub-artist types: filter out empty / N/A values */}
-      {Array.isArray(artist.subArtistTypes) && artist.subArtistTypes.filter((t: string) => t && t.trim() && t.toLowerCase() !== 'n/a').length > 0 && (
-        <div className='p-4 md:bg-background bg-card border rounded-xl' style={{ borderColor: '#232323' }}>
-          <h3 className="text-text-gray secondary-text mb-2">Sub-Artist Type</h3>
-          <div className="flex flex-wrap gap-1.5">
-            {artist.subArtistTypes
-              .filter((t: string) => t && t.trim() && t.toLowerCase() !== 'n/a')
-              .map((type: string, index: number) => (
-                <span
-                  key={index}
-                  className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
-                >
-                  {type}
-                </span>
-              ))}
-          </div>
-        </div>
-      )}
+        {/* Resolve sub-artist types whether provided as array or CSV string */}
+        {(() => {
+          const a: any = artist as any;
+          const artistSubTypes = Array.isArray(a.subArtistTypes)
+            ? a.subArtistTypes
+            : (a.subArtistType ? (a.subArtistType as string).split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+
+          if (artistSubTypes.filter((t: string) => t && t.trim() && t.toLowerCase() !== 'n/a').length === 0) return null;
+
+          return (
+            <div className='p-4 md:bg-background bg-card border rounded-xl' style={{ borderColor: '#232323' }}>
+              <h3 className="text-text-gray secondary-text mb-2">Sub-Artist Type</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {artistSubTypes
+                  .filter((t: string) => t && t.trim() && t.toLowerCase() !== 'n/a')
+                  .map((type: string, index: number) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
+                    >
+                      {type}
+                    </span>
+                  ))}
+              </div>
+            </div>
+          );
+        })()}
+      
 
       {/* Achievements: filter out empty / N/A values */}
       {Array.isArray(artist.achievements) && artist.achievements.filter((a: string) => a && a.trim() && a.toLowerCase() !== 'n/a').length > 0 && (
@@ -215,32 +226,36 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         <div className="mb-6">
           <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
           <div className="text-white mb-1">Starting from ₹ {artist.soloChargesFrom || 0}</div>
-          <p className="footnote">{artist.soloChargesDescription?.trim() || "No description provided."}</p>
+          {artist.soloChargesDescription?.trim() ? (
+            <p className="footnote">{artist.soloChargesDescription.trim()}</p>
+          ) : null}
         </div>
 
         <div>
           <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
           <div className="text-white mb-1">Starting from ₹ {artist.chargesWithBacklineFrom || 0}</div>
-          <p className="footnote">{artist.chargesWithBacklineDescription?.trim() || "No description provided."}</p>
+          {artist.chargesWithBacklineDescription?.trim() ? (
+            <p className="footnote">{artist.chargesWithBacklineDescription.trim()}</p>
+          ) : null}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:bg-background bg-card border rounded-lg p-4" style={{ borderColor: '#232323' }}>
+      <div className="md:bg-background bg-card border rounded-lg p-4" style={{ borderColor: '#232323' }}>
+        <div className="mb-4">
           <h4 className="text-text-gray secondary-text mb-1">Performing duration</h4>
           <p className="text-white text-sm">
-            {artist.performingDurationFrom || "N/A"} - {artist.performingDurationTo || "N/A"} mins
+            {artist.performingDurationFrom || 'N/A'} mins
           </p>
         </div>
 
-        <div className="md:bg-background bg-card border rounded-lg p-4" style={{ borderColor: '#232323' }}>
+        <div className="mb-4">
           <h4 className="text-text-gray secondary-text mb-1">Performing members</h4>
           <p className="text-white text-sm">
             {artist.performingMembers || "N/A"} members
           </p>
         </div>
 
-        <div className="md:bg-background bg-card border rounded-lg p-4" style={{ borderColor: '#232323' }}>
+        <div>
           <h4 className="text-text-gray secondary-text mb-1">Off stage members</h4>
           <p className="text-white text-sm">
             {artist.offStageMembers || "N/A"}

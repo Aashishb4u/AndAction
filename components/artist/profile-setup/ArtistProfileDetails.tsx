@@ -10,7 +10,6 @@ import imageCompression from "browser-image-compression";
 import { ArtistProfileSetupData } from "@/types";
 import Cropper from "react-easy-crop";
 import { Area } from "react-easy-crop";
-import { ARTIST_CATEGORIES } from "@/lib/constants";
 
 interface ArtistProfileDetailsProps {
   data: ArtistProfileSetupData;
@@ -92,6 +91,20 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
   const [uploading, setUploading] = useState<boolean>(false);
 
+  // Multi-select tags for sub-artist types (UI). Backend expects comma-separated string.
+  const initialSubTypes = (() => {
+    const raw = data.subArtistType || formData.subArtistType || "";
+    if (!raw) return [] as string[];
+    return raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  })();
+
+  const [selectedSubTypes, setSelectedSubTypes] =
+    useState<string[]>(initialSubTypes);
+  const [subTypeInput, setSubTypeInput] = useState<string>("");
+
   // Cropping states
   const [showCropModal, setShowCropModal] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -120,6 +133,22 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     },
     [],
   );
+
+  const artistTypes = [
+    { value: "singer", label: "Singer" },
+    { value: "dancer", label: "Dancer/Dance Group" },
+    { value: "musician", label: "Musician/Instrumentalist" },
+    { value: "comedian", label: "Comedian" },
+    { value: "magician", label: "Magician/Illusionist" },
+    { value: "actor", label: "Theatre Artist/Actor" },
+    { value: "anchor", label: "Anchor/Emcee/Host" },
+    { value: "band", label: "Live Band/Group" },
+    { value: "dj", label: "DJ" },
+    { value: "mimicry", label: "Mimicry/Impressionist" },
+    { value: "special-act", label: "Special Act Performer" },
+    { value: "spiritual", label: "Spiritual/Devotional" },
+    { value: "kids-entertainer", label: "Kids Entertainer" },
+  ];
 
   const subArtistTypes = [
     { value: "classical", label: "Classical" },
@@ -342,7 +371,17 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
           <span className="hidden md:block">Back</span>
           <span className="md:hidden h2">Profile Setup</span>
         </button>
+
+        <div>
+          <button
+            onClick={onSkip}
+            className="text-primary-pink hover:text-primary-orange transition-colors duration-200"
+          >
+            Skip
+          </button>
+        </div>
       </div>
+      <div className="h-px bg-border-line mb-4" />
 
       {/* Content */}
       <div className="flex-1 px-6 pb-32">
@@ -381,14 +420,14 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
             {/* Profile Photo Upload */}
             <div className="flex justify-center">
               <div className="relative">
-                <div className="w-[150px] h-[150px] bg-card border border-dashed border-border-color rounded-md flex flex-col gap-3 text-center items-center justify-center overflow-hidden">
+                <div className="w-[150px] h-[200px] bg-card border border-dashed border-border-color rounded-md flex flex-col gap-3 text-center items-center justify-center overflow-hidden">
                   {preview ? (
                     <Image
                       src={preview}
                       alt="Profile"
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-cover"
                       width={150}
-                      height={150}
+                      height={200}
                       unoptimized
                     />
                   ) : (
@@ -407,7 +446,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                 </div>
 
                 {uploading && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md">
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md z-10">
                     <p className="text-white text-sm">Uploading...</p>
                   </div>
                 )}
@@ -417,8 +456,26 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
                 />
+              </div>
+
+              <div className="ml-3 self-start mt-2">
+                <Tooltip content="Recommended: portrait JPG/PNG. Aspect ratio 3:4 (e.g. 600x800). Use a clear headshot.">
+                  <svg
+                    className="w-4 h-4 text-blue cursor-help"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </Tooltip>
               </div>
             </div>
 
@@ -481,7 +538,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                 placeholder="Select or write artist type"
                 value={formData.artistType}
                 onChange={(value) => handleInputChange("artistType", value)}
-                options={ARTIST_CATEGORIES}
+                options={artistTypes}
               />
               {errors.artistType && (
                 <p className="text-red-500 text-sm mt-1">{errors.artistType}</p>
@@ -510,19 +567,77 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                   </svg>
                 </Tooltip>
               </div>
-              <input
-                type="text"
-                placeholder="e.g. Classical, Bollywood, Fusion"
-                value={formData.subArtistType}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  handleInputChange("subArtistType", v);
-                  setShowSuggestions(true);
-                }}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-white placeholder-text-gray focus:outline-none"
-              />
+
+              <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
+                {selectedSubTypes.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-2 bg-background-light text-sm px-3 py-1 rounded-full"
+                  >
+                    <span>{tag}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = selectedSubTypes.filter((t) => t !== tag);
+                        setSelectedSubTypes(next);
+                        // update local formData and parent as comma-separated string
+                        const csv = next.length ? next.join(",") : "";
+                        setFormData((prev) => ({
+                          ...prev,
+                          subArtistType: csv,
+                        }));
+                        onUpdateData({ subArtistType: csv });
+                        // persist suggestion list
+                        persistSuggestions(next);
+                      }}
+                      className="text-text-gray hover:text-white"
+                      aria-label={`Remove ${tag}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+
+                <input
+                  type="text"
+                  placeholder="e.g. Classical, Bollywood, Fusion"
+                  value={subTypeInput}
+                  onChange={(e) => setSubTypeInput(e.target.value)}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowSuggestions(false), 150)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      const v = subTypeInput.trim().replace(/,$/, "");
+                      if (v) {
+                        if (!selectedSubTypes.includes(v)) {
+                          const next = [v, ...selectedSubTypes];
+                          setSelectedSubTypes(next);
+                          const csv = next.join(",");
+                          // update local formData and parent
+                          setFormData((prev) => ({
+                            ...prev,
+                            subArtistType: csv,
+                          }));
+                          onUpdateData({ subArtistType: csv });
+                          addSuggestionIfNew(v);
+                        }
+                        setSubTypeInput("");
+                      }
+                    } else if (e.key === "Backspace" && !subTypeInput) {
+                      // remove last tag
+                      const next = selectedSubTypes.slice(0, -1);
+                      setSelectedSubTypes(next);
+                      const csv = next.length ? next.join(",") : "";
+                      setFormData((prev) => ({ ...prev, subArtistType: csv }));
+                      onUpdateData({ subArtistType: csv });
+                    }
+                  }}
+                  className="flex-1 bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-text-gray"
+                />
+              </div>
 
               {/* Suggestions dropdown */}
               {showSuggestions && (
@@ -530,7 +645,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                   {subArtistSuggestions.filter((s) =>
                     s
                       .toLowerCase()
-                      .includes((formData.subArtistType || "").toLowerCase()),
+                      .includes((subTypeInput || "").toLowerCase()),
                   ).length === 0 ? (
                     <div className="px-3 py-2 text-sm text-text-gray">
                       No suggestions
@@ -540,9 +655,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                       .filter((s) =>
                         s
                           .toLowerCase()
-                          .includes(
-                            (formData.subArtistType || "").toLowerCase(),
-                          ),
+                          .includes((subTypeInput || "").toLowerCase()),
                       )
                       .map((s) => (
                         <button
@@ -552,7 +665,19 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                             e.preventDefault();
                           }}
                           onClick={() => {
-                            handleInputChange("subArtistType", s);
+                            // add suggestion as a tag
+                            if (!selectedSubTypes.includes(s)) {
+                              const next = [s, ...selectedSubTypes];
+                              setSelectedSubTypes(next);
+                              const csv = next.join(",");
+                              setFormData((prev) => ({
+                                ...prev,
+                                subArtistType: csv,
+                              }));
+                              onUpdateData({ subArtistType: csv });
+                              addSuggestionIfNew(s);
+                            }
+                            setSubTypeInput("");
                             setShowSuggestions(false);
                           }}
                           className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
@@ -674,16 +799,13 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
       {/* Bottom Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color px-5 md:px-0 py-4">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-2xl mx-auto">
           <Button
-            variant="secondary"
+            variant="primary"
             size="md"
-            onClick={onSkip}
-            className="gradient-text hover:bg-card"
+            onClick={handleNext}
+            className="w-full"
           >
-            Skip & Next
-          </Button>
-          <Button variant="primary" size="md" onClick={handleNext}>
             Save & Next
           </Button>
         </div>
@@ -717,12 +839,12 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
             </div>
 
             {/* Crop Area */}
-            <div className="relative h-[300px] bg-black">
+            <div className="relative h-[360px] bg-black">
               <Cropper
                 image={imageToCrop}
                 crop={crop}
                 zoom={zoom}
-                aspect={1}
+                aspect={3 / 4}
                 onCropChange={setCrop}
                 onCropComplete={onCropComplete}
                 onZoomChange={setZoom}

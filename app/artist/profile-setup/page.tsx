@@ -19,6 +19,10 @@ type ProfileSetupStep =
 
 export default function ProfileSetupPage() {
   const [currentStep, setCurrentStep] = useState<ProfileSetupStep>("overview");
+  // When a user clicks "Edit" from the Review page, we set this to the step
+  // being edited so that after saving we can return to the review instead of
+  // proceeding through the normal sequential flow.
+  const [editingFromReview, setEditingFromReview] = useState<ProfileSetupStep | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -158,6 +162,18 @@ export default function ProfileSetupPage() {
   };
 
   const handleNext = async () => {
+    // If we're editing a specific step initiated from the Review page,
+    // then Save on that step should return to Review instead of continuing
+    // the sequential flow.
+    if (editingFromReview) {
+      if (editingFromReview === currentStep) {
+        // Clear editing flag and go back to review
+        setEditingFromReview(null);
+        setCurrentStep("review");
+        return;
+      }
+    }
+
     switch (currentStep) {
       case "overview":
         setCurrentStep("artistDetails");
@@ -208,12 +224,15 @@ export default function ProfileSetupPage() {
   const handleEdit = (step: string) => {
     switch (step) {
       case "artistDetails":
+        setEditingFromReview("artistDetails");
         setCurrentStep("artistDetails");
         break;
       case "performanceDetails":
+        setEditingFromReview("performanceDetails");
         setCurrentStep("performanceDetails");
         break;
       case "contactPricing":
+        setEditingFromReview("contactPricing");
         setCurrentStep("contactPricing");
         break;
     }

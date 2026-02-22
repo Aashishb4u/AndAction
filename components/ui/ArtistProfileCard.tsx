@@ -57,7 +57,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
                   ? /^\d+$/.test(String(artist.image))
                     ? `/avatars/${artist.image}.png`
                     : artist.image
-                  : "/avatars/placeholder.png"
+                  : "/avatars/default.jpg"
               }
               alt={artist.name}
               fill
@@ -137,7 +137,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
               ? /^\d+$/.test(String(artist.image))
                 ? `/avatars/${artist.image}.png`
                 : artist.image
-              : "/avatars/placeholder.png"
+              : "/avatars/default.jpg"
           }
           alt={artist.name}
           fill

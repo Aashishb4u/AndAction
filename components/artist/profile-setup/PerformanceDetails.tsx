@@ -48,6 +48,20 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
     { value: "telugu", label: "Telugu" },
     { value: "bengali", label: "Bengali" },
     { value: "punjabi", label: "Punjabi" },
+    { value: "kannada", label: "Kannada" },
+    { value: "malayalam", label: "Malayalam" },
+    { value: "odia", label: "Odia" },
+    { value: "assamese", label: "Assamese" },
+    { value: "kashmiri", label: "Kashmiri" },
+    { value: "konkani", label: "Konkani" },
+    { value: "sindhi", label: "Sindhi" },
+    { value: "nepali", label: "Nepali" },
+    { value: "manipuri", label: "Manipuri" },
+    { value: "sanskrit", label: "Sanskrit" },
+    { value: "bodo", label: "Bodo" },
+    { value: "santali", label: "Santali" },
+    { value: "dogri", label: "Dogri" },
+    { value: "maithili", label: "Maithili" }
   ];
 
   const eventTypes = [
@@ -62,16 +76,43 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
   ];
 
   const states = [
-    { value: "maharashtra", label: "Maharashtra" },
-    { value: "delhi", label: "Delhi" },
-    { value: "karnataka", label: "Karnataka" },
-    { value: "tamil-nadu", label: "Tamil Nadu" },
+    { value: "andhra-pradesh", label: "Andhra Pradesh" },
+    { value: "arunachal-pradesh", label: "Arunachal Pradesh" },
+    { value: "assam", label: "Assam" },
+    { value: "bihar", label: "Bihar" },
+    { value: "chhattisgarh", label: "Chhattisgarh" },
+    { value: "goa", label: "Goa" },
     { value: "gujarat", label: "Gujarat" },
-    { value: "rajasthan", label: "Rajasthan" },
-    { value: "uttar-pradesh", label: "Uttar Pradesh" },
-    { value: "west-bengal", label: "West Bengal" },
-    { value: "punjab", label: "Punjab" },
     { value: "haryana", label: "Haryana" },
+    { value: "himachal-pradesh", label: "Himachal Pradesh" },
+    { value: "jharkhand", label: "Jharkhand" },
+    { value: "karnataka", label: "Karnataka" },
+    { value: "kerala", label: "Kerala" },
+    { value: "madhya-pradesh", label: "Madhya Pradesh" },
+    { value: "maharashtra", label: "Maharashtra" },
+    { value: "manipur", label: "Manipur" },
+    { value: "meghalaya", label: "Meghalaya" },
+    { value: "mizoram", label: "Mizoram" },
+    { value: "nagaland", label: "Nagaland" },
+    { value: "odisha", label: "Odisha" },
+    { value: "punjab", label: "Punjab" },
+    { value: "rajasthan", label: "Rajasthan" },
+    { value: "sikkim", label: "Sikkim" },
+    { value: "tamil-nadu", label: "Tamil Nadu" },
+    { value: "telangana", label: "Telangana" },
+    { value: "tripura", label: "Tripura" },
+    { value: "uttar-pradesh", label: "Uttar Pradesh" },
+    { value: "uttarakhand", label: "Uttarakhand" },
+    { value: "west-bengal", label: "West Bengal" },
+    // Union Territories
+    { value: "andaman-and-nicobar-islands", label: "Andaman & Nicobar Islands" },
+    { value: "chandigarh", label: "Chandigarh" },
+    { value: "dadra-and-nagar-haveli-and-daman-and-diu", label: "Dadra & Nagar Haveli and Daman & Diu" },
+    { value: "delhi", label: "Delhi (NCT)" },
+    { value: "jammu-and-kashmir", label: "Jammu & Kashmir" },
+    { value: "ladakh", label: "Ladakh" },
+    { value: "lakshadweep", label: "Lakshadweep" },
+    { value: "puducherry", label: "Puducherry" }
   ];
 
   const memberOptions = [
@@ -246,7 +287,18 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
           <span className="hidden md:block">Back</span>
           <span className="md:hidden h2">Profile Setup</span>
         </button>
+
+        <div>
+          <button
+            onClick={onSkip}
+            className="text-primary-pink hover:text-primary-orange transition-colors duration-200"
+          >
+            Skip
+          </button>
+        </div>
       </div>
+
+      <div className="h-px bg-border-line mb-4" />
 
       {/* Content */}
       <div className="flex-1 px-6 pb-32">
@@ -285,24 +337,26 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
           <div className="space-y-6">
             {/* Performing Languages - Multi-select */}
             <div className="relative">
-              <div className="flex items-center gap-2 mb-1">
-                <label className="block section-text secondary-text">Performing language*</label>
-                <Tooltip content="Select all the languages in which you can perform. This helps clients find artists who can perform in their preferred language.">
-                  <svg
-                    className="w-4 h-4 text-blue cursor-help"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </Tooltip>
-              </div>
+              <div className="relative mb-1">
+                  <label className="block section-text secondary-text">Performing language*</label>
+                  <div className="absolute top-0 right-0">
+                    <Tooltip content="Select all the languages in which you can perform. This helps clients find artists who can perform in their preferred language.">
+                      <svg
+                        className="w-4 h-4 text-blue cursor-help"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </Tooltip>
+                  </div>
+                </div>
 
               {/* Trigger button */}
               <button
@@ -386,23 +440,25 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
             {/* Performing Event Type - Multi-select */}
             <div className="relative">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="relative mb-1">
                 <label className="block section-text secondary-text">Performing event type*</label>
-                <Tooltip content="Select all the types of events you are available to perform at, such as weddings, corporate events, concerts, etc.">
-                  <svg
-                    className="w-4 h-4 text-blue cursor-help"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </Tooltip>
+                <div className="absolute top-0 right-0">
+                  <Tooltip content="Select all the types of events you are available to perform at, such as weddings, corporate events, concerts, etc.">
+                    <svg
+                      className="w-4 h-4 text-blue cursor-help"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </Tooltip>
+                </div>
               </div>
 
               {/* Trigger button */}
@@ -492,23 +548,25 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
             {/* Performing States - Multi-select */}
             <div className="relative">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="relative mb-1">
                 <label className="block section-text secondary-text">Performing states*</label>
-                <Tooltip content="Select the states where you are available to perform. Choose 'PAN India' if you can perform anywhere in India.">
-                  <svg
-                    className="w-4 h-4 text-blue cursor-help"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </Tooltip>
+                <div className="absolute top-0 right-0">
+                  <Tooltip content="Select the states where you are available to perform. Choose 'PAN India' if you can perform anywhere in India.">
+                    <svg
+                      className="w-4 h-4 text-blue cursor-help"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </Tooltip>
+                </div>
               </div>
 
               {/* Trigger button */}
@@ -589,24 +647,26 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
             {/* Performing Duration */}
             <div className="relative">
-              <div className="flex items-center gap-2 mb-2">
-                <label className="block secondary-text text-white">Performing duration <span className="footnote text-text-gray">(in minutes)</span></label>
-                <Tooltip content="Enter the typical duration range of your performances in minutes. For example, 30-60 minutes for short sets or 60-120 minutes for full shows.">
-                  <svg
-                    className="w-4 h-4 text-blue cursor-help"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </Tooltip>
-              </div>
+              <div className="relative mb-2">
+                  <label className="block secondary-text text-white">Performing duration <span className="footnote text-text-gray">(in minutes)</span></label>
+                  <div className="absolute top-0 right-0">
+                    <Tooltip content="Enter the typical duration range of your performances in minutes. For example, 30-60 minutes for short sets or 60-120 minutes for full shows.">
+                      <svg
+                        className="w-4 h-4 text-blue cursor-help"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </Tooltip>
+                  </div>
+                </div>
               <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <Input
@@ -622,7 +682,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     variant="filled"
                   />
                 </div>
-                <span className="mx-2 text-lg text-gray-400 select-none">
+                <span className="mx-2 text-lg text-[#2D2D2D] select-none">
                   —
                 </span>
                 <div className="flex-1">
@@ -650,23 +710,25 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
             {/* Performing Members */}
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="relative mb-1">
                 <label className="block section-text secondary-text">Performing members</label>
-                <Tooltip content="Select the number of artists/performers who will be on stage during your performance. This helps clients plan the event space and logistics.">
-                  <svg
-                    className="w-4 h-4 text-blue cursor-help"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </Tooltip>
+                <div className="absolute top-0 right-0">
+                  <Tooltip content="Select the number of artists/performers who will be on stage during your performance. This helps clients plan the event space and logistics.">
+                    <svg
+                      className="w-4 h-4 text-blue cursor-help"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </Tooltip>
+                </div>
               </div>
               <Select
                 placeholder="Select members"
@@ -680,23 +742,25 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
             {/* Off Stage Members */}
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="relative mb-1">
                 <label className="block section-text secondary-text">Off stage members</label>
-                <Tooltip content="Select the number of crew members who support your performance (sound engineers, managers, technicians, etc.) but don't perform on stage.">
-                  <svg
-                    className="w-4 h-4 text-blue cursor-help"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </Tooltip>
+                <div className="absolute top-0 right-0">
+                  <Tooltip content="Select the number of crew members who support your performance (sound engineers, managers, technicians, etc.) but don't perform on stage.">
+                    <svg
+                      className="w-4 h-4 text-blue cursor-help"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </Tooltip>
+                </div>
               </div>
               <Select
                 placeholder="Select members"
@@ -713,16 +777,8 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
       {/* Fixed Bottom Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color px-5 md:px-0 py-4">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={onSkip}
-            className="gradient-text hover:bg-card"
-          >
-            Skip & Next
-          </Button>
-          <Button variant="primary" size="md" onClick={handleNext}>
+        <div className="max-w-2xl mx-auto">
+          <Button variant="primary" size="md" onClick={handleNext} className="w-full">
             Save & Next
           </Button>
         </div>
