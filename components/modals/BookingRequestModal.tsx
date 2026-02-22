@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import Textarea from "../ui/Textarea";
 import PhoneInput from "../ui/PhoneInput";
 import { format, formatDate, startOfDay } from "date-fns";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 
 interface BookingRequestModalProps {
   isOpen: boolean;
@@ -52,24 +53,6 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
   });
 
   const [errors, setErrors] = useState<Partial<BookingFormData>>({});
-
-  // Sample data - in real app, these would come from API
-  const stateOptions = [
-    { value: "gujarat", label: "Gujarat" },
-    { value: "maharashtra", label: "Maharashtra" },
-    { value: "rajasthan", label: "Rajasthan" },
-    { value: "delhi", label: "Delhi" },
-    { value: "mumbai", label: "Mumbai" },
-  ];
-
-  const cityOptions = [
-    { value: "ahmedabad", label: "Ahmedabad" },
-    { value: "surat", label: "Surat" },
-    { value: "vadodara", label: "Vadodara" },
-    { value: "rajkot", label: "Rajkot" },
-    { value: "mumbai", label: "Mumbai" },
-    { value: "pune", label: "Pune" },
-  ];
 
   const eventTypeOptions = [
     { value: "wedding", label: "Wedding" },
@@ -223,7 +206,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
             <Select
               label="State*"
               placeholder="Select"
-              options={stateOptions}
+              options={INDIAN_STATES}
               value={formData.state}
               onChange={(value) => handleInputChange("state", value)}
               error={errors.state}
@@ -232,7 +215,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
             <Select
               label="City*"
               placeholder="Select"
-              options={cityOptions}
+              options={INDIAN_CITIES}
               value={formData.city}
               onChange={(value) => handleInputChange("city", value)}
               error={errors.city}

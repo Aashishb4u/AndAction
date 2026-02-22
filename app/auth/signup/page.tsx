@@ -12,6 +12,7 @@ import OTPInput from "@/components/ui/OTPInput";
 import { signUp, getRedirectUrl, signInWithGoogle, signInWithFacebook } from "@/lib/auth";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 // Password validation intentionally disabled for signup flow per UX request
 
 type SignUpStep = "contact" | "otp" | "password" | "profile" | "terms";
@@ -71,31 +72,10 @@ function SignUpContent() {
     setError(oauthError);
   }
 
-  // Avatar and location data
+  // Avatar data
   const avatars = [
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
     22, 23, 24,
-  ];
-  const states = [
-    { value: "maharashtra", label: "Maharashtra" },
-    { value: "delhi", label: "Delhi" },
-    { value: "karnataka", label: "Karnataka" },
-    { value: "tamil-nadu", label: "Tamil Nadu" },
-    { value: "gujarat", label: "Gujarat" },
-    { value: "rajasthan", label: "Rajasthan" },
-    { value: "west-bengal", label: "West Bengal" },
-    { value: "uttar-pradesh", label: "Uttar Pradesh" },
-  ];
-
-  const cities = [
-    { value: "mumbai", label: "Mumbai" },
-    { value: "delhi", label: "Delhi" },
-    { value: "bangalore", label: "Bangalore" },
-    { value: "hyderabad", label: "Hyderabad" },
-    { value: "ahmedabad", label: "Ahmedabad" },
-    { value: "chennai", label: "Chennai" },
-    { value: "kolkata", label: "Kolkata" },
-    { value: "pune", label: "Pune" },
   ];
 
   // Simple password strength calculation
@@ -920,7 +900,7 @@ function SignUpContent() {
                 <Select
                   label="State*"
                   placeholder="Select"
-                  options={states}
+                  options={INDIAN_STATES}
                   value={state}
                   onChange={setState}
                   required
@@ -928,7 +908,7 @@ function SignUpContent() {
                 <Select
                   label="City*"
                   placeholder="Select"
-                  options={cities}
+                  options={INDIAN_CITIES}
                   value={city}
                   onChange={setCity}
                   required

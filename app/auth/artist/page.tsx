@@ -13,6 +13,7 @@ import OTPInput from "@/components/ui/OTPInput";
 import DateInput from "@/components/ui/DateInput";
 import { signInWithGoogleAsArtist } from "@/lib/auth";
 import { signIn } from "next-auth/react";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 
 type ArtistSignUpStep = "join" | "otp" | "password" | "userInfo" | "terms";
 type ContactType = "phone" | "email";
@@ -38,6 +39,8 @@ function ArtistAuthContent() {
   const [pinCode, setPinCode] = useState("");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  const [locationFetched, setLocationFetched] = useState(false);
 
   // Terms step state
   const [noMarketing, setNoMarketing] = useState(true);
@@ -67,6 +70,50 @@ function ArtistAuthContent() {
     }
   }, [resendTimer]);
 
+  // Fetch location from PIN code
+  useEffect(() => {
+    const fetchLocationFromPinCode = async () => {
+      // Only fetch if PIN code is exactly 6 digits and user hasn't manually entered location
+      if (pinCode.length === 6 && /^\d{6}$/.test(pinCode)) {
+        setIsFetchingLocation(true);
+        try {
+          const response = await fetch(`/api/geocode/pincode?pin=${pinCode}`);
+          const data = await response.json();
+
+          if (data.success && data.data) {
+            // Normalize state to match dropdown values (lowercase with hyphens)
+            const normalizedState = data.data.state
+              ? data.data.state.toLowerCase().replace(/\s+/g, "-")
+              : "";
+            
+            // Normalize city to match dropdown values (lowercase)
+            const normalizedCity = (data.data.city || data.data.district || "")
+              .toLowerCase();
+            
+            setState(normalizedState);
+            setCity(normalizedCity);
+            setLocationFetched(true);
+            setError(""); // Clear any previous errors
+          } else {
+            setLocationFetched(false);
+            // Don't show error, just let user enter manually
+          }
+        } catch (err) {
+          console.error("Failed to fetch location:", err);
+          setLocationFetched(false);
+          // Don't show error, just let user enter manually
+        } finally {
+          setIsFetchingLocation(false);
+        }
+      } else if (pinCode.length < 6) {
+        // Reset location when PIN code is incomplete
+        setLocationFetched(false);
+      }
+    };
+
+    fetchLocationFromPinCode();
+  }, [pinCode]);
+
   // Check for OAuth errors from URL
   const oauthError = useMemo(() => {
     const errorParam = searchParams.get("error");
@@ -85,32 +132,7 @@ function ArtistAuthContent() {
     setError(oauthError);
   }
 
-  // Location data
-  const states = [
-    { value: "maharashtra", label: "Maharashtra" },
-    { value: "delhi", label: "Delhi" },
-    { value: "karnataka", label: "Karnataka" },
-    { value: "tamil-nadu", label: "Tamil Nadu" },
-    { value: "gujarat", label: "Gujarat" },
-    { value: "rajasthan", label: "Rajasthan" },
-    { value: "uttar-pradesh", label: "Uttar Pradesh" },
-    { value: "west-bengal", label: "West Bengal" },
-    { value: "punjab", label: "Punjab" },
-    { value: "haryana", label: "Haryana" },
-  ];
-
-  const cities = [
-    { value: "mumbai", label: "Mumbai" },
-    { value: "delhi", label: "Delhi" },
-    { value: "bangalore", label: "Bangalore" },
-    { value: "chennai", label: "Chennai" },
-    { value: "ahmedabad", label: "Ahmedabad" },
-    { value: "jaipur", label: "Jaipur" },
-    { value: "lucknow", label: "Lucknow" },
-    { value: "kolkata", label: "Kolkata" },
-    { value: "chandigarh", label: "Chandigarh" },
-    { value: "gurgaon", label: "Gurgaon" },
-  ];
+  // Location data from centralized constants
 
   const genderOptions = [
     { value: "male", label: "Male" },
@@ -828,11 +850,20 @@ function ArtistAuthContent() {
                 label="PIN code*"
                 placeholder="Enter PIN code"
                 value={pinCode}
-                onChange={(e) => setPinCode(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  setPinCode(value);
+                }}
                 required
                 disabled={isLoading}
                 variant="filled"
+                maxLength={6}
               />
+              {isFetchingLocation && (
+                <p className="text-sm text-primary-pink -mt-2">
+                  Fetching location...
+                </p>
+              )}
 
               {/* State and City */}
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -841,18 +872,18 @@ function ArtistAuthContent() {
                   placeholder="Select"
                   value={state}
                   onChange={setState}
-                  options={states}
+                  options={INDIAN_STATES}
                   required
-                  disabled={isLoading}
+                  disabled={isLoading || isFetchingLocation}
                 />
                 <Select
                   label="City*"
                   placeholder="Select"
                   value={city}
                   onChange={setCity}
-                  options={cities}
+                  options={INDIAN_CITIES}
                   required
-                  disabled={isLoading}
+                  disabled={isLoading || isFetchingLocation}
                 />
               </div>
 

@@ -6,6 +6,7 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
+import { INDIAN_STATES } from "@/lib/constants";
 
 export interface FindArtistModalProps {
   isOpen: boolean;
@@ -84,14 +85,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     { value: "100000+", label: "₹1,00,000+" },
   ];
 
-  const stateOptions = [
-    { value: "maharashtra", label: "Maharashtra" },
-    { value: "delhi", label: "Delhi" },
-    { value: "karnataka", label: "Karnataka" },
-    { value: "gujarat", label: "Gujarat" },
-    { value: "rajasthan", label: "Rajasthan" },
-    { value: "punjab", label: "Punjab" },
-  ];
+
 
   const eventTypes = [
     { value: "wedding", label: "Wedding" },
@@ -267,7 +261,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             <label className="secondary-text  block mb-1">Event State</label>
             <Select
               placeholder="Select state"
-              options={stateOptions}
+              options={INDIAN_STATES}
               value={formData.eventState}
               onChange={(value) => handleInputChange("eventState", value)}
             />

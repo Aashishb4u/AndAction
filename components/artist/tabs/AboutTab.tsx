@@ -12,6 +12,7 @@ import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
 import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
 import { toast } from "react-toastify";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 
 // Extended artist type for profile management
 type ExtendedArtist = Artist & {
@@ -37,31 +38,7 @@ const genderOptions = [
   { value: "prefer-not-to-say", label: "Prefer not to say" },
 ];
 
-const stateOptions = [
-  { value: "maharashtra", label: "Maharashtra" },
-  { value: "delhi", label: "Delhi" },
-  { value: "karnataka", label: "Karnataka" },
-  { value: "tamil-nadu", label: "Tamil Nadu" },
-  { value: "gujarat", label: "Gujarat" },
-  { value: "rajasthan", label: "Rajasthan" },
-  { value: "uttar-pradesh", label: "Uttar Pradesh" },
-  { value: "west-bengal", label: "West Bengal" },
-  { value: "punjab", label: "Punjab" },
-  { value: "haryana", label: "Haryana" },
-];
 
-const cityOptions = [
-  { value: "mumbai", label: "Mumbai" },
-  { value: "delhi", label: "Delhi" },
-  { value: "bangalore", label: "Bangalore" },
-  { value: "chennai", label: "Chennai" },
-  { value: "ahmedabad", label: "Ahmedabad" },
-  { value: "jaipur", label: "Jaipur" },
-  { value: "lucknow", label: "Lucknow" },
-  { value: "kolkata", label: "Kolkata" },
-  { value: "chandigarh", label: "Chandigarh" },
-  { value: "gurgaon", label: "Gurgaon" },
-];
 
 const subArtistTypeOptions = [
   { value: "classical", label: "Classical" },
@@ -259,14 +236,14 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         />
         <Select
           label="State*"
-          options={stateOptions}
+          options={INDIAN_STATES}
           value={formData.state}
           onChange={(value) => handleInputChange("state", value)}
           required
         />
         <Select
           label="City*"
-          options={cityOptions}
+          options={INDIAN_CITIES}
           value={formData.city}
           onChange={(value) => handleInputChange("city", value)}
           required
