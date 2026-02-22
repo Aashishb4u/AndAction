@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { syncYouTubeVideos } from "@/app/actions/youtube/sync-videos";
+import { syncYouTubeVideosInternal } from "@/app/actions/youtube/sync-videos";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
@@ -147,9 +147,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Auto-sync videos after connecting
+    // Auto-sync videos after connecting using internal function
     try {
-      await syncYouTubeVideos();
+      console.log("Auto-syncing videos after channel connection...");
+      const syncResult = await syncYouTubeVideosInternal(
+        artist.id,
+        session.user.id,
+        channel.id,
+        null // No OAuth token for manual connection
+      );
+      console.log("Auto-sync result:", syncResult);
     } catch (syncError) {
       console.error("Error auto-syncing videos:", syncError);
       // Don't fail the connection if sync fails - it can be done manually
