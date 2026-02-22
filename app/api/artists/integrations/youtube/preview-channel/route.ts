@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       const searchResponse = await fetch(
         `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(
           cleanedInput,
-        )}&maxResults=10&key=${YOUTUBE_API_KEY}`,
+        )}&maxResults=50&key=${YOUTUBE_API_KEY}`,
       );
 
       const searchData = await searchResponse.json();
@@ -92,12 +92,13 @@ export async function POST(request: NextRequest) {
             );
           });
 
-          // If no exact match, use the first result (most relevant)
-          if (!foundChannel) {
-            foundChannel = detailsData.items[0];
+          // If exact match found, return single channel
+          if (foundChannel) {
+            channelData = { items: [foundChannel] };
+          } else {
+            // Multiple results - return all for user selection
+            channelData = { items: detailsData.items, multiple: true };
           }
-
-          channelData = { items: [foundChannel] };
         }
       }
     }
@@ -106,13 +107,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: `Channel "${channelInput}" not found. Please try:\n• Using the exact handle (e.g., @username)\n• Using the Channel ID (starts with UC)\n• Using the exact channel name`,
+          message: `Channel "${channelInput}" not found. Please try:\n• Using the exact handle (e.g., @abcdf)\n• Using the Channel ID (starts with UC)\n• Using the exact channel name (e.g., abcdf)`,
         },
         { status: 404 },
       );
     }
-
-    const channel = channelData.items[0];
 
     // Format subscriber count
     const formatCount = (count: string) => {
@@ -125,22 +124,36 @@ export async function POST(request: NextRequest) {
       return count;
     };
 
-    // Return channel preview data
+    // Format channel data
+    const formatChannelData = (channel: any) => ({
+      channelId: channel.id,
+      channelName: channel.snippet.title,
+      customUrl: channel.snippet.customUrl,
+      description: channel.snippet.description,
+      thumbnailUrl:
+        channel.snippet.thumbnails?.high?.url ||
+        channel.snippet.thumbnails?.medium?.url,
+      subscriberCount: channel.statistics?.subscriberCount
+        ? formatCount(channel.statistics.subscriberCount)
+        : undefined,
+      videoCount: channel.statistics?.videoCount,
+    });
+
+    // Return multiple channels or single channel
+    if (channelData.multiple && channelData.items.length > 1) {
+      return NextResponse.json({
+        success: true,
+        multiple: true,
+        data: channelData.items.map(formatChannelData),
+      });
+    }
+
+    // Single channel result
+    const channel = channelData.items[0];
     return NextResponse.json({
       success: true,
-      data: {
-        channelId: channel.id,
-        channelName: channel.snippet.title,
-        customUrl: channel.snippet.customUrl,
-        description: channel.snippet.description,
-        thumbnailUrl:
-          channel.snippet.thumbnails?.high?.url ||
-          channel.snippet.thumbnails?.medium?.url,
-        subscriberCount: channel.statistics?.subscriberCount
-          ? formatCount(channel.statistics.subscriberCount)
-          : undefined,
-        videoCount: channel.statistics?.videoCount,
-      },
+      multiple: false,
+      data: formatChannelData(channel),
     });
   } catch (error) {
     console.error("Error previewing YouTube channel:", error);
