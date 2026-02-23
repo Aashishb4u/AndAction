@@ -5,12 +5,10 @@ import { Artist } from "@/types";
 import VideoCard from "@/components/ui/VideoCard";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import { Loader2, Youtube, RefreshCw, Download } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Loader2, Youtube, RefreshCw } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   useSyncedVideos,
-  useSyncYouTubeVideos,
   useDeleteVideo,
 } from "@/hooks/use-youtube-videos";
 
@@ -19,7 +17,6 @@ interface VideosTabProps {
 }
 
 const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
-  const router = useRouter();
   const [bookmarkedVideos, setBookmarkedVideos] = useState<Set<string>>(
     new Set()
   );
@@ -33,7 +30,6 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
     refetch,
   } = useSyncedVideos("videos");
 
-  const syncMutation = useSyncYouTubeVideos();
   const deleteMutation = useDeleteVideo();
 
   const videos =
@@ -51,10 +47,6 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
       source: v.source,
     })) || [];
 
-  const handleSync = () => {
-    syncMutation.mutate();
-  };
-
   const handleDelete = (videoId: string) => {
     if (deleteMutation.isPending) return;
     setVideoToDelete(videoId);
@@ -71,13 +63,13 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
     });
   };
 
-  const handleBookmark = (videoId: string) => {
+  const handleBookmark = (data: { id: string; bookmarkId?: string | null; isBookmarked: boolean }) => {
     setBookmarkedVideos((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(videoId)) {
-        newSet.delete(videoId);
+      if (newSet.has(data.id)) {
+        newSet.delete(data.id);
       } else {
-        newSet.add(videoId);
+        newSet.add(data.id);
       }
       return newSet;
     });
@@ -96,10 +88,6 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
         toast.success("Link copied to clipboard!");
       }
     }
-  };
-
-  const handleConnectYouTube = () => {
-    router.push("/artist/profile?tab=integrations");
   };
 
   // Loading state
@@ -153,60 +141,19 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
           No Videos Synced
         </h3>
         <p className="text-text-gray mb-4 max-w-md">
-          Click the sync button to import your YouTube videos.
+          Videos will be automatically synced from your connected YouTube account.
         </p>
-        <Button
-          variant="primary"
-          onClick={handleSync}
-          disabled={syncMutation.isPending}
-        >
-          {syncMutation.isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Syncing...
-            </>
-          ) : (
-            <>
-              <Download className="w-4 h-4 mr-2" />
-              Sync from YouTube
-            </>
-          )}
-        </Button>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header with sync and refresh buttons */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-text-gray text-sm">
           {videos.length} video{videos.length !== 1 ? "s" : ""} synced
         </p>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleSync}
-            disabled={syncMutation.isPending}
-          >
-            {syncMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Syncing...
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4 mr-2" />
-                Sync Videos
-              </>
-            )}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => refetch()}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
       </div>
 
       {/* Videos Grid */}
