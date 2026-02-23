@@ -304,9 +304,13 @@ function SignUpContent() {
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (firstName.trim() && lastName.trim() && state.trim() && city.trim()) {
+    // For email signups, phone is required in profile step
+    const isPhoneRequired = contactType === "email" && !phone.trim();
+    if (firstName.trim() && lastName.trim() && state.trim() && city.trim() && !isPhoneRequired) {
       setError("");
       setStep("terms");
+    } else if (isPhoneRequired) {
+      setError("Please enter your phone number.");
     }
   };
 
@@ -318,10 +322,10 @@ function SignUpContent() {
     const userData = {
       email: contactType === "email" ? email : undefined,
       phone:
-        contactType === "phone"
+        contactType === "phone" || phone.trim()
           ? getPhoneComponents(phone).phoneNumber
-          : undefined, // Ensure only the raw number is sent
-      countryCode: contactType === "phone" ? countryCode.trim() : undefined, // Include country code for phone registration
+          : undefined, // Include phone from contact step or profile step
+      countryCode: contactType === "phone" || phone.trim() ? countryCode.trim() : undefined, // Include country code when phone is provided
       password: password,
       firstName: firstName,
       lastName: lastName,
@@ -895,6 +899,22 @@ function SignUpContent() {
                 />
               </div>
 
+              {/* Phone Number Field - Only for email signups */}
+              {contactType === "email" && (
+                <PhoneInput
+                  label="Phone number*"
+                  placeholder="Enter your phone number"
+                  value={phone}
+                  onChange={setPhone}
+                  onCountryChange={(country) =>
+                    setCountryCode(country.dialCode)
+                  }
+                  required
+                  disabled={isLoading}
+                  variant="filled"
+                />
+              )}
+
               {/* Location Fields */}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <Select
@@ -925,7 +945,8 @@ function SignUpContent() {
                   !firstName.trim() ||
                   !lastName.trim() ||
                   !state ||
-                  !city
+                  !city ||
+                  (contactType === "email" && !phone.trim())
                 }
               >
                 Next
