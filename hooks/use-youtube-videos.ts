@@ -24,8 +24,8 @@ export function useSyncedVideos(type: "videos" | "shorts") {
       }
       return result.data || [];
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+    staleTime: 1000 * 60 * 60 * 24 * 7, // 7 days - backend auto-sync handles updates
+    gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days cache retention
   });
 }
 
