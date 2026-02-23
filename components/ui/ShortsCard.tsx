@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React, { useState, useRef } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import MoreVertical from '@/components/icons/more-vertical';
-import Bookmark from '@/components/icons/bookmark';
-import Share from '@/components/icons/share';
-import { Trash2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import MoreVertical from "@/components/icons/more-vertical";
+import Bookmark from "@/components/icons/bookmark";
+import Share from "@/components/icons/share";
+import { Trash2 } from "lucide-react";
 
 interface ShortsCardProps {
   id: string;
@@ -20,7 +20,11 @@ interface ShortsCardProps {
   bookmarkId?: string | null;
 
   // NEW object format
-  onBookmark?: (data: { id: string; bookmarkId?: string | null; isBookmarked: boolean }) => void;
+  onBookmark?: (data: {
+    id: string;
+    bookmarkId?: string | null;
+    isBookmarked: boolean;
+  }) => void;
 
   onShare?: (id: string) => void;
   onDelete?: (id: string) => void;
@@ -35,8 +39,8 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
   creator,
   thumbnail,
   videoUrl,
-  className = '',
-  bookmarkId,        // ⭐ NEW
+  className = "",
+  bookmarkId, // ⭐ NEW
   onBookmark,
   onShare,
   onDelete,
@@ -46,8 +50,70 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [shouldPlayVideo, setShouldPlayVideo] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper to check if URL is YouTube
+  const isYouTubeUrl = (url: string) => {
+    return url.includes("youtube.com") || url.includes("youtu.be");
+  };
+
+  // Extract YouTube video ID
+  const getYouTubeVideoId = (url: string) => {
+    const match = url.match(
+      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/,
+    );
+    return match ? match[1] : null;
+  };
+
+  const isYouTube = isYouTubeUrl(videoUrl);
+  const youtubeVideoId = isYouTube ? getYouTubeVideoId(videoUrl) : null;
+
+  useEffect(() => {
+    if (isHovered) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setShouldPlayVideo(true);
+        if (isYouTube && iframeRef.current) {
+          // Play YouTube video via postMessage
+          iframeRef.current.contentWindow?.postMessage(
+            '{"event":"command","func":"playVideo","args":""}',
+            "*",
+          );
+        } else if (videoRef.current) {
+          videoRef.current.play().catch(() => {});
+        }
+      }, 500);
+    } else {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      setShouldPlayVideo(false);
+
+      // Stop YouTube video
+      if (isYouTube && iframeRef.current) {
+        iframeRef.current.contentWindow?.postMessage(
+          '{"event":"command","func":"pauseVideo","args":""}',
+          "*",
+        );
+      }
+
+      // Stop MP4 video
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+    }
+
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, [isHovered, isYouTube]);
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -69,24 +135,22 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
     onDelete?.(id);
   };
 
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setShowMenu(false);
+  };
+
   return (
     <Link href={`/videos/${id}`} className="block">
       <div
         className={`relative group cursor-pointer transition-all duration-300 hover:scale-105 ${className}`}
-        onMouseEnter={() => {
-          setIsHovered(true);
-          videoRef.current?.play().catch(() => {});
-        }}
-        onMouseLeave={() => {
-          setIsHovered(false);
-          setShowMenu(false);
-          if (videoRef.current) {
-            videoRef.current.pause();
-            videoRef.current.currentTime = 0;
-          }
-        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
-
         <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-card">
           <Image
             src={thumbnail}
@@ -95,19 +159,40 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
             className="object-cover transition-transform duration-500 group-hover:scale-110"
           />
 
-          <div className={`absolute inset-0 transition-opacity duration-500 ${isHovered && isVideoLoaded ? "opacity-100" : "opacity-0"}`}>
-            <video
-              ref={videoRef}
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              className="w-full h-full object-cover"
-              onLoadedData={() => setIsVideoLoaded(true)}
+          {/* YouTube iframe */}
+          {isYouTube && youtubeVideoId && (
+            <div
+              className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo ? "opacity-100" : "opacity-0"}`}
             >
-              <source src={videoUrl} type="video/mp4" />
-            </video>
-          </div>
+              <iframe
+                ref={iframeRef}
+                className="w-full h-full object-cover"
+                src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onLoad={() => setIsVideoLoaded(true)}
+              />
+            </div>
+          )}
+
+          {/* MP4 video */}
+          {!isYouTube && (
+            <div
+              className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo && isVideoLoaded ? "opacity-100" : "opacity-0"}`}
+            >
+              <video
+                ref={videoRef}
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                className="w-full h-full object-cover"
+                onLoadedData={() => setIsVideoLoaded(true)}
+              >
+                <source src={videoUrl} type="video/mp4" />
+              </video>
+            </div>
+          )}
 
           {/* Delete Button */}
           {showDeleteButton && (
@@ -156,9 +241,7 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
               )}
             </div>
           )}
-
         </div>
-
       </div>
     </Link>
   );

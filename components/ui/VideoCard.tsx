@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import MoreVertical from "@/components/icons/more-vertical";
@@ -52,20 +52,77 @@ const VideoCard: React.FC<VideoCardProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [shouldPlayVideo, setShouldPlayVideo] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper to check if URL is YouTube
+  const isYouTubeUrl = (url: string) => {
+    return url.includes("youtube.com") || url.includes("youtu.be");
+  };
+
+  // Extract YouTube video ID
+  const getYouTubeVideoId = (url: string) => {
+    const match = url.match(
+      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/,
+    );
+    return match ? match[1] : null;
+  };
+
+  const isYouTube = isYouTubeUrl(videoUrl);
+  const youtubeVideoId = isYouTube ? getYouTubeVideoId(videoUrl) : null;
+
+  // Debounce hover to play video
+  useEffect(() => {
+    if (isHovered) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setShouldPlayVideo(true);
+        if (isYouTube && iframeRef.current) {
+          iframeRef.current.contentWindow?.postMessage(
+            '{"event":"command","func":"playVideo","args":""}',
+            "*",
+          );
+        } else if (videoRef.current) {
+          videoRef.current.play().catch(() => {});
+        }
+      }, 500); // 500ms debounce delay
+    } else {
+      // Clear timeout if hover ends before delay
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      setShouldPlayVideo(false);
+
+      // Stop YouTube video
+      if (isYouTube && iframeRef.current) {
+        iframeRef.current.contentWindow?.postMessage(
+          '{"event":"command","func":"pauseVideo","args":""}',
+          "*",
+        );
+      }
+
+    if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+    }
+
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, [isHovered, isYouTube]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    videoRef.current?.play().catch(() => {});
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
     setShowMenu(false);
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
   };
 
   const handleMenuToggle = (e: React.MouseEvent) => {
@@ -105,22 +162,48 @@ const VideoCard: React.FC<VideoCardProps> = ({
         onMouseLeave={handleMouseLeave}
       >
         <div className="relative w-full aspect-video rounded-lg overflow-hidden transition-transform duration-300 ease-out hover:scale-105">
-          <Image src={thumbnail} alt={title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" className="object-cover" />
+          <Image
+            src={thumbnail}
+            alt={title}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover"
+          />
 
-          <div
-            className={`absolute inset-0 transition-opacity duration-500 ${isHovered && isVideoLoaded ? "opacity-100" : "opacity-0"}`}
-          >
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover"
-              loop
-              playsInline
-              preload="metadata"
-              onLoadedData={() => setIsVideoLoaded(true)}
+          {/* YouTube iframe */}
+          {isYouTube && youtubeVideoId && (
+            <div
+              className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo ? "opacity-100" : "opacity-0"}`}
             >
-              <source src={videoUrl} type="video/mp4" />
-            </video>
-          </div>
+              <iframe
+                ref={iframeRef}
+                className="w-full h-full object-cover"
+                src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onLoad={() => setIsVideoLoaded(true)}
+              />
+            </div>
+          )}
+
+          {/* MP4 video */}
+          {!isYouTube && (
+            <div
+              className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo && isVideoLoaded ? "opacity-100" : "opacity-0"}`}
+            >
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                onLoadedData={() => setIsVideoLoaded(true)}
+              >
+                <source src={videoUrl} type="video/mp4" />
+              </video>
+            </div>
+          )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300" />
         </div>
@@ -136,14 +219,23 @@ const VideoCard: React.FC<VideoCardProps> = ({
               className="w-8 h-8 rounded-full object-cover flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
-              <h3 className="btn2 text-white line-clamp-2 transition-colors duration-300" style={{ fontSize: '16px' }}>
+              <h3
+                className="btn2 text-white line-clamp-2 transition-colors duration-300"
+                style={{ fontSize: "16px" }}
+              >
                 {title}
               </h3>
-              <p className="text-text-gray footnote line-clamp-1" style={{ fontSize: '14px' }}>
+              <p
+                className="text-text-gray footnote line-clamp-1"
+                style={{ fontSize: "14px" }}
+              >
                 <span className="align-middle">{creator}</span>
                 {artistType ? (
                   <span className="inline-flex items-center ml-2 text-text-gray">
-                    <span className="w-2 h-2 bg-text-gray rounded-full inline-block mr-2" aria-hidden="true" />
+                    <span
+                      className="w-2 h-2 bg-text-gray rounded-full inline-block mr-2"
+                      aria-hidden="true"
+                    />
                     <span className="align-middle">{artistType}</span>
                   </span>
                 ) : null}

@@ -8,6 +8,7 @@ import MobileBottomBar from "@/components/layout/MobileBottomBar";
 import LoadingSpinner from "@/components/ui/Loading";
 import { buildArtishProfileUrl } from "@/lib/utils";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { ARTIST_CATEGORIES } from "@/lib/constants";
 
 const fetchArtists = async ({
   pageParam = 1,
@@ -23,19 +24,6 @@ const fetchArtists = async ({
   const json = await res.json();
   return json.data?.artists || [];
 };
-
-const ARTIST_CATEGORIES = [
-  { value: "singer", label: "Singer" },
-  { value: "dancer", label: "Dancer" },
-  { value: "musician", label: "Musician" },
-  { value: "comedian", label: "Comedian" },
-  { value: "magician", label: "Magician" },
-  { value: "actor", label: "Actor" },
-  { value: "anchor", label: "Anchor" },
-  { value: "band", label: "Live Band" },
-  { value: "dj", label: "DJ" },
-  { value: "other", label: "Other" },
-];
 
 export default function MobileSearchPage() {
   const [search, setSearch] = useState("");

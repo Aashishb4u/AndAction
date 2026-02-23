@@ -6,6 +6,7 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
+import { ARTIST_CATEGORIES } from "@/lib/constants";
 import { INDIAN_STATES } from "@/lib/constants";
 
 export interface FindArtistModalProps {
@@ -56,7 +57,6 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     { value: "spiritual", label: "Spiritual / Devotional" },
     { value: "kidsEntertainers", label: "Kids Entertainer" },
   ];
-  
 
   const subCategories = [
     { value: "bollywood", label: "Bollywood" },
@@ -67,7 +67,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
   ];
   // Sub-category search UI state
   const [subInput, setSubInput] = useState<string>(
-    subCategories.find((s) => s.value === "" ) ? "" : ""
+    subCategories.find((s) => s.value === "") ? "" : "",
   );
   const [showSubSuggestions, setShowSubSuggestions] = useState(false);
 
@@ -174,13 +174,13 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
         {/* Artist Category */}
         <div>
           <label className="secondary-text  block mb-1">Artist Category</label>
-        <Select
-          placeholder="Select category"
-          options={artistCategories}
-          value={formData.artistCategory}
-          onChange={(value) => handleInputChange("artistCategory", value)}
-          required
-        />
+          <Select
+            placeholder="Select category"
+            options={ARTIST_CATEGORIES}
+            value={formData.artistCategory}
+            onChange={(value) => handleInputChange("artistCategory", value)}
+            required
+          />
         </div>
 
         {/* Sub-Category (searchable with recommendations) */}
@@ -190,13 +190,16 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             type="text"
             value={
               // show label if selected value present, otherwise show typed text
-              subInput || (subCategories.find(s => s.value === formData.subCategory)?.label) || ''
+              subInput ||
+              subCategories.find((s) => s.value === formData.subCategory)
+                ?.label ||
+              ""
             }
             onChange={(e) => {
               const v = e.target.value;
               setSubInput(v);
               // clear actual stored subCategory until user selects a suggestion
-              handleInputChange('subCategory', '');
+              handleInputChange("subCategory", "");
               setShowSubSuggestions(true);
             }}
             onFocus={() => setShowSubSuggestions(true)}
@@ -208,7 +211,11 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
           {showSubSuggestions && (
             <div className="absolute z-40 left-0 right-0 mt-1 bg-background border border-border-color rounded-lg max-h-48 overflow-auto">
               {subCategories
-                .filter((s) => s.label.toLowerCase().includes((subInput || '').toLowerCase()))
+                .filter((s) =>
+                  s.label
+                    .toLowerCase()
+                    .includes((subInput || "").toLowerCase()),
+                )
                 .map((s) => (
                   <button
                     key={s.value}
@@ -216,7 +223,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
                     onMouseDown={(e) => {
                       e.preventDefault();
                       // set value (used in query) and display label
-                      handleInputChange('subCategory', s.value);
+                      handleInputChange("subCategory", s.value);
                       setSubInput(s.label);
                       setShowSubSuggestions(false);
                     }}
@@ -225,7 +232,9 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
                     {s.label}
                   </button>
                 ))}
-              {subCategories.filter((s) => s.label.toLowerCase().includes((subInput || '').toLowerCase())).length === 0 && (
+              {subCategories.filter((s) =>
+                s.label.toLowerCase().includes((subInput || "").toLowerCase()),
+              ).length === 0 && (
                 <div className="px-3 py-2 text-gray-400">No suggestions</div>
               )}
             </div>
