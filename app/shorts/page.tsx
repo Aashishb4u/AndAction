@@ -416,7 +416,7 @@ export default function ShortsPage() {
     <SiteLayout showPreloader={false} hideNavbarOnMobile={true}>
       {/* Category Filter Header */}
       <div
-        className="fixed top-0 md:static md:mt-16 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-background-light backdrop-blur-sm p-4 border-y border-border-line"
+        className="fixed top-0 md:static md:mt-16 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-[#1B1B1B] backdrop-blur-sm p-4 border-y border-border-line"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {VIDEO_CATEGORIES.map((category) => (

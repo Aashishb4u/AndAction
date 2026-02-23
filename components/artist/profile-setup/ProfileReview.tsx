@@ -539,7 +539,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
             onClick={handleNext}
             className="w-full py-3"
           >
-            Submit
+            Save & Next
           </Button>
         </div>
       </div>

@@ -188,7 +188,7 @@ export default function VideosPage() {
       <div className="min-h-screen md:pt-20 pb-28">
         {/* Category Filter Chips */}
         <div
-          className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide bg-background-light p-4 border-y border-border-line sticky top-0 md:static z-10"
+          className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide bg-[#1B1B1B] p-4 border-y border-border-line sticky top-0 md:static z-10"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {VIDEO_CATEGORIES.map((category) => (

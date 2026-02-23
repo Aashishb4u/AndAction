@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
-import Checkbox from "@/components/ui/Checkbox";
 import Tooltip from "@/components/ui/Tooltip";
 import Image from "next/image";
 import PhoneInput from "@/components/ui/PhoneInput";
@@ -26,8 +25,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     contactNumber: data.contactNumber || "",
-    whatsappNumber: data.whatsappNumber || "",
-    sameAsContact: data.sameAsContact || false,
+    // merged contact/whatsapp number
     email: data.email || "",
     soloCharges: data.soloCharges || "",
     soloDescription: data.soloDescription || "",
@@ -37,18 +35,11 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
   // Track if fields are in edit mode (editable) or locked
   const [isContactEditing, setIsContactEditing] = useState(!data.contactNumber);
-  const [isWhatsappEditing, setIsWhatsappEditing] = useState(
-    !data.whatsappNumber,
-  );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [selectedCountry, setSelectedCountry] = useState<{ dialCode?: string } | null>({ dialCode: '+91' });
 
   const handleInputChange = (field: string, value: string | boolean) => {
     const updatedData = { ...formData, [field]: value };
-
-    // If "Same as Contact number" is checked, copy contact number to WhatsApp
-    if (field === "sameAsContact" && value === true) {
-      updatedData.whatsappNumber = updatedData.contactNumber;
-    }
 
     setFormData(updatedData);
     onUpdateData(updatedData);
@@ -67,7 +58,12 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
     // Remove all non-digit characters
     const digitsOnly = phoneNumber.replace(/\D/g, "");
 
-    // Check if it has at least 10 digits
+    // If India (+91) require exactly 10 digits (local national number)
+    if (selectedCountry?.dialCode === '+91') {
+      return digitsOnly.length === 10;
+    }
+
+    // For other countries, require between 10 and 15 digits
     return digitsOnly.length >= 10 && digitsOnly.length <= 15;
   };
 
@@ -78,15 +74,9 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
     if (!formData.contactNumber?.trim()) {
       newErrors.contactNumber = "Contact number is required";
     } else if (!validatePhoneNumber(formData.contactNumber)) {
-      newErrors.contactNumber =
-        "Please enter a valid phone number (at least 10 digits)";
-    }
-
-    if (!formData.whatsappNumber?.trim()) {
-      newErrors.whatsappNumber = "WhatsApp number is required";
-    } else if (!validatePhoneNumber(formData.whatsappNumber)) {
-      newErrors.whatsappNumber =
-        "Please enter a valid WhatsApp number (at least 10 digits)";
+      newErrors.contactNumber = selectedCountry?.dialCode === '+91'
+        ? 'Please enter a valid 10-digit mobile number for India'
+        : 'Please enter a valid phone number (10-15 digits)';
     }
 
     setErrors(newErrors);
@@ -123,12 +113,12 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
           <span className="hidden md:block">Back</span>
           <span className="md:hidden h2">Profile Setup</span>
         </button>
-        <button
+        {/* <button
           onClick={onSkip}
           className="text-primary-pink hover:text-primary-orange transition-colors duration-200 font-medium"
         >
           Skip
-        </button>
+        </button> */}
       </div>
       <div className="h-px bg-border-line mb-4" />
 
@@ -172,13 +162,13 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
               <h3 className="text-white h2 mb-4">Contact Details</h3>
 
               <div className="space-y-4">
-                {/* Contact Number */}
+                {/* Contact Number (merged with WhatsApp) */}
                 <div className="relative">
                   <div className="relative mb-1">
-                      <label className="block section-text secondary-text">Contact number*</label>
+                      <label className="block section-text secondary-text">Contact / WhatsApp Number*</label>
                       <div className="absolute top-0 right-0">
                         <Tooltip
-                          content="Your primary contact number for clients to reach you. This will be verified via OTP to ensure authenticity."
+                          content="Contact / WhatsApp Number"
                         >
                           <svg
                             className="w-4 h-4 text-blue cursor-help"
@@ -203,6 +193,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                       onChange={(value) =>
                         handleInputChange("contactNumber", value)
                       }
+                      onCountryChange={(c) => setSelectedCountry(c as any)}
                       variant="filled"
                       disabled={!isContactEditing && !!formData.contactNumber}
                     />
@@ -226,75 +217,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                     </p>
                   )}
                 </div>
-                {/* WhatsApp Number */}
-                <div className="relative">
-                  <div className="relative mb-1">
-                    <label className="block section-text secondary-text">WhatsApp number*</label>
-                    <div className="absolute top-0 right-0">
-                      <Tooltip
-                        content="Your WhatsApp number for quick communication with clients. Many clients prefer WhatsApp for booking inquiries."
-                      >
-                        <svg
-                          className="w-4 h-4 text-blue cursor-help"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      </Tooltip>
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <PhoneInput
-                      placeholder="Enter whatsApp number"
-                      value={formData.whatsappNumber}
-                      onChange={(value) =>
-                        handleInputChange("whatsappNumber", value)
-                      }
-                      variant="filled"
-                      disabled={!isWhatsappEditing && !!formData.whatsappNumber}
-                    />
-                    {/* Show Edit or Verify based on editing state */}
-                    {formData.whatsappNumber && !isWhatsappEditing ? (
-                      <button
-                        onClick={() => setIsWhatsappEditing(true)}
-                        className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-1 gradient-text btn1"
-                      >
-                        Edit
-                      </button>
-                    ) : (
-                      <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-1 gradient-text btn1">
-                        Verify
-                      </button>
-                    )}
-                  </div>
-                  {errors.whatsappNumber && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.whatsappNumber}
-                    </p>
-                  )}
-                </div>
-
-                {/* Same as Contact Checkbox */}
-                <div className="mt-3">
-                  <Checkbox
-                    checked={formData.sameAsContact}
-                    onChange={(checked) =>
-                      handleInputChange("sameAsContact", checked)
-                    }
-                    label="Same as Contact number"
-                    className="text-white"
-                    id="sameAsContact"
-                    small
-                  />
-                </div>
+                
 
                 {/* Email */}
                 <div className="relative">

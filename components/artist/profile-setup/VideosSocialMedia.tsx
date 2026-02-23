@@ -257,15 +257,7 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
 
       {/* Fixed Bottom Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color md:px-6 px-5 py-4">
-        <div className="max-w-md mx-auto flex items-center justify-between gap-4">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={onSkip}
-            className="gradient-text hover:bg-card"
-          >
-            Skip & Next
-          </Button>
+        <div className="max-w-md mx-auto flex items-center justify-end gap-4">
           <Button variant="primary" size="md" onClick={onNext}>
             Next
           </Button>
