@@ -16,6 +16,7 @@ export default function UserProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string>("");
   
   // Avatar selection - total 24 avatars
   const avatars = [
@@ -86,10 +87,39 @@ export default function UserProfilePage() {
       ...prev,
       [field]: value,
     }));
+
+    // Validate phone number in real-time
+    if (field === "phoneNumber") {
+      if (value && !validatePhoneNumber(value)) {
+        const digitsOnly = value.replace(/\D/g, "");
+        if (digitsOnly.length < 10) {
+          setPhoneError("Phone number must be 10 digits");
+        } else if (digitsOnly.length > 10) {
+          setPhoneError("Phone number cannot exceed 10 digits");
+        }
+      } else {
+        setPhoneError("");
+      }
+    }
+  };
+
+  const validatePhoneNumber = (phoneNumber: string): boolean => {
+    // Remove all non-digit characters
+    const digitsOnly = phoneNumber.replace(/\D/g, "");
+
+    // Check if it has exactly 10 digits for Indian phone numbers
+    return digitsOnly.length === 10;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate phone number before submission
+    if (formData.phoneNumber && !validatePhoneNumber(formData.phoneNumber)) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -335,6 +365,9 @@ export default function UserProfilePage() {
                   className="flex-1"
                 />
               </div>
+              {phoneError && (
+                <p className="text-red-400 text-sm mt-1">{phoneError}</p>
+              )}
             </div>
 
             {/* Email (Read-only) */}
