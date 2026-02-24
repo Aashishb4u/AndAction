@@ -8,7 +8,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useInfiniteVideos, useToggleBookmark } from "@/hooks/use-videos";
 import { VIDEO_CATEGORIES } from "@/lib/constants";
-import {
+import { 
   X,
   Copy,
   MessageCircle,
@@ -18,6 +18,7 @@ import {
   Linkedin,
   Loader2,
 } from "lucide-react";
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 
 export default function VideosPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -217,10 +218,7 @@ export default function VideosPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Initial Loading */}
           {isLoading && (
-            <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="w-10 h-10 text-primary-pink animate-spin mb-4" />
-              <p className="text-gray-400">Loading videos...</p>
-            </div>
+            <LoadingOverlay text="Loading videos..." />
           )}
 
           {/* Error State */}

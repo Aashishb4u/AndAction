@@ -6,6 +6,7 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
+import { TITLE_MAP, PREFERRED_ORDER, prettifyKey, getValueForKey } from '@/lib/artistCategories';
 
 export interface FindArtistModalProps {
   isOpen: boolean;
@@ -39,22 +40,11 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     performingLanguage: "",
   });
 
-  // Form options (updated mapping)
-  const artistCategories = [
-    { value: "singers", label: "Singer" },
-    { value: "dancers", label: "Dancer / Dance Group" },
-    { value: "anchors", label: "Anchor / Emcee / Host" },
-    { value: "djs", label: "DJ" },
-    { value: "bands", label: "Live Band / Group" },
-    { value: "comedians", label: "Comedian" },
-    { value: "musicians", label: "Musician / Instrumentalist" },
-    { value: "magicians", label: "Magician / Illusionist" },
-    { value: "actors", label: "Theatre Artist / Actor" },
-    { value: "mimicry", label: "Mimicry / Impressionist" },
-    { value: "specialAct", label: "Special Act Performer" },
-    { value: "spiritual", label: "Spiritual / Devotional" },
-    { value: "kidsEntertainers", label: "Kids Entertainer" },
-  ];
+  // Form options (use centralized TITLE_MAP so labels remain consistent)
+  const artistCategories = PREFERRED_ORDER.map((key) => ({
+    value: key,
+    label: TITLE_MAP[key] || prettifyKey(key),
+  }));
   
 
   const subCategories = [
@@ -149,7 +139,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
   const handleViewResults = () => {
     const params = new URLSearchParams();
 
-    if (formData.artistCategory) params.set("type", formData.artistCategory);
+    if (formData.artistCategory) params.set("type", getValueForKey(formData.artistCategory));
     if (formData.subCategory) params.set("subType", formData.subCategory);
     if (formData.artistGender) params.set("gender", formData.artistGender);
     if (formData.budget) params.set("budget", formData.budget);

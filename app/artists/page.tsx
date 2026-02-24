@@ -438,7 +438,7 @@ function ArtistsPageContent() {
                 isMobile ? (
                   <LoadingSpinner fullScreen={true} text="Loading artists..." />
                 ) : (
-                  <LoadingSpinner fullScreen={false} text="Loading artists..." />
+                  <LoadingSpinner fullScreen={true} text="Loading artists..." />
                 )
               ) : (
                 <>

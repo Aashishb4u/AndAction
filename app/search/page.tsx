@@ -24,18 +24,9 @@ const fetchArtists = async ({
   return json.data?.artists || [];
 };
 
-const ARTIST_CATEGORIES = [
-  { value: "singer", label: "Singer" },
-  { value: "dancer", label: "Dancer" },
-  { value: "musician", label: "Musician" },
-  { value: "comedian", label: "Comedian" },
-  { value: "magician", label: "Magician" },
-  { value: "actor", label: "Actor" },
-  { value: "anchor", label: "Anchor" },
-  { value: "band", label: "Live Band" },
-  { value: "dj", label: "DJ" },
-  { value: "other", label: "Other" },
-];
+import { VIDEO_CATEGORIES } from '@/lib/constants';
+
+const ARTIST_CATEGORIES = VIDEO_CATEGORIES.map(c => ({ value: c.value, label: c.label })).filter(c => c.value !== 'all');
 
 export default function MobileSearchPage() {
   const [search, setSearch] = useState("");

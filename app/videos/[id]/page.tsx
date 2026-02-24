@@ -10,6 +10,7 @@ import ShortsCard from "@/components/ui/ShortsCard";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 
 export default function VideoDetailsPage() {
   const params = useParams();
@@ -196,7 +197,9 @@ export default function VideoDetailsPage() {
   if (loading) {
     return (
       <SiteLayout>
-        <div className="text-center py-20 text-gray-400">Loading...</div>
+        <div>
+          <LoadingOverlay text="Loading video..." />
+        </div>
       </SiteLayout>
     );
   }
