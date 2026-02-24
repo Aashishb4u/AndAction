@@ -155,7 +155,7 @@ const AboutPage = () => {
                 <span>Call Us: +91 8860014889</span>
               </a>
               <a
-                href="mailto:support@andaction.com"
+                href="mailto:official@andaction.in"
                 className="inline-flex items-center gap-2 px-6 py-3 border-2 border-primary-pink text-primary-pink font-semibold rounded-full hover:bg-primary-pink hover:text-white transition-all duration-300"
               >
                 <span>Email Support</span>
