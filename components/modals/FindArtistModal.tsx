@@ -158,7 +158,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     router.push(`/artists?${params.toString()}`);
   };
 
-  const isFormValid = formData.artistCategory && formData.eventDate;
+  const isFormValid = formData.artistCategory;
 
   return (
     <Modal
@@ -276,13 +276,12 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             />
           </div>
           <div>
-            <label className="secondary-text  block mb-1">Event date*</label>
+            <label className="secondary-text  block mb-1">Event date</label>
             <DateInput
               placeholder="DD/MM/YYYY"
               value={formData.eventDate || null}
               onChange={(value) => handleInputChange("eventDate", value)}
               minDate={new Date()}
-              required
             />
           </div>
         </div>
