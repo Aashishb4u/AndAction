@@ -240,8 +240,8 @@ export default function ProfileSetupPage() {
 
   const handleGoToDashboard = () => {
     setShowSuccessModal(false);
-    // Redirect to integrations tab to connect YouTube/Instagram
-    router.push("/artist/profile?tab=integrations");
+    // Redirect to artist dashboard
+    router.push("/artist/dashboard");
   };
 
   const handleAddAnotherProfile = () => {

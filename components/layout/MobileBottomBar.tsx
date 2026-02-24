@@ -66,7 +66,7 @@ const MobileBottomBar = () => {
     },
     {
       id: 'bookmarks',
-      label: 'Bookmarks',
+      label: 'Favourites',
       href: '/bookmarks',
       icon: (
         <Bookmark className="w-6 h-6" active={isActive('/bookmarks')} />

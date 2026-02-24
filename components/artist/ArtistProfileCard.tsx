@@ -121,9 +121,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
                   if (artist.category) {
                     parts.push(...artist.category.split(",").map((s: string) => s.trim()));
                   }
-                  if (artist.subCategory) {
-                    parts.push(...artist.subCategory.split(",").map((s: string) => s.trim()));
-                  }
+                  // Show only main category, not sub-category
                   // remove duplicates and empty strings
                   const tags = Array.from(new Set(parts.filter(Boolean)));
                   return tags.map((tag, index) => (
