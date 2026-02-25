@@ -209,6 +209,37 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     }
   }, []);
 
+  // Sync formData when data prop changes (for editing existing profiles)
+  useEffect(() => {
+    if (data.artistType || data.stageName || data.subArtistType) {
+      setFormData({
+        profilePhoto: data.profilePhoto || null,
+        avatarUrl: (data as any).avatarUrl || "",
+        stageName: data.stageName || "",
+        artistType: data.artistType || "",
+        subArtistType: data.subArtistType || "",
+        achievements: data.achievements || "",
+        yearsOfExperience: data.yearsOfExperience || "",
+        shortBio: data.shortBio || "",
+      });
+
+      // Update preview if there's an avatar URL
+      if ((data as any).avatarUrl) {
+        setPreview((data as any).avatarUrl);
+      }
+
+      // Update selected sub types
+      const raw = data.subArtistType || "";
+      if (raw) {
+        const subTypes = raw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        setSelectedSubTypes(subTypes);
+      }
+    }
+  }, [data.artistType, data.stageName, data.subArtistType, data.achievements, data.yearsOfExperience, data.shortBio, (data as any).avatarUrl, data.profilePhoto]);
+
   const handleProfilePhotoUpload = async (file: File) => {
     console.log("⬇️ Original file:", file);
 
