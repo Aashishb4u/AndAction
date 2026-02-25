@@ -6,8 +6,8 @@ import { useMemo } from "react";
 const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
   const [_key, { category }] = queryKey;
   const url = category && category !== 'all'
-    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}`
-    : `/api/videos?type=shorts&page=${pageParam}`;
+    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}&limit=12`
+    : `/api/videos?type=shorts&page=${pageParam}&limit=12`;
   
   const res = await fetch(url);
   const json = await res.json();
