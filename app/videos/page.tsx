@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import SiteLayout from "@/components/layout/SiteLayout";
 import VideoCard from "@/components/ui/VideoCard";
 import { toast } from "react-toastify";
@@ -61,6 +61,7 @@ export default function VideosPage() {
         creator: v.user.name
           ? v.user.name
           : `${v.user.firstName} ${v.user.lastName}`,
+        userId: v.user.id, // Add userId for grouping
         thumbnail: v.thumbnailUrl,
         videoUrl: v.url,
         category: "other",
@@ -70,6 +71,32 @@ export default function VideosPage() {
         artistType: v.user.artist?.artistType || "",
       })),
     ) || [];
+
+  // Group videos by artist (all videos from one artist together)
+  const groupedVideos = useMemo(() => {
+    if (!allVideos.length) return [];
+
+    // Group by userId
+    const videosByArtist = allVideos.reduce((acc, video) => {
+      if (!acc[video.userId]) {
+        acc[video.userId] = [];
+      }
+      acc[video.userId].push(video);
+      return acc;
+    }, {} as Record<string, typeof allVideos>);
+
+    // Flatten back to array, maintaining artist grouping
+    // Get unique artist IDs in order of first appearance
+    const artistOrder: string[] = [];
+    allVideos.forEach(video => {
+      if (!artistOrder.includes(video.userId)) {
+        artistOrder.push(video.userId);
+      }
+    });
+
+    // Return videos grouped by artist
+    return artistOrder.flatMap(artistId => videosByArtist[artistId]);
+  }, [allVideos]);
 
   // Intersection observer for infinite scroll
   useEffect(() => {
@@ -109,7 +136,7 @@ export default function VideosPage() {
   };
 
   const handleShare = async (videoId: string) => {
-    const video = allVideos.find((v) => v.id === videoId);
+    const video = groupedVideos.find((v) => v.id === videoId);
     const shareTitle = video?.title || "Check out this video";
     setShareModal({ isOpen: true, videoId, title: shareTitle });
   };
@@ -237,7 +264,7 @@ export default function VideosPage() {
           {!isLoading && !isError && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
-                {allVideos.map((video, idx) => (
+                {groupedVideos.map((video, idx) => (
                   <VideoCard
                     key={`video-${video.id}-${idx}`}
                     id={video.id}
@@ -268,7 +295,7 @@ export default function VideosPage() {
               )}
 
               {/* End of List */}
-              {!hasNextPage && allVideos.length > 0 && (
+              {!hasNextPage && groupedVideos.length > 0 && (
                 <div className="text-center py-8">
                   <p className="text-gray-500 text-sm">
                     You&apos;ve reached the end
@@ -279,7 +306,7 @@ export default function VideosPage() {
           )}
 
           {/* Empty State */}
-          {!isLoading && !isError && allVideos.length === 0 && (
+          {!isLoading && !isError && groupedVideos.length === 0 && (
             <div className="text-center py-16">
               <img src="/blank.png" alt="No videos" className="w-48 h-48 mx-auto mb-6" />
               <p className="text-gray-400 text-lg">
