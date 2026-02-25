@@ -38,6 +38,7 @@ const getArtistCount = async (
     if (filters.eventType) params.set("eventType", filters.eventType);
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
+    if (filters.location) params.set("location", filters.location);
 
     const url = `/api/artists?${params.toString()}`;
     const res = await fetch(url, { cache: "no-store" });
@@ -76,6 +77,7 @@ const getArtists = async (
     if (filters.eventType) params.set("eventType", filters.eventType);
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
+    if (filters.location) params.set("location", filters.location);
 
     // Pagination
     params.set("page", page.toString());
@@ -118,6 +120,7 @@ function ArtistsPageContent() {
       eventState: params.get("state") || "",
       eventType: params.get("eventType") || "",
       language: params.get("language") || "",
+      location: params.get("location") || "",
     };
   };
 
@@ -189,6 +192,7 @@ function ArtistsPageContent() {
     if (filters.eventType) params.set("eventType", filters.eventType);
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
+    if (filters.location) params.set("location", filters.location);
 
     const newURL = params.toString() ? `?${params.toString()}` : window.location.pathname;
     window.history.replaceState({}, "", newURL);
@@ -235,6 +239,7 @@ function ArtistsPageContent() {
       eventState: "",
       eventType: "",
       language: "",
+      location: "",
     });
     setQuery("");
     setSearchInput("");
@@ -252,6 +257,7 @@ function ArtistsPageContent() {
         eventState: "",
         eventType: "",
         language: "",
+        location: "",
       },
       1
     ).then(({ artists, total }) => {

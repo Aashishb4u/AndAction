@@ -33,8 +33,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
     backingDescription: data.backingDescription || "",
   });
 
-  // Track if fields are in edit mode (editable) or locked
-  const [isContactEditing, setIsContactEditing] = useState(!data.contactNumber);
+  // contact editing flag removed — always allow editing in form
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedCountry, setSelectedCountry] = useState<{ dialCode?: string } | null>({ dialCode: '+91' });
 
@@ -195,21 +194,9 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                       }
                       onCountryChange={(c) => setSelectedCountry(c as any)}
                       variant="filled"
-                      disabled={!isContactEditing && !!formData.contactNumber}
+                      disabled={false}
                     />
-                    {/* Show Edit or Verify based on editing state */}
-                    {formData.contactNumber && !isContactEditing ? (
-                      <button
-                        onClick={() => setIsContactEditing(true)}
-                        className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-1 gradient-text btn1"
-                      >
-                        Edit
-                      </button>
-                    ) : (
-                      <button className="px-4 py-2 hover:text-primary-orange transition-colors duration-200 font-medium absolute right-0 top-1 gradient-text btn1">
-                        Verify
-                      </button>
-                    )}
+                    {/* phone input only — no verify/edit buttons */}
                   </div>
                   {errors.contactNumber && (
                     <p className="text-red-500 text-sm mt-1">

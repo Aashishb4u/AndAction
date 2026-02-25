@@ -22,6 +22,7 @@ interface FormData {
   eventDate: string;
   eventType: string;
   performingLanguage: string[];
+  location: string;
 }
 
 const FindArtistModal: React.FC<FindArtistModalProps> = ({
@@ -38,6 +39,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     eventDate: "",
     eventType: "",
     performingLanguage: [],
+    location: "",
   });
 
   // Form options (use centralized TITLE_MAP so labels remain consistent)
@@ -81,6 +83,24 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     { value: "gujarat", label: "Gujarat" },
     { value: "rajasthan", label: "Rajasthan" },
     { value: "punjab", label: "Punjab" },
+  ];
+
+  const locationOptions = [
+    { value: "mumbai", label: "Mumbai" },
+    { value: "delhi", label: "Delhi" },
+    { value: "bangalore", label: "Bangalore" },
+    { value: "hyderabad", label: "Hyderabad" },
+    { value: "ahmedabad", label: "Ahmedabad" },
+    { value: "chennai", label: "Chennai" },
+    { value: "kolkata", label: "Kolkata" },
+    { value: "pune", label: "Pune" },
+    { value: "jaipur", label: "Jaipur" },
+    { value: "surat", label: "Surat" },
+    { value: "lucknow", label: "Lucknow" },
+    { value: "chandigarh", label: "Chandigarh" },
+    { value: "indore", label: "Indore" },
+    { value: "nagpur", label: "Nagpur" },
+    { value: "goa", label: "Goa" },
   ];
 
   const eventTypes = [
@@ -174,6 +194,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       eventDate: "",
       eventType: "",
       performingLanguage: [],
+      location: "",
     });
   };
 
@@ -186,6 +207,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     if (formData.budget) params.set("budget", formData.budget);
     if (formData.eventState) params.set("state", formData.eventState);
     if (formData.eventType) params.set("eventType", formData.eventType);
+    if (formData.location) params.set("location", formData.location);
     if (formData.performingLanguage && formData.performingLanguage.length > 0) {
       // join multiple selected languages as comma-separated
       params.set("language", (formData.performingLanguage as string[]).join(","));
@@ -317,15 +339,26 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
           </div>
         </div>
 
-        {/* Event Type */}
-        <div>
-          <label className="secondary-text  block mb-1">Event type</label>
-          <Select
-            placeholder="Select event type"
-            options={eventTypes}
-            value={formData.eventType}
-            onChange={(value) => handleInputChange("eventType", value)}
-          />
+        {/* Event Type and Artist Location - Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="secondary-text  block mb-1">Event type</label>
+            <Select
+              placeholder="Select event type"
+              options={eventTypes}
+              value={formData.eventType}
+              onChange={(value) => handleInputChange("eventType", value)}
+            />
+          </div>
+          <div>
+            <label className="secondary-text  block mb-1">Artist Location</label>
+            <Select
+              placeholder="Select location"
+              options={locationOptions}
+              value={formData.location}
+              onChange={(value) => handleInputChange("location", value)}
+            />
+          </div>
         </div>
 
         {/* Performing Language */}

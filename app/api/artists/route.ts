@@ -65,6 +65,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const language = searchParams.get("language");
     const eventType = searchParams.get("eventType");
     const budget = searchParams.get("budget");
+    const location = searchParams.get("location");
 
     let state = searchParams.get("state");
     if (!state && lat && lng) state = await getStateFromLatLng(lat, lng);
@@ -183,6 +184,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
     if (gender) {
       userFilter.gender = { equals: gender, mode: "insensitive" };
+    }
+
+    if (location) {
+      userFilter.city = { contains: location, mode: "insensitive" };
     }
 
     where.user = { is: userFilter };

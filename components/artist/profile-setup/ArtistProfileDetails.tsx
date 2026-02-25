@@ -146,8 +146,9 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     { value: '5', label: '10+ years' }
   ];
 
-  const handleInputChange = (field: string, value: string) => {
-    const updatedData = { ...formData, [field]: value };
+  const handleInputChange = (field: string, value: string | string[]) => {
+    const stringValue = Array.isArray(value) ? value.join(',') : value;
+    const updatedData = { ...formData, [field]: stringValue };
     setFormData(updatedData);
     onUpdateData(updatedData);
   };
