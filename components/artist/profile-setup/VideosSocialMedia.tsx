@@ -5,11 +5,12 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Image from "next/image";
 import { Loader2, CheckCircle } from "lucide-react";
-import { toast } from "react-toastify";
 import {
   useIntegrationStatus,
   useYouTubeConnect,
   useYouTubeConnectByChannel,
+  useInstagramConnect,
+  useInstagramDisconnect,
 } from "@/hooks/use-integrations";
 
 interface VideosSocialMediaProps {
@@ -31,8 +32,13 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
   const connectYouTubeMutation = useYouTubeConnect();
   const connectYouTubeByChannelMutation = useYouTubeConnectByChannel();
 
+  const instagramConnectMutation = useInstagramConnect();
+  const instagramDisconnectMutation = useInstagramDisconnect();
+
   const youtubeConnected = integrationStatus?.youtube.connected ?? false;
   const instagramConnected = integrationStatus?.instagram.connected ?? false;
+  const isInstagramLoading =
+    instagramConnectMutation.isPending || instagramDisconnectMutation.isPending;
 
   const connectYouTube = () => {
     connectYouTubeMutation.mutate();
@@ -59,7 +65,11 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
   };
 
   const connectInstagram = () => {
-    toast.info("Instagram integration coming soon!");
+    instagramConnectMutation.mutate();
+  };
+
+  const disconnectInstagram = () => {
+    instagramDisconnectMutation.mutate();
   };
 
   return (
@@ -237,17 +247,42 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
               </div>
 
               {instagramConnected ? (
-                <div className="flex items-center justify-center text-center gap-2 text-green-500 text-sm">
-                  <CheckCircle className="w-4 h-4" />
-                  Connected
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center text-center gap-2 text-green-500 text-sm">
+                    <CheckCircle className="w-4 h-4" />
+                    Connected
+                    {integrationStatus?.instagram.username && (
+                      <span className="text-text-gray ml-1">
+                        (@{integrationStatus.instagram.username})
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={disconnectInstagram}
+                    disabled={isInstagramLoading}
+                    className="w-full py-2 text-sm border border-red-400/30 text-red-400 rounded-full font-medium hover:bg-red-400/10 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isInstagramLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Disconnect"
+                    )}
+                  </button>
                 </div>
               ) : (
                 <button
                   onClick={connectInstagram}
-                  className="w-full py-2 text-sm bg-gray-600 rounded-full font-medium cursor-not-allowed opacity-60"
-                  disabled
+                  disabled={isInstagramLoading}
+                  className="w-full py-2 text-sm bg-white rounded-full font-medium hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  <span className="text-gray-300">Coming Soon</span>
+                  {isInstagramLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
+                      <span className="gradient-text">Connecting...</span>
+                    </>
+                  ) : (
+                    <span className="gradient-text">Connect Instagram</span>
+                  )}
                 </button>
               )}
             </div>
@@ -257,17 +292,9 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
 
       {/* Fixed Bottom Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color md:px-6 px-5 py-4">
-        <div className="max-w-md mx-auto flex items-center justify-between gap-4">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={onSkip}
-            className="gradient-text hover:bg-card"
-          >
-            Skip & Next
-          </Button>
-          <Button variant="primary" size="md" onClick={onNext}>
-            Next
+        <div className="max-w-md mx-auto">
+          <Button variant="primary" size="md" onClick={onNext} className="w-full">
+            Save
           </Button>
         </div>
       </div>

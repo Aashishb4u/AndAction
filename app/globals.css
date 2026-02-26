@@ -770,6 +770,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
+/* Override global focus gradient for phone inputs inside phone-input wrapper */
+.phone-input input:hover,
+.phone-input input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  border-radius: 0 !important;
+}
+
 /* Artists page specific styles */
 .artist-card-hover {
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);

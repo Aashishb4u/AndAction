@@ -9,17 +9,16 @@ import Pause from "@/components/icons/pause";
 import Link from "next/link";
 
 const SoundOnIcon = () => (
-  <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M5 9v6h4l5 5V4L9 9H5z"></path>
-    <path d="M16.5 12c0-1.77-.77-3.29-2-4.3v8.59c1.23-1.01 2-2.53 2-4.29z"></path>
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M5 9v6h4l5 5V4L9 9H5z" />
+    <path d="M16.5 8.5a4.5 4.5 0 010 7" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const SoundOffIcon = () => (
-  <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M16.5 12c0-1.77-.77-3.29-2-4.3v2.59l2 2v-.29z"></path>
-    <path d="M5 9v6h4l5 5V4L9 9H5z"></path>
-    <path d="M19 13.59L17.59 15 15 12.41 12.41 15 11 13.59 13.59 11 11 8.41 12.41 7 15 9.59 17.59 7 19 8.41 16.41 11 19 13.59z"></path>
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M5 9v6h4l5 5V4L9 9H5z" fill="currentColor" />
+    <path d="M19 5L5 19" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 

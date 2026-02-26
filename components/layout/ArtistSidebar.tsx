@@ -46,7 +46,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
 
   const handleArtistProfile = () => {
     onClose();
-    router.push('/artist/profile');
+    router.push('/artist/dashboard');
   };
 
   const handleInstallApp = () => {

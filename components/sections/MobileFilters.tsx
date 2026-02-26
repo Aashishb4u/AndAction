@@ -77,6 +77,25 @@ const languageOptions: FilterOption[] = [
   { value: "punjabi", label: "Punjabi" },
 ];
 
+const locationOptions: FilterOption[] = [
+  { value: "", label: "Select location" },
+  { value: "mumbai", label: "Mumbai" },
+  { value: "delhi", label: "Delhi" },
+  { value: "bangalore", label: "Bangalore" },
+  { value: "hyderabad", label: "Hyderabad" },
+  { value: "ahmedabad", label: "Ahmedabad" },
+  { value: "chennai", label: "Chennai" },
+  { value: "kolkata", label: "Kolkata" },
+  { value: "pune", label: "Pune" },
+  { value: "jaipur", label: "Jaipur" },
+  { value: "surat", label: "Surat" },
+  { value: "lucknow", label: "Lucknow" },
+  { value: "chandigarh", label: "Chandigarh" },
+  { value: "indore", label: "Indore" },
+  { value: "nagpur", label: "Nagpur" },
+  { value: "goa", label: "Goa" },
+];
+
 const MobileFilters: React.FC<MobileFiltersProps> = ({
   filters,
   onFilterChange,
@@ -114,6 +133,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
       category: categoryOptions,
       budget: budgetOptions,
       language: languageOptions,
+      location: locationOptions,
     };
 
     const options = optionsMap[filterKey];
@@ -125,6 +145,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
     { key: "category", label: getFilterLabel("category", filters.category) },
     { key: "budget", label: getFilterLabel("budget", filters.budget) },
     { key: "language", label: getFilterLabel("language", filters.language) },
+    { key: "location", label: getFilterLabel("location", filters.location) },
   ];
 
   const FilterChip: React.FC<{
@@ -256,6 +277,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                 category: categoryOptions,
                 budget: budgetOptions,
                 language: languageOptions,
+                location: locationOptions,
               };
               return optionsMap[activeDropdown]?.map((option) => (
                 <button
@@ -321,7 +343,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Artist Category"
                     value={filters.category}
                     options={categoryOptions}
-                    onChange={(value) => onFilterChange("category", value)}
+                    onChange={(value) => onFilterChange("category", value as string)}
                     required
                     placeholder="Select Category"
                   />
@@ -333,7 +355,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Sub-Category"
                     value={filters.subCategory}
                     options={subCategoryOptions}
-                    onChange={(value) => onFilterChange("subCategory", value)}
+                    onChange={(value) => onFilterChange("subCategory", value as string)}
                     placeholder="Select sub-category"
                   />
                 </div>
@@ -344,7 +366,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Artist gender"
                     value={filters.gender}
                     options={genderOptions}
-                    onChange={(value) => onFilterChange("gender", value)}
+                    onChange={(value) => onFilterChange("gender", value as string)}
                     placeholder="Select gender"
                   />
                 </div>
@@ -355,7 +377,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Budget"
                     value={filters.budget}
                     options={budgetOptions}
-                    onChange={(value) => onFilterChange("budget", value)}
+                    onChange={(value) => onFilterChange("budget", value as string)}
                     placeholder="Select budget"
                   />
                 </div>
@@ -366,7 +388,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Event State"
                     value={filters.eventState}
                     options={eventStateOptions}
-                    onChange={(value) => onFilterChange("eventState", value)}
+                    onChange={(value) => onFilterChange("eventState", value as string)}
                     placeholder="Select State"
                   />
                 </div>
@@ -377,7 +399,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Event type"
                     value={filters.eventType}
                     options={eventTypeOptions}
-                    onChange={(value) => onFilterChange("eventType", value)}
+                    onChange={(value) => onFilterChange("eventType", value as string)}
                     placeholder="Select event type"
                   />
                 </div>
@@ -388,8 +410,19 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Preforming language"
                     value={filters.language}
                     options={languageOptions}
-                    onChange={(value) => onFilterChange("language", value)}
+                    onChange={(value) => onFilterChange("language", value as string)}
                     placeholder="Select language"
+                  />
+                </div>
+
+                {/* Artist Location */}
+                <div>
+                  <Select
+                    label="Artist Location"
+                    value={filters.location}
+                    options={locationOptions}
+                    onChange={(value) => onFilterChange("location", value as string)}
+                    placeholder="Select location"
                   />
                 </div>
               </div>
