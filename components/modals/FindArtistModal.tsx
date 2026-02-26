@@ -6,6 +6,7 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
+import { TITLE_MAP, PREFERRED_ORDER, prettifyKey, getValueForKey } from '@/lib/artistCategories';
 import { ARTIST_CATEGORIES } from "@/lib/constants";
 import { INDIAN_STATES } from "@/lib/constants";
 
@@ -22,7 +23,8 @@ interface FormData {
   eventState: string;
   eventDate: string;
   eventType: string;
-  performingLanguage: string;
+  performingLanguage: string[];
+  location: string;
 }
 
 const FindArtistModal: React.FC<FindArtistModalProps> = ({
@@ -38,25 +40,16 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     eventState: "",
     eventDate: "",
     eventType: "",
-    performingLanguage: "",
+    performingLanguage: [],
+    location: "",
   });
 
-  // Form options (updated mapping)
-  const artistCategories = [
-    { value: "singers", label: "Singer" },
-    { value: "dancers", label: "Dancer / Dance Group" },
-    { value: "anchors", label: "Anchor / Emcee / Host" },
-    { value: "djs", label: "DJ" },
-    { value: "bands", label: "Live Band / Group" },
-    { value: "comedians", label: "Comedian" },
-    { value: "musicians", label: "Musician / Instrumentalist" },
-    { value: "magicians", label: "Magician / Illusionist" },
-    { value: "actors", label: "Theatre Artist / Actor" },
-    { value: "mimicry", label: "Mimicry / Impressionist" },
-    { value: "specialAct", label: "Special Act Performer" },
-    { value: "spiritual", label: "Spiritual / Devotional" },
-    { value: "kidsEntertainers", label: "Kids Entertainer" },
-  ];
+  // Form options (use centralized TITLE_MAP so labels remain consistent)
+  const artistCategories = PREFERRED_ORDER.map((key) => ({
+    value: key,
+    label: TITLE_MAP[key] || prettifyKey(key),
+  }));
+  
 
   const subCategories = [
     { value: "bollywood", label: "Bollywood" },
@@ -87,6 +80,24 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
 
 
 
+  const locationOptions = [
+    { value: "mumbai", label: "Mumbai" },
+    { value: "delhi", label: "Delhi" },
+    { value: "bangalore", label: "Bangalore" },
+    { value: "hyderabad", label: "Hyderabad" },
+    { value: "ahmedabad", label: "Ahmedabad" },
+    { value: "chennai", label: "Chennai" },
+    { value: "kolkata", label: "Kolkata" },
+    { value: "pune", label: "Pune" },
+    { value: "jaipur", label: "Jaipur" },
+    { value: "surat", label: "Surat" },
+    { value: "lucknow", label: "Lucknow" },
+    { value: "chandigarh", label: "Chandigarh" },
+    { value: "indore", label: "Indore" },
+    { value: "nagpur", label: "Nagpur" },
+    { value: "goa", label: "Goa" },
+  ];
+
   const eventTypes = [
     { value: "wedding", label: "Wedding" },
     { value: "corporate", label: "Corporate Event" },
@@ -101,13 +112,54 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     { value: "english", label: "English" },
     { value: "marathi", label: "Marathi" },
     { value: "gujarati", label: "Gujarati" },
-    { value: "punjabi", label: "Punjabi" },
     { value: "tamil", label: "Tamil" },
+    { value: "telugu", label: "Telugu" },
+    { value: "bengali", label: "Bengali" },
+    { value: "punjabi", label: "Punjabi" },
+    { value: "kannada", label: "Kannada" },
+    { value: "malayalam", label: "Malayalam" },
+    { value: "odia", label: "Odia" },
+    { value: "assamese", label: "Assamese" },
+    { value: "kashmiri", label: "Kashmiri" },
+    { value: "konkani", label: "Konkani" },
+    { value: "sindhi", label: "Sindhi" },
+    { value: "nepali", label: "Nepali" },
+    { value: "manipuri", label: "Manipuri" },
+    { value: "sanskrit", label: "Sanskrit" },
+    { value: "bodo", label: "Bodo" },
+    { value: "santali", label: "Santali" },
+    { value: "dogri", label: "Dogri" },
+    { value: "maithili", label: "Maithili" }
   ];
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  // Language dropdown state
+  const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
+
+  // Toggle a single language selection
+  const toggleLanguageSelection = (langValue: string) => {
+    const current = formData.performingLanguage || [];
+    let updated: string[];
+    if (current.includes(langValue)) {
+      updated = current.filter((l) => l !== langValue);
+    } else {
+      updated = [...current, langValue];
+    }
+    handleInputChange('performingLanguage', updated);
+  };
+
+  // Toggle all languages
+  const toggleAllLanguages = () => {
+    const allValues = languages.map((l) => l.value);
+    if ((formData.performingLanguage || []).length === languages.length) {
+      handleInputChange('performingLanguage', []);
+    } else {
+      handleInputChange('performingLanguage', allValues);
+    }
+  };
+
+  const handleInputChange = (field: keyof FormData, value: string | string[]) => {
     // For eventDate, ensure only today or future dates are accepted
-    if (field === "eventDate" && value) {
+    if (field === "eventDate" && value && typeof value === "string") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const inputDate = new Date(value);
@@ -123,7 +175,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     }
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: value as any,
     }));
   };
 
@@ -136,21 +188,25 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       eventState: "",
       eventDate: "",
       eventType: "",
-      performingLanguage: "",
+      performingLanguage: [],
+      location: "",
     });
   };
 
   const handleViewResults = () => {
     const params = new URLSearchParams();
 
-    if (formData.artistCategory) params.set("type", formData.artistCategory);
+    if (formData.artistCategory) params.set("type", getValueForKey(formData.artistCategory));
     if (formData.subCategory) params.set("subType", formData.subCategory);
     if (formData.artistGender) params.set("gender", formData.artistGender);
     if (formData.budget) params.set("budget", formData.budget);
     if (formData.eventState) params.set("state", formData.eventState);
     if (formData.eventType) params.set("eventType", formData.eventType);
-    if (formData.performingLanguage)
-      params.set("language", formData.performingLanguage);
+    if (formData.location) params.set("location", formData.location);
+    if (formData.performingLanguage && formData.performingLanguage.length > 0) {
+      // join multiple selected languages as comma-separated
+      params.set("language", (formData.performingLanguage as string[]).join(","));
+    }
 
     // eventDate not used in API but we still pass it
     if (formData.eventDate) params.set("eventDate", formData.eventDate);
@@ -286,28 +342,99 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
           </div>
         </div>
 
-        {/* Event Type */}
-        <div>
-          <label className="secondary-text  block mb-1">Event type</label>
-          <Select
-            placeholder="Select event type"
-            options={eventTypes}
-            value={formData.eventType}
-            onChange={(value) => handleInputChange("eventType", value)}
-          />
+        {/* Event Type and Artist Location - Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="secondary-text  block mb-1">Event type</label>
+            <Select
+              placeholder="Select event type"
+              options={eventTypes}
+              value={formData.eventType}
+              onChange={(value) => handleInputChange("eventType", value)}
+            />
+          </div>
+          <div>
+            <label className="secondary-text  block mb-1">Artist Location</label>
+            <Select
+              placeholder="Select location"
+              options={locationOptions}
+              value={formData.location}
+              onChange={(value) => handleInputChange("location", value)}
+            />
+          </div>
         </div>
 
         {/* Performing Language */}
-        <div>
-          <label className="secondary-text  block mb-1">
-            Performing language
-          </label>
-          <Select
-            placeholder="Select language"
-            options={languages}
-            value={formData.performingLanguage}
-            onChange={(value) => handleInputChange("performingLanguage", value)}
-          />
+        <div className="relative">
+          <label className="secondary-text  block mb-1">Performing language</label>
+
+          <button
+            type="button"
+            onClick={() => setShowLanguagesDropdown(!showLanguagesDropdown)}
+            className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
+          >
+            <div className="flex-1 flex flex-wrap gap-2 items-center">
+              {(formData.performingLanguage || []).length === 0 ? (
+                <span className="text-text-gray">Select languages</span>
+              ) : (formData.performingLanguage || []).length === languages.length ? (
+                <span className="text-white">All Languages</span>
+              ) : (
+                (formData.performingLanguage || []).map((val) => {
+                  const label = languages.find((l) => l.value === val)?.label || val;
+                  return (
+                    <span key={val} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+                      <span className="text-white">{label}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleLanguageSelection(val); }}
+                        className="text-text-gray hover:text-white"
+                        aria-label={`Remove ${label}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })
+              )}
+            </div>
+            <svg
+              className={`w-6 h-6 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showLanguagesDropdown && (
+            <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg w-full max-h-60 overflow-auto">
+              <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
+                <input
+                  type="checkbox"
+                  checked={(formData.performingLanguage || []).length === languages.length}
+                  onChange={toggleAllLanguages}
+                  className="w-4 h-4 accent-primary-pink rounded"
+                />
+                <span className="text-white font-medium">All Languages</span>
+              </label>
+
+              {languages.map((language) => (
+                <label
+                  key={language.value}
+                  className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={(formData.performingLanguage || []).includes(language.value)}
+                    onChange={() => toggleLanguageSelection(language.value)}
+                    className="w-4 h-4 accent-primary-pink rounded"
+                  />
+                  <span className="text-white text-sm">{language.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}

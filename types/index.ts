@@ -227,6 +227,7 @@ export interface Filters {
   eventState: string;
   eventType: string;
   language: string;
+  location: string;
 }
 
 // Artist Profile Setup Types

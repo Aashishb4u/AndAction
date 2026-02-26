@@ -65,6 +65,24 @@ const languageOptions: FilterOption[] = [
   { value: "punjabi", label: "Punjabi" },
 ];
 
+const locationOptions: FilterOption[] = [
+  { value: "mumbai", label: "Mumbai" },
+  { value: "delhi", label: "Delhi" },
+  { value: "bangalore", label: "Bangalore" },
+  { value: "hyderabad", label: "Hyderabad" },
+  { value: "ahmedabad", label: "Ahmedabad" },
+  { value: "chennai", label: "Chennai" },
+  { value: "kolkata", label: "Kolkata" },
+  { value: "pune", label: "Pune" },
+  { value: "jaipur", label: "Jaipur" },
+  { value: "surat", label: "Surat" },
+  { value: "lucknow", label: "Lucknow" },
+  { value: "chandigarh", label: "Chandigarh" },
+  { value: "indore", label: "Indore" },
+  { value: "nagpur", label: "Nagpur" },
+  { value: "goa", label: "Goa" },
+];
+
 const FilterSelect: React.FC<{
   label: string;
   value: string;
@@ -77,7 +95,7 @@ const FilterSelect: React.FC<{
       label={label}
       value={value}
       options={options}
-      onChange={onChange}
+      onChange={(value) => onChange(value as string)}
       required={required}
       placeholder={`Select ${label}`}
     />
@@ -194,6 +212,13 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
           value={filters.language}
           options={languageOptions}
           onChange={(value) => onFilterChange("language", value)}
+        />
+
+        <FilterSelect
+          label="Artist Location"
+          value={filters.location}
+          options={locationOptions}
+          onChange={(value) => onFilterChange("location", value)}
         />
       </div>
 
