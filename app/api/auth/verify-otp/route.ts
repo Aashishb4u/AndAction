@@ -1,3 +1,8 @@
+/**
+ * POST /api/auth/verify-otp
+ * Verifies OTP for authentication (phone or email)
+ * Supports both mobile login/signup and email password reset
+ */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -7,32 +12,104 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     let body;
     try {
         body = await request.json();
-    } catch (e) {
+    } catch {
         return ApiErrors.badRequest('Invalid JSON body.');
     }
 
-    const { email, otp } = body;
+    const { email, phoneNumber, countryCode = "+91", otp, type = "email" } = body;
 
-    if (!email || !otp) {
-        return ApiErrors.badRequest('Email and OTP are required.');
+    if (!otp) {
+        return ApiErrors.badRequest('OTP is required.');
     }
 
     try {
-        const user = await prisma.user.findFirst({
-            where: {
-                email: email.toLowerCase(),
-                resetToken: otp,
-                resetTokenExpiry: {
-                    gt: new Date(),
-                },
-            },
-        });
+        // Handle mobile OTP verification
+        if (type === "phone") {
+            if (!phoneNumber) {
+                return ApiErrors.badRequest('Phone number is required.');
+            }
 
-        if (!user) {
-            return ApiErrors.badRequest('Invalid or expired OTP.');
+            // Find the most recent valid OTP for this phone number
+            const otpRecord = await prisma.otp.findFirst({
+                where: {
+                    phoneNumber,
+                    countryCode,
+                    otp,
+                    isVerified: false,
+                    expiresAt: {
+                        gt: new Date(), // Not expired
+                    },
+                },
+                orderBy: {
+                    createdAt: "desc",
+                },
+            });
+
+            if (!otpRecord) {
+                return ApiErrors.badRequest("Invalid or expired OTP");
+            }
+
+            // Mark OTP as verified
+            await prisma.otp.update({
+                where: { id: otpRecord.id },
+                data: { isVerified: true },
+            });
+
+            // Find user
+            const user = await prisma.user.findFirst({
+                where: {
+                    phoneNumber,
+                    countryCode,
+                },
+            });
+
+            if (!user) {
+                return ApiErrors.notFound(
+                    "User not found. Please complete signup first."
+                );
+            }
+
+            // Return user data for NextAuth session
+            return successResponse(
+                {
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        phoneNumber: user.phoneNumber,
+                        countryCode: user.countryCode,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        role: user.role,
+                    },
+                },
+                "OTP verified successfully"
+            );
         }
 
-        return successResponse({}, 'OTP verified successfully.', 200);
+        // Handle email OTP verification (password reset flow)
+        if (type === "email") {
+            if (!email) {
+                return ApiErrors.badRequest('Email is required.');
+            }
+
+            const user = await prisma.user.findFirst({
+                where: {
+                    email: email.toLowerCase(),
+                    resetToken: otp,
+                    resetTokenExpiry: {
+                        gt: new Date(),
+                    },
+                },
+            });
+
+            if (!user) {
+                return ApiErrors.badRequest('Invalid or expired OTP.');
+            }
+
+            return successResponse({}, 'OTP verified successfully.', 200);
+        }
+
+        return ApiErrors.badRequest('Invalid verification type.');
 
     } catch (error) {
         console.error('Verify OTP API Error:', error);

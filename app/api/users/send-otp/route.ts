@@ -68,9 +68,7 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse>>
 
     // --- Send via SMS or Email ---
     if (isPhone) {
-      const fullPhoneNumber = `${countryCode}${phoneNumber}`;
-
-      const smsResult = await sendOtpSms(countryCode!, fullPhoneNumber, otp);
+      const smsResult = await sendOtpSms(countryCode!, phoneNumber!, otp);
 
       // CORRECTED CHECK: Now only fails if transactionId missing or HTTP failure
       if (!smsResult.success) {
@@ -85,7 +83,7 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse>>
         return ApiErrors.internalError("Failed to send verification SMS. Please try again.");
       }
 
-      console.log(`📱 OTP sent to phone ${fullPhoneNumber}: ${otp}`);
+      console.log(`📱 OTP sent to phone ${countryCode}${phoneNumber}: ${otp}`);
 
     } else {
       const emailResult = await sendOtpEmail(email!, otp);
