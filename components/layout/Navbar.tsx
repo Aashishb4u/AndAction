@@ -52,7 +52,7 @@ useEffect(() => {
     { label: "Videos", href: "/videos", isActive: pathname === "/videos" },
     { label: "Shorts", href: "/shorts", isActive: pathname === "/shorts" },
     {
-      label: "Bookmarks",
+      label: "Favourites",
       href: "/bookmarks",
       isActive: pathname === "/bookmarks",
     },

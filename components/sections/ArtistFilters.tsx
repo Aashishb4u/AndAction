@@ -4,7 +4,7 @@ import React from "react";
 import { Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
-import { VIDEO_CATEGORIES } from "@/lib/constants";
+import { VIDEO_CATEGORIES, INDIAN_STATES } from "@/lib/constants";
 
 interface FilterOption {
   value: string;
@@ -47,13 +47,7 @@ const budgetOptions: FilterOption[] = [
   { value: "500000+", label: "₹5,00,000+" },
 ];
 
-const eventStateOptions: FilterOption[] = [
-  { value: "maharashtra", label: "Maharashtra" },
-  { value: "gujarat", label: "Gujarat" },
-  { value: "delhi", label: "Delhi" },
-  { value: "mumbai", label: "Mumbai" },
-  { value: "bangalore", label: "Bangalore" },
-];
+
 
 const eventTypeOptions: FilterOption[] = [
   { value: "wedding", label: "Wedding" },
@@ -202,7 +196,7 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
         <FilterSelect
           label="Event State"
           value={filters.eventState}
-          options={eventStateOptions}
+          options={INDIAN_STATES}
           onChange={(value) => onFilterChange("eventState", value)}
         />
 

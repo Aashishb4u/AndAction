@@ -294,8 +294,13 @@ export default function ArtistDetailPage() {
       return;
     }
     if (artist.whatsappNumber) {
+      const userName = `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'a user';
+      const artistName = artist.name || 'Artist';
+      const message = `Hi ${artistName}, I am ${userName} found your profile on ANDACTION`;
+      const encodedMessage = encodeURIComponent(message);
+      
       window.open(
-        `https://wa.me/${artist.whatsappNumber.replace(/[^0-9]/g, "")}`,
+        `https://wa.me/${artist.whatsappNumber.replace(/[^0-9]/g, "")}?text=${encodedMessage}`,
         "_blank"
       );
     }

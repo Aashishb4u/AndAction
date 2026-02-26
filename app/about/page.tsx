@@ -131,6 +131,20 @@ const AboutPage = () => {
             <p className="text-text-light-gray leading-relaxed font-medium">
               Let’s make magic happen—directly, affordably, and effortlessly.
             </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <a
+                href="tel:+918860014889"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
+              >
+                <span>Call Us: +91 8860014889</span>
+              </a>
+              <a
+                href="mailto:official@andaction.in"
+                className="inline-flex items-center gap-2 px-6 py-3 border-2 border-primary-pink text-primary-pink font-semibold rounded-full hover:bg-primary-pink hover:text-white transition-all duration-300"
+              >
+                <span>Email Support</span>
+              </a>
+            </div>
           </div>
         </section>
       </div>

@@ -220,7 +220,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         {isYT ? (
           <iframe
             className="w-full h-full object-cover"
-            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=1&playsinline=1&rel=0`}
+            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=0&controls=1&playsinline=1&rel=0`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />

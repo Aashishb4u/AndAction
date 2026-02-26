@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
-import { VIDEO_CATEGORIES } from "@/lib/constants";
+import { VIDEO_CATEGORIES, INDIAN_STATES } from "@/lib/constants";
 
 interface FilterOption {
   value: string;
@@ -56,11 +56,7 @@ const budgetOptions: FilterOption[] = [
 
 const eventStateOptions: FilterOption[] = [
   { value: "", label: "Select State" },
-  { value: "maharashtra", label: "Maharashtra" },
-  { value: "gujarat", label: "Gujarat" },
-  { value: "delhi", label: "Delhi" },
-  { value: "mumbai", label: "Mumbai" },
-  { value: "bangalore", label: "Bangalore" },
+  ...INDIAN_STATES,
 ];
 
 const eventTypeOptions: FilterOption[] = [

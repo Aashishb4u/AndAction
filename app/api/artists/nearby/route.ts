@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { Prisma } from "@prisma/client";
+import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 
 interface SearchMetadata {
   strategy: "nearby" | "expanded" | "nationwide";
@@ -37,12 +38,17 @@ async function countArtistsInRadius(
   radius: number,
   verified: boolean,
 ): Promise<number> {
+  const typeMatches = getArtistTypeMatches(type);
+  const typeConditions = typeMatches
+    .map(() => 'a."artistType" = ?')
+    .join(" OR ");
+
   const result = await prisma.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*) as count
     FROM "artists" a
     INNER JOIN "users" u ON a."userId" = u.id
     WHERE 
-      a."artistType" ILIKE ${type}
+      (${Prisma.raw(typeMatches.map((t) => `a."artistType" = '${t}'`).join(" OR "))})
       AND u.role = 'artist'
       AND u.latitude IS NOT NULL
       AND u.longitude IS NOT NULL
@@ -72,6 +78,8 @@ async function fetchArtistsInRadius(
   verified: boolean,
   limit: number = 50,
 ) {
+  const typeMatches = getArtistTypeMatches(type);
+
   const artists = await prisma.$queryRaw<Array<any>>`
     SELECT 
       a.id,
@@ -100,7 +108,7 @@ async function fetchArtistsInRadius(
     FROM "artists" a
     INNER JOIN "users" u ON a."userId" = u.id
     WHERE 
-      a."artistType" ILIKE ${type}
+      (${Prisma.raw(typeMatches.map((t) => `a."artistType" = '${t}'`).join(" OR "))})
       AND u.role = 'artist'
       AND u.latitude IS NOT NULL
       AND u.longitude IS NOT NULL
@@ -144,9 +152,11 @@ async function fetchTopRatedNationwide(
   verified: boolean,
   limit: number = 50,
 ) {
+  const typeMatches = getArtistTypeMatches(type);
+
   const artists = await prisma.artist.findMany({
     where: {
-      artistType: { contains: type, mode: "insensitive" },
+      artistType: { in: typeMatches },
       user: {
         role: "artist",
         ...(verified && {
