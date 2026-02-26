@@ -20,7 +20,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
 
   return (
     <section
-      className={`relative h-[75vh] md:h-[80vh] flex flex-col overflow-hidden ${className} pt-16 md:pt-20`}
+      className={`relative z-0 h-[75vh] md:h-[80vh] flex flex-col overflow-hidden ${className} pt-16 md:pt-20`}
       style={{ overflow: 'hidden' }}
     /* pt-16 = 64px for mobile navbar, md:pt-20 = 80px for desktop */
     /* h-[75vh] = 75% of viewport height for mobile, md:h-[70vh] = 70% for desktop */
@@ -75,7 +75,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
       </div>
 
 {/* Curve - positioned at the bottom of hero section */}
-      <div className="absolute left-0 right-0 bottom-0 z-50 pointer-events-none select-none">
+      <div className="absolute left-0 right-0 bottom-0 z-20 pointer-events-none select-none">
         <svg
           viewBox="0 0 1400 80"
           width="100%"
@@ -131,7 +131,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           height: '350px',
           transform: 'translate(-50%, 90%)',
           background: 'radial-gradient(ellipse 55% 65% at 50% 0%, rgba(255,45,122,0.32) 0%, rgba(255,45,122,0.16) 30%, rgba(255,45,122,0.05) 55%, transparent 80%)',
-          zIndex: 50,
+          zIndex: 20,
         }}
       />
 

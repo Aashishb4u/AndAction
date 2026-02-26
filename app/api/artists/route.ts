@@ -116,9 +116,19 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const dynamicOrFilters: Prisma.ArtistWhereInput[] = [];
 
     if (subType) {
-      dynamicOrFilters.push({
-        subArtistType: { contains: subType, mode: "insensitive" },
-      });
+      // Support comma-separated sub-types: match any of the provided values
+      const subTypes = subType.split(",").map((s) => s.trim()).filter(Boolean);
+      if (subTypes.length === 1) {
+        dynamicOrFilters.push({
+          subArtistType: { contains: subTypes[0], mode: "insensitive" },
+        });
+      } else if (subTypes.length > 1) {
+        dynamicOrFilters.push({
+          OR: subTypes.map((st) => ({
+            subArtistType: { contains: st, mode: "insensitive" },
+          })),
+        });
+      }
     }
 
     if (language) {
