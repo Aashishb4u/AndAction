@@ -33,8 +33,9 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({
   onClose,
   onConnect,
 }) => {
-  const [step, setStep] = useState<"input" | "preview">("input");
+  const [step, setStep] = useState<"input" | "selection" | "preview">("input");
   const [channelInput, setChannelInput] = useState("");
+  const [channelOptions, setChannelOptions] = useState<YouTubeChannelPreview[]>([]);
   const [channelPreview, setChannelPreview] =
     useState<YouTubeChannelPreview | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +44,7 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({
 
   const handleFetchChannel = async () => {
     if (!channelInput.trim()) {
-      setError("Please enter a channel ID or handle");
+      setError("Please enter your channel name");
       return;
     }
 
@@ -66,13 +67,25 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({
         throw new Error(data.message || "Failed to fetch channel details");
       }
 
-      setChannelPreview(data.data);
-      setStep("preview");
+      // Handle multiple channels
+      if (data.multiple && Array.isArray(data.data)) {
+        setChannelOptions(data.data);
+        setStep("selection");
+      } else {
+        // Single channel found
+        setChannelPreview(data.data);
+        setStep("preview");
+      }
     } catch (err: any) {
       setError(err.message || "Failed to fetch channel details");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSelectChannel = (channel: YouTubeChannelPreview) => {
+    setChannelPreview(channel);
+    setStep("preview");
   };
 
   const handleConfirmConnect = async () => {
@@ -93,8 +106,14 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({
   };
 
   const handleBack = () => {
-    setStep("input");
-    setChannelPreview(null);
+    if (step === "preview" && channelOptions.length > 0) {
+      setStep("selection");
+      setChannelPreview(null);
+    } else {
+      setStep("input");
+      setChannelPreview(null);
+      setChannelOptions([]);
+    }
     setError("");
   };
 
@@ -102,6 +121,7 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({
     setStep("input");
     setChannelInput("");
     setChannelPreview(null);
+    setChannelOptions([]);
     setError("");
     onClose();
   };
@@ -110,7 +130,13 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={step === "input" ? "Connect YouTube Channel" : "Confirm Channel"}
+      title={
+        step === "input"
+          ? "Connect YouTube Channel"
+          : step === "selection"
+            ? "Select Your Channel"
+            : "Confirm Channel"
+      }
       size="md"
     >
       <div className="px-8 py-6">
@@ -193,14 +219,84 @@ const YouTubeConnectModal: React.FC<YouTubeConnectModalProps> = ({
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Fetching...
+                    Searching...
                   </>
                 ) : (
                   <>
                     <Youtube className="w-4 h-4 mr-2" />
-                    Fetch Channel
+                    Search Channel
                   </>
                 )}
+              </Button>
+            </div>
+          </div>
+        ) : step === "selection" ? (
+          <div className="space-y-4">
+            {/* Info Message */}
+            <div className="bg-background/50 border border-border-color rounded-lg p-4">
+              <p className="text-white text-sm font-medium mb-1">
+                Multiple channels found for "{channelInput}"
+              </p>
+              <p className="text-text-gray text-sm">
+                Please select your channel from the list below.
+              </p>
+            </div>
+
+            {/* Channel List */}
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {channelOptions.map((channel) => (
+                <button
+                  key={channel.channelId}
+                  onClick={() => handleSelectChannel(channel)}
+                  className="w-full bg-card border border-border-color hover:border-red-400/50 hover:bg-background/50 rounded-lg p-4 text-left transition-all group"
+                >
+                  <div className="flex items-start gap-4">
+                    {channel.thumbnailUrl && (
+                      <img
+                        src={channel.thumbnailUrl}
+                        alt={channel.channelName}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-border-color group-hover:border-red-400/50"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-semibold text-base truncate group-hover:text-red-400 transition-colors">
+                        {channel.channelName}
+                      </h3>
+                      {channel.customUrl && (
+                        <p className="text-text-gray text-sm">
+                          {channel.customUrl}
+                        </p>
+                      )}
+                      {channel.description && (
+                        <p className="text-text-gray text-xs mt-1 line-clamp-1">
+                          {channel.description}
+                        </p>
+                      )}
+                      <div className="flex gap-4 mt-2">
+                        {channel.subscriberCount && (
+                          <span className="text-text-gray text-xs">
+                            {channel.subscriberCount} subscribers
+                          </span>
+                        )}
+                        {channel.videoCount && (
+                          <span className="text-text-gray text-xs">
+                            {channel.videoCount} videos
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 justify-end pt-2 mb-4">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+              >
+                Back to Search
               </Button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import SiteLayout from "@/components/layout/SiteLayout";
 import ArtistFilters from "@/components/sections/ArtistFilters";
 import ArtistGrid from "@/components/sections/ArtistGrid";
@@ -106,6 +107,7 @@ const getArtists = async (
 function ArtistsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
 
   // Initialize filters from URL params on first render
   const getInitialFilters = () => {
@@ -281,6 +283,12 @@ function ArtistsPageContent() {
   // BOOKMARK TOGGLE LOGIC
   // -----------------------------
   const handleBookmark = async (artistId: string) => {
+    // Check if user is logged in
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
+    }
+
     // Instant UI feedback
     setArtists((prev) =>
       prev.map((a) =>

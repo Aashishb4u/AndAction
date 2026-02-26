@@ -48,8 +48,8 @@ export function useSyncedInstagramReels() {
   return useQuery({
     queryKey: instagramVideoKeys.reels(),
     queryFn: fetchSyncedInstagramReels,
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 60 * 24 * 7, // 7 days - backend auto-sync handles updates
+    gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days cache retention
   });
 }
 

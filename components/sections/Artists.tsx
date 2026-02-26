@@ -107,13 +107,20 @@ export default function Artists({ location }: ArtistsProps) {
   // Derive categories dynamically from returned data keys and memoize
   const categoriesWithArtists = useMemo(() => {
     const derivedCategories = Object.keys(categoryData);
-    const ordered = [
-      ...PREFERRED_ORDER.filter((k) => derivedCategories.includes(k)),
-      ...derivedCategories.filter((k) => !PREFERRED_ORDER.includes(k)),
-    ];
-    return ordered
-      .map((key) => ({ key, title: TITLE_MAP[key] || prettifyKey(key) }))
-      .filter((category) => (categoryData[category.key] || []).length > 0);
+    
+    // Create category objects with their artist counts
+    const categoriesWithCounts = derivedCategories
+      .map((key) => ({
+        key,
+        title: TITLE_MAP[key] || prettifyKey(key),
+        count: (categoryData[key] || []).length,
+      }))
+      .filter((category) => category.count > 0);
+    
+    // Sort by artist count in descending order (highest first)
+    categoriesWithCounts.sort((a, b) => b.count - a.count);
+    
+    return categoriesWithCounts;
   }, [categoryData]);
 
   // State to track how many categories to show

@@ -10,6 +10,7 @@ import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
 import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
 import { toast } from "react-toastify";
+import { INDIAN_STATES } from "@/lib/constants";
 
 interface PerformanceTabProps {
   artist: Artist;
@@ -37,18 +38,7 @@ const eventTypeOptions = [
   { value: "religious", label: "Religious Event" },
 ];
 
-const performingStatesOptions = [
-  { value: "maharashtra", label: "Maharashtra" },
-  { value: "delhi", label: "Delhi" },
-  { value: "karnataka", label: "Karnataka" },
-  { value: "tamil-nadu", label: "Tamil Nadu" },
-  { value: "gujarat", label: "Gujarat" },
-  { value: "rajasthan", label: "Rajasthan" },
-  { value: "uttar-pradesh", label: "Uttar Pradesh" },
-  { value: "west-bengal", label: "West Bengal" },
-  { value: "punjab", label: "Punjab" },
-  { value: "haryana", label: "Haryana" },
-];
+
 
 const performingMembersOptions = [
   { value: "1", label: "1 member" },
@@ -161,8 +151,8 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
   // Toggle PAN India (all states)
   const togglePanIndia = () => {
-    const allValues = performingStatesOptions.map((s) => s.value);
-    if (formData.performingStates.length === performingStatesOptions.length) {
+    const allValues = INDIAN_STATES.map((s) => s.value);
+    if (formData.performingStates.length === INDIAN_STATES.length) {
       handleInputChange("performingStates", []);
     } else {
       handleInputChange("performingStates", allValues);
@@ -427,12 +417,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           >
             {formData.performingStates.length > 0
               ? formData.performingStates.length ===
-                performingStatesOptions.length
+                INDIAN_STATES.length
                 ? "PAN India (All States)"
                 : formData.performingStates
                     .map(
                       (val) =>
-                        performingStatesOptions.find((opt) => opt.value === val)
+                        INDIAN_STATES.find((opt) => opt.value === val)
                           ?.label || val,
                     )
                     .join(", ")
@@ -471,7 +461,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
                 type="checkbox"
                 checked={
                   formData.performingStates.length ===
-                  performingStatesOptions.length
+                  INDIAN_STATES.length
                 }
                 onChange={togglePanIndia}
                 className="w-4 h-4 accent-primary-pink rounded"
@@ -480,7 +470,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             </label>
 
             {/* Individual state checkboxes */}
-            {performingStatesOptions.map((state) => (
+            {INDIAN_STATES.map((state) => (
               <label
                 key={state.value}
                 className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"

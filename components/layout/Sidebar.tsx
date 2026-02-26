@@ -39,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const navigationItems = [
     { label: "Home", href: "/", isActive: pathname === "/" },
     { label: "About us", href: "/about", isActive: pathname === "/about" },
-    { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
+    // { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
     {
       label: "Terms & Conditions",
       href: "/terms",

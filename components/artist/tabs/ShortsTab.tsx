@@ -8,7 +8,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import SyncSelectionModal, {
   SyncPlatform,
 } from "@/components/modals/SyncSelectionModal";
-import { Loader2, Youtube, RefreshCw, Download } from "lucide-react";
+import { Loader2, Youtube, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import {
@@ -118,13 +118,13 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
     });
   };
 
-  const handleBookmark = (shortId: string) => {
+  const handleBookmark = (data: { id: string; bookmarkId?: string | null; isBookmarked: boolean }) => {
     setBookmarkedShorts((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(shortId)) {
-        newSet.delete(shortId);
+      if (newSet.has(data.id)) {
+        newSet.delete(data.id);
       } else {
-        newSet.add(shortId);
+        newSet.add(data.id);
       }
       return newSet;
     });
@@ -201,70 +201,20 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
             No Shorts Synced
           </h3>
           <p className="text-text-gray mb-4 max-w-md">
-            Click the sync button to import shorts from YouTube or Instagram
-            Reels.
+            Shorts will be automatically synced from your connected YouTube or Instagram accounts.
           </p>
-          <Button
-            variant="primary"
-            onClick={handleOpenSyncModal}
-            disabled={isSyncing}
-          >
-            {isSyncing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Syncing...
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4 mr-2" />
-                Sync Shorts
-              </>
-            )}
-          </Button>
         </div>
-        <SyncSelectionModal
-          open={syncModalOpen}
-          onOpenChange={setSyncModalOpen}
-          onSync={handleSyncPlatforms}
-          title="Sync Shorts"
-          description="Select which platforms you want to sync shorts from."
-          contentType="shorts"
-        />
       </>
     );
   }
 
   return (
     <div className="md:space-y-6 space-y-4 pb-24 md:pb-0">
-      {/* Header with sync and refresh buttons */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-text-gray text-sm">
           {shorts.length} short{shorts.length !== 1 ? "s" : ""} synced
         </p>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleOpenSyncModal}
-            disabled={isSyncing}
-          >
-            {isSyncing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Syncing...
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4 mr-2" />
-                Sync Shorts
-              </>
-            )}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => refetch()}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
       </div>
 
       {/* Shorts Grid - 4 columns for vertical videos */}

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, validatePasswordStrength } from '@/lib/password';
 import { ApiErrors, successResponse } from '@/lib/api-response';
+import { geocodeAddress } from '@/lib/geocoding';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -72,6 +73,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const hashedPassword = await hashPassword(password);
     const parsedDob = dateOfBirth ? new Date(dateOfBirth) : null;
 
+    // Geocode location if city and state are provided
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+
+    if (city && state) {
+      try {
+        const geocodeResult = await geocodeAddress(city, state);
+        if (geocodeResult) {
+          latitude = geocodeResult.lat;
+          longitude = geocodeResult.lng;
+          console.log(`✅ Geocoded artist location: ${city}, ${state} -> (${latitude}, ${longitude})`);
+        }
+      } catch (geoError) {
+        console.error('⚠️ Failed to geocode artist location:', geoError);
+        // Continue with signup even if geocoding fails
+      }
+    }
+
     const newUser = await prisma.user.create({
       data: {
         email: lowerCaseEmail,
@@ -86,6 +105,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         zip: pinCode || null,
         state: state || null,
         city: city || null,
+        latitude: latitude,
+        longitude: longitude,
+        geocodedAt: latitude && longitude ? new Date() : null,
         role: 'artist',
         isMarketingOptIn: !noMarketing,
         isDataSharingOptIn: !!shareData,

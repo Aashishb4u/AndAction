@@ -84,7 +84,15 @@ export default function ShortsPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = sessionStorage.getItem("shorts_sound");
-      if (saved === "on") setSoundEnabled(true);
+      if (saved === null) {
+        // First time - set to "on" and ensure sound is enabled
+        sessionStorage.setItem("shorts_sound", "on");
+        setSoundEnabled(true);
+      } else if (saved === "off") {
+        setSoundEnabled(false);
+      } else {
+        setSoundEnabled(true);
+      }
     }
   }, []);
 

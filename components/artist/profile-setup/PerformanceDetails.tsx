@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import Image from "next/image";
 import { ArtistProfileSetupData } from "@/types";
+import { INDIAN_STATES } from "@/lib/constants";
 
 interface PerformanceDetailsProps {
   data: ArtistProfileSetupData;
@@ -75,46 +76,6 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
     { value: "religious", label: "Religious Event" },
   ];
 
-  const states = [
-    { value: "andhra-pradesh", label: "Andhra Pradesh" },
-    { value: "arunachal-pradesh", label: "Arunachal Pradesh" },
-    { value: "assam", label: "Assam" },
-    { value: "bihar", label: "Bihar" },
-    { value: "chhattisgarh", label: "Chhattisgarh" },
-    { value: "goa", label: "Goa" },
-    { value: "gujarat", label: "Gujarat" },
-    { value: "haryana", label: "Haryana" },
-    { value: "himachal-pradesh", label: "Himachal Pradesh" },
-    { value: "jharkhand", label: "Jharkhand" },
-    { value: "karnataka", label: "Karnataka" },
-    { value: "kerala", label: "Kerala" },
-    { value: "madhya-pradesh", label: "Madhya Pradesh" },
-    { value: "maharashtra", label: "Maharashtra" },
-    { value: "manipur", label: "Manipur" },
-    { value: "meghalaya", label: "Meghalaya" },
-    { value: "mizoram", label: "Mizoram" },
-    { value: "nagaland", label: "Nagaland" },
-    { value: "odisha", label: "Odisha" },
-    { value: "punjab", label: "Punjab" },
-    { value: "rajasthan", label: "Rajasthan" },
-    { value: "sikkim", label: "Sikkim" },
-    { value: "tamil-nadu", label: "Tamil Nadu" },
-    { value: "telangana", label: "Telangana" },
-    { value: "tripura", label: "Tripura" },
-    { value: "uttar-pradesh", label: "Uttar Pradesh" },
-    { value: "uttarakhand", label: "Uttarakhand" },
-    { value: "west-bengal", label: "West Bengal" },
-    // Union Territories
-    { value: "andaman-and-nicobar-islands", label: "Andaman & Nicobar Islands" },
-    { value: "chandigarh", label: "Chandigarh" },
-    { value: "dadra-and-nagar-haveli-and-daman-and-diu", label: "Dadra & Nagar Haveli and Daman & Diu" },
-    { value: "delhi", label: "Delhi (NCT)" },
-    { value: "jammu-and-kashmir", label: "Jammu & Kashmir" },
-    { value: "ladakh", label: "Ladakh" },
-    { value: "lakshadweep", label: "Lakshadweep" },
-    { value: "puducherry", label: "Puducherry" }
-  ];
-
   const memberOptions = [
     { value: "1", label: "1 Member" },
     { value: "2-5", label: "2-5 Members" },
@@ -143,8 +104,8 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
   // Toggle PAN India (all states)
   const togglePanIndia = () => {
-    const allValues = states.map((s) => s.value);
-    if (formData.performingStates.length === states.length) {
+    const allValues = INDIAN_STATES.map((s) => s.value);
+    if (formData.performingStates.length === INDIAN_STATES.length) {
       // Deselect all
       handleInputChange("performingStates", []);
     } else {
@@ -400,7 +361,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     <input
                       type="checkbox"
                       checked={
-                        formData.performingLanguages.length === languages.length
+                        formData.performingStates.length === INDIAN_STATES.length
                       }
                       onChange={toggleAllLanguages}
                       className="w-4 h-4 accent-primary-pink rounded"
@@ -583,7 +544,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                   }
                 >
                   {formData.performingStates.length > 0
-                    ? formData.performingStates.length === states.length
+                    ? formData.performingStates.length === INDIAN_STATES.length
                       ? "PAN India"
                       : `${formData.performingStates.length} state${formData.performingStates.length > 1 ? "s" : ""} selected`
                     : "Select states"}
@@ -611,7 +572,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     <input
                       type="checkbox"
                       checked={
-                        formData.performingStates.length === states.length
+                        formData.performingStates.length === INDIAN_STATES.length
                       }
                       onChange={togglePanIndia}
                       className="w-4 h-4 accent-primary-pink rounded"
@@ -620,7 +581,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                   </label>
 
                   {/* Individual state checkboxes */}
-                  {states.map((state) => (
+                  {INDIAN_STATES.map((state) => (
                     <label
                       key={state.value}
                       className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
