@@ -16,7 +16,7 @@ import { auth } from "@/auth";
 import { Prisma } from "@prisma/client";
 
 // --- Configuration ---
-const DEFAULT_LIMIT = 20;
+const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 50;
 
 export async function GET(request: NextRequest): Promise<NextResponse<any>> {

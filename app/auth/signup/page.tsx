@@ -219,8 +219,14 @@ function SignUpContent() {
         throw new Error(data.error || data.message || "Verification failed.");
       }
 
-      // verified — move to create password
-      setStep("password");
+      // verified — move to next step based on contact type
+      if (contactType === "phone") {
+        // Phone signup: skip password, go directly to profile
+        setStep("profile");
+      } else {
+        // Email signup: go to password creation
+        setStep("password");
+      }
     } catch (err: any) {
       setError(err.message || "Invalid verification code. Please try again.");
       console.error("OTP verification error:", err);
@@ -326,7 +332,7 @@ function SignUpContent() {
           ? getPhoneComponents(phone).phoneNumber
           : undefined, // Include phone from contact step or profile step
       countryCode: contactType === "phone" || phone.trim() ? countryCode.trim() : undefined, // Include country code when phone is provided
-      password: password,
+      password: contactType === "email" ? password : undefined, // Only include password for email signups
       firstName: firstName,
       lastName: lastName,
       avatar: selectedAvatar,
@@ -339,11 +345,23 @@ function SignUpContent() {
     try {
       const result = await signUp(userData); // calls /api/auth/signup
 
-      await signIn("credentials", {
-        contact: result.contactIdentifier,
-        password: userData.password,
-        redirect: false,
-      });
+      // Sign in based on contact type
+      if (contactType === "phone") {
+        // For phone signup, use OTP-verified signin
+        await signIn("credentials", {
+          contact: result.contactIdentifier,
+          countryCode: countryCode,
+          isOtpVerified: "true",
+          redirect: false,
+        });
+      } else {
+        // For email signup, use password-based signin
+        await signIn("credentials", {
+          contact: result.contactIdentifier,
+          password: userData.password,
+          redirect: false,
+        });
+      }
 
       const redirectUrl = getRedirectUrl(searchParams);
       router.push(redirectUrl);
@@ -718,7 +736,7 @@ function SignUpContent() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setStep("password")}
+                  onClick={() => setStep(contactType === "phone" ? "otp" : "password")}
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg

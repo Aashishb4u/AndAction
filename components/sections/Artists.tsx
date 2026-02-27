@@ -68,20 +68,13 @@ export default function Artists({ location }: ArtistsProps) {
   // Derive categories dynamically from returned data keys and memoize
   const categoriesWithArtists = useMemo(() => {
     const derivedCategories = Object.keys(categoryData);
-    
-    // Create category objects with their artist counts
-    const categoriesWithCounts = derivedCategories
-      .map((key) => ({
-        key,
-        title: TITLE_MAP[key] || prettifyKey(key),
-        count: (categoryData[key] || []).length,
-      }))
-      .filter((category) => category.count > 0);
-    
-    // Sort by artist count in descending order (highest first)
-    categoriesWithCounts.sort((a, b) => b.count - a.count);
-    
-    return categoriesWithCounts;
+    const ordered = [
+      ...PREFERRED_ORDER.filter((k) => derivedCategories.includes(k)),
+      ...derivedCategories.filter((k) => !PREFERRED_ORDER.includes(k)),
+    ];
+    return ordered
+      .map((key) => ({ key, title: TITLE_MAP[key] || prettifyKey(key) }))
+      .filter((category) => (categoryData[category.key] || []).length > 0);
   }, [categoryData]);
 
   // State to track how many categories to show
@@ -147,7 +140,7 @@ export default function Artists({ location }: ArtistsProps) {
   }, [isLoading]);
 
   return (
-    <section className="relative w-full pt-4 md:pt-16 pb-20 md:pb-8 overflow-hidden">
+    <section className="relative w-full pt-2 pb-20 md:pb-8 overflow-hidden">
       {/* Full-height Gradient Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {/* Base background */}

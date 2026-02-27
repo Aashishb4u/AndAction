@@ -145,7 +145,7 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
   };
 
   return (
-    <Link href={`/videos/${id}`} className="block">
+    <Link href={`/shorts/${id}`} className="block">
       <div
         className={`relative group cursor-pointer transition-all duration-300 hover:scale-105 ${className}`}
         onMouseEnter={handleMouseEnter}

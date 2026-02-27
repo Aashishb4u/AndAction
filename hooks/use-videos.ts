@@ -62,7 +62,7 @@ async function fetchVideos({
   type = "videos",
   category = "all",
   withBookmarks = true,
-  limit = 20,
+  limit = 12,
 }: {
   pageParam?: number;
   type?: string;

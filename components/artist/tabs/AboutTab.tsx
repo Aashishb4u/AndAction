@@ -38,7 +38,21 @@ const genderOptions = [
   { value: "prefer-not-to-say", label: "Prefer not to say" },
 ];
 
-
+const artistTypeOptions = [
+  { value: "singer", label: "Singer" },
+  { value: "dancer", label: "Dancer/Dance Group" },
+  { value: "musician", label: "Musician/Instrumentalist" },
+  { value: "comedian", label: "Comedian" },
+  { value: "magician", label: "Magician/Illusionist" },
+  { value: "actor", label: "Theatre Artist/Actor" },
+  { value: "anchor", label: "Anchor/Emcee/Host" },
+  { value: "band", label: "Live Band/Group" },
+  { value: "dj", label: "DJ" },
+  { value: "mimicry", label: "Mimicry/Impressionist" },
+  { value: "special-act", label: "Special Act Performer" },
+  { value: "spiritual", label: "Spiritual/Devotional" },
+  { value: "kids-entertainer", label: "Kids Entertainer" },
+];
 
 const subArtistTypeOptions = [
   { value: "classical", label: "Classical" },
@@ -62,6 +76,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     stageName: artist.name,
+    artistType: artist.category?.toLowerCase() || "",
     firstName: (artist as ExtendedArtist).firstName || "",
     lastName: (artist as ExtendedArtist).lastName || "",
     dateOfBirth: (artist as ExtendedArtist).dateOfBirth || "",
@@ -107,6 +122,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         userId: session.user.id,
 
         stageName: formData.stageName,
+        artistType: formData.artistType,
         firstName: formData.firstName,
         lastName: formData.lastName,
         gender: formData.gender,
@@ -147,6 +163,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
   const handleReset = () => {
     setFormData({
       stageName: artist.name,
+      artistType: artist.category?.toLowerCase() || "",
       firstName: (artist as ExtendedArtist).firstName || "",
       lastName: (artist as ExtendedArtist).lastName || "",
       dateOfBirth: (artist as ExtendedArtist).dateOfBirth || "",
@@ -183,9 +200,23 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         </div>
       </div>
 
+      {/* Artist Category */}
+      <div className="relative text-sm">
+        <Select
+          label="Artist Category*"
+          options={artistTypeOptions}
+          value={formData.artistType}
+          onChange={(value) => handleInputChange("artistType", value)}
+          required
+        />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Select the primary category that best describes your art form">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+      </div>
       {/* First Name and Last Name */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Input
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">       <Input
           label="First name*"
           value={formData.firstName}
           onChange={(e) => handleInputChange("firstName", e.target.value)}

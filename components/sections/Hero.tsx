@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Button from '@/components/ui/Button';
 import FindArtistModal from '@/components/modals/FindArtistModal';
 import { HeroProps } from '@/types';
@@ -20,8 +21,8 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
 
   return (
     <section
-      className={`relative h-[75vh] md:h-[80vh] flex flex-col overflow-hidden ${className} pt-16 md:pt-20`}
-      style={{ overflow: 'hidden' }}
+      className={`relative h-[75vh] md:h-[80vh] flex flex-col ${className} pt-16 md:pt-20 z-10`}
+      style={{ overflow: 'visible' }}
     /* pt-16 = 64px for mobile navbar, md:pt-20 = 80px for desktop */
     /* h-[75vh] = 75% of viewport height for mobile, md:h-[70vh] = 70% for desktop */
     >
@@ -74,73 +75,44 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         </div>
       </div>
 
-{/* Curve - positioned at the bottom of hero section */}
-      <div className="absolute left-0 right-0 bottom-0 z-50 pointer-events-none select-none">
-        <svg
-          viewBox="0 0 1400 80"
-          width="100%"
-          height="85"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="none"
-          className="block"
-        >
-          <defs>
-            {/* Main curve stroke gradient */}
-            <linearGradient id="strokeFade" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
-              <stop offset="15%" stopColor="#FF2D7A" stopOpacity="0.5" />
-              <stop offset="50%" stopColor="#FF2D7A" stopOpacity="1" />
-              <stop offset="85%" stopColor="#FF2D7A" stopOpacity="0.5" />
-              <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-
-          {/* Dark curve fill */}
-          <path
-            d="M0,80 Q720,10 1440,80 L1440,80 L0,80 Z"
-            fill="#0A0A0A"
+      {/* Curve with pink spotlight - positioned at the bottom of hero section */}
+      <div className="absolute left-0 right-0 pointer-events-none select-none -bottom-[10vh] md:-bottom-[12vh]" style={{ zIndex: 10000 }}>
+        {/* Mobile Curve SVG */}
+        <div className="block md:hidden w-full">
+          <Image
+            src="/icons/Mobile_Curve.svg"
+            alt=""
+            width={1440}
+            height={200}
+            className="w-full h-auto"
+            priority
           />
-
-          {/* Main curve stroke */}
-          <path
-            d="M0,80 Q720,10 1440,80"
-            fill="none"
-            stroke="url(#strokeFade)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
+        </div>
+        
+        {/* Desktop Curve SVG */}
+        <div className="hidden md:block w-full">
+          <Image
+            src="/icons/Curve.svg"
+            alt=""
+            width={1440}
+            height={200}
+            className="w-full h-auto"
+            priority
           />
-
-          {/* Inner thin highlight */}
-          <path
-            d="M0,80 Q720,10 1440,80"
-            fill="none"
-            stroke="#FF2D7A"
-            strokeWidth="1"
-            strokeLinecap="round"
-            opacity="0.4"
-          />
-        </svg>
+        </div>
+        
+        {/* Pink spotlight — originates from curve center, extends into Artists section */}
+        <div
+          className="absolute left-1/2 top-0 pointer-events-none"
+          style={{
+            width: '65%',
+            height: '350px',
+            transform: 'translate(-50%, 0)',
+            background: 'radial-gradient(ellipse 55% 65% at 50% 0%, rgba(255,45,122,0.32) 0%, rgba(255,45,122,0.16) 30%, rgba(255,45,122,0.05) 55%, transparent 80%)',
+            zIndex: 1,
+          }}
+        />
       </div>
-
-      {/* Pink spotlight — originates from curve center, extends into Artists section */}
-      <div
-        className="absolute left-1/2 bottom-0 pointer-events-none"
-        style={{
-          width: '65%',
-          height: '350px',
-          transform: 'translate(-50%, 90%)',
-          background: 'radial-gradient(ellipse 55% 65% at 50% 0%, rgba(255,45,122,0.32) 0%, rgba(255,45,122,0.16) 30%, rgba(255,45,122,0.05) 55%, transparent 80%)',
-          zIndex: 50,
-        }}
-      />
-
-
-
-
-
-
-
 
       {/* Find Artist Modal */}
       <FindArtistModal
