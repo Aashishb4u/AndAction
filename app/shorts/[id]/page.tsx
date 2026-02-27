@@ -198,28 +198,30 @@ export default function ShortDetailsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Main Short - Left Side */}
             <div className="lg:col-span-5 xl:col-span-4">
-              <div className="sticky top-20">
-                {/* Video Player */}
-                <div className="relative w-full aspect-[9/16] max-h-[70vh] mx-auto bg-black rounded-2xl overflow-hidden">
-                  {isYouTube && youtubeVideoId ? (
-                    <iframe
-                      className="w-full h-full"
-                      src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&controls=1`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <video
-                      className="w-full h-full object-contain"
-                      controls
-                      autoPlay
-                      playsInline
-                      poster={shortData.poster}
-                    >
-                      <source src={shortData.videoUrl} type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
-                  )}
+              <div className="lg:sticky lg:top-20">
+                {/* Video Player - Sticky on mobile */}
+                <div className="sticky top-16 lg:static z-10 bg-black">
+                  <div className="relative w-full aspect-[9/16] max-h-[70vh] mx-auto bg-black rounded-2xl overflow-hidden">
+                    {isYouTube && youtubeVideoId ? (
+                      <iframe
+                        className="w-full h-full"
+                        src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&controls=1`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video
+                        className="w-full h-full object-contain"
+                        controls
+                        autoPlay
+                        playsInline
+                        poster={shortData.poster}
+                      >
+                        <source src={shortData.videoUrl} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    )}
+                  </div>
                 </div>
 
                 {/* Short Info */}

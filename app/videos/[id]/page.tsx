@@ -213,16 +213,19 @@ export default function VideoDetailsPage() {
     <SiteLayout showPreloader={false}>
       <div className="min-h-screen pt-16 lg:pt-20 pb-28">
         <div className="max-w-7xl mx-auto lg:px-8">
-          {/* MAIN VIDEO */}
-          <div className="mb-8">
+          {/* MAIN VIDEO - Sticky on mobile only */}
+          <div className="sticky top-16 lg:top-20 z-10 lg:static lg:mb-8 bg-black">
             <VideoPlayer
               videoUrl={videoData.videoUrl}
               title={videoData.title}
               poster={videoData.poster}
-              className="mb-4"
+              className="mb-0"
             />
+          </div>
 
-            <div className="px-4 sm:px-6 lg:px-8">
+          {/* SCROLLABLE CONTENT - Below video on mobile */}
+          <div className="bg-gradient-to-b from-black to-[#0a0a0a] lg:bg-none">
+            <div className="px-4 sm:px-6 lg:px-8 pt-4 lg:pt-0">
               <ArtistInfo
                 artist={videoData.artist}
                 video={{
@@ -244,10 +247,9 @@ export default function VideoDetailsPage() {
                 onShare={() => handleShare(videoData.id)}
               />
             </div>
-          </div>
 
-          {/* RELATED VIDEOS */}
-          <section className="mb-8 px-4 sm:px-6 lg:px-8">
+            {/* RELATED VIDEOS */}
+            <section className="mb-8 px-4 sm:px-6 lg:px-8">
             <h2 className="text-xl font-bold text-white mb-4">
               More from this artist
             </h2>
@@ -294,6 +296,7 @@ export default function VideoDetailsPage() {
               ))}
             </div>
           </section>
+          </div>
         </div>
       </div>
     </SiteLayout>
