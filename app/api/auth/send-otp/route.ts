@@ -60,14 +60,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Store OTP in database
-    const otpRecord = await prisma.otp.create({
+    // Store OTP in database using VerificationToken
+    const identifier = `${countryCode}${phoneNumber}`; // e.g., +918438877682
+    
+    // Delete any existing tokens for this identifier
+    await prisma.verificationToken.deleteMany({
+      where: { identifier },
+    });
+    
+    const otpRecord = await prisma.verificationToken.create({
       data: {
-        phoneNumber,
-        countryCode,
-        otp,
-        expiresAt,
-        isVerified: false,
+        identifier,
+        token: otp,
+        expires: expiresAt,
       },
     });
 
@@ -76,7 +81,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (!smsResult.success) {
       // Delete OTP record if SMS fails
-      await prisma.otp.delete({ where: { id: otpRecord.id } });
+      await prisma.verificationToken.delete({ where: { id: otpRecord.id } });
       
       if (smsResult.invalidPhone) {
         return ApiErrors.badRequest("Invalid phone number");

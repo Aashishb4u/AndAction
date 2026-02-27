@@ -66,20 +66,6 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-model Otp {
-  id          String   @id @default(cuid())
-  phoneNumber String
-  countryCode String   @default("+91")
-  otp         String
-  expiresAt   DateTime
-  isVerified  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-
-  @@index([phoneNumber, countryCode])
-  @@index([otp])
-  @@map("otps")
-}
-
 model Account {
   id                String  @id @default(cuid())
   userId            String  @map("user_id")

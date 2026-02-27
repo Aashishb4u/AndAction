@@ -29,15 +29,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
                 return ApiErrors.badRequest('Phone number is required.');
             }
 
+            const identifier = `${countryCode}${phoneNumber}`;
+
             // Find the most recent valid OTP for this phone number
-            const otpRecord = await prisma.otp.findFirst({
+            const otpRecord = await prisma.verificationToken.findFirst({
                 where: {
-                    phoneNumber,
-                    countryCode,
-                    otp,
-                    isVerified: false,
-                    expiresAt: {
-                        gt: new Date(), // Not expired
+                    identifier,
+                    token: otp,
+                    expires: {
+                        gte: new Date(), // Not expired
                     },
                 },
                 orderBy: {
@@ -49,10 +49,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
                 return ApiErrors.badRequest("Invalid or expired OTP");
             }
 
-            // Mark OTP as verified
-            await prisma.otp.update({
+            // Delete OTP record after successful verification
+            await prisma.verificationToken.delete({
                 where: { id: otpRecord.id },
-                data: { isVerified: true },
             });
 
             // Find user
