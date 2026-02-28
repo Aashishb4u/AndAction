@@ -3,8 +3,8 @@
 import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ArtistCard from '@/components/ui/ArtistCard';
-
 import Modal from '@/components/ui/Modal';
+import { getValueForKey } from '@/lib/artistCategories';
 
 interface Artist {
   id: string;
@@ -17,18 +17,25 @@ interface Artist {
 interface ArtistSectionProps {
   title: string;
   artists: Artist[];
+  categoryKey?: string;
   className?: string;
 }
+
+const MAX_VISIBLE = 11; // 11 artists + 1 "View All" card = 12 total
 
 const ArtistSection: React.FC<ArtistSectionProps> = ({
   title,
   artists,
+  categoryKey,
   className = '',
 }) => {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showNoArtistModal, setShowNoArtistModal] = useState(false);
   const router = useRouter();
+
+  const hasMore = artists.length > MAX_VISIBLE;
+  const visibleArtists = artists.slice(0, MAX_VISIBLE);
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -48,6 +55,33 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
     }
   };
 
+  const getTypeParam = () => {
+    if (categoryKey) return getValueForKey(categoryKey);
+    let typeParam = title.toLowerCase();
+    if (typeParam.includes('dj')) typeParam = 'DJ';
+    else if (typeParam.includes('anchor')) typeParam = 'anchor';
+    else if (typeParam.includes('band')) typeParam = 'band';
+    else if (typeParam.includes('actor')) typeParam = 'actor';
+    else if (typeParam.includes('singer')) typeParam = 'singer';
+    else if (typeParam.includes('dancer')) typeParam = 'dancer';
+    else if (typeParam.includes('comedian')) typeParam = 'comedian';
+    else if (typeParam.includes('musician')) typeParam = 'musicians';
+    else if (typeParam.includes('magician')) typeParam = 'magician';
+    else if (typeParam.includes('mimicry')) typeParam = 'mimicry';
+    else if (typeParam.includes('special act')) typeParam = 'specialAct';
+    else if (typeParam.includes('spiritual')) typeParam = 'spiritual';
+    else if (typeParam.includes('kids entertainer')) typeParam = 'kidsEntertainer';
+    return typeParam;
+  };
+
+  const handleViewAll = () => {
+    if (artists.length === 0) {
+      setShowNoArtistModal(true);
+    } else {
+      router.push(`/artists?type=${encodeURIComponent(getTypeParam())}`);
+    }
+  };
+
   return (
     <div className={`w-full ${className}`}>
       {/* Section Header */}
@@ -56,29 +90,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
         <div className="relative inline-flex">
           <button
             className="gradient-text hover:text-primary-orange transition-colors duration-300 btn1-responsive"
-            onClick={() => {
-              if (artists.length === 0) {
-                setShowNoArtistModal(true);
-              } else {
-                // Map section title to correct filter value (must match VIDEO_CATEGORIES values)
-                let typeParam = title.toLowerCase();
-                if (typeParam.includes('dj')) typeParam = 'DJ';
-                else if (typeParam.includes('anchor')) typeParam = 'anchor';
-                else if (typeParam.includes('band')) typeParam = 'band';
-                else if (typeParam.includes('actor')) typeParam = 'actor';
-                else if (typeParam.includes('singer')) typeParam = 'singer';
-                else if (typeParam.includes('dancer')) typeParam = 'dancer';
-                else if (typeParam.includes('comedian')) typeParam = 'comedian';
-                else if (typeParam.includes('musician')) typeParam = 'musicians';
-                else if (typeParam.includes('magician')) typeParam = 'magician';
-                else if (typeParam.includes('mimicry')) typeParam = 'mimicry';
-                else if (typeParam.includes('special act')) typeParam = 'specialAct';
-                else if (typeParam.includes('spiritual')) typeParam = 'spiritual';
-                else if (typeParam.includes('kids entertainer')) typeParam = 'kidsEntertainer';
-
-                router.push(`/artists?type=${encodeURIComponent(typeParam)}`);
-              }
-            }}
+            onClick={() => handleViewAll()}
           >
             View all
           </button>
@@ -188,7 +200,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
               document.addEventListener('mouseup', handleMouseUp);
             }}
           >
-            {artists.map((artist) => (
+            {visibleArtists.map((artist) => (
               <ArtistCard
                 key={artist.id}
                 id={artist.id}
@@ -198,6 +210,43 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
                 videoUrl={artist.videoUrl}
               />
             ))}
+
+            {/* View All card as the last card in the scroll */}
+            {hasMore && (
+              <button
+                onClick={handleViewAll}
+                className="relative flex-shrink-0 w-[150px] h-[225px] md:w-[200px] md:h-[300px] rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 flex flex-col items-center justify-center gap-3 group"
+                style={{ backgroundColor: '#1B1B1B', border: '1px solid var(--border-color)' }}
+              >
+                {/* Gradient background on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-pink/10 to-primary-orange/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
+
+                {/* Arrow circle */}
+                <div className="relative z-10 w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-primary-pink flex items-center justify-center group-hover:bg-primary-pink/20 transition-all duration-300">
+                  <svg
+                    className="w-6 h-6 md:w-7 md:h-7 text-primary-pink transition-transform duration-300 group-hover:translate-x-0.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+
+                {/* Label */}
+                <span className="relative z-10 text-sm md:text-base font-semibold gradient-text">
+                  View All
+                </span>
+                <span className="relative z-10 text-xs text-text-gray">
+                  {artists.length}+ artists
+                </span>
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -50,7 +50,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       >
         <div className="flex py-4 gap-4 items-start">
           {/* Artist Image */}
-          <div className="relative w-28 h-36 rounded-xl overflow-hidden flex-shrink-0 bg-card ring-2 ring-background">
+          <div className="relative w-28 h-36 rounded-xl overflow-hidden flex-shrink-0" style={{ backgroundColor: '#111' }}>
             <Image
               src={
                 artist.image && artist.image.trim() !== ""
@@ -61,7 +61,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
               }
               alt={artist.name}
               fill
-              className="object-cover"
+              className="object-cover scale-[1.02]"
               sizes="120px"
               unoptimized
             />

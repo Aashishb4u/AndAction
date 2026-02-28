@@ -183,7 +183,7 @@ export default function ArtistDashboard() {
                   {artist?.stageName || fullName}
                 </h2>
                 <p className="text-md text-text-gray">{session?.user?.email}</p>
-                <p className="text-lg mt-1">{artist?.artistType || "Signer"}</p>
+                <p className="text-lg mt-1">{artist?.artistType || ""}</p>
 
                 <div className="mt-3 w-full">
                   <Button
@@ -201,7 +201,7 @@ export default function ArtistDashboard() {
           </div>
 
           {/* Mobile profile progress (50%) */}
-          <div className="md:hidden bg-card border border-border-color rounded-xl p-4 mb-3 flex items-start">
+          <div className="md:hidden bg-card border border-border-color rounded-xl p-4 mb-3 flex items-center">
             <div className="relative w-28 h-28 mr-4 flex-shrink-0">
               <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 36 36">
                 <defs>
@@ -221,7 +221,7 @@ export default function ArtistDashboard() {
                 <path
                   stroke="url(#progressGradientMobile)"
                   strokeWidth="3.5"
-                  strokeDasharray="50, 100"
+                  strokeDasharray="80, 100"
                   strokeLinecap="round"
                   fill="none"
                   d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32"
@@ -230,19 +230,19 @@ export default function ArtistDashboard() {
 
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <span className="text-2xl font-bold text-white">50%</span>
+                  <span className="text-2xl font-bold text-white">80%</span>
                   <div className="text-[10px] text-text-gray">Completed</div>
                 </div>
               </div>
             </div>
 
-            <div className="flex-1">
-              <h3 className="text-white font-semibold text-lg">Profile Progress</h3>
-              <p className="text-text-gray text-sm mt-1">Your overall profile progress is showing here.</p>
+            <div className="flex-1 flex flex-col justify-center">
+              <h3 className="text-white font-semibold text-xl">Profile Progress</h3>
+              <p className="text-text-gray text-base mt-1">Your overall profile progress is showing here.</p>
             </div>
           </div>
 
-          {/* Desktop / tablet large profile card (unchanged, show on md+ only) */}
+          {/* Desktop / tablet large profile card (original) */}
           <div className="hidden md:block relative rounded-2xl overflow-hidden mb-3 bg-card border border-border-color">
             <div className="relative aspect-[4/5]">
               <Image
@@ -286,7 +286,7 @@ export default function ArtistDashboard() {
             </div>
           </div>
 
-          {/* Profile Progress Box (unchanged for md+) */}
+          {/* Profile Progress Box (original centered for md+) */}
           <div className="hidden md:block bg-card border border-border-color rounded-xl p-4 text-center">
             <div className="relative w-28 h-28 mx-auto mb-4">
               <svg

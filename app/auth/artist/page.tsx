@@ -11,6 +11,7 @@ import Checkbox from "@/components/ui/Checkbox";
 import PhoneInput from "@/components/ui/PhoneInput";
 import OTPInput from "@/components/ui/OTPInput";
 import DateInput from "@/components/ui/DateInput";
+import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { signInWithGoogleAsArtist } from "@/lib/auth";
 import { signIn } from "next-auth/react";
 import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
@@ -834,12 +835,19 @@ function ArtistAuthContent() {
                 />
               </div>
 
-              {/* Address */}
-              <Input
+              {/* Address with Location Picker */}
+              <AddressAutocomplete
                 label="Office/Home full address*"
-                placeholder="Enter your full address"
+                placeholder="Search for your address or use location"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={setAddress}
+                onLocationSelect={(loc) => {
+                  setAddress(loc.address);
+                  if (loc.pinCode) setPinCode(loc.pinCode);
+                  if (loc.state) setState(loc.state);
+                  if (loc.city) setCity(loc.city);
+                  setLocationFetched(true);
+                }}
                 required
                 disabled={isLoading}
                 variant="filled"
