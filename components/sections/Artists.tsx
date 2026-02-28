@@ -185,6 +185,7 @@ export default function Artists({ location }: ArtistsProps) {
                   key={category.key}
                   title={category.title}
                   artists={artists}
+                  categoryKey={category.key}
                 />
               );
             })}

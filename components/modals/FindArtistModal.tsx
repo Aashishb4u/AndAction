@@ -6,9 +6,9 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
-import { TITLE_MAP, PREFERRED_ORDER, prettifyKey, getValueForKey } from '@/lib/artistCategories';
-import { ARTIST_CATEGORIES } from "@/lib/constants";
-import { INDIAN_STATES } from "@/lib/constants";
+import { getValueForKey } from '@/lib/artistCategories';
+import { ARTIST_CATEGORIES, INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 
 export interface FindArtistModalProps {
   isOpen: boolean;
@@ -17,7 +17,7 @@ export interface FindArtistModalProps {
 
 interface FormData {
   artistCategory: string;
-  subCategory: string;
+  subCategory: string[];
   artistGender: string;
   budget: string;
   eventState: string;
@@ -34,7 +34,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     artistCategory: "",
-    subCategory: "",
+    subCategory: [],
     artistGender: "",
     budget: "",
     eventState: "",
@@ -44,24 +44,11 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     location: "",
   });
 
-  // Form options (use centralized TITLE_MAP so labels remain consistent)
-  const artistCategories = PREFERRED_ORDER.map((key) => ({
-    value: key,
-    label: TITLE_MAP[key] || prettifyKey(key),
-  }));
-  
+  // Fetch sub-artist types from database
+  const { subTypes: subArtistSuggestions } = useSubArtistTypes();
 
-  const subCategories = [
-    { value: "bollywood", label: "Bollywood" },
-    { value: "classical", label: "Classical" },
-    { value: "folk", label: "Folk" },
-    { value: "western", label: "Western" },
-    { value: "fusion", label: "Fusion" },
-  ];
-  // Sub-category search UI state
-  const [subInput, setSubInput] = useState<string>(
-    subCategories.find((s) => s.value === "") ? "" : "",
-  );
+  // Sub-category multi-tag UI state
+  const [subInput, setSubInput] = useState<string>("");
   const [showSubSuggestions, setShowSubSuggestions] = useState(false);
 
   const genderOptions = [
@@ -80,23 +67,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
 
 
 
-  const locationOptions = [
-    { value: "mumbai", label: "Mumbai" },
-    { value: "delhi", label: "Delhi" },
-    { value: "bangalore", label: "Bangalore" },
-    { value: "hyderabad", label: "Hyderabad" },
-    { value: "ahmedabad", label: "Ahmedabad" },
-    { value: "chennai", label: "Chennai" },
-    { value: "kolkata", label: "Kolkata" },
-    { value: "pune", label: "Pune" },
-    { value: "jaipur", label: "Jaipur" },
-    { value: "surat", label: "Surat" },
-    { value: "lucknow", label: "Lucknow" },
-    { value: "chandigarh", label: "Chandigarh" },
-    { value: "indore", label: "Indore" },
-    { value: "nagpur", label: "Nagpur" },
-    { value: "goa", label: "Goa" },
-  ];
+  const locationOptions = INDIAN_CITIES;
 
   const eventTypes = [
     { value: "wedding", label: "Wedding" },
@@ -182,7 +153,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
   const handleReset = () => {
     setFormData({
       artistCategory: "",
-      subCategory: "",
+      subCategory: [],
       artistGender: "",
       budget: "",
       eventState: "",
@@ -191,13 +162,14 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       performingLanguage: [],
       location: "",
     });
+    setSubInput("");
   };
 
   const handleViewResults = () => {
     const params = new URLSearchParams();
 
     if (formData.artistCategory) params.set("type", getValueForKey(formData.artistCategory));
-    if (formData.subCategory) params.set("subType", formData.subCategory);
+    if (formData.subCategory && formData.subCategory.length > 0) params.set("subType", formData.subCategory.join(","));
     if (formData.artistGender) params.set("gender", formData.artistGender);
     if (formData.budget) params.set("budget", formData.budget);
     if (formData.eventState) params.set("state", formData.eventState);
@@ -239,57 +211,77 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
           />
         </div>
 
-        {/* Sub-Category (searchable with recommendations) */}
+        {/* Sub-Category (multi-tag with searchable suggestions) */}
         <div className="relative">
           <label className="secondary-text block mb-1">Sub-Category</label>
-          <input
-            type="text"
-            value={
-              // show label if selected value present, otherwise show typed text
-              subInput ||
-              subCategories.find((s) => s.value === formData.subCategory)
-                ?.label ||
-              ""
-            }
-            onChange={(e) => {
-              const v = e.target.value;
-              setSubInput(v);
-              // clear actual stored subCategory until user selects a suggestion
-              handleInputChange("subCategory", "");
-              setShowSubSuggestions(true);
-            }}
-            onFocus={() => setShowSubSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
-            placeholder="Type to search sub-category"
-            className="w-full px-3 py-2 bg-card border border-border-color rounded-lg text-white placeholder-gray-400"
-          />
+          <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
+            {(formData.subCategory || []).map((tag) => (
+              <span key={tag} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+                <span className="text-white">{tag}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = formData.subCategory.filter((t) => t !== tag);
+                    handleInputChange("subCategory", next);
+                  }}
+                  className="text-text-gray hover:text-white"
+                  aria-label={`Remove ${tag}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              placeholder={formData.subCategory.length === 0 ? "Type to search sub-category" : ""}
+              value={subInput}
+              onChange={(e) => {
+                setSubInput(e.target.value);
+                setShowSubSuggestions(true);
+              }}
+              onFocus={() => setShowSubSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === ",") {
+                  e.preventDefault();
+                  const v = subInput.trim().replace(/,$/, "");
+                  if (v && !formData.subCategory.includes(v)) {
+                    handleInputChange("subCategory", [...formData.subCategory, v]);
+                  }
+                  setSubInput("");
+                } else if (e.key === "Backspace" && !subInput && formData.subCategory.length > 0) {
+                  handleInputChange("subCategory", formData.subCategory.slice(0, -1));
+                }
+              }}
+              className="flex-1 min-w-[120px] bg-transparent focus:outline-none px-1 py-1 text-sm placeholder-gray-400"
+            />
+          </div>
 
           {showSubSuggestions && (
             <div className="absolute z-40 left-0 right-0 mt-1 bg-background border border-border-color rounded-lg max-h-48 overflow-auto">
-              {subCategories
+              {subArtistSuggestions
                 .filter((s) =>
-                  s.label
-                    .toLowerCase()
-                    .includes((subInput || "").toLowerCase()),
+                  s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                  !formData.subCategory.includes(s)
                 )
                 .map((s) => (
                   <button
-                    key={s.value}
+                    key={s}
                     type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      // set value (used in query) and display label
-                      handleInputChange("subCategory", s.value);
-                      setSubInput(s.label);
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      handleInputChange("subCategory", [...formData.subCategory, s]);
+                      setSubInput("");
                       setShowSubSuggestions(false);
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white"
+                    className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white text-sm"
                   >
-                    {s.label}
+                    {s}
                   </button>
                 ))}
-              {subCategories.filter((s) =>
-                s.label.toLowerCase().includes((subInput || "").toLowerCase()),
+              {subArtistSuggestions.filter((s) =>
+                s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                !formData.subCategory.includes(s)
               ).length === 0 && (
                 <div className="px-3 py-2 text-gray-400">No suggestions</div>
               )}

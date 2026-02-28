@@ -295,7 +295,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
               e.stopPropagation();
               handleSoundToggle();
             }}
-            className="p-3 rounded-full text-white pointer-events-auto"
+            className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
             aria-label={soundEnabled ? "Sound on" : "Sound off"}
           >
             {soundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
