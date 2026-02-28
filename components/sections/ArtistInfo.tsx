@@ -42,9 +42,9 @@ const ArtistInfo: React.FC<ArtistInfoProps> = ({
 }) => {
   return (
     <div className={`${className}`}>
-      <div className="flex items-start justify-between gap-4 mb-6">
+      <div className="flex items-start justify-between gap-2 sm:gap-4 mb-6">
         {/* Left Side: Avatar + Title + Artist Name */}
-        <div className="flex gap-3 flex-1">
+        <div className="flex gap-2 sm:gap-3 flex-1 min-w-0">
           <Link href={`/artists/${artist.id}`} className="shrink-0">
             <div className="relative w-8 h-8 rounded-full overflow-hidden">
               <Image
@@ -57,7 +57,7 @@ const ArtistInfo: React.FC<ArtistInfoProps> = ({
             </div>
           </Link>
 
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <h1 className="btn2 text-white line-clamp-2">{video.title}</h1>
             <div className="flex items-center gap-2">
               <Link href={`/artists/${artist.id}`}>
@@ -75,25 +75,25 @@ const ArtistInfo: React.FC<ArtistInfoProps> = ({
         </div>
 
         {/* Right Side: Actions */}
-        <div className="flex items-center gap-2 lg:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 shrink-0">
           <button
             onClick={onBookmark}
-            className={`rounded-full flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background ${
+            className={`rounded-full flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background ${
               isBookmarked ? "text-primary-pink" : ""
             }`}
             title={isBookmarked ? "Remove Bookmark" : "Bookmark"}
           >
             <Bookmark
-              className={`w-6 h-6 ${isBookmarked ? "fill-current" : ""}`}
+              className={`w-5 h-5 sm:w-6 sm:h-6 ${isBookmarked ? "fill-current" : ""}`}
             />
           </button>
 
           <button
             onClick={onShare}
-            className="rounded-full flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background"
+            className="rounded-full flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background"
             title="Share"
           >
-            <Share className="w-6 h-6" />
+            <Share className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
       </div>

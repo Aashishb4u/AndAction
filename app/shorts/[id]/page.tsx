@@ -194,13 +194,13 @@ export default function ShortDetailsPage() {
   return (
     <SiteLayout showPreloader={false}>
       <div className="min-h-screen pt-16 lg:pt-20 pb-28 bg-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Main Short - Left Side */}
             <div className="lg:col-span-5 xl:col-span-4">
               <div className="lg:sticky lg:top-20">
                 {/* Video Player - Sticky on mobile */}
-                <div className="sticky top-16 lg:static z-10 bg-black">
+                <div className="sticky top-0 lg:static z-50 bg-black">
                   <div className="relative w-full aspect-[9/16] max-h-[70vh] mx-auto bg-black rounded-2xl overflow-hidden">
                     {isYouTube && youtubeVideoId ? (
                       <iframe
@@ -280,7 +280,7 @@ export default function ShortDetailsPage() {
                   )}
 
                   {/* Actions */}
-                  <div className="flex items-center gap-4 pt-2">
+                  <div className="flex items-center gap-2 sm:gap-4 pt-2 flex-wrap">
                     <button
                       onClick={() =>
                         toggleBookmark({
@@ -289,24 +289,24 @@ export default function ShortDetailsPage() {
                           bookmarkId: shortData.bookmarkId,
                         })
                       }
-                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
+                      className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
                     >
                       {shortData.isBookmarked ? (
                         <BookmarkCheck className="w-5 h-5 text-primary-pink" />
                       ) : (
                         <Bookmark className="w-5 h-5 text-white" />
                       )}
-                      <span className="text-white text-sm">
+                      <span className="text-white text-xs sm:text-sm">
                         {shortData.isBookmarked ? "Bookmarked" : "Bookmark"}
                       </span>
                     </button>
 
                     <button
                       onClick={() => handleShare(shortData.id)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
+                      className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
                     >
                       <Share2 className="w-5 h-5 text-white" />
-                      <span className="text-white text-sm">Share</span>
+                      <span className="text-white text-xs sm:text-sm">Share</span>
                     </button>
                   </div>
                 </div>
