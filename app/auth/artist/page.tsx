@@ -229,8 +229,14 @@ function ArtistAuthContent() {
         );
       }
 
-      // move to password step for artist (per requested flow)
-      setStep("password");
+      // Move to next step based on contact type
+      if (contactType === "phone") {
+        // Phone signup: skip password, go directly to user info
+        setStep("userInfo");
+      } else {
+        // Email signup: go to password creation
+        setStep("password");
+      }
     } catch (err: any) {
       console.error("Verify OTP error:", err);
       setError(err.message || "Invalid verification code. Please try again.");
@@ -270,7 +276,7 @@ function ArtistAuthContent() {
         phoneNumber:
           contactType === "phone" ? phone.replace(/\D/g, "") : undefined,
         countryCode: contactType === "phone" ? countryCode : undefined,
-        password: password || undefined,
+        password: contactType === "email" ? password : undefined,
         firstName,
         lastName,
         dateOfBirth,
@@ -322,12 +328,21 @@ function ArtistAuthContent() {
       console.log("📞 Auto-signin contactIdentifier:", contactIdentifier);
 
       // ✅ Attempt to auto Sign In via NextAuth
-      if (contactIdentifier && artistData.password) {
-        const signInResult = await signIn("credentials", {
+      if (contactIdentifier) {
+        const signInPayload: any = {
           contact: contactIdentifier,
-          password: artistData.password,
           redirect: false,
-        });
+        };
+
+        // Use appropriate authentication method based on contact type
+        if (contactType === "phone") {
+          signInPayload.countryCode = artistData.countryCode;
+          signInPayload.isOtpVerified = "true";
+        } else if (artistData.password) {
+          signInPayload.password = artistData.password;
+        }
+
+        const signInResult = await signIn("credentials", signInPayload);
 
         console.log("🧩 signIn result:", signInResult);
 
@@ -338,7 +353,7 @@ function ArtistAuthContent() {
         }
       } else {
         console.warn(
-          "⚠️ Missing contactIdentifier or password for auto Sign In.",
+          "⚠️ Missing contactIdentifier for auto Sign In.",
         );
       }
 
@@ -757,7 +772,7 @@ function ArtistAuthContent() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setStep("otp")}
+                  onClick={() => setStep(contactType === "phone" ? "otp" : "password")}
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg

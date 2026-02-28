@@ -75,6 +75,41 @@ export default function ProfileSetupPage() {
     backingDescription: "",
   });
 
+  // Pre-fill existing artist profile data when editing
+  useEffect(() => {
+    if (session?.user?.artistProfile) {
+      const profile = session.user.artistProfile;
+      const user = session.user;
+      
+      setProfileData((prev) => ({
+        ...prev,
+        avatarUrl: user.avatar || "",
+        stageName: profile.stageName || "",
+        artistType: profile.artistType || "",
+        subArtistType: profile.subArtistType || "",
+        achievements: profile.achievements || "",
+        yearsOfExperience: profile.yearsOfExperience?.toString() || "",
+        shortBio: profile.shortBio || "",
+        performingLanguages: profile.performingLanguage 
+          ? profile.performingLanguage.split(",").map((l: string) => l.trim())
+          : [],
+        performingEventTypes: profile.performingEventType
+          ? profile.performingEventType.split(",").map((t: string) => t.trim())
+          : [],
+        performingStates: profile.performingStates
+          ? profile.performingStates.split(",").map((s: string) => s.trim())
+          : [],
+        performingDurationFrom: profile.performingDurationFrom || "",
+        performingDurationTo: profile.performingDurationTo || "",
+        performingMembers: profile.performingMembers || "",
+        offStageMembers: profile.offStageMembers || "",
+        contactNumber: profile.contactNumber || user.phoneNumber || "",
+        whatsappNumber: profile.whatsappNumber || user.phoneNumber || "",
+        email: user.email || "",
+      }));
+    }
+  }, [session]);
+
   // Pre-fill contact number from session if user signed up with phone
   useEffect(() => {
     if (session?.user?.phoneNumber) {

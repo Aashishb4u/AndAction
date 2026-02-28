@@ -110,37 +110,61 @@ export const {
       credentials: {
         contact: { label: "Email or Phone", type: "text" },
         password: { label: "Password", type: "password" },
+        countryCode: { label: "Country Code", type: "text" },
+        isOtpVerified: { label: "OTP Verified", type: "text" },
       },
       async authorize(credentials: Record<string, any> | undefined) {
         try {
-          if (!credentials?.contact || !credentials?.password) {
-            throw new Error("Missing credentials");
+          if (!credentials?.contact) {
+            throw new Error("Missing contact information");
           }
 
           const contactRaw = String(credentials.contact).trim();
-          const passwordRaw = String(credentials.password);
+          const passwordRaw = credentials.password ? String(credentials.password) : null;
+          const isOtpVerified = credentials.isOtpVerified === "true";
+          const countryCodeRaw = credentials.countryCode ? String(credentials.countryCode) : "+91";
           const isEmail = contactRaw.includes("@");
 
           let user: any | null = null;
 
-          if (isEmail) {
-            user = await prisma.user.findUnique({
-              where: { email: contactRaw.toLowerCase() },
-              include: { artist: true },
-            });
-          } else {
+          // OTP-based authentication for phone numbers
+          if (isOtpVerified && !isEmail) {
             const digits = contactRaw.replace(/\D/g, "");
             user = await prisma.user.findFirst({
-              where: { phoneNumber: digits },
+              where: {
+                phoneNumber: digits,
+                countryCode: countryCodeRaw,
+              },
               include: { artist: true },
             });
+
+            if (!user) throw new Error("User not found");
           }
+          // Password-based authentication
+          else {
+            if (!passwordRaw) {
+              throw new Error("Missing password");
+            }
 
-          if (!user) throw new Error("User not found");
-          if (!user.password) throw new Error("No password set");
+            if (isEmail) {
+              user = await prisma.user.findUnique({
+                where: { email: contactRaw.toLowerCase() },
+                include: { artist: true },
+              });
+            } else {
+              const digits = contactRaw.replace(/\D/g, "");
+              user = await prisma.user.findFirst({
+                where: { phoneNumber: digits },
+                include: { artist: true },
+              });
+            }
 
-          const valid = await verifyPassword(passwordRaw, String(user.password));
-          if (!valid) throw new Error("Invalid password");
+            if (!user) throw new Error("User not found");
+            if (!user.password) throw new Error("No password set");
+
+            const valid = await verifyPassword(passwordRaw, String(user.password));
+            if (!valid) throw new Error("Invalid password");
+          }
 
           const safeUser: ExtendedUser = {
             id: user.id,
@@ -185,7 +209,7 @@ export const {
 
           return safeUser;
         } catch (err) {
-          throw new Error("Invalid email / phone or password");
+          throw new Error("Invalid credentials");
         }
       },
     }),

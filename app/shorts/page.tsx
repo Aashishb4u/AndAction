@@ -1,12 +1,13 @@
 "use client";
 
 import { VIDEO_CATEGORIES } from "@/lib/constants";
+import { useMemo } from "react";
 
 const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
   const [_key, { category }] = queryKey;
   const url = category && category !== 'all'
-    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}`
-    : `/api/videos?type=shorts&page=${pageParam}`;
+    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}&limit=12`
+    : `/api/videos?type=shorts&page=${pageParam}&limit=12`;
   
   const res = await fetch(url);
   const json = await res.json();
@@ -16,6 +17,7 @@ const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
     title: v.title,
     creator: `${v.user.firstName} ${v.user.lastName}`,
     creatorId: v.user.artist?.id,
+    userId: v.user.id, // Add userId for grouping
     avatar: v.user.avatar || v.user.image,
     videoUrl: v.url,
     thumbnail: v.thumbnailUrl,
@@ -81,6 +83,32 @@ export default function ShortsPage() {
 
   const shorts = data?.pages.flat() || [];
 
+  // Group shorts by artist (all shorts from one artist together)
+  const groupedShorts = useMemo(() => {
+    if (!shorts.length) return [];
+
+    // Group by userId
+    const shortsByArtist = shorts.reduce((acc, short) => {
+      if (!acc[short.userId]) {
+        acc[short.userId] = [];
+      }
+      acc[short.userId].push(short);
+      return acc;
+    }, {} as Record<string, typeof shorts>);
+
+    // Flatten back to array, maintaining artist grouping
+    // Get unique artist IDs in order of first appearance
+    const artistOrder: string[] = [];
+    shorts.forEach(short => {
+      if (!artistOrder.includes(short.userId)) {
+        artistOrder.push(short.userId);
+      }
+    });
+
+    // Return shorts grouped by artist
+    return artistOrder.flatMap(artistId => shortsByArtist[artistId]);
+  }, [shorts]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = sessionStorage.getItem("shorts_sound");
@@ -108,7 +136,7 @@ export default function ShortsPage() {
   // Load more videos when approaching the end
   const loadMoreVideos = useCallback(() => {
     if (
-      currentIndex >= shorts.length - 2 &&
+      currentIndex >= groupedShorts.length - 2 &&
       hasNextPage &&
       !isFetchingNextPage
     ) {
@@ -116,7 +144,7 @@ export default function ShortsPage() {
     }
   }, [
     currentIndex,
-    shorts.length,
+    groupedShorts.length,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
@@ -136,17 +164,17 @@ export default function ShortsPage() {
       setCurrentIndex((prevIndex) => {
         const newIndex =
           direction === "down"
-            ? Math.min(prevIndex + 1, shorts.length - 1)
+            ? Math.min(prevIndex + 1, groupedShorts.length - 1)
             : Math.max(prevIndex - 1, 0);
 
         if (newIndex === prevIndex) return prevIndex;
 
-        if (newIndex >= shorts.length - 2) loadMoreVideos();
+        if (newIndex >= groupedShorts.length - 2) loadMoreVideos();
 
         return newIndex;
       });
     },
-    [shorts.length, loadMoreVideos],
+    [groupedShorts.length, loadMoreVideos],
   );
 
   // Wheel (desktop)
@@ -283,13 +311,13 @@ export default function ShortsPage() {
   const getVisibleVideos = useCallback(() => {
     const bufferSize = 2;
     const startIndex = Math.max(0, currentIndex - bufferSize);
-    const endIndex = Math.min(shorts.length - 1, currentIndex + bufferSize);
+    const endIndex = Math.min(groupedShorts.length - 1, currentIndex + bufferSize);
 
-    return shorts.slice(startIndex, endIndex + 1).map((short, idx) => ({
+    return groupedShorts.slice(startIndex, endIndex + 1).map((short, idx) => ({
       ...short,
       absoluteIndex: startIndex + idx,
     }));
-  }, [currentIndex, shorts]);
+  }, [currentIndex, groupedShorts]);
 
   // Bookmark handler: persist to backend and update state
   const handleBookmark = async (id: string) => {
@@ -299,7 +327,7 @@ export default function ShortsPage() {
       return;
     }
 
-    const short = shorts.find((s) => s.id === id);
+    const short = groupedShorts.find((s) => s.id === id);
     if (!short) return;
 
     const previousData = queryClient.getQueryData(["shorts"]);
@@ -344,7 +372,7 @@ export default function ShortsPage() {
 
   // Share handler: open share modal
   const handleShare = async (id: string) => {
-    const short = shorts.find((s) => s.id === id);
+    const short = groupedShorts.find((s) => s.id === id);
     const shareTitle = short?.title || "Check out this short";
     setShareModal({ isOpen: true, shortId: id, title: shareTitle });
   };
