@@ -71,6 +71,11 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   const youtubeId = extractYouTubeId(short.videoUrl);
   const isYouTube = Boolean(youtubeId);
 
+  // Normalize avatar: numeric ids map to /avatars/{id}.png, otherwise use provided URL, fallback to /default.jpg
+  const avatarSrc = short.avatar && /^\d+$/.test(String(short.avatar))
+    ? `/avatars/${short.avatar}.png`
+    : (short.avatar || '/default.jpg');
+
   /**
    * NATIVE VIDEO: play/pause only (sound handled by `muted` prop)
    */
@@ -252,12 +257,13 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
           >
             <div className="flex items-center space-x-2 mb-4 cursor-pointer">
               <Image
-                src={short.avatar}
+                src={avatarSrc}
                 alt={short.creator}
                 width={40}
                 height={40}
                 className="rounded-full"
               />
+              
               <div>
                 <h3 className="text-white">{short.creator}</h3>
                 <p className="text-gray-300">@{short.creatorId}</p>
