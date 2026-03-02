@@ -208,9 +208,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   key={item.label}
                   href={item.href}
                   onClick={handleItemClick}
-                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${
-                    item.isActive ? "gradient-text" : "text-white"
-                  }`}
+                  className={`block h3 hover:text-primary-pink transition-colors duration-200 text-white`}
                 >
                   {item.label}
                 </Link>

@@ -465,7 +465,7 @@ export default function ShortsPage() {
             className={`px-4 py-2 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${
               selectedCategory === category.value
                 ? "bg-white border-white"
-                : "bg-transparent text-white border-[#2D2D2D] hover:border-gray-400"
+                : "bg-background text-white border-[#2D2D2D] hover:border-gray-400"
             }`}
           >
             <span

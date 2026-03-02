@@ -9,14 +9,14 @@ import Pause from "@/components/icons/pause";
 import Link from "next/link";
 
 const SoundOnIcon = () => (
-  <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
     <path d="M5 9v6h4l5 5V4L9 9H5z" />
     <path d="M16.5 8.5a4.5 4.5 0 010 7" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const SoundOffIcon = () => (
-  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path d="M5 9v6h4l5 5V4L9 9H5z" fill="currentColor" />
     <path d="M19 5L5 19" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
   </svg>

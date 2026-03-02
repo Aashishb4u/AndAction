@@ -213,8 +213,8 @@ export default function VideoDetailsPage() {
   }
 
   return (
-    <SiteLayout showPreloader={false}>
-      <div className="min-h-screen pt-16 lg:pt-20 pb-28">
+    <SiteLayout showPreloader={false} hideNavbar>
+      <div className="min-h-screen pb-28">
         <div className="max-w-7xl mx-auto lg:px-8">
           {/* MAIN VIDEO */}
           <div className="mb-8">

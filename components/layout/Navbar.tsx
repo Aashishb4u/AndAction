@@ -22,10 +22,16 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
   const user = session?.user;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
 useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
@@ -64,7 +70,9 @@ useEffect(() => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-[9999] transition-all duration-300 ease-in-out ${
+      className={`fixed top-0 left-0 right-0 z-[9999] ${
+        mounted ? 'transition-all duration-300 ease-in-out' : ''
+      } ${
         // glass blur only when the page is scrolled AND the navbar is visible
         isScrolled && isVisible ? "backdrop-blur-xl" : ""
       } ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"} ${className}`}
@@ -117,31 +125,36 @@ useEffect(() => {
               <Search className="size-6" />
             </button>
 
-            {/* Sign In (only show when logged out) */}
-            {!user && status !== "loading" && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() =>
-                  router.push(createAuthRedirectUrl("/auth/signin", pathname))
-                }
-                className="signup"
-              >
-                Sign In
-              </Button>
-            )}
+            {/* Only render session-dependent buttons after mount + session resolved */}
+            {mounted && status !== "loading" && (
+              <>
+                {/* Sign In (only show when logged out) */}
+                {!user && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() =>
+                      router.push(createAuthRedirectUrl("/auth/signin", pathname))
+                    }
+                    className="signup"
+                  >
+                    Sign In
+                  </Button>
+                )}
 
-            {/* Join as an artist - Only show for non-artist users */}
-            {user?.role !== "artist" && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() =>
-                  router.push(createAuthRedirectUrl("/auth/artist", pathname))
-                }
-              >
-                <span className="gradient-text signup">Join as an Artist</span>
-              </Button>
+                {/* Join as an artist - Only show for non-artist users */}
+                {user?.role !== "artist" && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      router.push(createAuthRedirectUrl("/auth/artist", pathname))
+                    }
+                  >
+                    <span className="gradient-text signup">Join as an Artist</span>
+                  </Button>
+                )}
+              </>
             )}
 
             {user ? (
