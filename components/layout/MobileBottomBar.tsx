@@ -21,6 +21,11 @@ const MobileBottomBar = () => {
   // const [activeItem, setActiveItem] = useState<string>('');
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
 
   const isActive = (href: string) => {
@@ -113,7 +118,7 @@ const MobileBottomBar = () => {
 
   return (
     <div className={`
-      fixed bottom-0 left-0 right-0 z-50 md:hidden transition-transform duration-300 ease-out
+      fixed bottom-0 left-0 right-0 z-50 md:hidden ${mounted ? 'transition-transform duration-300 ease-out' : ''}
       ${isVisible ? 'translate-y-0' : 'translate-y-full'}
     `}>
       {/* Blurred glass background with custom semi-transparent color (#0F0F0F CC = 80% opacity) */}

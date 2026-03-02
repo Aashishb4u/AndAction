@@ -146,20 +146,26 @@ export default function Artists({ location }: ArtistsProps) {
         {/* Base background */}
         <div className="absolute inset-0 bg-background" />
 
-        {/* Centered pink spotlight at top — connects with Hero curve glow */}
+        {/* Trapezium spotlight — narrows at top, widens toward bottom, faded edges */}
         <div
           className="absolute inset-x-0 top-0"
           style={{
-            height: '450px',
+            height: '1200px',
             background: `
               radial-gradient(
-                ellipse 40% 75% at 50% 0%,
-                rgba(255,45,122,0.25) 0%,
-                rgba(255,45,122,0.12) 30%,
-                rgba(255,45,122,0.04) 55%,
-                transparent 80%
+                ellipse 50% 95% at 50% 0%,
+                rgba(255,45,122,0.34) 0%,
+                rgba(255,45,122,0.20) 25%,
+                rgba(255,45,122,0.09) 50%,
+                rgba(255,45,122,0.03) 75%,
+                transparent 100%
               )
             `,
+            maskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%), linear-gradient(to right, transparent 8%, black 28%, black 72%, transparent 92%)',
+            maskComposite: 'intersect',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%), linear-gradient(to right, transparent 8%, black 28%, black 72%, transparent 92%)',
+            WebkitMaskComposite: 'source-in',
+            clipPath: 'polygon(30% 0%, 70% 0%, 90% 100%, 10% 100%)',
           }}
         />
       </div>

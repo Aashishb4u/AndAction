@@ -195,7 +195,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       title="Find your artist"
       size="full"
       variant="bottom-sheet"
-      className="max-w-2xl border-none bg-background h-[90vh] md:!h-auto md:!max-h-[90vh]"
+      className="md:max-w-2xl border-none bg-background h-[90vh] md:!h-auto md:!max-h-[90vh]"
       headerClassName="md:px-8 md:py-4 px-4 py-3"
     >
       <div className="md:px-8 px-4 md:pb-8 pb-4 md:pt-4 pt-4 md:space-y-6 space-y-4">
