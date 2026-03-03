@@ -9,6 +9,7 @@ interface VideoPlayerProps {
   autoplay?: boolean;
   poster?: string;
   videoId?: string;
+  onVideoReady?: () => void; // Callback when video is loaded and ready
 }
 
 // Helper functions
@@ -29,6 +30,7 @@ const OptimizedVideoPlayer: React.FC<VideoPlayerProps> = ({
   autoplay = false,
   poster,
   videoId,
+  onVideoReady,
 }) => {
   const isYT = isYouTube(videoUrl);
   const ytId = isYT ? getYouTubeId(videoUrl) : null;
@@ -88,6 +90,7 @@ const OptimizedVideoPlayer: React.FC<VideoPlayerProps> = ({
 
     const handleCanPlay = () => {
       setIsLoading(false);
+      onVideoReady?.(); // Notify parent that video is ready
     };
 
     const handleError = () => {
@@ -106,16 +109,19 @@ const OptimizedVideoPlayer: React.FC<VideoPlayerProps> = ({
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('error', handleError);
     };
-  }, [videoId, trackMilestone]);
+  }, [videoId, trackMilestone, onVideoReady]);
 
   // Handle iframe load
   useEffect(() => {
     if (isYT && playYouTube) {
       // Hide loading spinner faster for better perceived performance
-      const timer = setTimeout(() => setIsLoading(false), 300);
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+        onVideoReady?.(); // Notify parent that YouTube iframe is ready
+      }, 300);
       return () => clearTimeout(timer);
     }
-  }, [isYT, playYouTube]);
+  }, [isYT, playYouTube, onVideoReady]);
 
   // For YouTube, tracking would require YouTube IFrame API
   // which adds complexity. For now, we'll track HTML5 videos only.

@@ -7,6 +7,8 @@ import OptimizedVideoPlayer from "@/components/ui/OptimizedVideoPlayer";
 import ArtistInfo from "@/components/sections/ArtistInfo";
 import VideoCard from "@/components/ui/VideoCard";
 import ShortsCard from "@/components/ui/ShortsCard";
+import VideoCardSkeleton from "@/components/ui/VideoCardSkeleton";
+import ShortsCardSkeleton from "@/components/ui/ShortsCardSkeleton";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
@@ -19,6 +21,7 @@ export default function VideoDetailsPage() {
   const [relatedVideos, setRelatedVideos] = useState<any[]>([]);
   const [shorts, setShorts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isVideoReady, setIsVideoReady] = useState(false); // Track when main video is rendered
   const [showRelated, setShowRelated] = useState(false); // Lazy load related content
 
   const { data: session } = useSession();
@@ -102,14 +105,14 @@ export default function VideoDetailsPage() {
 
   // Lazy load related content AFTER video player is ready (prevents blocking)
   useEffect(() => {
-    if (!loading && videoData) {
+    if (isVideoReady && videoData) {
       // Delay rendering related content to prioritize video player
       const timer = setTimeout(() => {
         setShowRelated(true);
-      }, 1000); // 1 second after video loads
+      }, 500); // 500ms after video is ready
       return () => clearTimeout(timer);
     }
-  }, [loading, videoData]);
+  }, [isVideoReady, videoData]);
 
   // ---------- BOOKMARK TOGGLE (GLOBAL) ----------
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
@@ -235,6 +238,7 @@ export default function VideoDetailsPage() {
               className="mb-0"
               autoplay={true}
               videoId={videoData.id}
+              onVideoReady={() => setIsVideoReady(true)}
             />
           </div>
 
@@ -263,55 +267,79 @@ export default function VideoDetailsPage() {
               />
             </div>
 
-            {/* RELATED VIDEOS - Lazy loaded after video */}
-            {showRelated && relatedVideos.length > 0 && (
-              <section className="mb-8 px-3 sm:px-6 lg:px-8 animate-fadeIn">
+            {/* RELATED VIDEOS - Show skeletons while video loads, then actual content */}
+            {relatedVideos.length > 0 && (
+              <section className="mb-8 px-3 sm:px-6 lg:px-8">
                 <h2 className="text-xl font-bold text-white mb-4">
                   More from this artist
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {relatedVideos.map((video) => (
-                    <VideoCard
-                      key={video.id}
-                      id={video.id}
-                      title={video.title}
-                      creator={video.creator}
-                      thumbnail={video.thumbnail}
-                      videoUrl={video.videoUrl}
-                      isBookmarked={video.isBookmarked}
-                      bookmarkId={video.bookmarkId}
-                      onBookmark={(data) => toggleBookmark(data)}
-                      onShare={() => handleShare(video.id)}
-                    />
-                  ))}
+                  {!showRelated ? (
+                    // Show skeletons while waiting for video to render
+                    <>
+                      <VideoCardSkeleton />
+                      <VideoCardSkeleton />
+                      <VideoCardSkeleton />
+                      <VideoCardSkeleton />
+                    </>
+                  ) : (
+                    // Show actual videos after main video is ready
+                    relatedVideos.map((video) => (
+                      <VideoCard
+                        key={video.id}
+                        id={video.id}
+                        title={video.title}
+                        creator={video.creator}
+                        thumbnail={video.thumbnail}
+                        videoUrl={video.videoUrl}
+                        isBookmarked={video.isBookmarked}
+                        bookmarkId={video.bookmarkId}
+                        onBookmark={(data) => toggleBookmark(data)}
+                        onShare={() => handleShare(video.id)}
+                      />
+                    ))
+                  )}
                 </div>
               </section>
             )}
 
-            {/* SHORTS - Lazy loaded after video */}
-            {showRelated && shorts.length > 0 && (
-              <section className="mb-8 px-3 sm:px-6 lg:px-8 animate-fadeIn">
+            {/* SHORTS - Show skeletons while video loads, then actual content */}
+            {shorts.length > 0 && (
+              <section className="mb-8 px-3 sm:px-6 lg:px-8">
                 <div className="flex items-center gap-3 mb-4">
                   <Image src="/shorts.svg" alt="Shorts" width={24} height={24} />
                   <h2 className="text-2xl font-bold text-white">Shorts</h2>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                  {shorts.map((short) => (
-                    <ShortsCard
-                      key={short.id}
-                      id={short.id}
-                      title={short.title}
-                      creator={short.creator}
-                      thumbnail={short.thumbnail}
-                      videoUrl={short.videoUrl}
-                      isBookmarked={short.isBookmarked}
-                      bookmarkId={short.bookmarkId}
-                      onBookmark={(data) => toggleBookmark(data)}
-                      onShare={() => handleShare(short.id)}
-                    />
-                  ))}
+                  {!showRelated ? (
+                    // Show skeletons while waiting for video to render
+                    <>
+                      <ShortsCardSkeleton />
+                      <ShortsCardSkeleton />
+                      <ShortsCardSkeleton />
+                      <ShortsCardSkeleton />
+                      <ShortsCardSkeleton />
+                      <ShortsCardSkeleton />
+                    </>
+                  ) : (
+                    // Show actual shorts after main video is ready
+                    shorts.map((short) => (
+                      <ShortsCard
+                        key={short.id}
+                        id={short.id}
+                        title={short.title}
+                        creator={short.creator}
+                        thumbnail={short.thumbnail}
+                        videoUrl={short.videoUrl}
+                        isBookmarked={short.isBookmarked}
+                        bookmarkId={short.bookmarkId}
+                        onBookmark={(data) => toggleBookmark(data)}
+                        onShare={() => handleShare(short.id)}
+                      />
+                    ))
+                  )}
                 </div>
               </section>
             )}

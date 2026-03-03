@@ -278,6 +278,7 @@ export default function VideosPage() {
                     bookmarkId={video.bookmarkId}
                     onBookmark={(data) => toggleBookmark(data)}
                     onShare={() => handleShare(video.id)}
+                    enableMobileAutoplay={true}
                   />
                 ))}
               </div>
