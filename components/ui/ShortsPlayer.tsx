@@ -129,6 +129,8 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     commands.forEach((cmd) => {
       iframe.contentWindow?.postMessage(JSON.stringify(cmd), "*");
     });
+    // Keep the local playing state in sync with activity state
+    setIsPlaying(isActive);
   }, [isActive, soundEnabled, isYouTube, short.id]);
 
   /**
@@ -159,7 +161,27 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   }, [isPlaying, isYouTube]);
 
   const handleVideoClick = () => {
-    if (isYouTube) return;
+    if (isYouTube) {
+      const iframe = document.getElementById(
+        `yt-${short.id}`,
+      ) as HTMLIFrameElement | null;
+      if (!iframe || !iframe.contentWindow) return;
+
+      const cmd = {
+        event: "command",
+        func: isPlaying ? "pauseVideo" : "playVideo",
+        args: [] as unknown[],
+      };
+
+      try {
+        iframe.contentWindow.postMessage(JSON.stringify(cmd), "*");
+        setIsPlaying((prev) => !prev);
+      } catch (err) {
+        // ignore postMessage errors
+      }
+
+      return;
+    }
 
     const video = videoRef.current;
     if (!video) return;
@@ -238,15 +260,13 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
         </div>
       )}
 
-      {/* Click overlay */}
-      {!isYouTube && (
-        <div
-          className="absolute inset-0 z-0"
-          onClick={handleVideoClick}
-          onMouseEnter={() => setShowControls(true)}
-          onMouseLeave={() => setShowControls(false)}
-        />
-      )}
+      {/* Click overlay for toggling play/pause (captures clicks for both native video and YouTube iframe) */}
+      <div
+        className="absolute inset-0 z-10"
+        onClick={handleVideoClick}
+        onMouseEnter={() => setShowControls(true)}
+        onMouseLeave={() => setShowControls(false)}
+      />
 
       {/* Content Overlay */}
       <div className="absolute inset-0 flex z-20 pointer-events-none">
