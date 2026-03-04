@@ -3,11 +3,13 @@
 import { VIDEO_CATEGORIES } from "@/lib/constants";
 import { useMemo } from "react";
 
+const SHORTS_PAGE_LIMIT = 5;
+
 const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
   const [_key, { category }] = queryKey;
   const url = category && category !== 'all'
-    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}&limit=12`
-    : `/api/videos?type=shorts&page=${pageParam}&limit=12`;
+    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}&limit=${SHORTS_PAGE_LIMIT}`
+    : `/api/videos?type=shorts&page=${pageParam}&limit=${SHORTS_PAGE_LIMIT}`;
   
   const res = await fetch(url);
   const json = await res.json();
@@ -74,7 +76,7 @@ export default function ShortsPage() {
       queryFn: fetchShortsPage,
       initialPageParam: 1,
       getNextPageParam: (lastPage, allPages) => {
-        return lastPage && lastPage.length > 0
+        return lastPage && lastPage.length >= SHORTS_PAGE_LIMIT
           ? allPages.length + 1
           : undefined;
       },
@@ -133,10 +135,10 @@ export default function ShortsPage() {
   const velocityRef = useRef<number>(0);
   const lastTouchTime = useRef<number>(0);
 
-  // Load more videos when approaching the end
+  // Load more videos when approaching the end (trigger 3 items before end)
   const loadMoreVideos = useCallback(() => {
     if (
-      currentIndex >= groupedShorts.length - 2 &&
+      currentIndex >= groupedShorts.length - 3 &&
       hasNextPage &&
       !isFetchingNextPage
     ) {
