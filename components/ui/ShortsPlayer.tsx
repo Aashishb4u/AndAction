@@ -105,33 +105,74 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
    * - soundEnabled -> mute / unMute
    * - isActive     -> playVideo / pauseVideo
    */
-  useEffect(() => {
-    if (!isYouTube) return;
+useEffect(() => {
+  if (!isYouTube) return;
 
-    const iframe = document.getElementById(
-      `yt-${short.id}`,
-    ) as HTMLIFrameElement | null;
-    if (!iframe || !iframe.contentWindow) return;
+  const iframe = document.getElementById(
+    `yt-${short.id}`,
+  ) as HTMLIFrameElement | null;
+  if (!iframe || !iframe.contentWindow) return;
 
-    const commands = [
-      {
-        event: "command",
-        func: soundEnabled ? "unMute" : "mute",
-        args: [] as unknown[],
-      },
-      {
-        event: "command",
-        func: isActive ? "playVideo" : "pauseVideo",
-        args: [] as unknown[],
-      },
-    ];
+  const commands = [
+    {
+      event: "command",
+      func: soundEnabled ? "unMute" : "mute",
+      args: [],
+    },
+    {
+      event: "command",
+      func: isActive ? "playVideo" : "pauseVideo",
+      args: [],
+    },
+  ];
 
-    commands.forEach((cmd) => {
-      iframe.contentWindow?.postMessage(JSON.stringify(cmd), "*");
-    });
-    // Keep the local playing state in sync with activity state
-    setIsPlaying(isActive);
-  }, [isActive, soundEnabled, isYouTube, short.id]);
+  commands.forEach((cmd) => {
+    iframe.contentWindow?.postMessage(JSON.stringify(cmd), "*");
+  });
+
+  setIsPlaying(isActive);
+}, [isActive, soundEnabled, isYouTube, short.id]);
+
+
+useEffect(() => {
+  if (!isYouTube) return;
+
+  const iframe = document.getElementById(
+    `yt-${short.id}`,
+  ) as HTMLIFrameElement | null;
+
+  if (!iframe?.contentWindow) return;
+
+  iframe.contentWindow.postMessage(
+    JSON.stringify({
+      event: "command",
+      func: isActive ? "playVideo" : "pauseVideo",
+      args: [],
+    }),
+    "*"
+  );
+
+  setIsPlaying(isActive);
+}, [isActive, isYouTube, short.id]);
+
+useEffect(() => {
+  if (!isYouTube) return;
+
+  const iframe = document.getElementById(
+    `yt-${short.id}`,
+  ) as HTMLIFrameElement | null;
+
+  if (!iframe?.contentWindow) return;
+
+  iframe.contentWindow.postMessage(
+    JSON.stringify({
+      event: "command",
+      func: soundEnabled ? "unMute" : "mute",
+      args: [],
+    }),
+    "*"
+  );
+}, [soundEnabled, isYouTube, short.id]);
 
   /**
    * NATIVE VIDEO PROGRESS
@@ -221,7 +262,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
           <iframe
             id={`yt-${short.id}`}
             className="absolute inset-0 w-full h-full"
-            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&controls=0&playsinline=1&enablejsapi=1&mute=${soundEnabled ? 0 : 1}&origin=${typeof window !== "undefined" ? window.location.origin : ""}`}
+            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&controls=0&playsinline=1&enablejsapi=1&origin=${typeof window !== "undefined" ? window.location.origin : ""}`}
             allow="autoplay; encrypted-media; picture-in-picture"
           />
         ) : (
