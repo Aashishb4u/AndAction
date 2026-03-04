@@ -4,14 +4,53 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ArtistSection from "./ArtistSection";
 import ArtistSectionSkeleton from "./ArtistSectionSkeleton";
 import { useAllArtists } from "@/hooks/use-artists";
-import { TITLE_MAP, PREFERRED_ORDER, prettifyKey } from "@/lib/artistCategories";
 
 interface ArtistsProps {
   location: { lat: number; lng: number } | null;
 }
 
+// Known display titles for categories (fallback will prettify keys)
+const TITLE_MAP: Record<string, string> = {
+  singers: "Singer",
+  dancers: "Dancer / Dance Group",
+  anchors: "Anchor / Emcee / Host",
+  djs: "DJ",
+  bands: "Live Band / Group",
+  comedians: "Comedian",
+  musicians: "Musician / Instrumentalist",
+  magicians: "Magician / Illusionist",
+  actors: "Theatre Artist / Actor",
+  mimicry: "Mimicry / Impressionist",
+  specialAct: "Special Act Performer",
+  spiritual: "Spiritual / Devotional",
+  kidsEntertainers: "Kids Entertainer",
+};
+
+// Preferred ordering for categories (unknown categories will be appended)
+const PREFERRED_ORDER = [
+  "singers",
+  "dancers",
+  "musicians",
+  "anchors",
+  "djs",
+  "bands",
+  "comedians",
+  "magicians",
+  "actors",
+  "mimicry",
+  "specialAct",
+  "spiritual",
+  "kidsEntertainers",
+];
+
 // Number of categories to display initially and per load
 const CATEGORIES_PER_LOAD = 5;
+
+// Helper function to prettify category key to display title
+function prettifyKey(key: string) {
+  const withoutS = key.replace(/s$/, "");
+  return withoutS.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export default function Artists({ location }: ArtistsProps) {
   const {
@@ -146,26 +185,20 @@ export default function Artists({ location }: ArtistsProps) {
         {/* Base background */}
         <div className="absolute inset-0 bg-background" />
 
-        {/* Trapezium spotlight — narrows at top, widens toward bottom, faded edges */}
+        {/* Centered pink spotlight at top — connects with Hero curve glow */}
         <div
           className="absolute inset-x-0 top-0"
           style={{
-            height: '1200px',
+            height: '450px',
             background: `
               radial-gradient(
-                ellipse 50% 95% at 50% 0%,
-                rgba(255,45,122,0.34) 0%,
-                rgba(255,45,122,0.20) 25%,
-                rgba(255,45,122,0.09) 50%,
-                rgba(255,45,122,0.03) 75%,
-                transparent 100%
+                ellipse 40% 75% at 50% 0%,
+                rgba(255,45,122,0.25) 0%,
+                rgba(255,45,122,0.12) 30%,
+                rgba(255,45,122,0.04) 55%,
+                transparent 80%
               )
             `,
-            maskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%), linear-gradient(to right, transparent 8%, black 28%, black 72%, transparent 92%)',
-            maskComposite: 'intersect',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%), linear-gradient(to right, transparent 8%, black 28%, black 72%, transparent 92%)',
-            WebkitMaskComposite: 'source-in',
-            clipPath: 'polygon(30% 0%, 70% 0%, 90% 100%, 10% 100%)',
           }}
         />
       </div>
@@ -191,7 +224,6 @@ export default function Artists({ location }: ArtistsProps) {
                   key={category.key}
                   title={category.title}
                   artists={artists}
-                  categoryKey={category.key}
                 />
               );
             })}

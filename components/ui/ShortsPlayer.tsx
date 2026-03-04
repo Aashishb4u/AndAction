@@ -71,6 +71,11 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   const youtubeId = extractYouTubeId(short.videoUrl);
   const isYouTube = Boolean(youtubeId);
 
+  // Normalize avatar: numeric ids map to /avatars/{id}.png, otherwise use provided URL, fallback to /default.jpg
+  const avatarSrc = short.avatar && /^\d+$/.test(String(short.avatar))
+    ? `/avatars/${short.avatar}.png`
+    : (short.avatar || '/default.jpg');
+
   /**
    * NATIVE VIDEO: play/pause only (sound handled by `muted` prop)
    */
@@ -100,31 +105,74 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
    * - soundEnabled -> mute / unMute
    * - isActive     -> playVideo / pauseVideo
    */
-  useEffect(() => {
-    if (!isYouTube) return;
+useEffect(() => {
+  if (!isYouTube) return;
 
-    const iframe = document.getElementById(
-      `yt-${short.id}`,
-    ) as HTMLIFrameElement | null;
-    if (!iframe || !iframe.contentWindow) return;
+  const iframe = document.getElementById(
+    `yt-${short.id}`,
+  ) as HTMLIFrameElement | null;
+  if (!iframe || !iframe.contentWindow) return;
 
-    const commands = [
-      {
-        event: "command",
-        func: soundEnabled ? "unMute" : "mute",
-        args: [] as unknown[],
-      },
-      {
-        event: "command",
-        func: isActive ? "playVideo" : "pauseVideo",
-        args: [] as unknown[],
-      },
-    ];
+  const commands = [
+    {
+      event: "command",
+      func: soundEnabled ? "unMute" : "mute",
+      args: [],
+    },
+    {
+      event: "command",
+      func: isActive ? "playVideo" : "pauseVideo",
+      args: [],
+    },
+  ];
 
-    commands.forEach((cmd) => {
-      iframe.contentWindow?.postMessage(JSON.stringify(cmd), "*");
-    });
-  }, [isActive, soundEnabled, isYouTube, short.id]);
+  commands.forEach((cmd) => {
+    iframe.contentWindow?.postMessage(JSON.stringify(cmd), "*");
+  });
+
+  setIsPlaying(isActive);
+}, [isActive, soundEnabled, isYouTube, short.id]);
+
+
+useEffect(() => {
+  if (!isYouTube) return;
+
+  const iframe = document.getElementById(
+    `yt-${short.id}`,
+  ) as HTMLIFrameElement | null;
+
+  if (!iframe?.contentWindow) return;
+
+  iframe.contentWindow.postMessage(
+    JSON.stringify({
+      event: "command",
+      func: isActive ? "playVideo" : "pauseVideo",
+      args: [],
+    }),
+    "*"
+  );
+
+  setIsPlaying(isActive);
+}, [isActive, isYouTube, short.id]);
+
+useEffect(() => {
+  if (!isYouTube) return;
+
+  const iframe = document.getElementById(
+    `yt-${short.id}`,
+  ) as HTMLIFrameElement | null;
+
+  if (!iframe?.contentWindow) return;
+
+  iframe.contentWindow.postMessage(
+    JSON.stringify({
+      event: "command",
+      func: soundEnabled ? "unMute" : "mute",
+      args: [],
+    }),
+    "*"
+  );
+}, [soundEnabled, isYouTube, short.id]);
 
   /**
    * NATIVE VIDEO PROGRESS
@@ -154,7 +202,27 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   }, [isPlaying, isYouTube]);
 
   const handleVideoClick = () => {
-    if (isYouTube) return;
+    if (isYouTube) {
+      const iframe = document.getElementById(
+        `yt-${short.id}`,
+      ) as HTMLIFrameElement | null;
+      if (!iframe || !iframe.contentWindow) return;
+
+      const cmd = {
+        event: "command",
+        func: isPlaying ? "pauseVideo" : "playVideo",
+        args: [] as unknown[],
+      };
+
+      try {
+        iframe.contentWindow.postMessage(JSON.stringify(cmd), "*");
+        setIsPlaying((prev) => !prev);
+      } catch (err) {
+        // ignore postMessage errors
+      }
+
+      return;
+    }
 
     const video = videoRef.current;
     if (!video) return;
@@ -194,7 +262,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
           <iframe
             id={`yt-${short.id}`}
             className="absolute inset-0 w-full h-full"
-            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&controls=0&playsinline=1&enablejsapi=1&mute=${soundEnabled ? 0 : 1}&origin=${typeof window !== "undefined" ? window.location.origin : ""}`}
+            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&controls=0&playsinline=1&enablejsapi=1&origin=${typeof window !== "undefined" ? window.location.origin : ""}`}
             allow="autoplay; encrypted-media; picture-in-picture"
           />
         ) : (
@@ -233,15 +301,13 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
         </div>
       )}
 
-      {/* Click overlay */}
-      {!isYouTube && (
-        <div
-          className="absolute inset-0 z-0"
-          onClick={handleVideoClick}
-          onMouseEnter={() => setShowControls(true)}
-          onMouseLeave={() => setShowControls(false)}
-        />
-      )}
+      {/* Click overlay for toggling play/pause (captures clicks for both native video and YouTube iframe) */}
+      <div
+        className="absolute inset-0 z-10"
+        onClick={handleVideoClick}
+        onMouseEnter={() => setShowControls(true)}
+        onMouseLeave={() => setShowControls(false)}
+      />
 
       {/* Content Overlay */}
       <div className="absolute inset-0 flex z-20 pointer-events-none">
@@ -252,12 +318,13 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
           >
             <div className="flex items-center space-x-2 mb-4 cursor-pointer">
               <Image
-                src={short.avatar}
+                src={avatarSrc}
                 alt={short.creator}
                 width={40}
                 height={40}
                 className="rounded-full"
               />
+              
               <div>
                 <h3 className="text-white">{short.creator}</h3>
                 <p className="text-gray-300">@{short.creatorId}</p>

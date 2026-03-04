@@ -76,7 +76,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
       </div>
 
       {/* Curve with pink spotlight - positioned at the bottom of hero section */}
-      <div className="absolute left-0 right-0 pointer-events-none select-none -bottom-[16vh] md:-bottom-[18vh]" style={{ zIndex: 10000 }}>
+      <div className="absolute left-0 right-0 pointer-events-none select-none -bottom-[10vh] md:-bottom-[12vh]" style={{ zIndex: 10000 }}>
         {/* Mobile Curve SVG */}
         <div className="block md:hidden w-full">
           <Image
