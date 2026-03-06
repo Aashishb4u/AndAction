@@ -310,7 +310,7 @@ useEffect(() => {
       />
 
       {/* Content Overlay */}
-      <div className="absolute inset-0 flex z-20 pointer-events-none">
+      <div className="absolute inset-0 flex z-20">
         <div className="flex-1 flex flex-col justify-end p-4 pb-4 md:pb-8">
           <Link
             href={`/artists/${short.creatorId}`}
@@ -333,7 +333,7 @@ useEffect(() => {
           </Link>
         </div>
 
-        <div className="flex flex-col items-center justify-end space-y-4 p-4 pb-4 md:pb-8">
+        <div className="absolute right-4 bottom-16 md:bottom-8 z-30 flex flex-col items-center space-y-4 p-0 pointer-events-auto">
           {/* Sound button (above Share) */}
 
           <button
@@ -341,7 +341,7 @@ useEffect(() => {
               e.stopPropagation();
               onShare(short.id);
             }}
-            className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
+            className="p-3 rounded-full bg-black/30 text-white"
           >
             <Share className="w-6 h-6" />
           </button>
@@ -351,7 +351,7 @@ useEffect(() => {
               e.stopPropagation();
               onBookmark(short.id);
             }}
-            className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
+            className="p-3 rounded-full bg-black/30 text-white"
             aria-label={short.isBookmarked ? "Remove bookmark" : "Add bookmark"}
           >
             <Bookmark className="w-6 h-6" active={short.isBookmarked} />
@@ -362,7 +362,7 @@ useEffect(() => {
               e.stopPropagation();
               handleSoundToggle();
             }}
-            className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
+            className="p-3 rounded-full bg-black/30 text-white"
             aria-label={soundEnabled ? "Sound on" : "Sound off"}
           >
             {soundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
