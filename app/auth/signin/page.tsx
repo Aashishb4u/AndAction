@@ -381,7 +381,7 @@ function SignInContent() {
       </div>
       <div className="hidden md:block h-px bg-border-line " />
 
-      <div className="p-4 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
+      <div className="p-4 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6 mt-6">
         <h1 className="h1 text-white mb-2">Sign In to AndAction</h1>
 
         {error && (

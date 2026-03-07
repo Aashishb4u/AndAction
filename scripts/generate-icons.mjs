@@ -4,7 +4,8 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "..", "public");
-const logoPath = path.join(publicDir, "logo.png");
+const iconsDir = path.join(publicDir, "icons");
+const logoPath = path.join(iconsDir, "logo.png");
 
 const BG_COLOR = "#0A0A0A"; // matches app background
 
@@ -29,9 +30,9 @@ async function generateIcon(size, outputName, padding = 0.15) {
   })
     .composite([{ input: resizedLogo, left: offset, top: offset }])
     .png()
-    .toFile(path.join(publicDir, outputName));
+    .toFile(path.join(iconsDir, outputName));
 
-  console.log(`✓ Generated ${outputName} (${size}x${size})`);
+  console.log(`✓ Generated icons/${outputName} (${size}x${size})`);
 }
 
 async function main() {
