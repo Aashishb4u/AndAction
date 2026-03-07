@@ -336,7 +336,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             key={video.id}
             id={video.id}
             title={video.title}
-            creator={`${video.user.firstName} ${video.user.lastName}`}
+            creator={
+              video.user.name ||
+              `${video.user.firstName || ''} ${video.user.lastName || ''}`.trim() ||
+              'Unknown Artist'
+            }
             thumbnail={video.thumbnailUrl}
             videoUrl={video.url}
 
@@ -369,7 +373,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             key={short.id}
             id={short.id}
             title={short.title}
-            creator={`${short.user.firstName} ${short.user.lastName}`}
+            creator={
+              short.user.name ||
+              `${short.user.firstName || ''} ${short.user.lastName || ''}`.trim() ||
+              'Unknown Artist'
+            }
             thumbnail={short.thumbnailUrl}
             videoUrl={short.url}
             isBookmarked={short.isBookmarked}       

@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SiteLayout from "@/components/layout/SiteLayout";
-import VideoPlayer from "@/components/ui/VideoPlayer";
+import OptimizedVideoPlayer from "@/components/ui/OptimizedVideoPlayer";
 import ArtistInfo from "@/components/sections/ArtistInfo";
 import VideoCard from "@/components/ui/VideoCard";
 import ShortsCard from "@/components/ui/ShortsCard";
+import VideoCardSkeleton from "@/components/ui/VideoCardSkeleton";
+import ShortsCardSkeleton from "@/components/ui/ShortsCardSkeleton";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
@@ -20,6 +22,8 @@ export default function VideoDetailsPage() {
   const [relatedVideos, setRelatedVideos] = useState<any[]>([]);
   const [shorts, setShorts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isVideoReady, setIsVideoReady] = useState(false); // Track when main video is rendered
+  const [showRelated, setShowRelated] = useState(false); // Lazy load related content
 
   const { data: session } = useSession();
   const router = useRouter();
@@ -39,7 +43,6 @@ export default function VideoDetailsPage() {
         }
 
         const v = json.data.video;
-        console.log("Fetched video data:", v);
 
         // MAIN VIDEO
         setVideoData({
@@ -62,7 +65,7 @@ export default function VideoDetailsPage() {
           },
         });
 
-        // RELATED VIDEOS
+        // RELATED VIDEOS (processed but not rendered yet)
         setRelatedVideos(
           json.data.related.map((rv: any) => ({
             id: rv.id,
@@ -77,7 +80,7 @@ export default function VideoDetailsPage() {
           })),
         );
 
-        // SHORTS
+        // SHORTS (processed but not rendered yet)
         setShorts(
           json.data.shorts.map((sv: any) => ({
             id: sv.id,
@@ -101,6 +104,17 @@ export default function VideoDetailsPage() {
     fetchData();
   }, [videoId]);
 
+  // Lazy load related content AFTER video player is ready (prevents blocking)
+  useEffect(() => {
+    if (isVideoReady && videoData) {
+      // Delay rendering related content to prioritize video player
+      const timer = setTimeout(() => {
+        setShowRelated(true);
+      }, 500); // 500ms after video is ready
+      return () => clearTimeout(timer);
+    }
+  }, [isVideoReady, videoData]);
+
   // ---------- BOOKMARK TOGGLE (GLOBAL) ----------
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
     try {
@@ -122,6 +136,7 @@ export default function VideoDetailsPage() {
           }));
         }
 
+        // Update related content
         setRelatedVideos((prev) =>
           prev.map((v) =>
             v.id === id ? { ...v, isBookmarked: false, bookmarkId: null } : v,
@@ -155,6 +170,7 @@ export default function VideoDetailsPage() {
         }));
       }
 
+      // Update related content
       setRelatedVideos((prev) =>
         prev.map((v) =>
           v.id === id
@@ -216,16 +232,22 @@ export default function VideoDetailsPage() {
     <SiteLayout showPreloader={false} hideNavbar>
       <div className="min-h-screen pb-28">
         <div className="max-w-7xl mx-auto lg:px-8">
-          {/* MAIN VIDEO */}
-          <div className="mb-8">
-            <VideoPlayer
+          {/* MAIN VIDEO - Sticky on mobile only */}
+          <div className="sticky top-0 lg:top-20 z-50 lg:static lg:mb-8 bg-black">
+            <OptimizedVideoPlayer
               videoUrl={videoData.videoUrl}
               title={videoData.title}
               poster={videoData.poster}
-              className="mb-4"
+              className="mb-0"
+              autoplay={true}
+              videoId={videoData.id}
+              onVideoReady={() => setIsVideoReady(true)}
             />
+          </div>
 
-            <div className="px-4 sm:px-6 lg:px-8">
+          {/* SCROLLABLE CONTENT - Below video on mobile */}
+          <div className="bg-gradient-to-b from-black to-[#0a0a0a] lg:bg-none">
+            <div className="px-3 sm:px-6 lg:px-8 pt-4 lg:pt-0">
               <ArtistInfo
                 artist={videoData.artist}
                 video={{
@@ -247,56 +269,84 @@ export default function VideoDetailsPage() {
                 onShare={() => handleShare(videoData.id)}
               />
             </div>
+
+            {/* RELATED VIDEOS - Show skeletons while video loads, then actual content */}
+            {relatedVideos.length > 0 && (
+              <section className="mb-8 px-3 sm:px-6 lg:px-8">
+                <h2 className="text-xl font-bold text-white mb-4">
+                  More from this artist
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {!showRelated ? (
+                    // Show skeletons while waiting for video to render
+                    <>
+                      <VideoCardSkeleton />
+                      <VideoCardSkeleton />
+                      <VideoCardSkeleton />
+                      <VideoCardSkeleton />
+                    </>
+                  ) : (
+                    // Show actual videos after main video is ready
+                    relatedVideos.map((video) => (
+                      <VideoCard
+                        key={video.id}
+                        id={video.id}
+                        title={video.title}
+                        creator={video.creator}
+                        thumbnail={video.thumbnail}
+                        videoUrl={video.videoUrl}
+                        isBookmarked={video.isBookmarked}
+                        bookmarkId={video.bookmarkId}
+                        onBookmark={(data) => toggleBookmark(data)}
+                        onShare={() => handleShare(video.id)}
+                      />
+                    ))
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* SHORTS - Show skeletons while video loads, then actual content */}
+            {shorts.length > 0 && (
+              <section className="mb-8 px-3 sm:px-6 lg:px-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <Image src="/shorts.svg" alt="Shorts" width={24} height={24} />
+                  <h2 className="text-2xl font-bold text-white">Shorts</h2>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                  {!showRelated ? (
+                    // Show skeletons while waiting for video to render
+                    <>
+                      <ShortsCardSkeleton />
+                      <ShortsCardSkeleton />
+                      <ShortsCardSkeleton />
+                      <ShortsCardSkeleton />
+                      <ShortsCardSkeleton />
+                      <ShortsCardSkeleton />
+                    </>
+                  ) : (
+                    // Show actual shorts after main video is ready
+                    shorts.map((short) => (
+                      <ShortsCard
+                        key={short.id}
+                        id={short.id}
+                        title={short.title}
+                        creator={short.creator}
+                        thumbnail={short.thumbnail}
+                        videoUrl={short.videoUrl}
+                        isBookmarked={short.isBookmarked}
+                        bookmarkId={short.bookmarkId}
+                        onBookmark={(data) => toggleBookmark(data)}
+                        onShare={() => handleShare(short.id)}
+                      />
+                    ))
+                  )}
+                </div>
+              </section>
+            )}
           </div>
-
-          {/* RELATED VIDEOS */}
-          <section className="mb-8 px-4 sm:px-6 lg:px-8">
-            <h2 className="text-xl font-bold text-white mb-4">
-              More from this artist
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {relatedVideos.map((video) => (
-                <VideoCard
-                  key={video.id}
-                  id={video.id}
-                  title={video.title}
-                  creator={video.creator}
-                  thumbnail={video.thumbnail}
-                  videoUrl={video.videoUrl}
-                  isBookmarked={video.isBookmarked}
-                  bookmarkId={video.bookmarkId}
-                  onBookmark={(data) => toggleBookmark(data)}
-                  onShare={() => handleShare(video.id)}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* SHORTS */}
-          <section className="mb-8 px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-3 mb-4">
-              <Image src="/shorts.svg" alt="Shorts" width={24} height={24} />
-              <h2 className="text-2xl font-bold text-white">Shorts</h2>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-              {shorts.map((short) => (
-                <ShortsCard
-                  key={short.id}
-                  id={short.id}
-                  title={short.title}
-                  creator={short.creator}
-                  thumbnail={short.thumbnail}
-                  videoUrl={short.videoUrl}
-                  isBookmarked={short.isBookmarked}
-                  bookmarkId={short.bookmarkId}
-                  onBookmark={(data) => toggleBookmark(data)}
-                  onShare={() => handleShare(short.id)}
-                />
-              ))}
-            </div>
-          </section>
         </div>
       </div>
     </SiteLayout>

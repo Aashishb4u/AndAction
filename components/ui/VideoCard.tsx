@@ -7,6 +7,7 @@ import MoreVertical from "@/components/icons/more-vertical";
 import Bookmark from "@/components/icons/bookmark";
 import Share from "@/components/icons/share";
 import { Trash2 } from "lucide-react";
+import { useMobileVideoAutoplay } from "@/hooks/use-mobile-video-autoplay";
 
 interface VideoCardProps {
   id: string;
@@ -17,6 +18,7 @@ interface VideoCardProps {
   videoUrl: string;
   className?: string;
   artistType?: string;
+  enableMobileAutoplay?: boolean; // New prop
 
   // ⭐ NEW: bookmarkId passed from API so UI knows what to delete
   bookmarkId?: string | null;
@@ -48,6 +50,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   onDelete,
   isBookmarked = false,
   showDeleteButton = false,
+  enableMobileAutoplay = false, // Default false
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
@@ -73,7 +76,19 @@ const VideoCard: React.FC<VideoCardProps> = ({
   const isYouTube = isYouTubeUrl(videoUrl);
   const youtubeVideoId = isYouTube ? getYouTubeVideoId(videoUrl) : null;
 
-  // Debounce hover to play video
+  // Mobile scroll-based autoplay
+  const mobileAutoplayContainerRef = useMobileVideoAutoplay({
+    videoRef,
+    iframeRef,
+    isYouTube,
+    enabled: enableMobileAutoplay,
+    onPlayStateChange: (isPlaying) => {
+      // Update video visibility when mobile autoplay triggers
+      setShouldPlayVideo(isPlaying);
+    },
+  });
+
+  // Debounce hover to play video (desktop)
   useEffect(() => {
     if (isHovered) {
       hoverTimeoutRef.current = setTimeout(() => {
@@ -152,65 +167,64 @@ const VideoCard: React.FC<VideoCardProps> = ({
   };
 
   return (
-    <Link
-      href={`/videos/${id}`}
-      className={`block ${showMenu ? "z-50 relative" : ""}`}
+    <div
+      ref={mobileAutoplayContainerRef}
+      className={`relative group ${className} ${showMenu ? "z-50" : ""}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      <div
-        className={`relative group cursor-pointer ${className}`}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        <div className="relative w-full aspect-video rounded-lg overflow-hidden transition-transform duration-300 ease-out hover:scale-105">
-          <Image
-            src={thumbnail}
-            alt={title}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover"
-          />
+      {/* Video Player - Interactive area (NOT clickable for navigation) */}
+      <div className="relative w-full aspect-video rounded-lg overflow-hidden transition-transform duration-300 ease-out hover:scale-105">
+        <Image
+          src={thumbnail}
+          alt={title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          className="object-cover"
+        />
 
-          {/* YouTube iframe */}
-          {isYouTube && youtubeVideoId && (
-            <div
-              className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo ? "opacity-100" : "opacity-0"}`}
+        {/* YouTube iframe */}
+        {isYouTube && youtubeVideoId && (
+          <div
+            className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo ? "opacity-100" : "opacity-0"}`}
+          >
+            <iframe
+              ref={iframeRef}
+              className="w-full h-full object-cover"
+              src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}&controls=1`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              onLoad={() => setIsVideoLoaded(true)}
+            />
+          </div>
+        )}
+
+        {/* MP4 video */}
+        {!isYouTube && (
+          <div
+            className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo && isVideoLoaded ? "opacity-100" : "opacity-0"}`}
+          >
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              loop
+              muted
+              playsInline
+              controls
+              preload="metadata"
+              onLoadedData={() => setIsVideoLoaded(true)}
             >
-              <iframe
-                ref={iframeRef}
-                className="w-full h-full object-cover"
-                src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                onLoad={() => setIsVideoLoaded(true)}
-              />
-            </div>
-          )}
+              <source src={videoUrl} type="video/mp4" />
+            </video>
+          </div>
+        )}
 
-          {/* MP4 video */}
-          {!isYouTube && (
-            <div
-              className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo && isVideoLoaded ? "opacity-100" : "opacity-0"}`}
-            >
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover"
-                loop
-                muted
-                playsInline
-                preload="metadata"
-                onLoadedData={() => setIsVideoLoaded(true)}
-              >
-                <source src={videoUrl} type="video/mp4" />
-              </video>
-            </div>
-          )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300 pointer-events-none" />
+      </div>
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300" />
-        </div>
-
-        {/* BOTTOM INFO */}
-        <div className="mt-3 px-1 flex justify-between items-start gap-3">
-          <div className="flex gap-3 flex-1 min-w-0 items-center">
+      {/* BOTTOM INFO - Only this area is clickable for navigation */}
+      <div className="mt-3 px-1 flex justify-between items-start gap-3">
+        <Link href={`/videos/${id}`} className="flex gap-3 flex-1 min-w-0 items-center group/link">
             <Image
               src={"/avatars/default.jpg"}
               alt={creator}
@@ -220,7 +234,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
             />
             <div className="flex-1 min-w-0">
               <h3
-                className="btn2 text-white line-clamp-2 transition-colors duration-300"
+                className="btn2 text-white line-clamp-2 transition-colors duration-300 group-hover/link:text-primary-pink"
                 style={{ fontSize: "16px" }}
               >
                 {title}
@@ -241,7 +255,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
                 ) : null}
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* MENU */}
           <div className="relative flex items-start shrink-0">
@@ -286,8 +300,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
             )}
           </div>
         </div>
-      </div>
-    </Link>
+    </div>
   );
 };
 
