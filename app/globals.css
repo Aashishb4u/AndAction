@@ -1059,3 +1059,25 @@ rtist name multi-line support */
   max-height: 2.6em;
   /* 2 lines * 1.3 line-height */
 }
+
+/* Hide all scrollbars globally (useful for PWA installs) */
+/* Applies to WebKit, Firefox and IE/Edge */
+html, body, #__next, * {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+}
+
+/* WebKit browsers */
+*::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+/* If you prefer to hide only for the PWA root, use body.pwa-hide-scroll instead */
+/* Example: add `body.pwa-hide-scroll` on install and remove when needed. */

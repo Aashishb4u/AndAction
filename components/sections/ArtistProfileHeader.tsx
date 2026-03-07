@@ -164,7 +164,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
         </div>
 
         {/* Mobile Action Buttons */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+        <div className="fixed bottom-0 py-2 left-0 right-0 z-50 md:hidden">
           <div
             className="backdrop-blur-xl border-t border-white/10 py-2"
             style={{ backgroundColor: '#0F0F0FCC', WebkitBackdropFilter: 'blur(12px)', backdropFilter: 'blur(12px)' }}
@@ -173,7 +173,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
               <div className="w-1/2 pr-3">
                 <button
                   onClick={handleRequestBooking}
-                  className="w-full h-12 bg-gradient-to-r from-primary-orange to-primary-pink text-white rounded-full text-sm font-medium hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300 overflow-hidden whitespace-nowrap"
+                  className="w-full  h-12 bg-gradient-to-r from-primary-orange to-primary-pink text-white rounded-full text-sm font-medium hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300 overflow-hidden whitespace-nowrap"
                 >
                   Request Booking
                 </button>
