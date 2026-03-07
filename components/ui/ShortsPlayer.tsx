@@ -33,6 +33,7 @@ interface Short {
   title: string;
   creator: string;
   creatorId: string;
+  category: string;
   avatar: string;
   videoUrl: string;
   thumbnail: string;
@@ -313,7 +314,9 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
 
               <div>
                 <h3 className="text-white">{short.creator}</h3>
-                <p className="text-gray-300">@{short.creatorId}</p>
+                {short.category && (
+                  <p className="text-gray-300 text-sm capitalize">{short.category}</p>
+                )}
               </div>
             </div>
           </Link>

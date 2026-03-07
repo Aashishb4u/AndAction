@@ -19,6 +19,7 @@ const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
     title: v.title,
     creator: `${v.user.firstName} ${v.user.lastName}`,
     creatorId: v.user.artist?.id,
+    category: v.user.artist?.artistType || "",
     userId: v.user.id, // Add userId for grouping
     avatar: v.user.avatar || v.user.image,
     videoUrl: v.url,
