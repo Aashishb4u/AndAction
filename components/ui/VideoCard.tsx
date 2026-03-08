@@ -64,6 +64,9 @@ const VideoCard: React.FC<VideoCardProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Tracks approximate current time for YouTube (updated every second while playing)
+  const ytCurrentTimeRef = useRef(0);
+  const ytTickerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Helper to check if URL is YouTube
   const isYouTubeUrl = (url: string) => {
@@ -115,6 +118,9 @@ const VideoCard: React.FC<VideoCardProps> = ({
       }
       setShouldPlayVideo(false);
       setIsMuted(true);
+      // Reset YouTube time tracker
+      if (ytTickerRef.current) clearInterval(ytTickerRef.current);
+      ytCurrentTimeRef.current = 0;
 
       // Stop YouTube video
       if (isYouTube && iframeRef.current) {
@@ -145,6 +151,12 @@ const VideoCard: React.FC<VideoCardProps> = ({
         '{"event":"command","func":"playVideo","args":""}',
         "*",
       );
+      // Start ticking to track approximate YouTube current time
+      ytCurrentTimeRef.current = 0;
+      if (ytTickerRef.current) clearInterval(ytTickerRef.current);
+      ytTickerRef.current = setInterval(() => {
+        ytCurrentTimeRef.current += 1;
+      }, 1000);
     } else if (!isYouTube && videoRef.current) {
       videoRef.current.play().catch(() => {});
     }
@@ -162,6 +174,24 @@ const VideoCard: React.FC<VideoCardProps> = ({
       videoRef.current.muted = isMuted;
     }
   }, [isMuted, isYouTube, shouldPlayVideo]);
+
+  const handleSeek = (e: React.MouseEvent, delta: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (isYouTube && iframeRef.current) {
+      const target = Math.max(0, ytCurrentTimeRef.current + delta);
+      ytCurrentTimeRef.current = target;
+      iframeRef.current.contentWindow?.postMessage(
+        `{"event":"command","func":"seekTo","args":[${target}, true]}`,
+        "*",
+      );
+    } else if (!isYouTube && videoRef.current) {
+      videoRef.current.currentTime = Math.max(
+        0,
+        videoRef.current.currentTime + delta,
+      );
+    }
+  };
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -255,26 +285,51 @@ const VideoCard: React.FC<VideoCardProps> = ({
 
         {/* Mute / Unmute button */}
         {shouldPlayVideo && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              setIsMuted((m) => !m);
-            }}
-            className="absolute bottom-3 right-3 z-20 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
-          >
-            {isMuted ? (
-              <VolumeX className="w-4 h-4" />
-            ) : (
-              <Volume2 className="w-4 h-4" />
-            )}
-          </button>
+          <>
+            {/* Back 10s — center left */}
+            <button
+              onClick={(e) => handleSeek(e, -10)}
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+                <text x="12" y="16" textAnchor="middle" fontSize="7" fill="currentColor" fontFamily="sans-serif">10</text>
+              </svg>
+            </button>
+
+            {/* Forward 10s — center right */}
+            <button
+              onClick={(e) => handleSeek(e, 10)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
+                <text x="12" y="16" textAnchor="middle" fontSize="7" fill="currentColor" fontFamily="sans-serif">10</text>
+              </svg>
+            </button>
+
+            {/* Mute toggle — bottom right */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setIsMuted((m) => !m);
+              }}
+              className="absolute bottom-3 right-3 z-20 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+            >
+              {isMuted ? (
+                <VolumeX className="w-4 h-4" />
+              ) : (
+                <Volume2 className="w-4 h-4" />
+              )}
+            </button>
+          </>
         )}
       </div>
 
       {/* BOTTOM INFO - Only this area is clickable for navigation */}
       <div className="mt-3 px-1 flex justify-between items-start gap-3">
-        <Link href={artistId ? `/artists/${artistId}` : `/videos/${id}`} className="flex gap-3 flex-1 min-w-0 items-center group/link">
+        <Link href={artistId ? `/artists/${artistId}?tab=videos` : `/videos/${id}`} className="flex gap-3 flex-1 min-w-0 items-center group/link">
             <Image
               src={"/avatars/default.jpg"}
               alt={creator}

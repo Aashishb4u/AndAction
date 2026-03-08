@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Artist } from '@/types';
 import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
@@ -16,13 +17,32 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   artist,
   isMobile = false,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('about');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const t = searchParams.get('tab') as TabType | null;
+    return t && ['about', 'performance', 'videos', 'shorts'].includes(t) ? t : 'about';
+  });
   const [isBioExpanded, setIsBioExpanded] = useState(false);
   const [showBioMoreButton, setShowBioMoreButton] = useState(false);
   const bioRef = useRef<HTMLParagraphElement>(null);
 
   const [artistVideos, setArtistVideos] = useState<any[]>([]);
   const [artistShorts, setArtistShorts] = useState<any[]>([]);
+  const [isLoadingMedia, setIsLoadingMedia] = useState(true);
+
+  // Keep tab in sync when browser back/forward changes URL
+  useEffect(() => {
+    const t = searchParams.get('tab') as TabType | null;
+    const valid = t && ['about', 'performance', 'videos', 'shorts'].includes(t) ? t : 'about';
+    setActiveTab(valid);
+  }, [searchParams]);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    router.replace(`${pathname}?tab=${tab}`, { scroll: false });
+  };
 
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
     try {
@@ -80,6 +100,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     async function fetchMedia() {
       try {
         console.log(`Artist id : ${artist.id}`);
+        setIsLoadingMedia(true);
 
         // 🔥 Fetch VIDEOS with bookmark info
         const videosRes = await fetch(
@@ -99,6 +120,8 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
       } catch (err) {
         console.error("Media fetch error:", err);
+      } finally {
+        setIsLoadingMedia(false);
       }
     }
 
@@ -320,6 +343,24 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   );
 
   const renderVideosContent = () => {
+    if (isLoadingMedia) {
+      return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((n) => (
+            <div key={n} className="animate-pulse">
+              <div className="w-full aspect-video rounded-lg bg-[#2a2a2a]" />
+              <div className="mt-3 flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#2a2a2a] shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-[#2a2a2a] rounded w-3/4" />
+                  <div className="h-3 bg-[#2a2a2a] rounded w-1/2" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
     if (artistVideos.length === 0) {
       return (
         <div className="text-center py-12">
@@ -359,6 +400,17 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   };
 
   const renderShortsContent = () => {
+    if (isLoadingMedia) {
+      return (
+        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div key={n} className="animate-pulse">
+              <div className="w-full aspect-[9/16] rounded-xl bg-[#2a2a2a]" />
+            </div>
+          ))}
+        </div>
+      );
+    }
     if (artistShorts.length === 0) {
       return (
         <div className="text-center py-12">
@@ -416,7 +468,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`flex-1 py-4 px-4 text-base font-medium transition-colors relative ${activeTab === tab.id
                   ? 'text-white'
                   : 'text-text-gray hover:text-gray-300'
@@ -448,7 +500,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`py-4 px-6 text-base font-medium transition-colors relative ${activeTab === tab.id
                 ? 'gradient-text'
                 : 'text-text-gray hover:text-gray-300'
