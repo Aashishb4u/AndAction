@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { Prisma } from "@prisma/client";
+import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 
 // --- Configuration ---
 const DEFAULT_LIMIT = 12;
@@ -33,6 +34,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const withBookmarks = url.searchParams.get("withBookmarks") === "true"; // NEW 🔥
     const random = url.searchParams.get("random") === "true";
     const artistCategory = url.searchParams.get("category") || "all";
+    // Seed for consistent random ordering across paginated pages
+    const seedParam = url.searchParams.get("seed");
+    const seed = seedParam ? parseFloat(seedParam) : null;
 
     // Check logged in user if bookmark details requested
     let userId: string | null = null;
@@ -46,12 +50,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const where: Prisma.VideoWhereInput = { isApproved: true };
 
     if (artistCategory && artistCategory !== "all") {
+      const matchValues = getArtistTypeMatches(artistCategory);
       where.user = {
         artist: {
-          artistType: {
-            contains: artistCategory,
-            mode: "insensitive",
-          },
+          OR: matchValues.map((val) => ({
+            artistType: { contains: val, mode: "insensitive" as const },
+          })),
         },
       };
     }
@@ -125,27 +129,58 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
           ? Prisma.sql`JOIN "users" cu ON v."userId" = cu.id JOIN "artists" ca ON cu.id = ca."userId"`
           : Prisma.empty;
 
-      const categoryCondition =
-        artistCategory && artistCategory !== "all"
-          ? Prisma.sql`AND ca."artistType" ILIKE ${`%${artistCategory}%`}`
-          : Prisma.empty;
+      let categoryCondition = Prisma.empty;
+      if (artistCategory && artistCategory !== "all") {
+        const matchValues = getArtistTypeMatches(artistCategory);
+        const conditions = matchValues.map(
+          (val) => Prisma.sql`LOWER(TRIM(ca."artistType")) = LOWER(${val})`
+        );
+        categoryCondition = Prisma.sql`AND (${Prisma.join(conditions, " OR ")})`;
+      }
 
-      const [idRows, count] = await Promise.all([
+      // Round-robin by artist: rank each artist's videos using MD5(id||seed),
+      // then interleave one video per artist per round so every artist appears
+      // on page 1 regardless of how many videos they have.
+      // Artist order within each round is also randomised by MD5(userId||seed).
+      const hasSeed = seed !== null && !isNaN(seed) && seed >= -1 && seed <= 1;
+      // Fall back to a server-side random seed so requests without a seed still
+      // get consistent intra-request pagination (same query, same OFFSET).
+      const effectiveSeedStr = String(hasSeed ? seed : Math.random() * 2 - 1);
+
+      const [idRows, countRows] = await Promise.all([
         prisma.$queryRaw<{ id: string }[]>`
-          SELECT v.id
+          WITH artist_ranked AS (
+            SELECT
+              v.id,
+              ROW_NUMBER() OVER (
+                PARTITION BY v."userId"
+                ORDER BY MD5(v.id || ${effectiveSeedStr})
+              ) AS video_rank,
+              MD5(v."userId" || ${effectiveSeedStr}) AS artist_sort_key
+            FROM "videos" v
+            ${categoryJoin}
+            WHERE v."isApproved" = true
+            ${typeCondition}
+            ${artistCondition}
+            ${categoryCondition}
+          )
+          SELECT id
+          FROM artist_ranked
+          ORDER BY video_rank, artist_sort_key
+          LIMIT ${limit} OFFSET ${offset}
+        `,
+        prisma.$queryRaw<{ count: bigint }[]>`
+          SELECT COUNT(v.id) AS count
           FROM "videos" v
           ${categoryJoin}
           WHERE v."isApproved" = true
           ${typeCondition}
           ${artistCondition}
           ${categoryCondition}
-          ORDER BY RANDOM()
-          LIMIT ${limit} OFFSET ${offset}
         `,
-        prisma.video.count({ where }),
       ]);
 
-      totalCount = count;
+      totalCount = Number(countRows[0]?.count ?? 0);
       const randomIds = idRows.map((r) => r.id);
 
       if (randomIds.length > 0) {

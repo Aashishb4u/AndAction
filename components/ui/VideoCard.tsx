@@ -236,14 +236,19 @@ const VideoCard: React.FC<VideoCardProps> = ({
       onMouseLeave={handleMouseLeave}
     >
       {/* Video Player - Interactive area (NOT clickable for navigation) */}
-      <div className="relative w-full aspect-video rounded-lg overflow-hidden transition-transform duration-300 ease-out hover:scale-105">
+      {/* overflow-hidden clips any scale/transform overflow */}
+      <div className="relative w-full aspect-video rounded-lg overflow-hidden">
+        {/* Thumbnail image - hidden once video starts playing */}
         <Image
           src={thumbnail}
           alt={title}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          className="object-cover"
+          className={`object-cover transition-opacity duration-500 ${shouldPlayVideo ? "opacity-0" : "opacity-100"}`}
         />
+
+        {/* Video overlay wrapper - sits exactly over thumbnail */}
+        <div className="absolute inset-0 overflow-hidden">
 
         {/* YouTube iframe */}
         {isYouTube && youtubeVideoId && (
@@ -280,7 +285,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
           </div>
         )}
 
-        {/* Transparent navigation overlay – sits above iframe/video but below mute button */}
+        {/* Transparent navigation overlay - sits above iframe/video but below mute button */}
         <Link href={`/videos/${id}`} className="absolute inset-0 z-10" aria-label={title} />
 
         {/* Mute / Unmute button */}
@@ -325,7 +330,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
             </button>
           </>
         )}
-      </div>
+        </div>{/* end scale overlay */}
+      </div>{/* end clip wrapper */}
 
       {/* BOTTOM INFO - Only this area is clickable for navigation */}
       <div className="mt-3 px-1 flex justify-between items-start gap-3">

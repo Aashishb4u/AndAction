@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Artist } from '@/types';
 import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
+import { Loader2 } from 'lucide-react';
 
 interface ArtistDetailTabsProps {
   artist: Artist;
@@ -28,9 +29,24 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const [showBioMoreButton, setShowBioMoreButton] = useState(false);
   const bioRef = useRef<HTMLParagraphElement>(null);
 
+  // Paginated video state
   const [artistVideos, setArtistVideos] = useState<any[]>([]);
+  const [videosPage, setVideosPage] = useState(1);
+  const [hasMoreVideos, setHasMoreVideos] = useState(true);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(false);
+  const [isInitialLoadingVideos, setIsInitialLoadingVideos] = useState(true);
+  const videosObserverRef = useRef<HTMLDivElement>(null);
+
+  // Paginated shorts state
   const [artistShorts, setArtistShorts] = useState<any[]>([]);
-  const [isLoadingMedia, setIsLoadingMedia] = useState(true);
+  const [shortsPage, setShortsPage] = useState(1);
+  const [hasMoreShorts, setHasMoreShorts] = useState(true);
+  const [isLoadingShorts, setIsLoadingShorts] = useState(false);
+  const [isInitialLoadingShorts, setIsInitialLoadingShorts] = useState(true);
+  const shortsObserverRef = useRef<HTMLDivElement>(null);
+
+  const VIDEOS_PER_PAGE = 6;
+  const SHORTS_PER_PAGE = 9;
 
   // Keep tab in sync when browser back/forward changes URL
   useEffect(() => {
@@ -94,39 +110,106 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
 
 
+  // Fetch videos page
+  const fetchVideosPage = useCallback(async (page: number) => {
+    if (!artist?.userId) return;
+    try {
+      if (page === 1) setIsInitialLoadingVideos(true);
+      setIsLoadingVideos(true);
+      const res = await fetch(
+        `/api/videos?type=videos&artistId=${artist.userId}&withBookmarks=true&page=${page}&limit=${VIDEOS_PER_PAGE}`
+      );
+      const json = await res.json();
+      const newVideos = json?.data?.videos || [];
+      const pagination = json?.data?.pagination;
+
+      setArtistVideos(prev => page === 1 ? newVideos : [...prev, ...newVideos]);
+      setHasMoreVideos(pagination?.hasNextPage ?? false);
+    } catch (err) {
+      console.error("Videos fetch error:", err);
+    } finally {
+      setIsLoadingVideos(false);
+      setIsInitialLoadingVideos(false);
+    }
+  }, [artist?.userId]);
+
+  // Fetch shorts page
+  const fetchShortsPage = useCallback(async (page: number) => {
+    if (!artist?.userId) return;
+    try {
+      if (page === 1) setIsInitialLoadingShorts(true);
+      setIsLoadingShorts(true);
+      const res = await fetch(
+        `/api/videos?type=shorts&artistId=${artist.userId}&withBookmarks=true&page=${page}&limit=${SHORTS_PER_PAGE}`
+      );
+      const json = await res.json();
+      const newShorts = json?.data?.videos || [];
+      const pagination = json?.data?.pagination;
+
+      setArtistShorts(prev => page === 1 ? newShorts : [...prev, ...newShorts]);
+      setHasMoreShorts(pagination?.hasNextPage ?? false);
+    } catch (err) {
+      console.error("Shorts fetch error:", err);
+    } finally {
+      setIsLoadingShorts(false);
+      setIsInitialLoadingShorts(false);
+    }
+  }, [artist?.userId]);
+
+  // Initial fetch
   useEffect(() => {
     if (!artist?.userId) return;
+    setArtistVideos([]);
+    setArtistShorts([]);
+    setVideosPage(1);
+    setShortsPage(1);
+    setHasMoreVideos(true);
+    setHasMoreShorts(true);
+    fetchVideosPage(1);
+    fetchShortsPage(1);
+  }, [artist?.userId, fetchVideosPage, fetchShortsPage]);
 
-    async function fetchMedia() {
-      try {
-        console.log(`Artist id : ${artist.id}`);
-        setIsLoadingMedia(true);
+  // Fetch more videos when page changes (after initial)
+  useEffect(() => {
+    if (videosPage > 1) fetchVideosPage(videosPage);
+  }, [videosPage, fetchVideosPage]);
 
-        // 🔥 Fetch VIDEOS with bookmark info
-        const videosRes = await fetch(
-          `/api/videos?type=videos&artistId=${artist.userId}&withBookmarks=true`
-        );
-        const videosJson = await videosRes.json();
+  // Fetch more shorts when page changes (after initial)
+  useEffect(() => {
+    if (shortsPage > 1) fetchShortsPage(shortsPage);
+  }, [shortsPage, fetchShortsPage]);
 
-        setArtistVideos(videosJson?.data?.videos || []);
+  // Infinite scroll observer for videos
+  useEffect(() => {
+    if (!videosObserverRef.current || !hasMoreVideos || isLoadingVideos) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVideosPage(prev => prev + 1);
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" }
+    );
+    const el = videosObserverRef.current;
+    observer.observe(el);
+    return () => { if (el) observer.unobserve(el); };
+  }, [hasMoreVideos, isLoadingVideos, artistVideos.length]);
 
-        // 🔥 Fetch SHORTS with bookmark info
-        const shortsRes = await fetch(
-          `/api/videos?type=shorts&artistId=${artist.userId}&withBookmarks=true`
-        );
-        const shortsJson = await shortsRes.json();
-
-        setArtistShorts(shortsJson?.data?.videos || []);
-
-      } catch (err) {
-        console.error("Media fetch error:", err);
-      } finally {
-        setIsLoadingMedia(false);
-      }
-    }
-
-    fetchMedia();
-  }, [artist?.id]);
+  // Infinite scroll observer for shorts
+  useEffect(() => {
+    if (!shortsObserverRef.current || !hasMoreShorts || isLoadingShorts) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setShortsPage(prev => prev + 1);
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" }
+    );
+    const el = shortsObserverRef.current;
+    observer.observe(el);
+    return () => { if (el) observer.unobserve(el); };
+  }, [hasMoreShorts, isLoadingShorts, artistShorts.length]);
 
   // Check if bio text overflows (more than 2 lines)
   useEffect(() => {
@@ -343,7 +426,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   );
 
   const renderVideosContent = () => {
-    if (isLoadingMedia) {
+    if (isInitialLoadingVideos) {
       return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[1, 2, 3, 4].map((n) => (
@@ -371,36 +454,46 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     }
 
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {artistVideos.map((video) => (
-          <VideoCard
-            key={video.id}
-            id={video.id}
-            title={video.title}
-            creator={
-              video.user.name ||
-              `${video.user.firstName || ''} ${video.user.lastName || ''}`.trim() ||
-              'Unknown Artist'
-            }
-            thumbnail={video.thumbnailUrl}
-            videoUrl={video.url}
-
-            isBookmarked={video.isBookmarked}         // 🔥 NEW
-            bookmarkId={video.bookmarkId}             // 🔥 NEW
-
-            onBookmark={(data) => toggleBookmark(data)}
-            onShare={() => { }}
-            artistId={(video.user as any)?.artist?.id}
-            enableMobileAutoplay={true}
-          />
-
-        ))}
-      </div>
+      <>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {artistVideos.map((video) => (
+            <VideoCard
+              key={video.id}
+              id={video.id}
+              title={video.title}
+              creator={
+                video.user.name ||
+                `${video.user.firstName || ''} ${video.user.lastName || ''}`.trim() ||
+                'Unknown Artist'
+              }
+              thumbnail={video.thumbnailUrl}
+              videoUrl={video.url}
+              isBookmarked={video.isBookmarked}
+              bookmarkId={video.bookmarkId}
+              onBookmark={(data) => toggleBookmark(data)}
+              onShare={() => { }}
+              artistId={(video.user as any)?.artist?.id}
+              enableMobileAutoplay={true}
+            />
+          ))}
+        </div>
+        {/* Infinite scroll sentinel */}
+        {hasMoreVideos && (
+          <div ref={videosObserverRef} className="flex justify-center py-6">
+            {isLoadingVideos && (
+              <Loader2 className="w-6 h-6 animate-spin text-primary-pink" />
+            )}
+          </div>
+        )}
+        {!hasMoreVideos && artistVideos.length > 0 && (
+          <p className="text-center text-gray-500 text-sm py-4">No more videos</p>
+        )}
+      </>
     );
   };
 
   const renderShortsContent = () => {
-    if (isLoadingMedia) {
+    if (isInitialLoadingShorts) {
       return (
         <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -421,27 +514,39 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     }
 
     return (
-      <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {artistShorts.map((short) => (
-          <ShortsCard
-            key={short.id}
-            id={short.id}
-            title={short.title}
-            creator={
-              short.user.name ||
-              `${short.user.firstName || ''} ${short.user.lastName || ''}`.trim() ||
-              'Unknown Artist'
-            }
-            thumbnail={short.thumbnailUrl}
-            videoUrl={short.url}
-            isBookmarked={short.isBookmarked}       
-            bookmarkId={short.bookmarkId}   
-            onBookmark={(data) => toggleBookmark(data)}
-            onShare={() => { }}
-          />
-
-        ))}
-      </div>
+      <>
+        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {artistShorts.map((short) => (
+            <ShortsCard
+              key={short.id}
+              id={short.id}
+              title={short.title}
+              creator={
+                short.user.name ||
+                `${short.user.firstName || ''} ${short.user.lastName || ''}`.trim() ||
+                'Unknown Artist'
+              }
+              thumbnail={short.thumbnailUrl}
+              videoUrl={short.url}
+              isBookmarked={short.isBookmarked}
+              bookmarkId={short.bookmarkId}
+              onBookmark={(data) => toggleBookmark(data)}
+              onShare={() => { }}
+            />
+          ))}
+        </div>
+        {/* Infinite scroll sentinel */}
+        {hasMoreShorts && (
+          <div ref={shortsObserverRef} className="flex justify-center py-6">
+            {isLoadingShorts && (
+              <Loader2 className="w-6 h-6 animate-spin text-primary-pink" />
+            )}
+          </div>
+        )}
+        {!hasMoreShorts && artistShorts.length > 0 && (
+          <p className="text-center text-gray-500 text-sm py-4">No more shorts</p>
+        )}
+      </>
     );
   };
 
@@ -518,7 +623,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         </div>
       </div>
 
-      <div className="p-8 h-full overflow-y-auto">
+      <div className="p-8">
         {renderContent()}
       </div>
     </div>
