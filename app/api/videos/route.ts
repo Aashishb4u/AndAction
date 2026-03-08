@@ -31,6 +31,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const type = url.searchParams.get("type"); // "shorts" | "videos" | null
     const artistId = url.searchParams.get("artistId"); // filter by artist
     const withBookmarks = url.searchParams.get("withBookmarks") === "true"; // NEW 🔥
+    const random = url.searchParams.get("random") === "true";
     const artistCategory = url.searchParams.get("category") || "all";
 
     // Check logged in user if bookmark details requested
@@ -67,54 +68,111 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
     const offset = (page - 1) * limit;
 
-    // 1. Fetch videos (with optional bookmark join)
-    const videos = await prisma.video.findMany({
-      where,
-      skip: offset,
-      take: limit,
-      orderBy: {
-        createdAt: "desc",
-      },
-      select: {
-        id: true,
-        title: true,
-        url: true,
-        thumbnailUrl: true,
-        duration: true,
-        views: true,
-        createdAt: true,
-        isShort: true,
-
-        user: {
-          select: {
-            id: true,
-            name: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-            image: true,
-            isArtistVerified: true,
-            artist: {
-              select: {
-                id: true,
-                artistType: true,
-              },
+    const videoSelect = {
+      id: true,
+      title: true,
+      url: true,
+      thumbnailUrl: true,
+      duration: true,
+      views: true,
+      createdAt: true,
+      isShort: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          firstName: true,
+          lastName: true,
+          avatar: true,
+          image: true,
+          isArtistVerified: true,
+          artist: {
+            select: {
+              id: true,
+              artistType: true,
             },
           },
         },
-        ...(withBookmarks && userId
-          ? {
-              bookmarkedByUsers: {
-                where: { userId },
-                select: { id: true },
-              },
-            }
-          : {}),
       },
-    });
+      ...(withBookmarks && userId
+        ? {
+            bookmarkedByUsers: {
+              where: { userId },
+              select: { id: true },
+            },
+          }
+        : {}),
+    };
 
-    // 2. Count total videos for pagination
-    const totalCount = await prisma.video.count({ where });
+    let videos: any[];
+    let totalCount: number;
+
+    if (random) {
+      // Build SQL fragments for ORDER BY RANDOM() via raw query
+      const typeCondition =
+        type === "shorts"
+          ? Prisma.sql`AND v."isShort" = true`
+          : type === "videos"
+          ? Prisma.sql`AND v."isShort" = false`
+          : Prisma.empty;
+
+      const artistCondition = artistId
+        ? Prisma.sql`AND v."userId" = ${artistId}`
+        : Prisma.empty;
+
+      const categoryJoin =
+        artistCategory && artistCategory !== "all"
+          ? Prisma.sql`JOIN "users" cu ON v."userId" = cu.id JOIN "artists" ca ON cu.id = ca."userId"`
+          : Prisma.empty;
+
+      const categoryCondition =
+        artistCategory && artistCategory !== "all"
+          ? Prisma.sql`AND ca."artistType" ILIKE ${`%${artistCategory}%`}`
+          : Prisma.empty;
+
+      const [idRows, count] = await Promise.all([
+        prisma.$queryRaw<{ id: string }[]>`
+          SELECT v.id
+          FROM "videos" v
+          ${categoryJoin}
+          WHERE v."isApproved" = true
+          ${typeCondition}
+          ${artistCondition}
+          ${categoryCondition}
+          ORDER BY RANDOM()
+          LIMIT ${limit} OFFSET ${offset}
+        `,
+        prisma.video.count({ where }),
+      ]);
+
+      totalCount = count;
+      const randomIds = idRows.map((r) => r.id);
+
+      if (randomIds.length > 0) {
+        const fetched = await prisma.video.findMany({
+          where: { id: { in: randomIds } },
+          select: videoSelect as any,
+        });
+        const videoMap = new Map(fetched.map((v: any) => [v.id, v]));
+        videos = randomIds.map((id) => videoMap.get(id)).filter(Boolean) as any[];
+      } else {
+        videos = [];
+      }
+    } else {
+      // Default: newest-first ordering
+      const [fetched, count] = await Promise.all([
+        prisma.video.findMany({
+          where,
+          skip: offset,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+          select: videoSelect as any,
+        }),
+        prisma.video.count({ where }),
+      ]);
+      videos = fetched;
+      totalCount = count;
+    }
 
     const totalPages = Math.ceil(totalCount / limit);
 
@@ -124,9 +182,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     if (withBookmarks) {
       processedVideos = videos.map((v: any) => ({
         ...v,
-        isBookmarked: v.bookmarks?.length > 0,
-        bookmarkId: v.bookmarks?.[0]?.id || null,
-        bookmarks: undefined, // remove raw join key
+        isBookmarked: (v.bookmarkedByUsers?.length ?? 0) > 0,
+        bookmarkId: v.bookmarkedByUsers?.[0]?.id || null,
+        bookmarkedByUsers: undefined, // remove raw join key
       }));
     }
 
