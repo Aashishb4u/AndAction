@@ -8,8 +8,8 @@ const SHORTS_PAGE_LIMIT = 5;
 const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
   const [_key, { category }] = queryKey;
   const url = category && category !== 'all'
-    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}&limit=${SHORTS_PAGE_LIMIT}`
-    : `/api/videos?type=shorts&page=${pageParam}&limit=${SHORTS_PAGE_LIMIT}`;
+    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}&limit=${SHORTS_PAGE_LIMIT}&random=true`
+    : `/api/videos?type=shorts&page=${pageParam}&limit=${SHORTS_PAGE_LIMIT}&random=true`;
   
   const res = await fetch(url);
   const json = await res.json();

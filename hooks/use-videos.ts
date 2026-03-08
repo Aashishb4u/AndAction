@@ -49,6 +49,7 @@ interface UseVideosOptions {
   category?: string;
   withBookmarks?: boolean;
   limit?: number;
+  random?: boolean;
 }
 
 export const videoKeys = {
@@ -63,12 +64,14 @@ async function fetchVideos({
   category = "all",
   withBookmarks = true,
   limit = 12,
+  random = false,
 }: {
   pageParam?: number;
   type?: string;
   category?: string;
   withBookmarks?: boolean;
   limit?: number;
+  random?: boolean;
 }): Promise<VideosResponse["data"]> {
   const params = new URLSearchParams({
     page: pageParam.toString(),
@@ -79,6 +82,10 @@ async function fetchVideos({
 
   if (type !== "all") {
     params.set("type", type);
+  }
+
+  if (random) {
+    params.set("random", "true");
   }
 
   const response = await fetch(`/api/videos?${params.toString()}`);
@@ -97,12 +104,13 @@ export function useInfiniteVideos(options: UseVideosOptions = {}) {
     category = "all",
     withBookmarks = true,
     limit = 20,
+    random = false,
   } = options;
 
   return useInfiniteQuery({
-    queryKey: videoKeys.list({ type, category, withBookmarks, limit }),
+    queryKey: videoKeys.list({ type, category, withBookmarks, limit, random }),
     queryFn: ({ pageParam }) =>
-      fetchVideos({ pageParam, type, category, withBookmarks, limit }),
+      fetchVideos({ pageParam, type, category, withBookmarks, limit, random }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       return lastPage.pagination.hasNextPage
