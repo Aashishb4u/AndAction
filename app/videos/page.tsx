@@ -70,6 +70,7 @@ export default function VideosPage() {
         bookmarkId: v.bookmarkId || null,
         creatorImage: v.user.avatar || v.user.image || undefined,
         artistType: v.user.artist?.artistType || "",
+        artistId: v.user.artist?.id || "",
       })),
     ) || [];
 
@@ -276,6 +277,7 @@ export default function VideosPage() {
                     bookmarkId={video.bookmarkId}
                     onBookmark={(data) => toggleBookmark(data)}
                     onShare={() => handleShare(video.id)}
+                    artistId={video.artistId}
                     enableMobileAutoplay={true}
                   />
                 ))}

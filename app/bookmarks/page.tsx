@@ -70,6 +70,7 @@ export default function BookmarksPage() {
               thumbnail: v.thumbnailUrl,
               videoUrl: v.url,
               isBookmarked: true,
+              artistId: (v.user as any).artist?.id || "",
             };
           });
 
@@ -218,6 +219,7 @@ export default function BookmarksPage() {
                     bookmarkId={v.bookmarkId}
                     onBookmark={({ bookmarkId }) => bookmarkId && deleteBookmark(bookmarkId, "video")}
                     onShare={() => {}}
+                    artistId={v.artistId}
                   />
                 ))
               ) : (
