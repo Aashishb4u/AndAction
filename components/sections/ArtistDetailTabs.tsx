@@ -349,6 +349,8 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
             onBookmark={(data) => toggleBookmark(data)}
             onShare={() => { }}
+            artistId={(video.user as any)?.artist?.id}
+            enableMobileAutoplay={true}
           />
 
         ))}

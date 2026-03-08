@@ -171,6 +171,8 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
             onDelete={handleDelete}
             isBookmarked={bookmarkedVideos.has(video.id)}
             showDeleteButton={true}
+            enableMobileAutoplay={true}
+            artistId={artist.id}
           />
         ))}
       </div>

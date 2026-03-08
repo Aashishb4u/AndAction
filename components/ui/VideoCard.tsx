@@ -8,6 +8,8 @@ import Bookmark from "@/components/icons/bookmark";
 import Share from "@/components/icons/share";
 import { Trash2 } from "lucide-react";
 import { useMobileVideoAutoplay } from "@/hooks/use-mobile-video-autoplay";
+import Volume2 from "@/components/icons/volume-2";
+import VolumeX from "@/components/icons/volume-x";
 
 interface VideoCardProps {
   id: string;
@@ -19,6 +21,7 @@ interface VideoCardProps {
   className?: string;
   artistType?: string;
   enableMobileAutoplay?: boolean; // New prop
+  artistId?: string; // For profile navigation
 
   // ⭐ NEW: bookmarkId passed from API so UI knows what to delete
   bookmarkId?: string | null;
@@ -51,11 +54,13 @@ const VideoCard: React.FC<VideoCardProps> = ({
   isBookmarked = false,
   showDeleteButton = false,
   enableMobileAutoplay = false, // Default false
+  artistId,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [shouldPlayVideo, setShouldPlayVideo] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -109,6 +114,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
         hoverTimeoutRef.current = null;
       }
       setShouldPlayVideo(false);
+      setIsMuted(true);
 
       // Stop YouTube video
       if (isYouTube && iframeRef.current) {
@@ -130,6 +136,32 @@ const VideoCard: React.FC<VideoCardProps> = ({
       }
     };
   }, [isHovered, isYouTube]);
+
+  useEffect(() => {
+    if (!shouldPlayVideo || !isVideoLoaded) return;
+    setTimeout(()=>{
+    if (isYouTube && iframeRef.current) {
+      iframeRef.current.contentWindow?.postMessage(
+        '{"event":"command","func":"playVideo","args":""}',
+        "*",
+      );
+    } else if (!isYouTube && videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  },200);
+  }, [isVideoLoaded, shouldPlayVideo, isYouTube]);
+
+  useEffect(() => {
+    if (!shouldPlayVideo) return;
+    if (isYouTube && iframeRef.current) {
+      iframeRef.current.contentWindow?.postMessage(
+        `{"event":"command","func":"${isMuted ? 'mute' : 'unMute'}","args":""}`,
+        "*",
+      );
+    } else if (!isYouTube && videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted, isYouTube, shouldPlayVideo]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -191,7 +223,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
             <iframe
               ref={iframeRef}
               className="w-full h-full object-cover"
-              src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}&controls=1`}
+              src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               onLoad={() => setIsVideoLoaded(true)}
@@ -210,7 +242,6 @@ const VideoCard: React.FC<VideoCardProps> = ({
               loop
               muted
               playsInline
-              controls
               preload="metadata"
               onLoadedData={() => setIsVideoLoaded(true)}
             >
@@ -219,12 +250,31 @@ const VideoCard: React.FC<VideoCardProps> = ({
           </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300 pointer-events-none" />
+        {/* Transparent navigation overlay – sits above iframe/video but below mute button */}
+        <Link href={`/videos/${id}`} className="absolute inset-0 z-10" aria-label={title} />
+
+        {/* Mute / Unmute button */}
+        {shouldPlayVideo && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setIsMuted((m) => !m);
+            }}
+            className="absolute bottom-3 right-3 z-20 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+          >
+            {isMuted ? (
+              <VolumeX className="w-4 h-4" />
+            ) : (
+              <Volume2 className="w-4 h-4" />
+            )}
+          </button>
+        )}
       </div>
 
       {/* BOTTOM INFO - Only this area is clickable for navigation */}
       <div className="mt-3 px-1 flex justify-between items-start gap-3">
-        <Link href={`/videos/${id}`} className="flex gap-3 flex-1 min-w-0 items-center group/link">
+        <Link href={artistId ? `/artists/${artistId}` : `/videos/${id}`} className="flex gap-3 flex-1 min-w-0 items-center group/link">
             <Image
               src={"/avatars/default.jpg"}
               alt={creator}

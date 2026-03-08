@@ -76,6 +76,7 @@ export default function VideoDetailsPage() {
             videoUrl: rv.url,
             isBookmarked: rv.isBookmarked,
             bookmarkId: rv.bookmarkId,
+            artistId: rv.user.artist?.id || "",
           })),
         );
 
@@ -297,6 +298,7 @@ export default function VideoDetailsPage() {
                         bookmarkId={video.bookmarkId}
                         onBookmark={(data) => toggleBookmark(data)}
                         onShare={() => handleShare(video.id)}
+                        artistId={video.artistId}
                       />
                     ))
                   )}
