@@ -67,85 +67,69 @@ const AboutPage = () => {
       description="Connecting talent with unforgettable experiences, all in one place!"
     >
       <div className="space-y-12">
-        {/* Mission Section */}
         <section>
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Our Mission</h2>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">About Us</h1>
+
+          <h2 className="text-2xl md:text-3xl font-semibold text-white mb-6">Connecting Talent with Opportunity</h2>
+
           <div className="prose prose-lg max-w-none">
             <p className="text-text-light-gray leading-relaxed mb-4">
-              At ANDACTION, we&apos;re revolutionizing the way people discover and book entertainment for their events. 
-              Our mission is to create a seamless bridge between talented artists and event organizers, making it 
-              easier than ever to bring exceptional performances to life.
+              At And-Action, we make discovering and booking artists effortless. Whether you&apos;re looking for a magician to amaze kids at a birthday party, a live band to set the mood at your wedding, or a Sufi group to elevate your cocktail night, we connect you directly with top-tier performers—no middlemen, no hefty commissions.
             </p>
-            <p className="text-text-light-gray leading-relaxed">
-              Whether you&apos;re planning a wedding, corporate event, festival, or private party, we believe every 
-              occasion deserves the perfect soundtrack. Our platform empowers artists to showcase their talents 
-              while helping event organizers find exactly what they&apos;re looking for.
+
+            <p className="text-text-light-gray leading-relaxed mb-4">
+              But that’s not all—And-Action is also a streaming and entertainment platform. If you love watching talented artists perform, you can simply scroll, explore, and enjoy performances from amazing entertainers across various categories, just like a streaming app.
             </p>
           </div>
         </section>
 
-        {/* Features Section */}
         <section>
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-8">Why Choose ANDACTION?</h2>
+          <h3 className="text-2xl md:text-3xl font-semibold text-white mb-4">Smart Matching for the Perfect Artist</h3>
+          <p className="text-text-light-gray mb-4">We use advanced filters and smart algorithms to match you with the ideal artist based on:</p>
+
+          <ul className="list-none space-y-2">
+            <li className="text-text-light-gray">✔ Location – Find artists available in your city or region.</li>
+            <li className="text-text-light-gray">✔ Budget – Get options that fit your price range.</li>
+            <li className="text-text-light-gray">✔ Availability – Book artists who are free on your event date.</li>
+            <li className="text-text-light-gray">✔ Performance Type &amp; Style – Choose from various categories and vibes.</li>
+            <li className="text-text-light-gray">✔ And much more!</li>
+          </ul>
+        </section>
+
+        <section>
+          <h3 className="text-2xl md:text-3xl font-semibold text-white mb-4">A Win-Win for Everyone</h3>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="bg-card/30 border border-background-light rounded-xl p-6 hover:border-primary-pink/30 transition-all duration-300"
-              >
-                <div className="text-primary-pink mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold text-white mb-3">{feature.title}</h3>
-                <p className="text-text-light-gray leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
+            <div className="bg-card/20 rounded-xl border border-background-light p-6">
+              <h4 className="text-lg font-semibold text-white mb-3">For Event Organizers &amp; Users</h4>
+              <ul className="space-y-2">
+                <li className="text-text-light-gray">✅ Discover and book verified, high-quality artists effortlessly.</li>
+                <li className="text-text-light-gray">✅ Browse performance videos to see artists in action before you book.</li>
+                <li className="text-text-light-gray">✅ Save money! No expensive event management fees—you pay artists directly.</li>
+                <li className="text-text-light-gray">✅ Scroll and watch talented performers, even if you’re not booking.</li>
+              </ul>
+            </div>
+
+            <div className="bg-card/20 rounded-xl border border-background-light p-6">
+              <h4 className="text-lg font-semibold text-white mb-3">For Artists</h4>
+              <ul className="space-y-2">
+                <li className="text-text-light-gray">✅ Get featured on a platform designed for visibility and bookings.</li>
+                <li className="text-text-light-gray">✅ Reach a wider audience and land more gigs without paying hefty commissions.</li>
+                <li className="text-text-light-gray">✅ Showcase your work with an immersive YouTube-like video experience.</li>
+                <li className="text-text-light-gray">✅ Earn more by dealing directly with clients—no middlemen taking a cut.</li>
+              </ul>
+            </div>
           </div>
         </section>
 
-        {/* Values Section */}
         <section>
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-8">Our Values</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {values.map((value, index) => (
-              <div
-                key={index}
-                className="text-center p-6 bg-card/20 rounded-xl border border-background-light hover:border-primary-orange/30 transition-all duration-300"
-              >
-                <div className="text-primary-orange mb-4 flex justify-center">{value.icon}</div>
-                <h3 className="text-lg font-semibold text-white mb-3">{value.title}</h3>
-                <p className="text-text-gray text-sm leading-relaxed">{value.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Story Section */}
-        <section>
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Our Story</h2>
           <div className="prose prose-lg max-w-none">
             <p className="text-text-light-gray leading-relaxed mb-4">
-              ANDACTION was born from a simple observation: finding the right entertainment for events was 
-              unnecessarily complicated. Event organizers struggled to discover talented artists, while 
-              performers found it challenging to reach their ideal audience.
+              At And-Action, we bridge the gap between talent and opportunity, ensuring that every event gets the perfect artist, and every artist gets the stage they deserve. Whether you&apos;re here to book, perform, or just enjoy great entertainment, we’ve got something for you.
             </p>
-            <p className="text-text-light-gray leading-relaxed mb-4">
-              Founded by a team of music enthusiasts and technology experts, we set out to create a platform 
-              that would solve these challenges. Today, ANDACTION serves thousands of artists and event 
-              organizers across the country, facilitating countless memorable performances.
-            </p>
-            <p className="text-text-light-gray leading-relaxed">
-              We&apos;re more than just a booking platform – we&apos;re a community dedicated to celebrating talent 
-              and creating unforgettable moments through the power of live entertainment.
-            </p>
-          </div>
-        </section>
 
-        {/* Contact Section */}
-        <section className="bg-gradient-to-r from-primary-orange/10 to-primary-pink/10 rounded-xl p-8 border border-primary-pink/20">
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 text-center">Get in Touch</h2>
-          <div className="text-center">
-            <p className="text-text-light-gray mb-6 leading-relaxed">
-              Have questions about our platform or want to learn more about how ANDACTION can help 
-              your next event? We&apos;d love to hear from you.
+            <p className="text-text-light-gray leading-relaxed font-medium">
+              Let’s make magic happen—directly, affordably, and effortlessly.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a

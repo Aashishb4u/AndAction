@@ -6,8 +6,9 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
-import { ARTIST_CATEGORIES } from "@/lib/constants";
-import { INDIAN_STATES } from "@/lib/constants";
+import { getValueForKey } from '@/lib/artistCategories';
+import { ARTIST_CATEGORIES, INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 
 export interface FindArtistModalProps {
   isOpen: boolean;
@@ -16,13 +17,14 @@ export interface FindArtistModalProps {
 
 interface FormData {
   artistCategory: string;
-  subCategory: string;
+  subCategory: string[];
   artistGender: string;
   budget: string;
   eventState: string;
   eventDate: string;
   eventType: string;
-  performingLanguage: string;
+  performingLanguage: string[];
+  location: string;
 }
 
 const FindArtistModal: React.FC<FindArtistModalProps> = ({
@@ -32,43 +34,21 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     artistCategory: "",
-    subCategory: "",
+    subCategory: [],
     artistGender: "",
     budget: "",
     eventState: "",
     eventDate: "",
     eventType: "",
-    performingLanguage: "",
+    performingLanguage: [],
+    location: "",
   });
 
-  // Form options (updated mapping)
-  const artistCategories = [
-    { value: "singers", label: "Singer" },
-    { value: "dancers", label: "Dancer / Dance Group" },
-    { value: "anchors", label: "Anchor / Emcee / Host" },
-    { value: "djs", label: "DJ" },
-    { value: "bands", label: "Live Band / Group" },
-    { value: "comedians", label: "Comedian" },
-    { value: "musicians", label: "Musician / Instrumentalist" },
-    { value: "magicians", label: "Magician / Illusionist" },
-    { value: "actors", label: "Theatre Artist / Actor" },
-    { value: "mimicry", label: "Mimicry / Impressionist" },
-    { value: "specialAct", label: "Special Act Performer" },
-    { value: "spiritual", label: "Spiritual / Devotional" },
-    { value: "kidsEntertainers", label: "Kids Entertainer" },
-  ];
+  // Fetch sub-artist types from database
+  const { subTypes: subArtistSuggestions } = useSubArtistTypes();
 
-  const subCategories = [
-    { value: "bollywood", label: "Bollywood" },
-    { value: "classical", label: "Classical" },
-    { value: "folk", label: "Folk" },
-    { value: "western", label: "Western" },
-    { value: "fusion", label: "Fusion" },
-  ];
-  // Sub-category search UI state
-  const [subInput, setSubInput] = useState<string>(
-    subCategories.find((s) => s.value === "") ? "" : "",
-  );
+  // Sub-category multi-tag UI state
+  const [subInput, setSubInput] = useState<string>("");
   const [showSubSuggestions, setShowSubSuggestions] = useState(false);
 
   const genderOptions = [
@@ -87,6 +67,8 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
 
 
 
+  const locationOptions = INDIAN_CITIES;
+
   const eventTypes = [
     { value: "wedding", label: "Wedding" },
     { value: "corporate", label: "Corporate Event" },
@@ -101,13 +83,54 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     { value: "english", label: "English" },
     { value: "marathi", label: "Marathi" },
     { value: "gujarati", label: "Gujarati" },
-    { value: "punjabi", label: "Punjabi" },
     { value: "tamil", label: "Tamil" },
+    { value: "telugu", label: "Telugu" },
+    { value: "bengali", label: "Bengali" },
+    { value: "punjabi", label: "Punjabi" },
+    { value: "kannada", label: "Kannada" },
+    { value: "malayalam", label: "Malayalam" },
+    { value: "odia", label: "Odia" },
+    { value: "assamese", label: "Assamese" },
+    { value: "kashmiri", label: "Kashmiri" },
+    { value: "konkani", label: "Konkani" },
+    { value: "sindhi", label: "Sindhi" },
+    { value: "nepali", label: "Nepali" },
+    { value: "manipuri", label: "Manipuri" },
+    { value: "sanskrit", label: "Sanskrit" },
+    { value: "bodo", label: "Bodo" },
+    { value: "santali", label: "Santali" },
+    { value: "dogri", label: "Dogri" },
+    { value: "maithili", label: "Maithili" }
   ];
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  // Language dropdown state
+  const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
+
+  // Toggle a single language selection
+  const toggleLanguageSelection = (langValue: string) => {
+    const current = formData.performingLanguage || [];
+    let updated: string[];
+    if (current.includes(langValue)) {
+      updated = current.filter((l) => l !== langValue);
+    } else {
+      updated = [...current, langValue];
+    }
+    handleInputChange('performingLanguage', updated);
+  };
+
+  // Toggle all languages
+  const toggleAllLanguages = () => {
+    const allValues = languages.map((l) => l.value);
+    if ((formData.performingLanguage || []).length === languages.length) {
+      handleInputChange('performingLanguage', []);
+    } else {
+      handleInputChange('performingLanguage', allValues);
+    }
+  };
+
+  const handleInputChange = (field: keyof FormData, value: string | string[]) => {
     // For eventDate, ensure only today or future dates are accepted
-    if (field === "eventDate" && value) {
+    if (field === "eventDate" && value && typeof value === "string") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const inputDate = new Date(value);
@@ -123,34 +146,39 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     }
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: value as any,
     }));
   };
 
   const handleReset = () => {
     setFormData({
       artistCategory: "",
-      subCategory: "",
+      subCategory: [],
       artistGender: "",
       budget: "",
       eventState: "",
       eventDate: "",
       eventType: "",
-      performingLanguage: "",
+      performingLanguage: [],
+      location: "",
     });
+    setSubInput("");
   };
 
   const handleViewResults = () => {
     const params = new URLSearchParams();
 
-    if (formData.artistCategory) params.set("type", formData.artistCategory);
-    if (formData.subCategory) params.set("subType", formData.subCategory);
+    if (formData.artistCategory) params.set("type", getValueForKey(formData.artistCategory));
+    if (formData.subCategory && formData.subCategory.length > 0) params.set("subType", formData.subCategory.join(","));
     if (formData.artistGender) params.set("gender", formData.artistGender);
     if (formData.budget) params.set("budget", formData.budget);
     if (formData.eventState) params.set("state", formData.eventState);
     if (formData.eventType) params.set("eventType", formData.eventType);
-    if (formData.performingLanguage)
-      params.set("language", formData.performingLanguage);
+    if (formData.location) params.set("location", formData.location);
+    if (formData.performingLanguage && formData.performingLanguage.length > 0) {
+      // join multiple selected languages as comma-separated
+      params.set("language", (formData.performingLanguage as string[]).join(","));
+    }
 
     // eventDate not used in API but we still pass it
     if (formData.eventDate) params.set("eventDate", formData.eventDate);
@@ -167,7 +195,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       title="Find your artist"
       size="full"
       variant="bottom-sheet"
-      className="max-w-2xl border-none bg-background h-[90vh] md:!h-auto md:!max-h-[90vh]"
+      className="md:max-w-2xl border-none bg-background h-[90vh] md:!h-auto md:!max-h-[90vh]"
       headerClassName="md:px-8 md:py-4 px-4 py-3"
     >
       <div className="md:px-8 px-4 md:pb-8 pb-4 md:pt-4 pt-4 md:space-y-6 space-y-4">
@@ -183,57 +211,77 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
           />
         </div>
 
-        {/* Sub-Category (searchable with recommendations) */}
+        {/* Sub-Category (multi-tag with searchable suggestions) */}
         <div className="relative">
           <label className="secondary-text block mb-1">Sub-Category</label>
-          <input
-            type="text"
-            value={
-              // show label if selected value present, otherwise show typed text
-              subInput ||
-              subCategories.find((s) => s.value === formData.subCategory)
-                ?.label ||
-              ""
-            }
-            onChange={(e) => {
-              const v = e.target.value;
-              setSubInput(v);
-              // clear actual stored subCategory until user selects a suggestion
-              handleInputChange("subCategory", "");
-              setShowSubSuggestions(true);
-            }}
-            onFocus={() => setShowSubSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
-            placeholder="Type to search sub-category"
-            className="w-full px-3 py-2 bg-card border border-border-color rounded-lg text-white placeholder-gray-400"
-          />
+          <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
+            {(formData.subCategory || []).map((tag) => (
+              <span key={tag} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+                <span className="text-white">{tag}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = formData.subCategory.filter((t) => t !== tag);
+                    handleInputChange("subCategory", next);
+                  }}
+                  className="text-text-gray hover:text-white"
+                  aria-label={`Remove ${tag}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              placeholder={formData.subCategory.length === 0 ? "Type to search sub-category" : ""}
+              value={subInput}
+              onChange={(e) => {
+                setSubInput(e.target.value);
+                setShowSubSuggestions(true);
+              }}
+              onFocus={() => setShowSubSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === ",") {
+                  e.preventDefault();
+                  const v = subInput.trim().replace(/,$/, "");
+                  if (v && !formData.subCategory.includes(v)) {
+                    handleInputChange("subCategory", [...formData.subCategory, v]);
+                  }
+                  setSubInput("");
+                } else if (e.key === "Backspace" && !subInput && formData.subCategory.length > 0) {
+                  handleInputChange("subCategory", formData.subCategory.slice(0, -1));
+                }
+              }}
+              className="flex-1 min-w-[120px] bg-transparent focus:outline-none px-1 py-1 text-sm placeholder-gray-400"
+            />
+          </div>
 
           {showSubSuggestions && (
             <div className="absolute z-40 left-0 right-0 mt-1 bg-background border border-border-color rounded-lg max-h-48 overflow-auto">
-              {subCategories
+              {subArtistSuggestions
                 .filter((s) =>
-                  s.label
-                    .toLowerCase()
-                    .includes((subInput || "").toLowerCase()),
+                  s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                  !formData.subCategory.includes(s)
                 )
                 .map((s) => (
                   <button
-                    key={s.value}
+                    key={s}
                     type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      // set value (used in query) and display label
-                      handleInputChange("subCategory", s.value);
-                      setSubInput(s.label);
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      handleInputChange("subCategory", [...formData.subCategory, s]);
+                      setSubInput("");
                       setShowSubSuggestions(false);
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white"
+                    className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white text-sm"
                   >
-                    {s.label}
+                    {s}
                   </button>
                 ))}
-              {subCategories.filter((s) =>
-                s.label.toLowerCase().includes((subInput || "").toLowerCase()),
+              {subArtistSuggestions.filter((s) =>
+                s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                !formData.subCategory.includes(s)
               ).length === 0 && (
                 <div className="px-3 py-2 text-gray-400">No suggestions</div>
               )}
@@ -286,28 +334,99 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
           </div>
         </div>
 
-        {/* Event Type */}
-        <div>
-          <label className="secondary-text  block mb-1">Event type</label>
-          <Select
-            placeholder="Select event type"
-            options={eventTypes}
-            value={formData.eventType}
-            onChange={(value) => handleInputChange("eventType", value)}
-          />
+        {/* Event Type and Artist Location - Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="secondary-text  block mb-1">Event type</label>
+            <Select
+              placeholder="Select event type"
+              options={eventTypes}
+              value={formData.eventType}
+              onChange={(value) => handleInputChange("eventType", value)}
+            />
+          </div>
+          <div>
+            <label className="secondary-text  block mb-1">Artist Location</label>
+            <Select
+              placeholder="Select location"
+              options={locationOptions}
+              value={formData.location}
+              onChange={(value) => handleInputChange("location", value)}
+            />
+          </div>
         </div>
 
         {/* Performing Language */}
-        <div>
-          <label className="secondary-text  block mb-1">
-            Performing language
-          </label>
-          <Select
-            placeholder="Select language"
-            options={languages}
-            value={formData.performingLanguage}
-            onChange={(value) => handleInputChange("performingLanguage", value)}
-          />
+        <div className="relative">
+          <label className="secondary-text  block mb-1">Performing language</label>
+
+          <button
+            type="button"
+            onClick={() => setShowLanguagesDropdown(!showLanguagesDropdown)}
+            className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
+          >
+            <div className="flex-1 flex flex-wrap gap-2 items-center">
+              {(formData.performingLanguage || []).length === 0 ? (
+                <span className="text-text-gray">Select languages</span>
+              ) : (formData.performingLanguage || []).length === languages.length ? (
+                <span className="text-white">All Languages</span>
+              ) : (
+                (formData.performingLanguage || []).map((val) => {
+                  const label = languages.find((l) => l.value === val)?.label || val;
+                  return (
+                    <span key={val} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+                      <span className="text-white">{label}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleLanguageSelection(val); }}
+                        className="text-text-gray hover:text-white"
+                        aria-label={`Remove ${label}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })
+              )}
+            </div>
+            <svg
+              className={`w-6 h-6 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showLanguagesDropdown && (
+            <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg w-full max-h-60 overflow-auto">
+              <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
+                <input
+                  type="checkbox"
+                  checked={(formData.performingLanguage || []).length === languages.length}
+                  onChange={toggleAllLanguages}
+                  className="w-4 h-4 accent-primary-pink rounded"
+                />
+                <span className="text-white font-medium">All Languages</span>
+              </label>
+
+              {languages.map((language) => (
+                <label
+                  key={language.value}
+                  className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={(formData.performingLanguage || []).includes(language.value)}
+                    onChange={() => toggleLanguageSelection(language.value)}
+                    className="w-4 h-4 accent-primary-pink rounded"
+                  />
+                  <span className="text-white text-sm">{language.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}

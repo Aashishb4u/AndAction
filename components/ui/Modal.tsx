@@ -62,7 +62,7 @@ const Modal: React.FC<ModalProps> = ({
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
-    full: 'max-w-full mx-4',
+    full: 'max-w-full md:mx-4',
   };
 
   const isBottomSheet = (variant === 'bottom-sheet');
@@ -71,7 +71,7 @@ const Modal: React.FC<ModalProps> = ({
 
   const modalContent = (
     <div
-      className={`fixed inset-0 z-50 flex ${isBottomSheet ? 'items-end' : 'items-center'} justify-center md:p-4 modal-backdrop`}
+      className={`fixed inset-0 z-50 flex ${isBottomSheet ? 'items-end' : 'items-center'} justify-center ${isBottomSheet ? 'md:p-4' : 'md:p-4'} modal-backdrop`}
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
@@ -80,12 +80,11 @@ const Modal: React.FC<ModalProps> = ({
       {/* Modal Content */}
       <div
         className={`
-          relative w-full ${sizeClasses[size]} ${isBottomSheet ? 'max-h-[90vh] rounded-t-2xl' : 'max-h-[90vh] rounded-2xl'} overflow-hidden
+          relative w-full ${sizeClasses[size]} ${isBottomSheet ? 'max-h-[90vh] rounded-t-2xl md:rounded-2xl' : 'max-h-[90vh] rounded-2xl'} overflow-hidden
           bg-background border border-border-color shadow-2xl
-          modal-content
+          ${isBottomSheet ? 'modal-bottom-sheet' : 'modal-content'}
           ${className}
         `}
-        style={isBottomSheet ? { borderTopLeftRadius: '1rem', borderTopRightRadius: '1rem' } : undefined}
       >
         {showCloseButton && title && (
           <div className={`border-b border-border-color px-8 py-6 ${headerClassName}`}>

@@ -7,6 +7,7 @@ import ArtistProfileDetails from "@/components/artist/profile-setup/ArtistProfil
 import PerformanceDetails from "@/components/artist/profile-setup/PerformanceDetails";
 import ContactPricingDetails from "@/components/artist/profile-setup/ContactPricingDetails";
 import ProfileReview from "@/components/artist/profile-setup/ProfileReview";
+import VideosSocialMedia from "@/components/artist/profile-setup/VideosSocialMedia";
 import SuccessModal from "@/components/artist/profile-setup/SuccessModal";
 import { useSession } from "next-auth/react";
 
@@ -15,7 +16,8 @@ type ProfileSetupStep =
   | "artistDetails"
   | "performanceDetails"
   | "contactPricing"
-  | "review";
+  | "review"
+  | "videosSocialMedia";
 
 export default function ProfileSetupPage() {
   const [currentStep, setCurrentStep] = useState<ProfileSetupStep>("overview");
@@ -188,7 +190,8 @@ export default function ProfileSetupPage() {
         isArtistVerified: true,
       });
 
-      setShowSuccessModal(true);
+      // Navigate to Videos & Social Media step after successful save
+      setCurrentStep("videosSocialMedia");
     } catch (err) {
       console.error("Unexpected Error Saving Artist Profile:", err);
     } finally {
@@ -225,6 +228,9 @@ export default function ProfileSetupPage() {
       case "review":
         await handleSubmitProfile();
         break;
+      case "videosSocialMedia":
+        setShowSuccessModal(true);
+        break;
     }
   };
 
@@ -241,6 +247,9 @@ export default function ProfileSetupPage() {
         break;
       case "review":
         setCurrentStep("contactPricing");
+        break;
+      case "videosSocialMedia":
+        setCurrentStep("review");
         break;
       case "overview":
         router.push("/artist/dashboard");
@@ -356,6 +365,14 @@ export default function ProfileSetupPage() {
             onNext={handleNext}
             onBack={handleBack}
             onEdit={handleEdit}
+          />
+        );
+      case "videosSocialMedia":
+        return (
+          <VideosSocialMedia
+            onNext={handleNext}
+            onSkip={handleNext}
+            onBack={handleBack}
           />
         );
       default:

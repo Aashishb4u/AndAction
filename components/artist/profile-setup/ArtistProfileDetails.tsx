@@ -167,8 +167,9 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     { value: "5", label: "10+ years" },
   ];
 
-  const handleInputChange = (field: string, value: string) => {
-    const updatedData = { ...formData, [field]: value };
+  const handleInputChange = (field: string, value: string | string[]) => {
+    const stringValue = Array.isArray(value) ? value.join(',') : value;
+    const updatedData = { ...formData, [field]: stringValue };
     setFormData(updatedData);
     onUpdateData(updatedData);
   };
@@ -347,7 +348,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   };
 
   const handleNext = () => {
-    // Validate required fields
+    // Validate required fields: only stageName and artistType
     const newErrors: Record<string, string> = {};
 
     if (!formData.stageName?.trim()) {
@@ -355,12 +356,6 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     }
     if (!formData.artistType) {
       newErrors.artistType = "Artist type is required";
-    }
-    if (!formData.yearsOfExperience) {
-      newErrors.yearsOfExperience = "Years of experience is required";
-    }
-    if (!formData.shortBio?.trim()) {
-      newErrors.shortBio = "Short bio is required";
     }
 
     setErrors(newErrors);
@@ -403,14 +398,14 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
           <span className="md:hidden h2">Profile Setup</span>
         </button>
 
-        <div>
+        {/* <div>
           <button
             onClick={onSkip}
             className="text-primary-pink hover:text-primary-orange transition-colors duration-200"
           >
             Skip
           </button>
-        </div>
+        </div> */}
       </div>
       <div className="h-px bg-border-line mb-4" />
 
@@ -601,11 +596,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
               <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
                 {selectedSubTypes.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-2 bg-background-light text-sm px-3 py-1 rounded-full"
-                  >
-                    <span>{tag}</span>
+                  <span key={tag} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+                    <span className="text-white">{tag}</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -756,9 +748,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block secondary-text text-white">
-                    Years of experience*
-                  </label>
+                  <label className="block secondary-text text-white">Years of experience</label>
                   <Tooltip content="Select how many years you have been performing professionally. This helps clients understand your experience level.">
                     <svg
                       className="w-4 h-4 text-blue cursor-help"
@@ -794,9 +784,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
             {/* Short Bio */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block secondary-text text-white">
-                  Short bio*
-                </label>
+                <label className="block secondary-text text-white">Short bio</label>
                 <Tooltip content="Write a compelling description about yourself, your journey, and what makes you unique. This is your chance to tell your story to potential clients.">
                   <svg
                     className="w-4 h-4 text-blue cursor-help"

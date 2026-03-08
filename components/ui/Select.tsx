@@ -12,12 +12,13 @@ export interface SelectProps {
   label?: string;
   placeholder?: string;
   options: SelectOption[];
-  value?: string;
-  onChange: (value: string) => void;
+  value?: string | string[];
+  onChange: (value: string | string[]) => void;
   error?: string;
   helperText?: string;
   disabled?: boolean;
   required?: boolean;
+  multiple?: boolean;
   className?: string;
 }
 
@@ -32,10 +33,11 @@ const Select: React.FC<SelectProps> = ({
   disabled = false,
   required = false,
   className = '',
+  multiple = false,
 }) => {
   const selectId = `select-${Math.random().toString(36).substr(2, 9)}`;
 
-  const isPlaceholderSelected = !value || value === "";
+  const isPlaceholderSelected = !value || (typeof value === 'string' && value === "");
   const textColorClass = isPlaceholderSelected ? 'text-[#7F7F7F]' : 'text-white';
 
   const baseClasses = `
@@ -71,17 +73,31 @@ const Select: React.FC<SelectProps> = ({
       <div className="relative">
         <select
           id={selectId}
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
+          value={
+            multiple
+              ? (Array.isArray(value) ? (value as string[]) : [])
+              : (typeof value === 'string' ? (value as string) : '')
+          }
+          onChange={(e) => {
+            if (multiple) {
+              const values = Array.from(e.target.selectedOptions).map(
+                (o) => (o as HTMLOptionElement).value,
+              );
+              onChange(values);
+            } else {
+              onChange(e.target.value);
+            }
+          }}
           disabled={disabled}
           required={required}
+          multiple={multiple}
           className={`
             ${baseClasses}
             ${stateClasses}
             ${errorClasses}
           `}
         >
-          {placeholder && (
+          {!multiple && placeholder && (
             <option value="" disabled hidden className="text-text-gray">
               {placeholder}
             </option>

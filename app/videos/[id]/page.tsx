@@ -12,6 +12,7 @@ import ShortsCardSkeleton from "@/components/ui/ShortsCardSkeleton";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 
 export default function VideoDetailsPage() {
   const params = useParams();
@@ -213,7 +214,9 @@ export default function VideoDetailsPage() {
   if (loading) {
     return (
       <SiteLayout>
-        <div className="text-center py-20 text-gray-400">Loading...</div>
+        <div>
+          <LoadingOverlay text="Loading video..." />
+        </div>
       </SiteLayout>
     );
   }
@@ -227,8 +230,8 @@ export default function VideoDetailsPage() {
   }
 
   return (
-    <SiteLayout showPreloader={false}>
-      <div className="min-h-screen pt-16 lg:pt-20 pb-28">
+    <SiteLayout showPreloader={false} hideNavbar>
+      <div className="min-h-screen pb-28">
         <div className="max-w-7xl mx-auto lg:px-8">
           {/* MAIN VIDEO - Sticky on mobile only */}
           <div className="sticky top-0 lg:top-20 z-50 lg:static lg:mb-8 bg-black">

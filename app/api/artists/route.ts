@@ -71,6 +71,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const language = searchParams.get("language");
     const eventType = searchParams.get("eventType");
     const budget = searchParams.get("budget");
+    const location = searchParams.get("location");
 
     let state = searchParams.get("state");
     if (!state && lat && lng) state = await getStateFromLatLng(lat, lng);
@@ -115,9 +116,19 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const dynamicOrFilters: Prisma.ArtistWhereInput[] = [];
 
     if (subType) {
-      dynamicOrFilters.push({
-        subArtistType: { contains: subType, mode: "insensitive" },
-      });
+      // Support comma-separated sub-types: match any of the provided values
+      const subTypes = subType.split(",").map((s) => s.trim()).filter(Boolean);
+      if (subTypes.length === 1) {
+        dynamicOrFilters.push({
+          subArtistType: { contains: subTypes[0], mode: "insensitive" },
+        });
+      } else if (subTypes.length > 1) {
+        dynamicOrFilters.push({
+          OR: subTypes.map((st) => ({
+            subArtistType: { contains: st, mode: "insensitive" },
+          })),
+        });
+      }
     }
 
     if (language) {
@@ -198,6 +209,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
     if (gender) {
       userFilter.gender = { equals: gender, mode: "insensitive" };
+    }
+
+    if (location) {
+      userFilter.city = { contains: location, mode: "insensitive" };
     }
 
     where.user = { is: userFilter };

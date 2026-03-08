@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import SiteLayout from '@/components/layout/SiteLayout';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import ArtistGrid from '@/components/sections/ArtistGrid';
 import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
@@ -178,7 +179,7 @@ export default function BookmarksPage() {
 
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 py-8">
 
-          {loading && <div className="text-center text-white py-12">Loading...</div>}
+          {loading && <LoadingOverlay text="Loading bookmarks..." />}
 
           {/* ARTISTS */}
           {activeTab === "Artist" && !loading && (

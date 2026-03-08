@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
-import { VIDEO_CATEGORIES, INDIAN_STATES } from "@/lib/constants";
+import { VIDEO_CATEGORIES, INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 
 interface FilterOption {
   value: string;
@@ -27,15 +28,6 @@ const categoryOptions: FilterOption[] = [
     value: cat.value,
     label: cat.label,
   })),
-];
-
-const subCategoryOptions: FilterOption[] = [
-  { value: "", label: "Select sub-category" },
-  { value: "bollywood", label: "Bollywood" },
-  { value: "classical", label: "Classical" },
-  { value: "folk", label: "Folk" },
-  { value: "western", label: "Western" },
-  { value: "devotional", label: "Devotional" },
 ];
 
 const genderOptions: FilterOption[] = [
@@ -77,6 +69,11 @@ const languageOptions: FilterOption[] = [
   { value: "punjabi", label: "Punjabi" },
 ];
 
+const locationOptions: FilterOption[] = [
+  { value: "", label: "Select location" },
+  ...INDIAN_CITIES,
+];
+
 const MobileFilters: React.FC<MobileFiltersProps> = ({
   filters,
   onFilterChange,
@@ -88,6 +85,27 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Sub-category multi-tag state
+  const { subTypes: subArtistSuggestions } = useSubArtistTypes();
+  const [subInput, setSubInput] = useState("");
+  const [showSubSuggestions, setShowSubSuggestions] = useState(false);
+
+  const selectedSubTypes = filters.subCategory
+    ? filters.subCategory.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  const addSubType = (value: string) => {
+    if (!selectedSubTypes.includes(value)) {
+      const next = [...selectedSubTypes, value];
+      onFilterChange("subCategory", next.join(","));
+    }
+  };
+
+  const removeSubType = (value: string) => {
+    const next = selectedSubTypes.filter((t) => t !== value);
+    onFilterChange("subCategory", next.join(","));
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -114,6 +132,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
       category: categoryOptions,
       budget: budgetOptions,
       language: languageOptions,
+      location: locationOptions,
     };
 
     const options = optionsMap[filterKey];
@@ -125,6 +144,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
     { key: "category", label: getFilterLabel("category", filters.category) },
     { key: "budget", label: getFilterLabel("budget", filters.budget) },
     { key: "language", label: getFilterLabel("language", filters.language) },
+    { key: "location", label: getFilterLabel("location", filters.location) },
   ];
 
   const FilterChip: React.FC<{
@@ -256,6 +276,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                 category: categoryOptions,
                 budget: budgetOptions,
                 language: languageOptions,
+                location: locationOptions,
               };
               return optionsMap[activeDropdown]?.map((option) => (
                 <button
@@ -321,21 +342,83 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Artist Category"
                     value={filters.category}
                     options={categoryOptions}
-                    onChange={(value) => onFilterChange("category", value)}
+                    onChange={(value) => onFilterChange("category", value as string)}
                     required
                     placeholder="Select Category"
                   />
                 </div>
 
-                {/* Sub-Category */}
-                <div>
-                  <Select
-                    label="Sub-Category"
-                    value={filters.subCategory}
-                    options={subCategoryOptions}
-                    onChange={(value) => onFilterChange("subCategory", value)}
-                    placeholder="Select sub-category"
-                  />
+                {/* Sub-Category (multi-tag) */}
+                <div className="relative">
+                  <label className="block text-sm text-white mb-1">Sub-Category</label>
+                  <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
+                    {selectedSubTypes.map((tag) => (
+                      <span key={tag} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+                        <span className="text-white">{tag}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeSubType(tag)}
+                          className="text-text-gray hover:text-white"
+                          aria-label={`Remove ${tag}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      type="text"
+                      placeholder={selectedSubTypes.length === 0 ? "Type to search sub-category" : ""}
+                      value={subInput}
+                      onChange={(e) => {
+                        setSubInput(e.target.value);
+                        setShowSubSuggestions(true);
+                      }}
+                      onFocus={() => setShowSubSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === ",") {
+                          e.preventDefault();
+                          const v = subInput.trim().replace(/,$/, "");
+                          if (v) addSubType(v);
+                          setSubInput("");
+                        } else if (e.key === "Backspace" && !subInput && selectedSubTypes.length > 0) {
+                          removeSubType(selectedSubTypes[selectedSubTypes.length - 1]);
+                        }
+                      }}
+                      className="flex-1 min-w-[120px] bg-transparent focus:outline-none px-1 py-1 text-sm placeholder-text-gray"
+                    />
+                  </div>
+
+                  {showSubSuggestions && (
+                    <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
+                      {subArtistSuggestions
+                        .filter((s) =>
+                          s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                          !selectedSubTypes.includes(s)
+                        )
+                        .map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              addSubType(s);
+                              setSubInput("");
+                              setShowSubSuggestions(false);
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      {subArtistSuggestions.filter((s) =>
+                        s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                        !selectedSubTypes.includes(s)
+                      ).length === 0 && (
+                        <div className="px-3 py-2 text-sm text-text-gray">No suggestions</div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Artist Gender */}
@@ -344,7 +427,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Artist gender"
                     value={filters.gender}
                     options={genderOptions}
-                    onChange={(value) => onFilterChange("gender", value)}
+                    onChange={(value) => onFilterChange("gender", value as string)}
                     placeholder="Select gender"
                   />
                 </div>
@@ -355,7 +438,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Budget"
                     value={filters.budget}
                     options={budgetOptions}
-                    onChange={(value) => onFilterChange("budget", value)}
+                    onChange={(value) => onFilterChange("budget", value as string)}
                     placeholder="Select budget"
                   />
                 </div>
@@ -366,7 +449,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Event State"
                     value={filters.eventState}
                     options={eventStateOptions}
-                    onChange={(value) => onFilterChange("eventState", value)}
+                    onChange={(value) => onFilterChange("eventState", value as string)}
                     placeholder="Select State"
                   />
                 </div>
@@ -377,7 +460,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Event type"
                     value={filters.eventType}
                     options={eventTypeOptions}
-                    onChange={(value) => onFilterChange("eventType", value)}
+                    onChange={(value) => onFilterChange("eventType", value as string)}
                     placeholder="Select event type"
                   />
                 </div>
@@ -388,8 +471,19 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Preforming language"
                     value={filters.language}
                     options={languageOptions}
-                    onChange={(value) => onFilterChange("language", value)}
+                    onChange={(value) => onFilterChange("language", value as string)}
                     placeholder="Select language"
+                  />
+                </div>
+
+                {/* Artist Location */}
+                <div>
+                  <Select
+                    label="Artist Location"
+                    value={filters.location}
+                    options={locationOptions}
+                    onChange={(value) => onFilterChange("location", value as string)}
+                    placeholder="Select location"
                   />
                 </div>
               </div>

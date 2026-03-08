@@ -383,9 +383,9 @@ function SignUpContent() {
           <Image
             src="/logo.png"
             alt="ANDACTION Logo"
+            className="h-5 w-[180px] object-contain"
             width={180}
             height={20}
-            className="object-contain"
           />
         </div>
 

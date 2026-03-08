@@ -249,14 +249,14 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
           <span className="md:hidden h2">Profile Setup</span>
         </button>
 
-        <div>
+        {/* <div>
           <button
             onClick={onSkip}
             className="text-primary-pink hover:text-primary-orange transition-colors duration-200"
           >
             Skip
           </button>
-        </div>
+        </div> */}
       </div>
 
       <div className="h-px bg-border-line mb-4" />
@@ -325,19 +325,30 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                 onClick={() => setShowLanguagesDropdown(!showLanguagesDropdown)}
                 className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
               >
-                <span
-                  className={
-                    formData.performingLanguages.length > 0
-                      ? "text-white"
-                      : "text-text-gray"
-                  }
-                >
-                  {formData.performingLanguages.length > 0
-                    ? formData.performingLanguages.length === languages.length
-                      ? "All Languages"
-                      : `${formData.performingLanguages.length} language${formData.performingLanguages.length > 1 ? "s" : ""} selected`
-                    : "Select languages"}
-                </span>
+                <div className="flex-1 flex flex-wrap gap-2 items-center">
+                  {formData.performingLanguages.length === 0 ? (
+                    <span className="text-text-gray">Select languages</span>
+                  ) : formData.performingLanguages.length === languages.length ? (
+                    <span className="text-white">All Languages</span>
+                  ) : (
+                    formData.performingLanguages.map((val) => {
+                      const label = languages.find((l) => l.value === val)?.label || val;
+                      return (
+                        <span key={val} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+                          <span className="text-white">{label}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); toggleLanguageSelection(val); }}
+                            className="text-text-gray hover:text-white"
+                            aria-label={`Remove ${label}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })
+                  )}
+                </div>
                 <svg
                   className={`w-6 h-6 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
                   fill="none"
@@ -355,7 +366,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
               {/* Dropdown */}
               {showLanguagesDropdown && (
-                <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-64 overflow-auto">
+                <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg w-full h-[60vh] overflow-auto">
                   {/* All Languages checkbox */}
                   <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
                     <input
@@ -430,19 +441,30 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                 }
                 className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
               >
-                <span
-                  className={
-                    formData.performingEventTypes.length > 0
-                      ? "text-white"
-                      : "text-text-gray"
-                  }
-                >
-                  {formData.performingEventTypes.length > 0
-                    ? formData.performingEventTypes.length === eventTypes.length
-                      ? "All Event Types"
-                      : `${formData.performingEventTypes.length} event type${formData.performingEventTypes.length > 1 ? "s" : ""} selected`
-                    : "Select event types"}
-                </span>
+                <div className="flex-1 flex flex-wrap gap-2 items-center">
+                  {formData.performingEventTypes.length === 0 ? (
+                    <span className="text-text-gray">Select event types</span>
+                  ) : formData.performingEventTypes.length === eventTypes.length ? (
+                    <span className="text-white">All Event Types</span>
+                  ) : (
+                    formData.performingEventTypes.map((val) => {
+                      const label = eventTypes.find((l) => l.value === val)?.label || val;
+                      return (
+                        <span key={val} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+                          <span className="text-white">{label}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); toggleEventTypeSelection(val); }}
+                            className="text-text-gray hover:text-white"
+                            aria-label={`Remove ${label}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })
+                  )}
+                </div>
                 <svg
                   className={`w-6 h-6 text-text-gray transition-transform ${showEventTypesDropdown ? "rotate-180" : ""}`}
                   fill="none"
@@ -460,7 +482,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
               {/* Dropdown */}
               {showEventTypesDropdown && (
-                <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-64 overflow-auto">
+                <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg w-full h-[60vh] overflow-auto">
                   {/* All Event Types checkbox */}
                   <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
                     <input
@@ -536,19 +558,30 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                 onClick={() => setShowStatesDropdown(!showStatesDropdown)}
                 className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
               >
-                <span
-                  className={
-                    formData.performingStates.length > 0
-                      ? "text-white"
-                      : "text-text-gray"
-                  }
-                >
-                  {formData.performingStates.length > 0
-                    ? formData.performingStates.length === INDIAN_STATES.length
-                      ? "PAN India"
-                      : `${formData.performingStates.length} state${formData.performingStates.length > 1 ? "s" : ""} selected`
-                    : "Select states"}
-                </span>
+                <div className="flex-1 flex flex-wrap gap-2 items-center">
+                  {formData.performingStates.length === 0 ? (
+                    <span className="text-text-gray">Select states</span>
+                  ) : formData.performingStates.length === INDIAN_STATES.length ? (
+                    <span className="text-white">PAN India</span>
+                  ) : (
+                    formData.performingStates.map((val) => {
+                      const label = INDIAN_STATES.find((l) => l.value === val)?.label || val;
+                      return (
+                        <span key={val} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+                          <span className="text-white">{label}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); toggleStateSelection(val); }}
+                            className="text-text-gray hover:text-white"
+                            aria-label={`Remove ${label}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })
+                  )}
+                </div>
                 <svg
                   className={`w-6 h-6 text-text-gray transition-transform ${showStatesDropdown ? "rotate-180" : ""}`}
                   fill="none"
@@ -566,7 +599,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
               {/* Dropdown */}
               {showStatesDropdown && (
-                <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-64 overflow-auto">
+                <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg w-full h-[60vh] overflow-auto">
                   {/* PAN India checkbox */}
                   <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
                     <input

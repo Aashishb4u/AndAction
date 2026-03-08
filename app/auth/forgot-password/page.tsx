@@ -217,9 +217,9 @@ export default function ForgotPasswordPage() {
         <Image
           src="/logo.png"
           alt="ANDACTION Logo"
-          className="h-8 w-[150px] md:w-[215px] object-contain"
-          width={215}
-          height={24}
+          className="h-5 w-[180px] object-contain"
+          width={180}
+          height={20}
         />
 
         <button

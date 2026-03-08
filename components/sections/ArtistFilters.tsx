@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
-import { VIDEO_CATEGORIES, INDIAN_STATES } from "@/lib/constants";
+import { VIDEO_CATEGORIES, INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 
 interface FilterOption {
   value: string;
@@ -15,7 +16,7 @@ interface ArtistFiltersProps {
   filters: Filters;
   onFilterChange: (filterType: keyof Filters, value: string) => void;
   onReset: () => void;
-  onViewResult?: () => void; // NEW: handler for View Result button
+  onViewResult?: () => void;
   resultCount?: number;
   className?: string;
 }
@@ -24,14 +25,6 @@ interface ArtistFiltersProps {
 const categoryOptions: FilterOption[] = VIDEO_CATEGORIES.filter(
   (cat) => cat.value !== "all",
 ).map((cat) => ({ value: cat.value, label: cat.label }));
-
-const subCategoryOptions: FilterOption[] = [
-  { value: "bollywood", label: "Bollywood" },
-  { value: "classical", label: "Classical" },
-  { value: "folk", label: "Folk" },
-  { value: "western", label: "Western" },
-  { value: "devotional", label: "Devotional" },
-];
 
 const genderOptions: FilterOption[] = [
   { value: "male", label: "Male" },
@@ -65,6 +58,8 @@ const languageOptions: FilterOption[] = [
   { value: "punjabi", label: "Punjabi" },
 ];
 
+const locationOptions: FilterOption[] = INDIAN_CITIES;
+
 const FilterSelect: React.FC<{
   label: string;
   value: string;
@@ -77,7 +72,7 @@ const FilterSelect: React.FC<{
       label={label}
       value={value}
       options={options}
-      onChange={onChange}
+      onChange={(value) => onChange(value as string)}
       required={required}
       placeholder={`Select ${label}`}
     />
@@ -92,6 +87,27 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
   resultCount = 0,
   className = "",
 }) => {
+  const { subTypes: subArtistSuggestions } = useSubArtistTypes();
+  const [subInput, setSubInput] = useState("");
+  const [showSubSuggestions, setShowSubSuggestions] = useState(false);
+
+  // Parse comma-separated subCategory into array
+  const selectedSubTypes = filters.subCategory
+    ? filters.subCategory.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  const addSubType = (value: string) => {
+    if (!selectedSubTypes.includes(value)) {
+      const next = [...selectedSubTypes, value];
+      onFilterChange("subCategory", next.join(","));
+    }
+  };
+
+  const removeSubType = (value: string) => {
+    const next = selectedSubTypes.filter((t) => t !== value);
+    onFilterChange("subCategory", next.join(","));
+  };
+
   return (
     <div
       className={`bg-card rounded-2xl border border-border-color h-fit ${className}`}
@@ -154,12 +170,78 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
           required
         />
 
-        <FilterSelect
-          label="Sub-Category"
-          value={filters.subCategory}
-          options={subCategoryOptions}
-          onChange={(value) => onFilterChange("subCategory", value)}
-        />
+        {/* Sub-Category (multi-tag with search) */}
+        <div className="mb-6 relative">
+          <label className="block text-sm text-white mb-1">Sub-Category</label>
+          <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
+            {selectedSubTypes.map((tag) => (
+              <span key={tag} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+                <span className="text-white">{tag}</span>
+                <button
+                  type="button"
+                  onClick={() => removeSubType(tag)}
+                  className="text-text-gray hover:text-white"
+                  aria-label={`Remove ${tag}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              placeholder={selectedSubTypes.length === 0 ? "Type to search" : ""}
+              value={subInput}
+              onChange={(e) => {
+                setSubInput(e.target.value);
+                setShowSubSuggestions(true);
+              }}
+              onFocus={() => setShowSubSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === ",") {
+                  e.preventDefault();
+                  const v = subInput.trim().replace(/,$/, "");
+                  if (v) addSubType(v);
+                  setSubInput("");
+                } else if (e.key === "Backspace" && !subInput && selectedSubTypes.length > 0) {
+                  removeSubType(selectedSubTypes[selectedSubTypes.length - 1]);
+                }
+              }}
+              className="flex-1 min-w-[80px] bg-transparent focus:outline-none px-1 py-1 text-sm placeholder-text-gray"
+            />
+          </div>
+
+          {showSubSuggestions && (
+            <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
+              {subArtistSuggestions
+                .filter((s) =>
+                  s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                  !selectedSubTypes.includes(s)
+                )
+                .map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      addSubType(s);
+                      setSubInput("");
+                      setShowSubSuggestions(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
+                  >
+                    {s}
+                  </button>
+                ))}
+              {subArtistSuggestions.filter((s) =>
+                s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                !selectedSubTypes.includes(s)
+              ).length === 0 && (
+                <div className="px-3 py-2 text-sm text-text-gray">No suggestions</div>
+              )}
+            </div>
+          )}
+        </div>
 
         <FilterSelect
           label="Artist gender"
@@ -194,6 +276,13 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
           value={filters.language}
           options={languageOptions}
           onChange={(value) => onFilterChange("language", value)}
+        />
+
+        <FilterSelect
+          label="Artist Location"
+          value={filters.location}
+          options={locationOptions}
+          onChange={(value) => onFilterChange("location", value)}
         />
       </div>
 

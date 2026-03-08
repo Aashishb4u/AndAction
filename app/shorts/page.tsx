@@ -3,12 +3,14 @@
 import { VIDEO_CATEGORIES } from "@/lib/constants";
 import { useMemo } from "react";
 
+const SHORTS_PAGE_LIMIT = 5;
+
 const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
   const [_key, { category }] = queryKey;
   const url = category && category !== 'all'
-    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}&limit=12&random=true`
-    : `/api/videos?type=shorts&page=${pageParam}&limit=12&random=true`;
-
+    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}&limit=${SHORTS_PAGE_LIMIT}&random=true`
+    : `/api/videos?type=shorts&page=${pageParam}&limit=${SHORTS_PAGE_LIMIT}&random=true`;
+  
   const res = await fetch(url);
   const json = await res.json();
 
@@ -17,6 +19,7 @@ const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
     title: v.title,
     creator: `${v.user.firstName} ${v.user.lastName}`,
     creatorId: v.user.artist?.id,
+    category: v.user.artist?.artistType || "",
     userId: v.user.id, // Add userId for grouping
     avatar: v.user.avatar || v.user.image,
     videoUrl: v.url,
@@ -74,7 +77,7 @@ export default function ShortsPage() {
       queryFn: fetchShortsPage,
       initialPageParam: 1,
       getNextPageParam: (lastPage, allPages) => {
-        return lastPage && lastPage.length > 0
+        return lastPage && lastPage.length >= SHORTS_PAGE_LIMIT
           ? allPages.length + 1
           : undefined;
       },
@@ -133,10 +136,10 @@ export default function ShortsPage() {
   const velocityRef = useRef<number>(0);
   const lastTouchTime = useRef<number>(0);
 
-  // Load more videos when approaching the end
+  // Load more videos when approaching the end (trigger 3 items before end)
   const loadMoreVideos = useCallback(() => {
     if (
-      currentIndex >= groupedShorts.length - 2 &&
+      currentIndex >= groupedShorts.length - 3 &&
       hasNextPage &&
       !isFetchingNextPage
     ) {
@@ -452,7 +455,7 @@ export default function ShortsPage() {
     <SiteLayout showPreloader={false} hideNavbarOnMobile={true}>
       {/* Category Filter Header */}
       <div
-        className="fixed top-0 md:static md:mt-16 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-background-light backdrop-blur-sm p-4 border-y border-border-line"
+        className="fixed top-0 md:static md:mt-16 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-[#1B1B1B] backdrop-blur-sm p-4 border-y border-border-line"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {VIDEO_CATEGORIES.map((category) => (
@@ -465,7 +468,7 @@ export default function ShortsPage() {
             className={`px-4 py-2 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${
               selectedCategory === category.value
                 ? "bg-white border-white"
-                : "bg-transparent text-white border-[#2D2D2D] hover:border-gray-400"
+                : "bg-background text-white border-[#2D2D2D] hover:border-gray-400"
             }`}
           >
             <span
