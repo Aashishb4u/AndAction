@@ -180,8 +180,8 @@ export async function syncYouTubeVideosInternal(
 
     // Fetch videos from playlist
     const playlistUrl = useOAuth
-      ? `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50`
-      : `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50${apiKeyParam}`;
+      ? `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=30`
+      : `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=30${apiKeyParam}`;
 
     const playlistResponse = await fetch(playlistUrl, { headers: authHeader });
 

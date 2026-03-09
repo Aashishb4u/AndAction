@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -65,6 +66,7 @@ async function fetchVideos({
   withBookmarks = true,
   limit = 12,
   random = false,
+  seed,
 }: {
   pageParam?: number;
   type?: string;
@@ -72,6 +74,7 @@ async function fetchVideos({
   withBookmarks?: boolean;
   limit?: number;
   random?: boolean;
+  seed?: number;
 }): Promise<VideosResponse["data"]> {
   const params = new URLSearchParams({
     page: pageParam.toString(),
@@ -86,6 +89,9 @@ async function fetchVideos({
 
   if (random) {
     params.set("random", "true");
+    if (seed !== undefined) {
+      params.set("seed", seed.toString());
+    }
   }
 
   const response = await fetch(`/api/videos?${params.toString()}`);
@@ -107,10 +113,19 @@ export function useInfiniteVideos(options: UseVideosOptions = {}) {
     random = false,
   } = options;
 
+  const currentKey = `${type}:${category}`;
+  const [prevKey, setPrevKey] = useState(currentKey);
+  const [seed, setSeed] = useState(() => (random ? Math.random() * 2 - 1 : 0));
+
+  if (prevKey !== currentKey) {
+    setPrevKey(currentKey);
+    setSeed(random ? Math.random() * 2 - 1 : 0);
+  }
+
   return useInfiniteQuery({
-    queryKey: videoKeys.list({ type, category, withBookmarks, limit, random }),
+    queryKey: videoKeys.list({ type, category, withBookmarks, limit, random, seed: random ? seed : 0 } as any),
     queryFn: ({ pageParam }) =>
-      fetchVideos({ pageParam, type, category, withBookmarks, limit, random }),
+      fetchVideos({ pageParam, type, category, withBookmarks, limit, random, seed: random ? seed : undefined }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       return lastPage.pagination.hasNextPage
@@ -122,8 +137,8 @@ export function useInfiniteVideos(options: UseVideosOptions = {}) {
         ? firstPage.pagination.page - 1
         : undefined;
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 0, // always fetch fresh so random order changes on each visit/category switch
+    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
