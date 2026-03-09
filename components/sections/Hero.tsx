@@ -79,7 +79,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
       </div>
 
       {/* Curve with pink spotlight - positioned at the bottom of hero section */}
-      <div className="absolute left-0 right-0 pointer-events-none select-none -bottom-[10vh] md:-bottom-[12vh]" style={{ zIndex: 10000 }}>
+      <div className="absolute left-0 right-0 pointer-events-none select-none -bottom-[10vh] md:-bottom-[12vh]" style={{ zIndex: 1 }}>
         {/* Mobile Curve SVG */}
         <div className="block md:hidden w-full">
           <Image
@@ -108,11 +108,12 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         <div
           className="absolute left-1/2 top-0 pointer-events-none"
           style={{
-            width: '65%',
-            height: '350px',
+            width: '85%',
+            height: '1800px',
             transform: 'translate(-50%, 0)',
-            background: 'radial-gradient(ellipse 55% 65% at 50% 0%, rgba(255,45,122,0.32) 0%, rgba(255,45,122,0.16) 30%, rgba(255,45,122,0.05) 55%, transparent 80%)',
+            background: 'radial-gradient(ellipse 55% 65% at 50% 0%, rgba(255,45,122,0.32) 0%, rgba(255,45,122,0.16) 20%, rgba(255,45,122,0.08) 45%, rgba(255,45,122,0.03) 70%, transparent 95%)',
             zIndex: 1,
+            mixBlendMode: 'screen',
           }}
         />
       </div>
