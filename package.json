@@ -43,7 +43,8 @@
     "react-easy-crop": "^5.5.6",
     "react-player": "^3.4.0",
     "react-toastify": "^11.0.5",
-    "resend": "^6.5.2"
+    "resend": "^6.5.2",
+    "ssh2-sftp-client": "^12.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -51,6 +52,7 @@
     "@types/next-auth": "^3.15.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ssh2-sftp-client": "^9.0.6",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "tailwindcss": "^4",
