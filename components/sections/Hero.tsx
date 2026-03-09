@@ -40,12 +40,15 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           Your browser does not support the video tag.
         </video>
         {/* Dark Overlay */}
-        <div className={`absolute inset-0 bg-black/10 ${isLoaded ? 'hero-overlay-animate' : ''}`} />
+        <div
+          className={`absolute inset-0 ${isLoaded ? 'hero-overlay-animate' : ''}`}
+          style={{ backgroundColor: '#0F0F0FAA' }}
+        />
       </div>
       {/* Black Overlay */}
       <div
-        className={`absolute inset-0 bg-black/70 pointer-events-none ${isLoaded ? 'hero-overlay-animate' : ''
-          }`}
+        className={`absolute inset-0 pointer-events-none ${isLoaded ? 'hero-overlay-animate' : ''}`}
+        style={{ backgroundColor: '#0F0F0FAA' }}
       />
 
       {/* Content - centered in the video area */}
