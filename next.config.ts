@@ -29,9 +29,9 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
       {
-        protocol: "https",
-        hostname: "and-action-media.s3.ap-south-1.amazonaws.com",
-        pathname: "/**",
+        protocol: "http",
+        hostname: "72.62.227.114",
+        pathname: "/uploads/**",
       },
       {
         protocol: "https",

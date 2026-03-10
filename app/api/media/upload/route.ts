@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
-import { uploadToS3 } from "@/lib/s3";
+import { uploadToVPS, deleteFromVPS } from "@/lib/vps-upload";
 
 export async function POST(request: NextRequest): Promise<NextResponse<any>> {
   const session = await auth();
@@ -23,10 +23,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-
     const key = `${userId}/${Date.now()}.${fileExtension}`;
-    const fileUrl = await uploadToS3({buffer, key, mimeType});
+    const fileUrl = await uploadToVPS({buffer, key, mimeType});
     if (mimeType.startsWith("image/")) {
+      // Delete old profile photo from VPS to avoid orphaned files
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatar: true },
+      });
+      if (currentUser?.avatar) {
+        await deleteFromVPS(currentUser.avatar).catch(() => {});
+      }
+
       await prisma.user.update({
         where: { id: userId },
         data: { avatar: fileUrl },
