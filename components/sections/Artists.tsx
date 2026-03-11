@@ -14,7 +14,7 @@ const TITLE_MAP: Record<string, string> = {
   singers: "Singer",
   dancers: "Dancer / Dance Group",
   anchors: "Anchor / Emcee / Host",
-  djs: "DJ",
+  djs: "DJ / VJ",
   bands: "Live Band / Group",
   comedians: "Comedian",
   musicians: "Musician / Instrumentalist",
@@ -22,7 +22,7 @@ const TITLE_MAP: Record<string, string> = {
   actors: "Theatre Artist / Actor",
   mimicry: "Mimicry / Impressionist",
   specialAct: "Special Act Performer",
-  spiritual: "Spiritual / Devotional",
+  spiritual: "Devotional / Spiritual Singer",
   kidsEntertainers: "Kids Entertainer",
 };
 
