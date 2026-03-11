@@ -314,7 +314,7 @@ export default function VideoDetailsPage() {
       <div className="min-h-screen pb-6 md:pb-8">
         <div className="max-w-7xl mx-auto lg:px-8">
           {/* MAIN VIDEO - Sticky on mobile only */}
-          <div className="sticky top-0 lg:top-20 z-50 lg:static lg:mb-8 bg-black">
+          <div className="sticky top-0 lg:top-20 z-50 lg:static lg:mb-8 bg-[#0f0f0f]">
             <OptimizedVideoPlayer
               videoUrl={videoData.videoUrl}
               title={videoData.title}
@@ -327,7 +327,7 @@ export default function VideoDetailsPage() {
           </div>
 
           {/* SCROLLABLE CONTENT - Below video on mobile */}
-          <div className="bg-gradient-to-b from-black to-[#0a0a0a] lg:bg-none">
+          <div className="bg-[#0f0f0f] lg:bg-none">
             <div className="px-3 sm:px-6 lg:px-8 pt-4 lg:pt-0">
               <ArtistInfo
                 artist={videoData.artist}
