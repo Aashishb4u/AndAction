@@ -335,7 +335,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
 
       {/* BOTTOM INFO - Only this area is clickable for navigation */}
       <div className="mt-3 px-1 flex justify-between items-start gap-3">
-        <Link href={artistId ? `/artists/${artistId}?tab=videos` : `/videos/${id}`} className="flex gap-3 flex-1 min-w-0 items-center group/link">
+        <Link href={artistId ? `/artists/${artistId}?tab=about` : `/videos/${id}`} className="flex gap-3 flex-1 min-w-0 items-center group/link">
             <Image
               src={"/avatars/default.jpg"}
               alt={creator}
