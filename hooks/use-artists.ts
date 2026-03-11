@@ -16,6 +16,7 @@ export type ArtistType =
   | "dancer"
   | "anchor"
   | "dj"
+  | "dj-percussionist"
   | "band"
   | "comedian"
   | "musician"
@@ -146,6 +147,7 @@ export const ALL_ARTIST_TYPES: ArtistType[] = [
   "dancer",
   "anchor",
   "dj",
+  "dj-percussionist",
   "band",
   "comedian",
   "musician",
@@ -170,6 +172,7 @@ export function useAllArtists(
   const musiciansQuery = useArtistsByType("musician", location, verified);
   const magiciansQuery = useArtistsByType("magician", location, verified);
   const actorsQuery = useArtistsByType("actor", location, verified);
+  const djPercussionistsQuery = useArtistsByType("dj-percussionist", location, verified);
   const mimicryQuery = useArtistsByType("mimicry", location, verified);
   const specialActQuery = useArtistsByType("special-act", location, verified);
   const spiritualQuery = useArtistsByType("spiritual", location, verified);
@@ -189,6 +192,7 @@ export function useAllArtists(
     musicians: musiciansQuery.data?.artists || [],
     magicians: magiciansQuery.data?.artists || [],
     actors: actorsQuery.data?.artists || [],
+    djPercussionists: djPercussionistsQuery.data?.artists || [],
     mimicry: mimicryQuery.data?.artists || [],
     specialAct: specialActQuery.data?.artists || [],
     spiritual: spiritualQuery.data?.artists || [],
@@ -204,6 +208,7 @@ export function useAllArtists(
     musiciansMetadata: musiciansQuery.data?.metadata,
     magiciansMetadata: magiciansQuery.data?.metadata,
     actorsMetadata: actorsQuery.data?.metadata,
+    djPercussionistsMetadata: djPercussionistsQuery.data?.metadata,
     mimicryMetadata: mimicryQuery.data?.metadata,
     specialActMetadata: specialActQuery.data?.metadata,
     spiritualMetadata: spiritualQuery.data?.metadata,
@@ -219,6 +224,7 @@ export function useAllArtists(
       musiciansQuery.isLoading ||
       magiciansQuery.isLoading ||
       actorsQuery.isLoading ||
+      djPercussionistsQuery.isLoading ||
       mimicryQuery.isLoading ||
       specialActQuery.isLoading ||
       spiritualQuery.isLoading ||
@@ -233,6 +239,7 @@ export function useAllArtists(
       musiciansQuery.isError ||
       magiciansQuery.isError ||
       actorsQuery.isError ||
+      djPercussionistsQuery.isError ||
       mimicryQuery.isError ||
       specialActQuery.isError ||
       spiritualQuery.isError ||
@@ -247,6 +254,7 @@ export function useAllArtists(
       musiciansQuery.error ||
       magiciansQuery.error ||
       actorsQuery.error ||
+      djPercussionistsQuery.error ||
       mimicryQuery.error ||
       specialActQuery.error ||
       spiritualQuery.error ||
@@ -261,6 +269,7 @@ export function useAllArtists(
       musiciansQuery.refetch();
       magiciansQuery.refetch();
       actorsQuery.refetch();
+      djPercussionistsQuery.refetch();
       mimicryQuery.refetch();
       specialActQuery.refetch();
       spiritualQuery.refetch();

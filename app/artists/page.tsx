@@ -109,7 +109,8 @@ const getArtists = async (
 function normalizeTypeForRequest(type: string) {
   if (!type) return type;
   const t = type.toLowerCase();
-    if (t === 'band' || t === 'bands' || t === 'live band' || t === 'liveband') return 'Live Band ';
+  if (t === "band" || t === "bands" || t === "live band" || t === "liveband") return "Live Band";
+  if (t === "dj percussionist" || t === "dj-percussionist" || t === "djpercussionist") return "dj-percussionist";
   return type;
 }
 
