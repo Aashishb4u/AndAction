@@ -32,7 +32,7 @@ const getArtistCount = async (
     }
 
     // Filters
-    if (filters.category) params.set("type", filters.category);
+    if (filters.category) params.set("type", normalizeTypeForRequest(filters.category));
     if (filters.subCategory) params.set("subType", filters.subCategory);
     if (filters.gender) params.set("gender", filters.gender);
     if (filters.language) params.set("language", filters.language);
@@ -71,7 +71,7 @@ const getArtists = async (
     }
 
     // Filters
-    if (filters.category) params.set("type", filters.category);
+    if (filters.category) params.set("type", normalizeTypeForRequest(filters.category));
     if (filters.subCategory) params.set("subType", filters.subCategory);
     if (filters.gender) params.set("gender", filters.gender);
     if (filters.language) params.set("language", filters.language);
@@ -104,6 +104,14 @@ const getArtists = async (
     return { artists: [], total: 0 };
   }
 };
+
+// Normalize category values for API requests / URLs
+function normalizeTypeForRequest(type: string) {
+  if (!type) return type;
+  const t = type.toLowerCase();
+    if (t === 'band' || t === 'bands' || t === 'live band' || t === 'liveband') return 'Live Band ';
+  return type;
+}
 
 
 function ArtistsPageContent() {
