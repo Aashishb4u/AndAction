@@ -9,7 +9,7 @@ export const ARTIST_CATEGORIES = [
   { value: "magician", label: "Magician / Illusionist" },
   { value: "actor", label: "Theatre Artist / Actor" },
   { value: "anchor", label: "Anchor / Emcee / Host" },
-  { value: "band", label: "Live Band / Group" },
+  { value: "Live Band", label: "Live Band / Group" },
   { value: "dj", label: "DJ" },
   { value: "special-act", label: "Special Act Performer" },
   { value: "kids-entertainer", label: "Kids Entertainer" },
