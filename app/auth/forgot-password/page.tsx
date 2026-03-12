@@ -254,7 +254,7 @@ export default function ForgotPasswordPage() {
 
         {step === "email" ? (
           /* Email Step */
-          <div className="space-y-6">
+          <div className="space-y-6 mt-4">
             {/* Title */}
             <div>
               <h1 className="h1 text-white mb-2">Reset Password</h1>
