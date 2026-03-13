@@ -120,7 +120,7 @@ function ArtistProfileContent() {
   };
 
   return (
-    <ArtistDashboardLayout>
+    <ArtistDashboardLayout hideNavbar={true}>
       <div className="flex flex-col lg:flex-row md:gap-5 md:p-6 min-h-screen">
         {/* Left Side - Artist Profile Card */}
           <div className="w-full lg:w-80 flex-shrink-0 max-w-screen overflow-hidden">

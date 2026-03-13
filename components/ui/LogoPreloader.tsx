@@ -75,7 +75,7 @@ const LogoPreloader: React.FC<LogoPreloaderProps> = ({
         `}>
           <div className="relative">
             <Image
-              src="/logo.png"
+              src="/icons/logo.jpeg"
               alt="ANDACTION Logo"
               width={250}
               height={250}
