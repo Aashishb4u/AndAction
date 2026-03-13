@@ -400,32 +400,69 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
           </button>
 
           {showLanguagesDropdown && (
-            <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg w-full max-h-60 overflow-auto">
-              <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
-                <input
-                  type="checkbox"
-                  checked={(formData.performingLanguage || []).length === languages.length}
-                  onChange={toggleAllLanguages}
-                  className="w-4 h-4 accent-primary-pink rounded"
-                />
-                <span className="text-white font-medium">All Languages</span>
-              </label>
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99998]"
+                onClick={() => setShowLanguagesDropdown(false)}
+              />
 
-              {languages.map((language) => (
-                <label
-                  key={language.value}
-                  className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={(formData.performingLanguage || []).includes(language.value)}
-                    onChange={() => toggleLanguageSelection(language.value)}
-                    className="w-4 h-4 accent-primary-pink rounded"
-                  />
-                  <span className="text-white text-sm">{language.label}</span>
-                </label>
-              ))}
-            </div>
+              {/* Full-screen language picker */}
+              <div className="fixed inset-0 md:inset-auto md:absolute md:left-0 md:right-0 md:mt-1 z-[99999] flex flex-col bg-background md:bg-card md:border md:border-border-color md:rounded-lg md:shadow-lg md:max-h-80">
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border-color">
+                  <h3 className="text-white font-semibold text-lg">Select Languages</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowLanguagesDropdown(false)}
+                    className="p-1 text-text-gray hover:text-white transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Scrollable list */}
+                <div className="flex-1 overflow-y-auto">
+                  <label className="flex items-center gap-3 px-5 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
+                    <input
+                      type="checkbox"
+                      checked={(formData.performingLanguage || []).length === languages.length}
+                      onChange={toggleAllLanguages}
+                      className="w-5 h-5 accent-primary-pink rounded"
+                    />
+                    <span className="text-white font-medium">All Languages</span>
+                  </label>
+
+                  {languages.map((language) => (
+                    <label
+                      key={language.value}
+                      className="flex items-center gap-3 px-5 py-3 hover:bg-background-light cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(formData.performingLanguage || []).includes(language.value)}
+                        onChange={() => toggleLanguageSelection(language.value)}
+                        className="w-5 h-5 accent-primary-pink rounded"
+                      />
+                      <span className="text-white">{language.label}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {/* Done button */}
+                <div className="px-5 py-4 border-t border-border-color">
+                  <button
+                    type="button"
+                    onClick={() => setShowLanguagesDropdown(false)}
+                    className="w-full py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-lg"
+                  >
+                    Done {(formData.performingLanguage || []).length > 0 && `(${(formData.performingLanguage || []).length})`}
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </div>
 

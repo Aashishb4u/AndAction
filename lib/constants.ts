@@ -11,6 +11,7 @@ export const ARTIST_CATEGORIES = [
   { value: "anchor", label: "Anchor / Emcee / Host" },
   { value: "Live Band", label: "Live Band / Group" },
   { value: "dj", label: "DJ" },
+  { value: "dj-percussionist", label: "DJ Percussionist" },
   { value: "special-act", label: "Special Act Performer" },
   { value: "kids-entertainer", label: "Kids Entertainer" },
 ];
