@@ -10,11 +10,13 @@ import { useSession } from 'next-auth/react';
 interface ArtistDashboardLayoutProps {
   children: React.ReactNode;
   className?: string;
+  hideNavbar?: boolean;
 }
 
 const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
   children,
   className = '',
+  hideNavbar = false,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -31,7 +33,8 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
   return (
     <div className={`min-h-screen bg-black ${className}`}>
       {/* Navigation Bar */}
-      <nav className="flex items-center justify-between px-6 py-4 container mx-auto">
+      {!hideNavbar && (
+        <nav className="flex items-center justify-between px-6 py-4 container mx-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Image src="/logo.png" alt="ANDACTION Logo" width={180} height={180} />
@@ -63,7 +66,8 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
             <Menu className="w-6 h-6" />
           </button>
         </div>
-      </nav>
+        </nav>
+      )}
 
       {/* Sidebar */}
       <ArtistSidebar isOpen={isSidebarOpen} onClose={closeSidebar} />

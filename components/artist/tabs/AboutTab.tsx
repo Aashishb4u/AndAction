@@ -12,7 +12,7 @@ import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
 import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
 import { toast } from "react-toastify";
-import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES, INDIAN_CITIES, ARTIST_CATEGORIES } from "@/lib/constants";
 
 // Extended artist type for profile management
 type ExtendedArtist = Artist & {
@@ -38,21 +38,7 @@ const genderOptions = [
   { value: "prefer-not-to-say", label: "Prefer not to say" },
 ];
 
-const artistTypeOptions = [
-  { value: "singer", label: "Singer" },
-  { value: "dancer", label: "Dancer/Dance Group" },
-  { value: "musician", label: "Musician/Instrumentalist" },
-  { value: "comedian", label: "Comedian" },
-  { value: "magician", label: "Magician/Illusionist" },
-  { value: "actor", label: "Theatre Artist/Actor" },
-  { value: "anchor", label: "Anchor/Emcee/Host" },
-  { value: "band", label: "Live Band/Group" },
-  { value: "dj", label: "DJ" },
-  { value: "mimicry", label: "Mimicry/Impressionist" },
-  { value: "special-act", label: "Special Act Performer" },
-  { value: "spiritual", label: "Spiritual/Devotional" },
-  { value: "kids-entertainer", label: "Kids Entertainer" },
-];
+// Use `ARTIST_CATEGORIES` from constants for category options
 
 const subArtistTypeOptions = [
   { value: "classical", label: "Classical" },
@@ -200,21 +186,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         </div>
       </div>
 
-      {/* Artist Category */}
-      <div className="relative text-sm">
-        <Select
-          label="Artist Category*"
-          options={artistTypeOptions}
-          value={formData.artistType}
-          onChange={(value) => handleInputChange("artistType", value)}
-          required
-        />
-        <div className="absolute top-0 right-0">
-          <Tooltip content="Select the primary category that best describes your art form">
-            <Info size={16} className="text-blue" />
-          </Tooltip>
-        </div>
-      </div>
+
       {/* First Name and Last Name */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">       <Input
           label="First name*"
@@ -281,8 +253,23 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         />
       </div>
 
-      {/* Sub-Artist Type (tag-style multi-select) */}
+            {/* Artist Category */}
       <div className="relative text-sm">
+        <Select
+          label="Artist Category*"
+          options={ARTIST_CATEGORIES}
+          value={formData.artistType}
+          onChange={(value) => handleInputChange("artistType", value)}
+          required
+        />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Select the primary category that best describes your art form">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* Sub-Artist Type (tag-style multi-select) */}      <div className="relative text-sm">
         <label className="block secondary-text text-white mb-1">Sub-Artist type*</label>
         <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
           {selectedSubTypes.map((tag, idx) => (

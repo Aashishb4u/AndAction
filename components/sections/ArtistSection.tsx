@@ -58,9 +58,10 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   const getTypeParam = () => {
     if (categoryKey) return getValueForKey(categoryKey);
     let typeParam = title.toLowerCase();
-    if (typeParam.includes('dj')) typeParam = 'DJ';
+    if (typeParam.includes('percussion')) typeParam = 'Dj Percussionist';
+    else if (typeParam.includes('dj')) typeParam = 'DJ';
     else if (typeParam.includes('anchor')) typeParam = 'anchor';
-    else if (typeParam.includes('band')) typeParam = 'Live Band ';
+    else if (typeParam.includes('band')) typeParam = 'Live Band';
     else if (typeParam.includes('actor')) typeParam = 'actor';
     else if (typeParam.includes('singer')) typeParam = 'singer';
     else if (typeParam.includes('dancer')) typeParam = 'dancer';
