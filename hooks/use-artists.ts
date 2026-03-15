@@ -99,7 +99,10 @@ async function fetchArtistsByType({
   artists: Artist[];
   metadata?: SearchMetadata;
 }> {
-  let url = `/api/artists/nearby?type=${type}&verified=${verified}&minResults=${minResults}&maxRadius=${maxRadius}`;
+  // Normalize type for request (map internal 'band' to the display/API 'Live Band')
+  const typeParam = type === 'band' ? 'Live Band ' : type;
+
+  let url = `/api/artists/nearby?type=${encodeURIComponent(typeParam)}&verified=${verified}&minResults=${minResults}&maxRadius=${maxRadius}`;
 
   if (location?.lat && location?.lng) {
     url += `&lat=${location.lat}&lng=${location.lng}`;
