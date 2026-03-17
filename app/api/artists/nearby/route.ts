@@ -39,9 +39,6 @@ async function countArtistsInRadius(
   verified: boolean,
 ): Promise<number> {
   const typeMatches = getArtistTypeMatches(type);
-  const typeConditions = typeMatches
-    .map(() => 'a."artistType" = ?')
-    .join(" OR ");
 
   const result = await prisma.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*) as count
@@ -211,7 +208,6 @@ async function fetchArtistsWithProgressiveSearch(
 
   let nearbyCount = 0;
   let expandedCount = 0;
-  let nationwideCount = 0;
 
   // Try each radius progressively
   for (const radius of radiusSteps) {
@@ -261,21 +257,29 @@ async function fetchArtistsWithProgressiveSearch(
     }
   }
 
-  // Fallback: Not enough in any radius, get nationwide
+  // Strict fallback: return artists within maxRadius only (no nationwide spillover)
+  const artists = await fetchArtistsInRadius(
+    type,
+    userLat,
+    userLng,
+    maxRadius,
+    verified,
+    50,
+  );
 
-  const artists = await fetchTopRatedNationwide(type, verified, minResults);
-  nationwideCount = artists.length;
+  nearbyCount = artists.filter((a) => a.distance && a.distance <= 50).length;
+  expandedCount = artists.filter((a) => a.distance && a.distance > 50).length;
 
   return {
     artists,
     metadata: {
-      strategy: "nationwide",
+      strategy: maxRadius <= 100 ? "nearby" : "expanded",
       radiusUsed: maxRadius,
       totalFound: artists.length,
-      nearbyCount: 0,
-      expandedCount: 0,
-      nationwideCount,
-      message: getSearchMessage("nationwide", maxRadius),
+      nearbyCount,
+      expandedCount,
+      nationwideCount: 0,
+      message: getSearchMessage(maxRadius <= 100 ? "nearby" : "expanded", maxRadius),
       userLocation: { lat: userLat, lng: userLng },
     } as SearchMetadata,
   };
@@ -305,7 +309,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     // If location not provided, return artists without distance filtering
-    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+    if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
       const artists = await fetchTopRatedNationwide(type, verified, 50);
 
       return successResponse(

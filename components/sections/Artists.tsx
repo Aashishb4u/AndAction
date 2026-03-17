@@ -55,6 +55,21 @@ function prettifyKey(key: string) {
 }
 
 export default function Artists({ location }: ArtistsProps) {
+  const normalizedLocation = useMemo(() => {
+    if (!location) return null;
+
+    const { lat, lng } = location;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return null;
+    }
+
+    return { lat, lng };
+  }, [location]);
+
+  const locationQueryKey = normalizedLocation
+    ? `${normalizedLocation.lat.toFixed(4)},${normalizedLocation.lng.toFixed(4)}`
+    : "all";
+
   const {
     singers,
     dancers,
@@ -71,7 +86,7 @@ export default function Artists({ location }: ArtistsProps) {
     spiritual,
     kidsEntertainers,
     isLoading,
-  } = useAllArtists(location, false);
+  } = useAllArtists(normalizedLocation, false);
 
   // Map category keys to their artist arrays (memoized to keep stable ref)
   const categoryData: Record<string, any[]> = useMemo(
@@ -182,6 +197,11 @@ export default function Artists({ location }: ArtistsProps) {
       setVisibleCategoryCount(CATEGORIES_PER_LOAD);
     }
   }, [isLoading]);
+
+  useEffect(() => {
+    setVisibleCategoryCount(CATEGORIES_PER_LOAD);
+    setLoadingMore(false);
+  }, [locationQueryKey]);
 
   return (
     <section className="relative w-full pt-2 pb-20 md:pb-8 overflow-hidden">
