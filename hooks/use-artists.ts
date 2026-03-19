@@ -105,7 +105,7 @@ async function fetchArtistsByType({
 
   let url = `/api/artists/nearby?type=${encodeURIComponent(typeParam)}&verified=${verified}&minResults=${minResults}&maxRadius=${maxRadius}`;
 
-  if (location?.lat && location?.lng) {
+  if (location && Number.isFinite(location.lat) && Number.isFinite(location.lng)) {
     url += `&lat=${location.lat}&lng=${location.lng}`;
   }
 
