@@ -7,6 +7,7 @@ import { useAllArtists } from "@/hooks/use-artists";
 
 interface ArtistsProps {
   location: { lat: number; lng: number } | null;
+  canFetch?: boolean;
 }
 
 // Known display titles for categories (fallback will prettify keys)
@@ -54,7 +55,7 @@ function prettifyKey(key: string) {
   return withoutS.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export default function Artists({ location }: ArtistsProps) {
+export default function Artists({ location, canFetch = true }: ArtistsProps) {
   const normalizedLocation = useMemo(() => {
     if (!location) return null;
 
@@ -86,7 +87,9 @@ export default function Artists({ location }: ArtistsProps) {
     spiritual,
     kidsEntertainers,
     isLoading,
-  } = useAllArtists(normalizedLocation, false);
+  } = useAllArtists(normalizedLocation, false, canFetch);
+
+  const shouldShowLoading = !canFetch || isLoading;
 
   // Map category keys to their artist arrays (memoized to keep stable ref)
   const categoryData: Record<string, any[]> = useMemo(
@@ -172,7 +175,7 @@ export default function Artists({ location }: ArtistsProps) {
 
   // Intersection observer for infinite scroll
   useEffect(() => {
-    if (!observerRef.current || isLoading) return;
+    if (!observerRef.current || shouldShowLoading) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -189,14 +192,14 @@ export default function Artists({ location }: ArtistsProps) {
     return () => {
       if (target) observer.unobserve(target);
     };
-  }, [loadMoreCategories, hasMoreToLoad, loadingMore, isLoading]);
+  }, [loadMoreCategories, hasMoreToLoad, loadingMore, shouldShowLoading]);
 
   // Reset visible category count when data changes
   useEffect(() => {
-    if (!isLoading) {
+    if (!shouldShowLoading) {
       setVisibleCategoryCount(CATEGORIES_PER_LOAD);
     }
-  }, [isLoading]);
+  }, [shouldShowLoading]);
 
   useEffect(() => {
     setVisibleCategoryCount(CATEGORIES_PER_LOAD);
@@ -248,7 +251,7 @@ export default function Artists({ location }: ArtistsProps) {
 
       {/* Content */}
       <div className="relative z-20 max-w-7xl mx-auto space-y-6">
-        {isLoading ? (
+        {shouldShowLoading ? (
           <>
             {PREFERRED_ORDER.slice(0, CATEGORIES_PER_LOAD).map((key) => (
               <ArtistSectionSkeleton

@@ -38,6 +38,7 @@ interface FetchArtistsParams {
   verified?: boolean;
   minResults?: number;
   maxRadius?: number;
+  enabled?: boolean;
 }
 
 interface SearchMetadata {
@@ -127,10 +128,12 @@ export function useArtistsByType(
   type: ArtistType,
   location: LocationParams | null = null,
   verified: boolean = false,
+  enabled: boolean = true,
 ) {
   return useQuery({
     queryKey: artistKeys.byTypeWithLocation(type, location),
     queryFn: () => fetchArtistsByType({ type, location, verified }),
+    enabled,
     staleTime: 1000 * 60 * 10, // 10 minutes - data stays fresh longer
     gcTime: 1000 * 60 * 30, // 30 minutes - keep in cache longer
     refetchOnWindowFocus: false,
@@ -162,24 +165,26 @@ export const ALL_ARTIST_TYPES: ArtistType[] = [
 export function useAllArtists(
   location: LocationParams | null = null,
   verified: boolean = false,
+  enabled: boolean = true,
 ) {
-  const singersQuery = useArtistsByType("singer", location, verified);
-  const dancersQuery = useArtistsByType("dancer", location, verified);
-  const anchorsQuery = useArtistsByType("anchor", location, verified);
-  const djsQuery = useArtistsByType("dj", location, verified);
-  const bandsQuery = useArtistsByType("band", location, verified);
-  const comediansQuery = useArtistsByType("comedian", location, verified);
-  const musiciansQuery = useArtistsByType("musician", location, verified);
-  const magiciansQuery = useArtistsByType("magician", location, verified);
-  const actorsQuery = useArtistsByType("actor", location, verified);
-  const djPercussionistsQuery = useArtistsByType("dj-percussionist", location, verified);
-  const mimicryQuery = useArtistsByType("mimicry", location, verified);
-  const specialActQuery = useArtistsByType("special-act", location, verified);
-  const spiritualQuery = useArtistsByType("spiritual", location, verified);
+  const singersQuery = useArtistsByType("singer", location, verified, enabled);
+  const dancersQuery = useArtistsByType("dancer", location, verified, enabled);
+  const anchorsQuery = useArtistsByType("anchor", location, verified, enabled);
+  const djsQuery = useArtistsByType("dj", location, verified, enabled);
+  const bandsQuery = useArtistsByType("band", location, verified, enabled);
+  const comediansQuery = useArtistsByType("comedian", location, verified, enabled);
+  const musiciansQuery = useArtistsByType("musician", location, verified, enabled);
+  const magiciansQuery = useArtistsByType("magician", location, verified, enabled);
+  const actorsQuery = useArtistsByType("actor", location, verified, enabled);
+  const djPercussionistsQuery = useArtistsByType("dj-percussionist", location, verified, enabled);
+  const mimicryQuery = useArtistsByType("mimicry", location, verified, enabled);
+  const specialActQuery = useArtistsByType("special-act", location, verified, enabled);
+  const spiritualQuery = useArtistsByType("spiritual", location, verified, enabled);
   const kidsEntertainerQuery = useArtistsByType(
     "kids-entertainer",
     location,
     verified,
+    enabled,
   );
 
   return {
