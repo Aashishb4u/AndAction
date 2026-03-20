@@ -114,6 +114,12 @@ function normalizeTypeForRequest(type: string) {
   return type;
 }
 
+function normalizeTypeForUrl(type: string) {
+  const normalized = normalizeTypeForRequest(type);
+  if (normalized.toLowerCase() === "live band") return "Live Band ";
+  return normalized;
+}
+
 
 function ArtistsPageContent() {
   const router = useRouter();
@@ -124,7 +130,7 @@ function ArtistsPageContent() {
   const getInitialFilters = () => {
     const params = searchParams;
     return {
-      category: params.get("type") || "",
+      category: (params.get("type") || "").trim(),
       subCategory: params.get("subType") || "",
       gender: params.get("gender") || "",
       budget: params.get("budget") || "",
@@ -196,7 +202,7 @@ function ArtistsPageContent() {
   const updateURL = () => {
     const params = new URLSearchParams();
     if (query) params.set("search", query);
-    if (filters.category) params.set("type", filters.category);
+    if (filters.category) params.set("type", normalizeTypeForUrl(filters.category));
     if (filters.subCategory) params.set("subType", filters.subCategory);
     if (filters.gender) params.set("gender", filters.gender);
     if (filters.language) params.set("language", filters.language);

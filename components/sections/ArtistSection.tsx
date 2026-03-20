@@ -61,12 +61,12 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
     if (typeParam.includes('percussion')) typeParam = 'Dj Percussionist';
     else if (typeParam.includes('dj')) typeParam = 'DJ';
     else if (typeParam.includes('anchor')) typeParam = 'anchor';
-    else if (typeParam.includes('band')) typeParam = 'Live Band';
+    else if (typeParam.includes('band')) typeParam = 'Live Band ';
     else if (typeParam.includes('actor')) typeParam = 'actor';
     else if (typeParam.includes('singer')) typeParam = 'singer';
     else if (typeParam.includes('dancer')) typeParam = 'dancer';
     else if (typeParam.includes('comedian')) typeParam = 'comedian';
-    else if (typeParam.includes('musician')) typeParam = 'musicians';
+    else if (typeParam.includes('musician')) typeParam = 'musician';
     else if (typeParam.includes('magician')) typeParam = 'magician';
     else if (typeParam.includes('mimicry')) typeParam = 'mimicry';
     else if (typeParam.includes('special act')) typeParam = 'specialAct';
@@ -79,7 +79,8 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
     if (artists.length === 0) {
       setShowNoArtistModal(true);
     } else {
-      router.push(`/artists?type=${encodeURIComponent(getTypeParam())}`);
+      const params = new URLSearchParams({ type: getTypeParam() });
+      router.push(`/artists?${params.toString()}`);
     }
   };
 

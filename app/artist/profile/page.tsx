@@ -7,6 +7,7 @@ import ArtistProfileTabs from "@/components/artist/ArtistProfileTabs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
+import { ARTIST_CATEGORIES } from "@/lib/constants";
 
 function ArtistProfileContent() {
   const searchParams = useSearchParams();
@@ -56,6 +57,17 @@ function ArtistProfileContent() {
   const user = session?.user;
   const artistProfile = user?.artistProfile;
 
+  const displayArtistType = (() => {
+    const rawType = artistProfile?.artistType?.trim() || "";
+    if (!rawType) return "Artist";
+
+    const match = ARTIST_CATEGORIES.find(
+      (item) => item.value.toLowerCase() === rawType.toLowerCase()
+    );
+
+    return match?.label || rawType;
+  })();
+
 
   if (!user || !artistProfile) {
     return (
@@ -72,7 +84,7 @@ function ArtistProfileContent() {
     name:
       artistProfile.stageName ||
       `${user.firstName || ""} ${user.lastName || ""}`.trim(),
-    category: artistProfile.artistType || "Artist",
+    category: displayArtistType,
     location: `${user.city || ""}${user.state ? `, ${user.state}` : ""}`,
     duration: "2-4 hours",
     startingPrice: 25000,
