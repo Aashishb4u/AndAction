@@ -31,6 +31,37 @@ function getSearchMessage(strategy: string, radius: number): string {
   }
 }
 
+function calculateDistanceKm(
+  userLat: number,
+  userLng: number,
+  targetLat: number,
+  targetLng: number,
+): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(targetLat - userLat);
+  const dLng = toRad(targetLng - userLng);
+  const lat1 = toRad(userLat);
+  const lat2 = toRad(targetLat);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return 6371 * c;
+}
+
+function sortArtistsByDistance<T extends { distance: number | null }>(
+  artists: T[],
+): T[] {
+  return [...artists].sort((a, b) => {
+    if (a.distance === null && b.distance === null) return 0;
+    if (a.distance === null) return 1;
+    if (b.distance === null) return -1;
+    return a.distance - b.distance;
+  });
+}
+
 async function countArtistsInRadius(
   type: string,
   userLat: number,
@@ -257,8 +288,8 @@ async function fetchArtistsWithProgressiveSearch(
     }
   }
 
-  // Strict fallback: return artists within maxRadius only (no nationwide spillover)
-  const artists = await fetchArtistsInRadius(
+  // Fallback: keep nearby artists first, then fill with additional artists and sort by proximity.
+  const nearbyArtists = await fetchArtistsInRadius(
     type,
     userLat,
     userLng,
@@ -267,19 +298,59 @@ async function fetchArtistsWithProgressiveSearch(
     50,
   );
 
+  const nearbyIds = new Set(nearbyArtists.map((artist) => artist.id));
+
+  const nationwideCandidates = await fetchTopRatedNationwide(type, verified, 50);
+  const supplementalArtists = nationwideCandidates
+    .filter((artist) => !nearbyIds.has(artist.id))
+    .map((artist) => {
+      if (
+        typeof artist.user.latitude === "number" &&
+        typeof artist.user.longitude === "number"
+      ) {
+        return {
+          ...artist,
+          distance: calculateDistanceKm(
+            userLat,
+            userLng,
+            artist.user.latitude,
+            artist.user.longitude,
+          ),
+        };
+      }
+
+      return {
+        ...artist,
+        distance: null,
+      };
+    });
+
+  const artists = sortArtistsByDistance([
+    ...nearbyArtists,
+    ...supplementalArtists,
+  ]).slice(0, 50);
+
   nearbyCount = artists.filter((a) => a.distance && a.distance <= 50).length;
   expandedCount = artists.filter((a) => a.distance && a.distance > 50).length;
+  const nationwideCount = artists.filter((a) => a.distance === null).length;
+
+  const strategy =
+    nationwideCount > 0
+      ? "nationwide"
+      : maxRadius <= 100
+        ? "nearby"
+        : "expanded";
 
   return {
     artists,
     metadata: {
-      strategy: maxRadius <= 100 ? "nearby" : "expanded",
+      strategy,
       radiusUsed: maxRadius,
       totalFound: artists.length,
       nearbyCount,
       expandedCount,
-      nationwideCount: 0,
-      message: getSearchMessage(maxRadius <= 100 ? "nearby" : "expanded", maxRadius),
+      nationwideCount,
+      message: getSearchMessage(strategy, maxRadius),
       userLocation: { lat: userLat, lng: userLng },
     } as SearchMetadata,
   };

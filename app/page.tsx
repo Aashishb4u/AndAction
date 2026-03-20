@@ -10,17 +10,35 @@ import Image from 'next/image';
 export default function Home() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [locationAsked, setLocationAsked] = useState(false);
+  const [isLocationResolved, setIsLocationResolved] = useState(false);
 
   // Check if we should show the location modal on mount
   useEffect(() => {
     // Check if user has already responded to location request
     const locationPreference = localStorage.getItem('locationPermissionAsked');
     if (locationPreference) {
-      setLocationAsked(true);
       // If they previously allowed, try to get location silently
       if (locationPreference === 'allowed') {
+        const cachedLocation = localStorage.getItem('userLocationCoords');
+        if (cachedLocation) {
+          try {
+            const parsed = JSON.parse(cachedLocation) as { lat?: number; lng?: number };
+            if (
+              typeof parsed.lat === 'number' &&
+              Number.isFinite(parsed.lat) &&
+              typeof parsed.lng === 'number' &&
+              Number.isFinite(parsed.lng)
+            ) {
+              setLocation({ lat: parsed.lat, lng: parsed.lng });
+              setIsLocationResolved(true);
+            }
+          } catch {
+            // Ignore invalid cached location and continue with live geolocation.
+          }
+        }
         requestLocation();
+      } else {
+        setIsLocationResolved(true);
       }
     } else {
       // Show custom modal after a short delay
@@ -34,25 +52,28 @@ export default function Home() {
   const requestLocation = () => {
     if (!navigator.geolocation) {
       setShowLocationModal(false);
+      setIsLocationResolved(true);
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLocation({
+        const nextLocation = {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
-        });
+        };
+        setLocation(nextLocation);
         localStorage.setItem('locationPermissionAsked', 'allowed');
+        localStorage.setItem('userLocationCoords', JSON.stringify(nextLocation));
         setShowLocationModal(false);
-        setLocationAsked(true);
+        setIsLocationResolved(true);
       },
       (err) => {
         console.error("Location permission denied", err);
         setLocation(null);
         localStorage.setItem('locationPermissionAsked', 'denied');
         setShowLocationModal(false);
-        setLocationAsked(true);
+        setIsLocationResolved(true);
       },
       { enableHighAccuracy: true }
     );
@@ -65,7 +86,7 @@ export default function Home() {
   const handleSkipLocation = () => {
     localStorage.setItem('locationPermissionAsked', 'denied');
     setShowLocationModal(false);
-    setLocationAsked(true);
+    setIsLocationResolved(true);
   };
 
   return (
@@ -73,7 +94,7 @@ export default function Home() {
       <Hero />
 
       {/* PASS LOCATION DOWN TO CHILD */}
-      <Artists location={location} />
+      <Artists location={location} canFetch={isLocationResolved} />
 
       {/* Custom Location Permission Modal */}
       {showLocationModal && (
