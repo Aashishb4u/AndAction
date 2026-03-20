@@ -126,7 +126,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 onClick={() => {
                   onClose();
                   if (user.role === "artist") {
-                    router.push("/artist/profile");
+                    router.push("/artist/dashboard");
                   } else {
                     router.push("/user/profile");
                   }
