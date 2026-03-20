@@ -29,15 +29,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
       // Delete old profile photo from VPS to avoid orphaned files
       const currentUser = await prisma.user.findUnique({
         where: { id: userId },
-        select: { avatar: true },
+        select: { avatar: true, image: true },
       });
       if (currentUser?.avatar) {
         await deleteFromVPS(currentUser.avatar).catch(() => {});
       }
+      if (currentUser?.image && currentUser.image !== currentUser.avatar) {
+        await deleteFromVPS(currentUser.image).catch(() => {});
+      }
 
       await prisma.user.update({
         where: { id: userId },
-        data: { avatar: fileUrl },
+        data: { avatar: fileUrl, image: fileUrl },
       });
 
       return successResponse(
