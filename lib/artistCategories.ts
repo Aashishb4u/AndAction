@@ -44,6 +44,7 @@ export function prettifyKey(key: string) {
 export const VALUE_TO_KEY: Record<string, string> = {
   singer: 'singers',
   dancer: 'dancers',
+  musician: 'musicians',
   musicians: 'musicians',
   anchor: 'anchors',
   DJ: 'djs',

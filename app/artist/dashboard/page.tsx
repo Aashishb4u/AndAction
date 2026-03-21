@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import { Pencil } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { BookingStatus } from "@prisma/client";
+import { ARTIST_CATEGORIES } from "@/lib/constants";
 
 /* ----------------------------------------------------
    FORMAT DATE
@@ -153,6 +154,17 @@ export default function ArtistDashboard() {
     session?.user?.lastName ?? ""
   }`.trim();
 
+  const displayArtistType = (() => {
+    const rawType = artist?.artistType?.trim() || "";
+    if (!rawType) return "";
+
+    const match = ARTIST_CATEGORIES.find(
+      (item) => item.value.toLowerCase() === rawType.toLowerCase()
+    );
+
+    return match?.label || rawType;
+  })();
+
   const totalBookings = Object.values(bookings).flat().length;
 
   /* ----------------------------------------------------
@@ -183,7 +195,7 @@ export default function ArtistDashboard() {
                   {artist?.stageName || fullName}
                 </h2>
                 <p className="text-md text-text-gray">{session?.user?.email}</p>
-                <p className="text-lg mt-1">{artist?.artistType || ""}</p>
+                <p className="text-base mt-1">{displayArtistType}</p>
 
                 <div className="mt-3 w-full">
                   <Button
@@ -259,7 +271,7 @@ export default function ArtistDashboard() {
                 <h2 className="text-xl font-bold mb-1">
                   {artist?.stageName || fullName}
                   <span className="text-sm font-medium ml-1">
-                    ({artist?.artistType || "Performer"})
+                    ({displayArtistType || "Performer"})
                   </span>
                 </h2>
 

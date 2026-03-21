@@ -19,7 +19,7 @@ const TITLE_MAP: Record<string, string> = {
   djPercussionists: "DJ Percussionist",
   bands: "Live Band / Group",
   comedians: "Comedian",
-  musicians: "Musician / Instrumentalist",
+  musician: "Musician / Instrumentalist",
   magicians: "Magician / Illusionist",
   actors: "Theatre Artist / Actor",
   mimicry: "Mimicry / Impressionist",
