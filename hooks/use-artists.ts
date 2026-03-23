@@ -101,8 +101,13 @@ async function fetchArtistsByType({
   artists: Artist[];
   metadata?: SearchMetadata;
 }> {
-  // Normalize type for request (map internal 'band' to the display/API 'Live Band')
-  const typeParam = type === 'band' ? 'Live Band ' : type;
+  // Normalize type for request to keep category naming consistent across pages.
+  const typeParam =
+    type === 'band'
+      ? 'Live Band'
+      : type === 'spiritual'
+        ? 'Devotional / Spiritual Singer'
+        : type;
 
   let url = `/api/artists/nearby?type=${encodeURIComponent(typeParam)}&verified=${verified}&minResults=${minResults}&maxRadius=${maxRadius}`;
 
