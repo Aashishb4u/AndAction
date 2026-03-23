@@ -287,7 +287,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <p className="text-text-gray text-sm">Short bio</p>
                 <p className="text-white text-base leading-relaxed">
                   {data.shortBio ||
-                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."}
+                    "No bio available."}
                 </p>
               </div>
             </div>
