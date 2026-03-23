@@ -27,7 +27,7 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
       ),
       title: "Artist Profile Details",
       description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc",
+        "Add your stage name, category, experience, and short bio.",
     },
     {
       icon: (
@@ -40,7 +40,7 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
       ),
       title: "Performance Details",
       description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc",
+        "Share your styles, event types, languages, and availability.",
     },
     {
       icon: (
@@ -53,7 +53,7 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
       ),
       title: "Contact & Pricing Details",
       description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc",
+        "Add your contact details and pricing range for bookings.",
     },
     {
       icon: (
@@ -66,7 +66,7 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
       ),
       title: "Videos & Social Media",
       description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc",
+        "Upload videos and link social profiles to showcase talent.",
     },
   ];
 
