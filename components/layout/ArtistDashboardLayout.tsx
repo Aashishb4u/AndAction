@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ArtistSidebar from './ArtistSidebar';
+import Sidebar from './Sidebar';
 import { Menu } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
@@ -11,12 +12,14 @@ interface ArtistDashboardLayoutProps {
   children: React.ReactNode;
   className?: string;
   hideNavbar?: boolean;
+  useMainSidebar?: boolean;
 }
 
 const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
   children,
   className = '',
   hideNavbar = false,
+  useMainSidebar = false,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -28,7 +31,7 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
     setIsSidebarOpen(false);
   };
 
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   return (
     <div className={`min-h-screen bg-black ${className}`}>
@@ -70,7 +73,11 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
       )}
 
       {/* Sidebar */}
-      <ArtistSidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+      {useMainSidebar ? (
+        <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+      ) : (
+        <ArtistSidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+      )}
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto">

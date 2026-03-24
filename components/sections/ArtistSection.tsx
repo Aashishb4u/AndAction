@@ -56,13 +56,18 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   };
 
   const getTypeParam = () => {
-    if (categoryKey) return getValueForKey(categoryKey);
+    if (categoryKey) {
+      const value = getValueForKey(categoryKey);
+      if (value.toLowerCase() === 'spiritual') return 'Devotional / Spiritual Singer';
+      return value;
+    }
     let typeParam = title.toLowerCase();
     if (typeParam.includes('percussion')) typeParam = 'Dj Percussionist';
     else if (typeParam.includes('dj')) typeParam = 'DJ';
     else if (typeParam.includes('anchor')) typeParam = 'anchor';
-    else if (typeParam.includes('band')) typeParam = 'Live Band ';
+    else if (typeParam.includes('band')) typeParam = 'Live Band';
     else if (typeParam.includes('actor')) typeParam = 'actor';
+    else if (typeParam.includes('devotional') || typeParam.includes('spiritual')) typeParam = 'Devotional / Spiritual Singer';
     else if (typeParam.includes('singer')) typeParam = 'singer';
     else if (typeParam.includes('dancer')) typeParam = 'dancer';
     else if (typeParam.includes('comedian')) typeParam = 'comedian';
@@ -70,7 +75,6 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
     else if (typeParam.includes('magician')) typeParam = 'magician';
     else if (typeParam.includes('mimicry')) typeParam = 'mimicry';
     else if (typeParam.includes('special act')) typeParam = 'specialAct';
-    else if (typeParam.includes('spiritual')) typeParam = 'spiritual';
     else if (typeParam.includes('kids entertainer')) typeParam = 'kidsEntertainer';
     return typeParam;
   };

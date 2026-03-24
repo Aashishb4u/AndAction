@@ -7,13 +7,15 @@
 export function getArtistTypeMatches(queryType: string): string[] {
   const typeMap: Record<string, string[]> = {
     singer: ["singer", "Singer"],
-    spiritual: ["spiritual", "Spiritual / Devotional Singer"],
+    spiritual: ["spiritual", "Spiritual / Devotional Singer", "Devotional / Spiritual Singer"],
+    "spiritual / devotional singer": ["spiritual", "Spiritual / Devotional Singer", "Devotional / Spiritual Singer"],
+    "devotional / spiritual singer": ["spiritual", "Spiritual / Devotional Singer", "Devotional / Spiritual Singer"],
     dancer: ["dancer", "Dancer / Dance Group"],
     dj: ["DJ / VJ"],
     "dj-percussionist": ["Dj Percussionist", "DJ Percussionist"],
     "dj percussionist": ["Dj Percussionist", "DJ Percussionist"],
-    band: ["band", "Live Band"],
-    "live band": ["band", "Live Band"],
+    band: ["band", "Band", "Live Band", "Live Band ", "Live Band / Group"],
+    "live band": ["band", "Band", "Live Band", "Live Band ", "Live Band / Group"],
     magician: ["Magician / Illusionist"],
     anchor: ["Anchor / Emcee / Host"],
     comedian: ["Comedian / Mimicry"],
@@ -24,5 +26,6 @@ export function getArtistTypeMatches(queryType: string): string[] {
     "kids-entertainer": ["Kids Entertainer"],
   };
 
-  return typeMap[queryType.toLowerCase()] || [queryType];
+  const normalizedType = queryType.trim().toLowerCase();
+  return typeMap[normalizedType] || [queryType.trim()];
 }

@@ -108,15 +108,17 @@ const getArtists = async (
 // Normalize category values for API requests / URLs
 function normalizeTypeForRequest(type: string) {
   if (!type) return type;
-  const t = type.toLowerCase();
+  const t = type.trim().toLowerCase();
   if (t === "band" || t === "bands" || t === "live band" || t === "liveband") return "Live Band";
+  if (t === "spiritual" || t === "spiritual / devotional singer" || t === "devotional / spiritual singer") return "spiritual";
   if (t === "dj percussionist" || t === "dj-percussionist" || t === "djpercussionist") return "dj-percussionist";
-  return type;
+  return type.trim();
 }
 
 function normalizeTypeForUrl(type: string) {
   const normalized = normalizeTypeForRequest(type);
-  if (normalized.toLowerCase() === "live band") return "Live Band ";
+  if (normalized.toLowerCase() === "live band") return "Live Band";
+  if (normalized.toLowerCase() === "spiritual") return "Devotional / Spiritual Singer";
   return normalized;
 }
 

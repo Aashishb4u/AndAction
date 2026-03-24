@@ -171,7 +171,7 @@ export default function ArtistDashboard() {
      PAGE JSX
   ---------------------------------------------------- */
   return (
-    <ArtistDashboardLayout>
+    <ArtistDashboardLayout useMainSidebar={true}>
       <div className="md:flex w-full">
         {/* ----------------------------------------------------
              LEFT SIDEBAR
