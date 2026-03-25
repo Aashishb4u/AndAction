@@ -4,29 +4,37 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ArtistSection from "./ArtistSection";
 import ArtistSectionSkeleton from "./ArtistSectionSkeleton";
 import { useAllArtists } from "@/hooks/use-artists";
+import { ARTIST_CATEGORIES } from "@/lib/constants";
 
 interface ArtistsProps {
   location: { lat: number; lng: number } | null;
   canFetch?: boolean;
 }
 
-// Known display titles for categories (fallback will prettify keys)
-const TITLE_MAP: Record<string, string> = {
-  singers: "Singer",
-  dancers: "Dancer / Dance Group",
-  anchors: "Anchor / Emcee / Host",
-  djs: "DJ / VJ",
-  djPercussionists: "DJ Percussionist",
-  bands: "Live Band / Group",
-  comedians: "Comedian",
-  musician: "Musician / Instrumentalist",
-  magicians: "Magician / Illusionist",
-  actors: "Theatre Artist / Actor",
-  mimicry: "Mimicry / Impressionist",
-  specialAct: "Special Act Performer",
-  spiritual: "Devotional / Spiritual Singer",
-  kidsEntertainers: "Kids Entertainer",
+const CATEGORY_KEY_TO_VALUE: Record<string, string> = {
+  singers: "singer",
+  dancers: "dancer",
+  anchors: "anchor",
+  djs: "dj",
+  djPercussionists: "dj-percussionist",
+  bands: "Live Band",
+  comedians: "comedian",
+  musicians: "musician",
+  magicians: "magician",
+  actors: "actor",
+  mimicry: "mimicry",
+  specialAct: "special-act",
+  spiritual: "spiritual",
+  kidsEntertainers: "kids-entertainer",
 };
+
+const CATEGORY_LABEL_BY_VALUE = ARTIST_CATEGORIES.reduce(
+  (acc, category) => {
+    acc[category.value] = category.label;
+    return acc;
+  },
+  {} as Record<string, string>,
+);
 
 // Preferred ordering for categories (unknown categories will be appended)
 const PREFERRED_ORDER = [
@@ -135,7 +143,14 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
       ...derivedCategories.filter((k) => !PREFERRED_ORDER.includes(k)),
     ];
     return ordered
-      .map((key) => ({ key, title: TITLE_MAP[key] || prettifyKey(key) }))
+      .map((key) => {
+        const categoryValue = CATEGORY_KEY_TO_VALUE[key];
+        const title = categoryValue
+          ? CATEGORY_LABEL_BY_VALUE[categoryValue]
+          : undefined;
+
+        return { key, title: title || prettifyKey(key) };
+      })
       .filter((category) => (categoryData[category.key] || []).length > 0);
   }, [categoryData]);
 
@@ -256,7 +271,10 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
             {PREFERRED_ORDER.slice(0, CATEGORIES_PER_LOAD).map((key) => (
               <ArtistSectionSkeleton
                 key={key}
-                title={TITLE_MAP[key] || prettifyKey(key)}
+                title={
+                  CATEGORY_LABEL_BY_VALUE[CATEGORY_KEY_TO_VALUE[key]] ||
+                  prettifyKey(key)
+                }
               />
             ))}
           </>

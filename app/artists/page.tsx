@@ -109,17 +109,21 @@ const getArtists = async (
 function normalizeTypeForRequest(type: string) {
   if (!type) return type;
   const t = type.trim().toLowerCase();
+
   if (t === "band" || t === "bands" || t === "live band" || t === "liveband") return "Live Band";
   if (t === "spiritual" || t === "spiritual / devotional singer" || t === "devotional / spiritual singer") return "spiritual";
   if (t === "dj percussionist" || t === "dj-percussionist" || t === "djpercussionist") return "dj-percussionist";
+
+  // Keep common aliases stable with current constants values.
+  if (t === "special act" || t === "specialact" || t === "special-act") return "special-act";
+  if (t === "kids entertainer" || t === "kids entertainers" || t === "kidsentertainer" || t === "kids-entertainer") return "kids-entertainer";
+
   return type.trim();
 }
 
 function normalizeTypeForUrl(type: string) {
-  const normalized = normalizeTypeForRequest(type);
-  if (normalized.toLowerCase() === "live band") return "Live Band";
-  if (normalized.toLowerCase() === "spiritual") return "Devotional / Spiritual Singer";
-  return normalized;
+  // Keep URL query values canonical so filter controls can resolve selections reliably.
+  return normalizeTypeForRequest(type);
 }
 
 
@@ -132,7 +136,7 @@ function ArtistsPageContent() {
   const getInitialFilters = () => {
     const params = searchParams;
     return {
-      category: (params.get("type") || "").trim(),
+      category: normalizeTypeForRequest(params.get("type") || ""),
       subCategory: params.get("subType") || "",
       gender: params.get("gender") || "",
       budget: params.get("budget") || "",
