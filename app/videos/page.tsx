@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import SiteLayout from "@/components/layout/SiteLayout";
 import VideoCard from "@/components/ui/VideoCard";
 import { toast } from "react-toastify";
@@ -34,7 +34,17 @@ export default function VideosPage() {
 
   const { data: session } = useSession();
   const router = useRouter();
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Responsive limit: 6 on mobile, 12 on desktop
+  const [videoLimit, setVideoLimit] = useState(12);
+  useEffect(() => {
+    const updateLimit = () => {
+      setVideoLimit(window.innerWidth < 768 ? 6 : 12);
+    };
+    updateLimit();
+    window.addEventListener("resize", updateLimit);
+    return () => window.removeEventListener("resize", updateLimit);
+  }, []);
 
   // Use infinite query hook
   const {
@@ -48,7 +58,8 @@ export default function VideosPage() {
     type: "videos",
     category: selectedCategory,
     withBookmarks: true,
-    limit: 12,
+    limit: videoLimit,
+    random: true,
   });
 
   const toggleBookmarkMutation = useToggleBookmark();
@@ -70,6 +81,7 @@ export default function VideosPage() {
         bookmarkId: v.bookmarkId || null,
         creatorImage: v.user.avatar || v.user.image || undefined,
         artistType: v.user.artist?.artistType || "",
+        artistId: v.user.artist?.id || "",
       })),
     ) || [];
 
@@ -99,28 +111,22 @@ export default function VideosPage() {
     return artistOrder.flatMap(artistId => videosByArtist[artistId]);
   }, [allVideos]);
 
-  // Intersection observer for infinite scroll
+  // Infinite scroll: auto-fetch when sentinel enters viewport
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return;
-
+    const el = loadMoreRef.current;
+    if (!el) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
           fetchNextPage();
         }
       },
-      { threshold: 0.1, rootMargin: "200px" },
+      { threshold: 0.1 },
     );
-
-    const currentRef = loadMoreRef.current;
-    observer.observe(currentRef);
-
-    return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef);
-      }
-    };
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Toggle bookmark handler
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
@@ -276,6 +282,7 @@ export default function VideosPage() {
                     bookmarkId={video.bookmarkId}
                     onBookmark={(data) => toggleBookmark(data)}
                     onShare={() => handleShare(video.id)}
+                    artistId={video.artistId}
                     enableMobileAutoplay={true}
                   />
                 ))}
@@ -283,14 +290,14 @@ export default function VideosPage() {
 
               {/* Infinite Scroll Trigger */}
               {hasNextPage && (
-                <div ref={loadMoreRef} className="flex justify-center py-8">
-                  {isFetchingNextPage && (
+              <div ref={loadMoreRef} className="flex justify-center py-8">
+                {isFetchingNextPage && (
                     <div className="flex items-center gap-2 text-gray-400">
                       <Loader2 className="w-6 h-6 animate-spin text-primary-pink" />
                       <span>Loading more videos...</span>
                     </div>
-                  )}
-                </div>
+                )}
+              </div>
               )}
 
               {/* End of List */}

@@ -6,12 +6,21 @@ import { useMemo } from "react";
 const SHORTS_PAGE_LIMIT = 5;
 
 const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
-  const [_key, { category }] = queryKey;
-  const url = category && category !== 'all'
-    ? `/api/videos?type=shorts&page=${pageParam}&category=${category}&limit=${SHORTS_PAGE_LIMIT}`
-    : `/api/videos?type=shorts&page=${pageParam}&limit=${SHORTS_PAGE_LIMIT}`;
-  
-  const res = await fetch(url);
+  const [_key, { category, seed }] = queryKey;
+  const params = new URLSearchParams({
+    type: 'shorts',
+    page: pageParam.toString(),
+    limit: SHORTS_PAGE_LIMIT.toString(),
+    random: 'true',
+  });
+  if (category && category !== 'all') {
+    params.set('category', category);
+  }
+  if (seed !== undefined) {
+    params.set('seed', seed.toString());
+  }
+
+  const res = await fetch(`/api/videos?${params.toString()}`);
   const json = await res.json();
 
   return json.data.videos.map((v: any) => ({
@@ -20,7 +29,7 @@ const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
     creator: `${v.user.firstName} ${v.user.lastName}`,
     creatorId: v.user.artist?.id,
     category: v.user.artist?.artistType || "",
-    userId: v.user.id, // Add userId for grouping
+    userId: v.user.id,
     avatar: v.user.avatar || v.user.image,
     videoUrl: v.url,
     thumbnail: v.thumbnailUrl,
@@ -71,9 +80,12 @@ export default function ShortsPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Stable seed for consistent random ordering across pages
+  const [shortsSeed] = useState(() => Math.random() * 2 - 1);
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ["shorts", { category: selectedCategory }],
+      queryKey: ["shorts", { category: selectedCategory, seed: shortsSeed }],
       queryFn: fetchShortsPage,
       initialPageParam: 1,
       getNextPageParam: (lastPage, allPages) => {

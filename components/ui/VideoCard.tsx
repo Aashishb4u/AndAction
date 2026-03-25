@@ -8,6 +8,8 @@ import Bookmark from "@/components/icons/bookmark";
 import Share from "@/components/icons/share";
 import { Trash2 } from "lucide-react";
 import { useMobileVideoAutoplay } from "@/hooks/use-mobile-video-autoplay";
+import Volume2 from "@/components/icons/volume-2";
+import VolumeX from "@/components/icons/volume-x";
 
 interface VideoCardProps {
   id: string;
@@ -19,6 +21,7 @@ interface VideoCardProps {
   className?: string;
   artistType?: string;
   enableMobileAutoplay?: boolean; // New prop
+  artistId?: string; // For profile navigation
 
   // ⭐ NEW: bookmarkId passed from API so UI knows what to delete
   bookmarkId?: string | null;
@@ -51,14 +54,19 @@ const VideoCard: React.FC<VideoCardProps> = ({
   isBookmarked = false,
   showDeleteButton = false,
   enableMobileAutoplay = false, // Default false
+  artistId,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [shouldPlayVideo, setShouldPlayVideo] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Tracks approximate current time for YouTube (updated every second while playing)
+  const ytCurrentTimeRef = useRef(0);
+  const ytTickerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Helper to check if URL is YouTube
   const isYouTubeUrl = (url: string) => {
@@ -109,6 +117,10 @@ const VideoCard: React.FC<VideoCardProps> = ({
         hoverTimeoutRef.current = null;
       }
       setShouldPlayVideo(false);
+      setIsMuted(true);
+      // Reset YouTube time tracker
+      if (ytTickerRef.current) clearInterval(ytTickerRef.current);
+      ytCurrentTimeRef.current = 0;
 
       // Stop YouTube video
       if (isYouTube && iframeRef.current) {
@@ -130,6 +142,56 @@ const VideoCard: React.FC<VideoCardProps> = ({
       }
     };
   }, [isHovered, isYouTube]);
+
+  useEffect(() => {
+    if (!shouldPlayVideo || !isVideoLoaded) return;
+    setTimeout(()=>{
+    if (isYouTube && iframeRef.current) {
+      iframeRef.current.contentWindow?.postMessage(
+        '{"event":"command","func":"playVideo","args":""}',
+        "*",
+      );
+      // Start ticking to track approximate YouTube current time
+      ytCurrentTimeRef.current = 0;
+      if (ytTickerRef.current) clearInterval(ytTickerRef.current);
+      ytTickerRef.current = setInterval(() => {
+        ytCurrentTimeRef.current += 1;
+      }, 1000);
+    } else if (!isYouTube && videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  },200);
+  }, [isVideoLoaded, shouldPlayVideo, isYouTube]);
+
+  useEffect(() => {
+    if (!shouldPlayVideo) return;
+    if (isYouTube && iframeRef.current) {
+      iframeRef.current.contentWindow?.postMessage(
+        `{"event":"command","func":"${isMuted ? 'mute' : 'unMute'}","args":""}`,
+        "*",
+      );
+    } else if (!isYouTube && videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted, isYouTube, shouldPlayVideo]);
+
+  const handleSeek = (e: React.MouseEvent, delta: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (isYouTube && iframeRef.current) {
+      const target = Math.max(0, ytCurrentTimeRef.current + delta);
+      ytCurrentTimeRef.current = target;
+      iframeRef.current.contentWindow?.postMessage(
+        `{"event":"command","func":"seekTo","args":[${target}, true]}`,
+        "*",
+      );
+    } else if (!isYouTube && videoRef.current) {
+      videoRef.current.currentTime = Math.max(
+        0,
+        videoRef.current.currentTime + delta,
+      );
+    }
+  };
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -174,14 +236,19 @@ const VideoCard: React.FC<VideoCardProps> = ({
       onMouseLeave={handleMouseLeave}
     >
       {/* Video Player - Interactive area (NOT clickable for navigation) */}
-      <div className="relative w-full aspect-video rounded-lg overflow-hidden transition-transform duration-300 ease-out hover:scale-105">
+      {/* overflow-hidden clips any scale/transform overflow */}
+      <div className="relative w-full aspect-video rounded-lg overflow-hidden">
+        {/* Thumbnail image - hidden once video starts playing */}
         <Image
           src={thumbnail}
           alt={title}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          className="object-cover"
+          className={`object-cover transition-opacity duration-500 ${shouldPlayVideo ? "opacity-0" : "opacity-100"}`}
         />
+
+        {/* Video overlay wrapper - sits exactly over thumbnail */}
+        <div className="absolute inset-0 overflow-hidden">
 
         {/* YouTube iframe */}
         {isYouTube && youtubeVideoId && (
@@ -191,7 +258,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
             <iframe
               ref={iframeRef}
               className="w-full h-full object-cover"
-              src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}&controls=1`}
+              src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               onLoad={() => setIsVideoLoaded(true)}
@@ -210,7 +277,6 @@ const VideoCard: React.FC<VideoCardProps> = ({
               loop
               muted
               playsInline
-              controls
               preload="metadata"
               onLoadedData={() => setIsVideoLoaded(true)}
             >
@@ -219,12 +285,57 @@ const VideoCard: React.FC<VideoCardProps> = ({
           </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 rounded-lg transition-opacity duration-300 pointer-events-none" />
-      </div>
+        {/* Transparent navigation overlay - sits above iframe/video but below mute button */}
+        <Link href={`/videos/${id}`} className="absolute inset-0 z-10" aria-label={title} />
+
+        {/* Mute / Unmute button */}
+        {shouldPlayVideo && (
+          <>
+            {/* Back 10s — center left */}
+            <button
+              onClick={(e) => handleSeek(e, -10)}
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+                <text x="12" y="16" textAnchor="middle" fontSize="7" fill="currentColor" fontFamily="sans-serif">10</text>
+              </svg>
+            </button>
+
+            {/* Forward 10s — center right */}
+            <button
+              onClick={(e) => handleSeek(e, 10)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
+                <text x="12" y="16" textAnchor="middle" fontSize="7" fill="currentColor" fontFamily="sans-serif">10</text>
+              </svg>
+            </button>
+
+            {/* Mute toggle — bottom right */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setIsMuted((m) => !m);
+              }}
+              className="absolute bottom-3 right-3 z-20 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+            >
+              {isMuted ? (
+                <VolumeX className="w-4 h-4" />
+              ) : (
+                <Volume2 className="w-4 h-4" />
+              )}
+            </button>
+          </>
+        )}
+        </div>{/* end scale overlay */}
+      </div>{/* end clip wrapper */}
 
       {/* BOTTOM INFO - Only this area is clickable for navigation */}
       <div className="mt-3 px-1 flex justify-between items-start gap-3">
-        <Link href={`/videos/${id}`} className="flex gap-3 flex-1 min-w-0 items-center group/link">
+        <Link href={artistId ? `/artists/${artistId}?tab=about` : `/videos/${id}`} className="flex gap-3 flex-1 min-w-0 items-center group/link">
             <Image
               src={"/avatars/default.jpg"}
               alt={creator}

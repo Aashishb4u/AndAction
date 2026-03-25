@@ -5,10 +5,11 @@ import { Artist } from "@/types";
 import VideoCard from "@/components/ui/VideoCard";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import { Loader2, Youtube, RefreshCw } from "lucide-react";
+import { Loader2, Youtube, RefreshCw, Download } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   useSyncedVideos,
+  useSyncYouTubeVideos,
   useDeleteVideo,
 } from "@/hooks/use-youtube-videos";
 
@@ -18,7 +19,7 @@ interface VideosTabProps {
 
 const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
   const [bookmarkedVideos, setBookmarkedVideos] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
@@ -30,7 +31,12 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
     refetch,
   } = useSyncedVideos("videos");
 
+  const syncMutation = useSyncYouTubeVideos();
   const deleteMutation = useDeleteVideo();
+
+  const handleSync = () => {
+    syncMutation.mutate();
+  };
 
   const videos =
     videosData?.map((v) => ({
@@ -63,7 +69,11 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
     });
   };
 
-  const handleBookmark = (data: { id: string; bookmarkId?: string | null; isBookmarked: boolean }) => {
+  const handleBookmark = (data: {
+    id: string;
+    bookmarkId?: string | null;
+    isBookmarked: boolean;
+  }) => {
     setBookmarkedVideos((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(data.id)) {
@@ -141,8 +151,25 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
           No Videos Synced
         </h3>
         <p className="text-text-gray mb-4 max-w-md">
-          Videos will be automatically synced from your connected YouTube account.
+          Click the sync button to import your YouTube videos.
         </p>
+        <Button
+          variant="primary"
+          onClick={handleSync}
+          disabled={syncMutation.isPending}
+        >
+          {syncMutation.isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Syncing...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4 mr-2" />
+              Sync from YouTube
+            </>
+          )}
+        </Button>
       </div>
     );
   }
@@ -154,6 +181,30 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
         <p className="text-text-gray text-sm">
           {videos.length} video{videos.length !== 1 ? "s" : ""} synced
         </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSync}
+            disabled={syncMutation.isPending}
+          >
+            {syncMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Sync Videos
+              </>
+            )}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Videos Grid */}
@@ -171,6 +222,8 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
             onDelete={handleDelete}
             isBookmarked={bookmarkedVideos.has(video.id)}
             showDeleteButton={true}
+            enableMobileAutoplay={true}
+            artistId={artist.id}
           />
         ))}
       </div>
