@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,8 @@ import { ChevronRight, LogOut } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Download from '../icons/download';
 import Support from '../icons/support';
+import { usePWAInstall } from '@/hooks/use-pwa-install';
+import { toast } from 'react-toastify';
 
 interface ArtistSidebarProps {
   isOpen: boolean;
@@ -16,7 +18,9 @@ interface ArtistSidebarProps {
 
 const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
+  const { isInstalled, installApp } = usePWAInstall();
+  const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -49,9 +53,29 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
     router.push('/artist/profile');
   };
 
-  const handleInstallApp = () => {
-    console.log('Install app clicked');
-    onClose();
+  const handleInstallApp = async () => {
+    if (isInstalling) return;
+
+    setIsInstalling(true);
+    try {
+      const result = await installApp();
+
+      if (result.success) {
+        toast.success('Install prompt opened.');
+        onClose();
+        return;
+      }
+
+      if (result.message === 'Already installed') {
+        toast.info('App is already installed.');
+      } else if (result.message === 'iOS instructions shown') {
+        toast.info('Follow iOS instructions to add app to Home Screen.');
+      } else {
+        toast.info('Install prompt is not available yet. Please try again in a moment.');
+      }
+    } finally {
+      setIsInstalling(false);
+    }
   };
 
   const artist = session?.user?.artistProfile;
@@ -175,13 +199,16 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
             </button>
 
             {/* Install App */}
-            <button
-              onClick={handleInstallApp}
-              className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group btn1"
-            >
-              <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
-              <span className="gradient-text">Install our web application</span>
-            </button>
+            {!isInstalled && (
+              <button
+                onClick={handleInstallApp}
+                disabled={isInstalling}
+                className="w-full flex items-center justify-center space-x-2 py-3 px-3 border-2 border-border-color bg-card rounded-full hover:border-primary-pink/30 transition-all duration-300 group btn1 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
+                <span className="gradient-text">{isInstalling ? 'Checking install...' : 'Install our web application'}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
