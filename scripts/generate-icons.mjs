@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "..", "public");
 const iconsDir = path.join(publicDir, "icons");
-const logoPath = path.join(iconsDir, "logo.png");
+const logoPath = path.join(iconsDir, "logo.jpeg");
 
 const BG_COLOR = "#0A0A0A"; // matches app background
 
