@@ -18,6 +18,7 @@ const CATEGORY_KEY_TO_VALUE: Record<string, string> = {
   djs: "dj",
   djPercussionists: "dj-percussionist",
   bands: "Live Band",
+  comedian: "comedian",
   comedians: "comedian",
   musicians: "musician",
   magicians: "magician",
@@ -56,6 +57,7 @@ const PREFERRED_ORDER = [
 
 // Number of categories to display initially and per load
 const CATEGORIES_PER_LOAD = 5;
+const EMPTY_ARTISTS: any[] = [];
 
 // Helper function to prettify category key to display title
 function prettifyKey(key: string) {
@@ -79,6 +81,8 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
     ? `${normalizedLocation.lat.toFixed(4)},${normalizedLocation.lng.toFixed(4)}`
     : "all";
 
+  const allArtists = useAllArtists(normalizedLocation, false, canFetch);
+
   const {
     singers,
     dancers,
@@ -86,7 +90,7 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
     djs,
     djPercussionists,
     bands,
-    comedians,
+    comedians: comediansFromHook,
     musicians,
     magicians,
     actors,
@@ -95,7 +99,12 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
     spiritual,
     kidsEntertainers,
     isLoading,
-  } = useAllArtists(normalizedLocation, false, canFetch);
+  } = allArtists;
+
+  const comedians =
+    comediansFromHook ||
+    ((allArtists as Record<string, any>).comedian as any[]) ||
+    EMPTY_ARTISTS;
 
   const shouldShowLoading = !canFetch || isLoading;
 

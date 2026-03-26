@@ -113,6 +113,7 @@ function normalizeTypeForRequest(type: string) {
   if (t === "band" || t === "bands" || t === "live band" || t === "liveband") return "Live Band";
   if (t === "spiritual" || t === "spiritual / devotional singer" || t === "devotional / spiritual singer") return "spiritual";
   if (t === "dj percussionist" || t === "dj-percussionist" || t === "djpercussionist") return "dj-percussionist";
+  if (t === "comedian" || t === "comedians" || t === "comedy") return "comedian";
 
   // Keep common aliases stable with current constants values.
   if (t === "special act" || t === "specialact" || t === "special-act") return "special-act";

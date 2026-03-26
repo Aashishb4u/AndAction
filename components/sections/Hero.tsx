@@ -42,13 +42,13 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         {/* Dark Overlay */}
         <div
           className={`absolute inset-0 ${isLoaded ? 'hero-overlay-animate' : ''}`}
-          style={{ backgroundColor: '#0F0F0F99' }}
+          style={{ backgroundColor: '#0F0F0F88' }}
         />
       </div>
       {/* Black Overlay */}
       <div
         className={`absolute inset-0 pointer-events-none ${isLoaded ? 'hero-overlay-animate' : ''}`}
-        style={{ backgroundColor: '##0F0F0F99' }}
+        style={{ backgroundColor: '#0F0F0F88' }}
       />
 
       {/* Content - centered in the video area */}

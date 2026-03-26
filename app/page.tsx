@@ -11,6 +11,7 @@ export default function Home() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [isLocationResolved, setIsLocationResolved] = useState(false);
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 
   // Check if we should show the location modal on mount
   useEffect(() => {
@@ -49,10 +50,13 @@ export default function Home() {
     }
   }, []);
 
-  const requestLocation = () => {
+  const requestLocation = (showLoader: boolean = false) => {
+    if (showLoader) setIsRequestingLocation(true);
+
     if (!navigator.geolocation) {
       setShowLocationModal(false);
       setIsLocationResolved(true);
+      setIsRequestingLocation(false);
       return;
     }
 
@@ -67,6 +71,7 @@ export default function Home() {
         sessionStorage.setItem('userLocationCoords', JSON.stringify(nextLocation));
         setShowLocationModal(false);
         setIsLocationResolved(true);
+        setIsRequestingLocation(false);
       },
       (err) => {
         console.error("Location permission denied", err);
@@ -74,16 +79,19 @@ export default function Home() {
         sessionStorage.setItem('locationPermissionAsked', 'denied');
         setShowLocationModal(false);
         setIsLocationResolved(true);
+        setIsRequestingLocation(false);
       },
       { enableHighAccuracy: true }
     );
   };
 
   const handleEnableLocation = () => {
-    requestLocation();
+    if (isRequestingLocation) return;
+    requestLocation(true);
   };
 
   const handleSkipLocation = () => {
+    if (isRequestingLocation) return;
     sessionStorage.setItem('locationPermissionAsked', 'denied');
     setShowLocationModal(false);
     setIsLocationResolved(true);
@@ -120,12 +128,41 @@ export default function Home() {
                 variant="primary"
                 size="md"
                 onClick={handleEnableLocation}
+                disabled={isRequestingLocation}
                 className="w-full btn1"
               >
-                Enable Location
+                {isRequestingLocation ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="9"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeOpacity="0.35"
+                      />
+                      <path
+                        d="M21 12a9 9 0 00-9-9"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    Enabling...
+                  </span>
+                ) : (
+                  "Enable Location"
+                )}
               </Button>
               <button
                 onClick={handleSkipLocation}
+                disabled={isRequestingLocation}
                 className="w-full py-3 text-text-gray hover:text-white transition-colors btn2"
               >
                 Maybe Later

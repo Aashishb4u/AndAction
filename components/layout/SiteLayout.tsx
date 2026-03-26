@@ -17,7 +17,7 @@ interface SiteLayoutProps {
 
 const SiteLayout: React.FC<SiteLayoutProps> = ({
   children,
-  showPreloader = true,
+  showPreloader = false,
   className = '',
   hideNavbar = false,
   hideBottomBar = false,

@@ -25,8 +25,8 @@ type RawArtistFromAPI = {
 
 export function transformArtist(raw: RawArtistFromAPI): Artist {
   const fullName =
+    (raw.stageName || "").trim() ||
     `${raw.user.firstName || ""} ${raw.user.lastName || ""}`.trim() ||
-    raw.stageName ||
     "Unknown Artist";
 
   let duration = "N/A";

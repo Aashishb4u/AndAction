@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react";
 import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
 import { toast } from "react-toastify";
 import { INDIAN_STATES, INDIAN_CITIES, ARTIST_CATEGORIES } from "@/lib/constants";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Extended artist type for profile management
 type ExtendedArtist = Artist & {
@@ -59,10 +60,57 @@ const experienceOptions = [
 
 const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
   const { data: session, update } = useSession();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
+
+  const mapArtistTypeForStorage = (value: string) => {
+    const v = (value || "").trim().toLowerCase();
+    if (!v) return "";
+
+    // Keep DB naming compatible with existing data/query mappings.
+    if (v === "dj-percussionist" || v === "dj percussionist" || v === "djpercussionist") {
+      return "Dj Percussionist";
+    }
+    if (v === "dj") return "DJ / VJ";
+    if (v === "live band" || v === "band" || v === "bands") return "Live Band";
+    if (v === "spiritual") return "Spiritual / Devotional Singer";
+
+    return value.trim();
+  };
+
+  const normalizeArtistTypeValue = (rawValue?: string) => {
+    const raw = (rawValue || "").trim();
+    if (!raw) return "";
+
+    const lower = raw.toLowerCase();
+
+    // 1) Exact match by option value
+    const byValue = ARTIST_CATEGORIES.find(
+      (item) => item.value.toLowerCase() === lower,
+    );
+    if (byValue) return byValue.value;
+
+    // 2) Match by display label
+    const byLabel = ARTIST_CATEGORIES.find(
+      (item) => item.label.toLowerCase() === lower,
+    );
+    if (byLabel) return byLabel.value;
+
+    // 3) Common aliases
+    if (lower === "band" || lower === "bands" || lower === "live band" || lower === "liveband") return "Live Band";
+    if (lower === "spiritual" || lower === "spiritual / devotional singer" || lower === "devotional / spiritual singer") return "spiritual";
+    if (lower === "dj percussionist" || lower === "dj-percussionist" || lower === "djpercussionist") return "dj-percussionist";
+
+    return raw;
+  };
+
+  const initialArtistType = normalizeArtistTypeValue(
+    (artist as any)?.tags?.[0] || artist.category,
+  );
+
   const [formData, setFormData] = useState({
     stageName: artist.name,
-    artistType: artist.category?.toLowerCase() || "",
+    artistType: initialArtistType,
     firstName: (artist as ExtendedArtist).firstName || "",
     lastName: (artist as ExtendedArtist).lastName || "",
     dateOfBirth: (artist as ExtendedArtist).dateOfBirth || "",
@@ -88,10 +136,11 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
   const [subTypeInput, setSubTypeInput] = useState<string>('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | string[]) => {
+    const normalizedValue = Array.isArray(value) ? value.join(",") : value;
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: normalizedValue,
     }));
   };
 
@@ -108,7 +157,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         userId: session.user.id,
 
         stageName: formData.stageName,
-        artistType: formData.artistType,
+        artistType: mapArtistTypeForStorage(formData.artistType),
         firstName: formData.firstName,
         lastName: formData.lastName,
         gender: formData.gender,
@@ -137,6 +186,10 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         update: sessionPayload,
       });
 
+      // Ensure home/category listings fetch fresh data after profile category change.
+      await queryClient.cancelQueries({ queryKey: ["artists"] });
+      queryClient.removeQueries({ queryKey: ["artists"] });
+
       toast.success("Profile updated!");
     } catch (err) {
       console.error(err);
@@ -149,7 +202,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
   const handleReset = () => {
     setFormData({
       stageName: artist.name,
-      artistType: artist.category?.toLowerCase() || "",
+      artistType: normalizeArtistTypeValue((artist as any)?.tags?.[0] || artist.category),
       firstName: (artist as ExtendedArtist).firstName || "",
       lastName: (artist as ExtendedArtist).lastName || "",
       dateOfBirth: (artist as ExtendedArtist).dateOfBirth || "",
