@@ -30,6 +30,7 @@ interface PhoneInputProps {
   value: string;
   onChange: (value: string) => void;
   onCountryChange?: (country: Country) => void;
+  error?: string;
   variant?: 'filled' | 'outlined';
   required?: boolean;
   disabled?: boolean;
@@ -43,6 +44,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   value,
   onChange,
   onCountryChange,
+  error,
   variant = 'filled',
   required = false,
   disabled = false,
@@ -80,7 +82,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
       )}
 
       <div className="relative">
-        <div className={`phone-input ${baseClasses} ${variantClasses[variant]} flex items-center overflow-hidden`}>
+        <div className={`phone-input ${baseClasses} ${variantClasses[variant]} ${error ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/50' : ''} flex items-center overflow-hidden`}>
           {/* Country Selector */}
           <div className="relative">
             <button
@@ -138,6 +140,8 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
           />
         )}
       </div>
+
+      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
     </div>
   );
 };

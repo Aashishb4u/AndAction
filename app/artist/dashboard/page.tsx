@@ -172,15 +172,15 @@ export default function ArtistDashboard() {
   ---------------------------------------------------- */
   return (
     <ArtistDashboardLayout useMainSidebar={true}>
-      <div className="md:flex w-full">
+      <div className="w-full bg-[#0F0F0F] md:flex">
         {/* ----------------------------------------------------
              LEFT SIDEBAR
         ---------------------------------------------------- */}
-        <div className="md:w-80 p-5">
+        <div className="px-4 pb-4 pt-2 md:w-80 md:p-5">
           {/* Mobile compact profile card */}
-          <div className="md:hidden bg-card border border-border-color rounded-xl p-4 mb-3">
-            <div className="flex items-center">
-              <div className="relative w-[100px] h-[140px] rounded-xl overflow-hidden flex-shrink-0 border border-[#e6d7c8]">
+          <div className="mb-3 rounded-xl border border-border-color bg-card p-3.5 md:hidden sm:p-4">
+            <div className="flex items-start gap-3">
+              <div className="relative h-31 w-22 shrink-0 overflow-hidden rounded-xl border border-[#e6d7c8] sm:h-35 sm:w-25">
                 <Image
                   src={session?.user?.avatar || "/icons/images.jpeg"}
                   alt={artist?.stageName || fullName || "Artist"}
@@ -190,32 +190,34 @@ export default function ArtistDashboard() {
                 />
               </div>
 
-              <div className="ml-4 flex-1">
-                <h2 className="text-xl font-semibold text-white leading-tight">
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-lg font-semibold leading-tight text-white sm:text-xl">
                   {artist?.stageName || fullName}
                 </h2>
-                <p className="text-md text-text-gray">{session?.user?.email}</p>
-                <p className="text-base mt-1">{displayArtistType}</p>
+                <p className="truncate text-sm text-text-gray sm:text-base">
+                  {session?.user?.email}
+                </p>
+                <p className="mt-1 truncate text-sm sm:text-base">{displayArtistType}</p>
 
-                <div className="mt-3 w-full">
+                <div className="mt-2 w-full sm:mt-3">
                   <Button
                     onClick={() => router.push("/artist/profile")}
                     variant="secondary"
                     size="sm"
-                    className="w-full flex items-center justify-center border-[1.5px] border-border-color rounded-full px-6 py-3"
+                    className="w-full min-w-0 rounded-full border-[1.5px] border-border-color px-3 py-2 text-sm"
                   >
-                    <Pencil className="w-4 h-4 mr-2 text-primary-orange" />
-                    <span className="gradient-text">Edit Profile</span>
+                    <Pencil className="mr-2 h-4 w-4 shrink-0 text-primary-orange" />
+                    <span className="truncate gradient-text">Edit Profile</span>
                   </Button>
                 </div>
-                </div>
+              </div>
             </div>
           </div>
 
           {/* Mobile profile progress (50%) */}
-          <div className="md:hidden bg-card border border-border-color rounded-xl p-4 mb-3 flex items-center">
-            <div className="relative w-28 h-28 mr-4 flex-shrink-0">
-              <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 36 36">
+          <div className="mb-3 flex items-center gap-3 rounded-xl border border-border-color bg-card p-3.5 md:hidden sm:p-4">
+            <div className="relative h-24 w-24 shrink-0 sm:h-28 sm:w-28">
+              <svg className="h-24 w-24 -rotate-90 transform sm:h-28 sm:w-28" viewBox="0 0 36 36">
                 <defs>
                   <linearGradient id="progressGradientMobile">
                     <stop offset="0%" stopColor="#E8047E" />
@@ -242,15 +244,15 @@ export default function ArtistDashboard() {
 
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <span className="text-2xl font-bold text-white">80%</span>
+                  <span className="text-xl font-bold text-white sm:text-2xl">80%</span>
                   <div className="text-[10px] text-text-gray">Completed</div>
                 </div>
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center">
-              <h3 className="text-white font-semibold text-xl">Profile Progress</h3>
-              <p className="text-text-gray text-base mt-1">Your overall profile progress is showing here.</p>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-lg font-semibold text-white sm:text-xl">Profile Progress</h3>
+              <p className="mt-1 text-sm text-text-gray sm:text-base">Your overall profile progress is showing here.</p>
             </div>
           </div>
 
@@ -347,22 +349,24 @@ export default function ArtistDashboard() {
         {/* ----------------------------------------------------
              RIGHT CONTENT - BOOKINGS
         ---------------------------------------------------- */}
-        <div className="flex-1 p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-white h1">Leads / Bookings</h1>
+        <div className="flex-1 px-4 pb-4  md:p-5">
+          <div className="mb-4 flex items-start justify-between gap-2 sm:items-center">
+            <h1 className="text-white h1 leading-tight">Leads / Bookings</h1>
             <button
-              className="flex items-center gap-1 bg-[#262626] py-2 px-4 border-[1.5px] border-border-color rounded-full btn2"
+              className="btn2 flex shrink-0 items-center gap-1 rounded-full border-[1.5px] border-border-color bg-[#262626] px-3 py-2 sm:px-4"
               onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
               title="Sort by event date"
+              aria-label={`Sort by event date, currently ${sortOrder === 'desc' ? 'newest first' : 'oldest first'}`}
             >
-              <span className="gradient-text">
-                Sort by: {sortOrder === 'desc' ? 'Newest' : 'Oldest'}
+              <span className="gradient-text text-sm sm:text-base">
+                Sort by
               </span>
               <Image
                 src="/icons/up-down.svg"
                 width={18}
                 height={18}
                 alt="Sort"
+                className="shrink-0"
                 style={{ transform: sortOrder === 'desc' ? 'rotate(0deg)' : 'rotate(180deg)' }}
               />
             </button>
@@ -396,20 +400,19 @@ export default function ArtistDashboard() {
 
               return (
                 <section key={status} className="space-y-6">
-                  <h2 className="text-2xl font-semibold text-white">
+                  <h2 className="text-xl font-semibold text-white sm:text-2xl">
                     {sectionTitle}
                     <span className="ml-3 text-sm text-gray-400">
                       ({bookingsList.length})
                     </span>
                   </h2>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
                     {bookingsList.map((booking) => (
                       <BookingCard
                         key={booking.id}
                         status={booking.status}
                         clientName={`${booking.client.firstName} ${booking.client.lastName}`}
-                        clientEmail={booking.client.email}
                         clientPhone={booking.client.phoneNumber}
                         location={booking.eventLocation}
                         date={formatDate(booking.eventDate)}

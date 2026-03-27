@@ -225,7 +225,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
   return (
     <div className="md:space-y-5 space-y-4 pb-24 md:pb-0">
       {/* Stage Name */}
-      <div className="relative">
+      <div className="relative text-sm">
         <Input
           label="Stage name*"
           value={formData.stageName}
@@ -283,7 +283,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       />
 
       {/* PIN Code, State, City */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
           label="PIN code*"
           value={formData.pinCode}
