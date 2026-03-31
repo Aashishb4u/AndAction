@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Button from '@/components/ui/Button';
-import { Calendar, MapPin, Phone, X, Check, Mail } from 'lucide-react';
+import { MapPin, Phone, X, Check } from 'lucide-react';
 import Image from 'next/image';
 import { BookingStatus } from "@prisma/client";
 
@@ -14,7 +14,6 @@ interface BookingCardProps {
   description: string;
 
   status: BookingStatus;         // <-- NEW
-  clientEmail?: string | null;   // <-- NEW
   clientPhone?: string | null;   // <-- NEW
 
   onReject: () => void;
@@ -31,7 +30,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
   description,
 
   status,          // <-- NEW
-  clientEmail,     // <-- NEW
   clientPhone,     // <-- NEW
 
   onReject,
@@ -40,8 +38,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
 }) => {
   
   const isPending = status === "PENDING";
-  const isApproved = status === "APPROVED";
-
   // State for expanding description
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMoreButton, setShowMoreButton] = useState(false);
@@ -63,29 +59,29 @@ const BookingCard: React.FC<BookingCardProps> = ({
   }, [description]);
 
   return (
-    <div className={`bg-card border border-border-color rounded-xl p-4 ${className}`}>
+    <div className={`bg-card border border-border-color rounded-xl p-3 sm:p-4 overflow-hidden ${className}`}>
       
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 className="text-white h3 mb-1">{clientName}</h3>
-          <div className="flex items-center secondary-text text-text-gray mb-2">
-            <MapPin className="w-4 h-4 mr-1" />
-            <span>{location}</span>
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="text-white h3 mb-1 truncate">{clientName}</h3>
+          <div className="flex min-w-0 items-center secondary-text text-text-gray mb-2">
+            <MapPin className="w-4 h-4 mr-1 shrink-0" />
+            <span className="truncate">{location}</span>
           </div>
         </div>
-        <div className="text-right text-text-gray secondary-text">{date}</div>
+        <div className="secondary-text text-text-gray self-start sm:text-right">{date}</div>
       </div>
 
       {/* Event Info */}
-      <div className="flex items-center gap-4 mb-3 text-card">
-        <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full">
-          <Image src="/icons/calander.svg" alt="Calendar" width={16} height={16} />
-          <span className="secondary-text">{date}</span>
+      <div className="mb-3 flex flex-wrap items-center gap-2 sm:gap-3 text-card">
+        <div className="flex max-w-full items-center gap-2 rounded-full bg-white px-3 py-1">
+          <Image src="/icons/calander.svg" alt="Calendar" width={16} height={16} className="shrink-0" />
+          <span className="secondary-text truncate">{date}</span>
         </div>
-        <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full">
-          <Image src="/icons/building.svg" alt="Building" width={16} height={16} />
-          <span className="secondary-text">{eventType}</span>
+        <div className="flex max-w-full items-center gap-2 rounded-full bg-white px-3 py-1">
+          <Image src="/icons/building.svg" alt="Building" width={16} height={16} className="shrink-0" />
+          <span className="secondary-text truncate">{eventType}</span>
         </div>
       </div>
 
@@ -93,7 +89,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
       <div className="mb-3">
         <p 
           ref={descriptionRef}
-          className={`text-white secondary-text ${isExpanded ? '' : 'line-clamp-2'}`}
+          className={`text-white secondary-text wrap-break-word ${isExpanded ? '' : 'line-clamp-2'}`}
         >
           {description}
         </p>
@@ -110,7 +106,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
       {/* ---------------------------------------------------
           CONDITIONAL ACTION BUTTONS
       --------------------------------------------------- */}
-      <div className="flex gap-3 mt-3">
+      <div className="mt-3 flex flex-wrap gap-2 sm:gap-3">
 
         {isPending && (
           <>
@@ -119,10 +115,10 @@ const BookingCard: React.FC<BookingCardProps> = ({
               variant="outline"
               size="sm"
               onClick={onAccept}
-              className="flex-1 border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+              className="min-w-30 flex-1 border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
             >
-              <Check className="w-4 h-4 mr-2" />
-              Accept
+              <Check className="w-4 h-4 mr-2 shrink-0" />
+              <span className="truncate">Accept</span>
             </Button>
 
             {/* REJECT */}
@@ -130,10 +126,10 @@ const BookingCard: React.FC<BookingCardProps> = ({
               variant="outline"
               size="sm"
               onClick={onReject}
-              className="flex-1 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+              className="min-w-30 flex-1 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
             >
-              <X className="w-4 h-4 mr-2" />
-              Reject
+              <X className="w-4 h-4 mr-2 shrink-0" />
+              <span className="truncate">Reject</span>
             </Button>
           </>
         )}
@@ -144,23 +140,10 @@ const BookingCard: React.FC<BookingCardProps> = ({
             variant="primary"
             size="sm"
             onClick={() => window.open(`tel:${clientPhone}`, "_self")}
-            className="flex-1"
+            className="min-w-30 flex-1"
           >
-            <Phone className="w-4 h-4 mr-2" />
-            Call
-          </Button>
-        )}
-
-        {/* EMAIL BUTTON (if approved or declined or completed, OR if pending too, you decide) */}
-        {clientEmail && (
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => window.open(`mailto:${clientEmail}`, "_self")}
-            className="flex-1"
-          >
-            <Mail className="w-4 h-4 mr-2" />
-            Email
+            <Phone className="w-4 h-4 mr-2 shrink-0" />
+            <span className="truncate">Call</span>
           </Button>
         )}
 

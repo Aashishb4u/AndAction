@@ -164,6 +164,14 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
     fileInputRef.current?.click();
   };
 
+  const categoryParts = artist.category
+    ? artist.category.split(",").map((s: string) => s.trim())
+    : [];
+  const categoryTags = Array.from(new Set(categoryParts.filter(Boolean)));
+  const hasLongCategory =
+    categoryTags.some((tag) => tag.length > 16) ||
+    (artist.category?.length ?? 0) > 18;
+
   return (
     <div className="relative md:rounded-2xl overflow-hidden h-[85vh] lg:h-[500px]">
       {/* hidden file input */}
@@ -213,36 +221,31 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
           <div className="flex flex-col items-start gap-3">
             <h2 className="t1-heading text-white mb-2 drop-shadow-lg">{artist.name}</h2>
 
-            <div className="flex flex-col items-start gap-3 w-full">
-              <div className="flex flex-wrap gap-2 items-center justify-start">
-                {(() => {
-                  const parts: string[] = [];
-                  if (artist.category) {
-                    parts.push(...artist.category.split(",").map((s: string) => s.trim()));
-                  }
-                  // Show only main category, not sub-category
-                  // remove duplicates and empty strings
-                  const tags = Array.from(new Set(parts.filter(Boolean)));
-                  return tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className={`px-4 md:py-2 py-1.5 rounded-full btn2 backdrop-blur-sm ${
-                        tag === (artist.category || "")
-                          ? "bg-white text-primary-pink"
-                          : "bg-card border border-border-color text-white"
-                      }`}
-                    >
-                      {tag}
-                    </span>
-                  ));
-                })()}
+            <div className="flex w-full flex-wrap items-center gap-3">
+              <div
+                className={`flex min-w-0 flex-wrap items-center justify-start gap-2 ${
+                  hasLongCategory ? "w-full flex-none" : "flex-1"
+                }`}
+              >
+                {categoryTags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className={`px-4 md:py-2 py-1.5 rounded-full btn2 backdrop-blur-sm ${
+                      tag === (artist.category || "")
+                        ? "bg-white text-primary-pink"
+                        : "bg-card border border-border-color text-white"
+                    }`}
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
 
               <Button
                 variant="primary"
                 size="sm"
                 onClick={onEdit}
-                className="px-3 py-1.5 rounded-full self-start"
+                className="shrink-0 self-start rounded-full px-3 py-1.5"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Profile

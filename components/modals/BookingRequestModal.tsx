@@ -8,7 +8,6 @@ import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
 import Textarea from "../ui/Textarea";
 import PhoneInput from "../ui/PhoneInput";
-import { format, formatDate, startOfDay } from "date-fns";
 import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 
 interface BookingRequestModalProps {
@@ -72,11 +71,11 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
 
   // State for confirmation and success modals
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [showSubmitSuccess, setShowSubmitSuccess] = useState(false);
 
-  const handleInputChange = (field: keyof BookingFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof BookingFormData, value: string | string[]) => {
+    const normalizedValue = Array.isArray(value) ? value.join(",") : value;
+    setFormData((prev) => ({ ...prev, [field]: normalizedValue }));
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -198,6 +197,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
             placeholder="Enter mobile number"
             value={formData.mobileNumber}
             onChange={(value) => handleInputChange("mobileNumber", value)}
+            error={errors.mobileNumber}
             required
           />
 
