@@ -2,12 +2,11 @@
 
 import React, { useState } from "react";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import YouTubeConnectModal from "@/components/modals/YouTubeConnectModal";
 import Image from "next/image";
 import { Loader2, CheckCircle } from "lucide-react";
 import {
   useIntegrationStatus,
-  useYouTubeConnect,
   useYouTubeConnectByChannel,
   useInstagramConnect,
   useInstagramDisconnect,
@@ -24,12 +23,10 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
   onSkip,
   onBack,
 }) => {
-  const [showChannelInput, setShowChannelInput] = useState(false);
-  const [channelInput, setChannelInput] = useState("");
+  const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
 
   const { data: integrationStatus, isLoading: isLoadingStatus } =
     useIntegrationStatus();
-  const connectYouTubeMutation = useYouTubeConnect();
   const connectYouTubeByChannelMutation = useYouTubeConnectByChannel();
 
   const instagramConnectMutation = useInstagramConnect();
@@ -40,28 +37,13 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
   const isInstagramLoading =
     instagramConnectMutation.isPending || instagramDisconnectMutation.isPending;
 
-  const connectYouTube = () => {
-    connectYouTubeMutation.mutate();
+  const handleYouTubeConnect = () => {
+    setYoutubeModalOpen(true);
   };
 
-  const handleShowChannelInput = () => {
-    setShowChannelInput(true);
-  };
-
-  const handleConnectByChannel = () => {
-    if (channelInput.trim()) {
-      connectYouTubeByChannelMutation.mutate(channelInput.trim(), {
-        onSuccess: () => {
-          setShowChannelInput(false);
-          setChannelInput("");
-        },
-      });
-    }
-  };
-
-  const handleCancelChannelInput = () => {
-    setShowChannelInput(false);
-    setChannelInput("");
+  const handleYouTubeConnectConfirm = async (channelId: string) => {
+    await connectYouTubeByChannelMutation.mutateAsync(channelId);
+    setYoutubeModalOpen(false);
   };
 
   const connectInstagram = () => {
@@ -162,58 +144,32 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
                   Checking status...
                 </div>
               ) : youtubeConnected ? (
-                <div className="flex items-center justify-center text-center gap-2 text-green-500 text-sm">
-                  <CheckCircle className="w-4 h-4" />
-                  Connected
-                  {integrationStatus?.youtube.channelName && (
-                    <span className="text-text-gray ml-1">
-                      ({integrationStatus.youtube.channelName})
-                    </span>
-                  )}
-                </div>
-              ) : showChannelInput ? (
                 <div className="space-y-3">
-                  <Input
-                    placeholder="Enter channel name or ID"
-                    value={channelInput}
-                    onChange={(e) => setChannelInput(e.target.value)}
-                    variant="filled"
-                    disabled={connectYouTubeByChannelMutation.isPending}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleConnectByChannel}
-                      disabled={
-                        connectYouTubeByChannelMutation.isPending ||
-                        !channelInput.trim()
-                      }
-                      className="flex-1 w-full py-2 text-sm bg-white rounded-full font-medium hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {connectYouTubeByChannelMutation.isPending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
-                          <span className="gradient-text">Connecting...</span>
-                        </>
-                      ) : (
-                        <span className="gradient-text">Connect</span>
-                      )}
-                    </button>
-                    <button
-                      onClick={handleCancelChannelInput}
-                      disabled={connectYouTubeByChannelMutation.isPending}
-                      className="flex-1 w-full py-2 text-sm border border-border-color text-white rounded-full font-medium hover:bg-card transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Cancel
-                    </button>
+                  <div className="flex items-center justify-center text-center gap-2 text-green-500 text-sm">
+                    <CheckCircle className="w-4 h-4" />
+                    Connected
+                    {integrationStatus?.youtube.channelName && (
+                      <span className="text-text-gray ml-1">
+                        ({integrationStatus.youtube.channelName})
+                      </span>
+                    )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleYouTubeConnect}
+                    className="w-full py-2 text-sm border border-border-color text-white rounded-full font-medium hover:bg-card transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                    <span className="gradient-text">Change YouTube Channel</span>
+                  </button>
                 </div>
               ) : (
                 <button
-                  onClick={handleShowChannelInput}
-                  disabled={connectYouTubeMutation.isPending}
+                  type="button"
+                  onClick={handleYouTubeConnect}
+                  disabled={connectYouTubeByChannelMutation.isPending}
                   className="w-full py-2 text-sm bg-white rounded-full font-medium hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {connectYouTubeMutation.isPending ? (
+                  {connectYouTubeByChannelMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
                       <span className="gradient-text">Connecting...</span>
@@ -258,6 +214,7 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
                     )}
                   </div>
                   <button
+                    type="button"
                     onClick={disconnectInstagram}
                     disabled={isInstagramLoading}
                     className="w-full py-2 text-sm border border-red-400/30 text-red-400 rounded-full font-medium hover:bg-red-400/10 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -271,6 +228,7 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
                 </div>
               ) : (
                 <button
+                  type="button"
                   onClick={connectInstagram}
                   disabled={isInstagramLoading}
                   className="w-full py-2 text-sm bg-white rounded-full font-medium hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -298,6 +256,12 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
           </Button>
         </div>
       </div>
+
+      <YouTubeConnectModal
+        isOpen={youtubeModalOpen}
+        onClose={() => setYoutubeModalOpen(false)}
+        onConnect={handleYouTubeConnectConfirm}
+      />
     </div>
   );
 };
