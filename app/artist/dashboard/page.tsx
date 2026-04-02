@@ -10,6 +10,7 @@ import { Pencil } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { BookingStatus } from "@prisma/client";
 import { ARTIST_CATEGORIES } from "@/lib/constants";
+import { getArtistProfileProgress } from "@/lib/utils";
 
 /* ----------------------------------------------------
    FORMAT DATE
@@ -166,6 +167,10 @@ export default function ArtistDashboard() {
   })();
 
   const totalBookings = Object.values(bookings).flat().length;
+  const profileProgress = getArtistProfileProgress({
+    user: session?.user ?? null,
+    artistProfile: session?.user?.artistProfile ?? null,
+  }).percentage;
 
   /* ----------------------------------------------------
      PAGE JSX
@@ -235,7 +240,7 @@ export default function ArtistDashboard() {
                 <path
                   stroke="url(#progressGradientMobile)"
                   strokeWidth="3.5"
-                  strokeDasharray="80, 100"
+                  strokeDasharray={`${profileProgress}, 100`}
                   strokeLinecap="round"
                   fill="none"
                   d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32"
@@ -244,7 +249,7 @@ export default function ArtistDashboard() {
 
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <span className="text-xl font-bold text-white sm:text-2xl">80%</span>
+                  <span className="text-xl font-bold text-white sm:text-2xl">{profileProgress}%</span>
                   <div className="text-[10px] text-text-gray">Completed</div>
                 </div>
               </div>
@@ -324,7 +329,7 @@ export default function ArtistDashboard() {
                 <path
                   stroke="url(#progressGradient)"
                   strokeWidth="3"
-                  strokeDasharray="80, 100"
+                  strokeDasharray={`${profileProgress}, 100`}
                   strokeLinecap="round"
                   fill="none"
                   d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32"
@@ -332,7 +337,7 @@ export default function ArtistDashboard() {
               </svg>
 
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-white">80%</span>
+                <span className="text-2xl font-bold text-white">{profileProgress}%</span>
                 <span className="text-[10px] text-text-gray">Completed</span>
               </div>
             </div>

@@ -111,3 +111,84 @@ export function buildArtishProfileUrl(avatar:string) {
   }
     return avatar;
 }
+
+type ProgressResult = {
+  percentage: number;
+  completed: number;
+  total: number;
+};
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
+const isFilled = (value: unknown): boolean => {
+  if (value === null || typeof value === "undefined") return false;
+  if (typeof value === "number") return true;
+  if (typeof value === "boolean") return true;
+  if (isNonEmptyString(value)) return true;
+  if (Array.isArray(value)) return value.filter((v) => isFilled(v)).length > 0;
+  return false;
+};
+
+const isFilledCsv = (value: unknown): boolean => {
+  if (!isNonEmptyString(value)) return false;
+  return value
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean).length > 0;
+};
+
+export function getArtistProfileProgress(input: {
+  user?: unknown | null;
+  artistProfile?: unknown | null;
+}): ProgressResult {
+  const toRecord = (value: unknown): Record<string, unknown> => {
+    if (!value || typeof value !== "object") return {};
+    return value as Record<string, unknown>;
+  };
+
+  const user = toRecord(input.user);
+  const artist = toRecord(input.artistProfile);
+
+  const checks: boolean[] = [
+    isFilled(user.avatar),
+    isFilled(user.firstName),
+    isFilled(user.lastName),
+    isFilled(user.gender),
+    isFilled(user.dob),
+    isFilled(user.address),
+    isFilled(user.city),
+    isFilled(user.state),
+    isFilled(user.zip),
+
+    isFilled(artist.stageName),
+    isFilled(artist.artistType),
+    isFilled(artist.subArtistType),
+    isFilled(artist.achievements),
+    isFilled(artist.yearsOfExperience),
+    isFilled(artist.shortBio),
+
+    isFilledCsv(artist.performingLanguage),
+    isFilledCsv(artist.performingEventType),
+    isFilledCsv(artist.performingStates),
+    isFilled(artist.performingDurationFrom),
+    isFilled(artist.performingDurationTo),
+    isFilled(artist.performingMembers),
+    isFilled(artist.offStageMembers),
+
+    isFilled(artist.contactNumber) || isFilled(user.phoneNumber),
+    isFilled(artist.whatsappNumber),
+    isFilled(artist.contactEmail) || isFilled(user.email),
+
+    isFilled(artist.soloChargesFrom),
+    isFilled(artist.soloChargesDescription),
+    isFilled(artist.chargesWithBacklineFrom),
+    isFilled(artist.chargesWithBacklineDescription),
+  ];
+
+  const total = checks.length;
+  const completed = checks.filter(Boolean).length;
+  const percentage = total === 0 ? 0 : Math.min(100, Math.max(0, Math.round((completed / total) * 100)));
+
+  return { percentage, completed, total };
+}
