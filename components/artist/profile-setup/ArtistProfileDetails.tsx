@@ -10,6 +10,7 @@ import imageCompression from "browser-image-compression";
 import { ArtistProfileSetupData } from "@/types";
 import Cropper from "react-easy-crop";
 import { Area } from "react-easy-crop";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 
 interface ArtistProfileDetailsProps {
   data: ArtistProfileSetupData;
@@ -72,6 +73,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   onBack,
   onUpdateData,
 }) => {
+  const { categories: artistTypes } = useArtistCategories();
+
   const [formData, setFormData] = useState({
     profilePhoto: data.profilePhoto || null,
     avatarUrl: (data as any).avatarUrl || "",
@@ -133,22 +136,6 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     },
     [],
   );
-
-  const artistTypes = [
-    { value: "singer", label: "Singer" },
-    { value: "dancer", label: "Dancer/Dance Group" },
-    { value: "musician", label: "Musician/Instrumentalist" },
-    { value: "comedian", label: "Comedian" },
-    { value: "magician", label: "Magician/Illusionist" },
-    { value: "actor", label: "Theatre Artist/Actor" },
-    { value: "anchor", label: "Anchor/Emcee/Host" },
-    { value: "band", label: "Live Band/Group" },
-    { value: "dj", label: "DJ" },
-    { value: "mimicry", label: "Mimicry/Impressionist" },
-    { value: "special-act", label: "Special Act Performer" },
-    { value: "spiritual", label: "Spiritual/Devotional" },
-    { value: "kids-entertainer", label: "Kids Entertainer" },
-  ];
 
   const subArtistTypes = [
     { value: "classical", label: "Classical" },

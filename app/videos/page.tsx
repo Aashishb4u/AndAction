@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useInfiniteVideos, useToggleBookmark } from "@/hooks/use-videos";
-import { VIDEO_CATEGORIES } from "@/lib/constants";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { 
   X,
   Copy,
@@ -22,6 +22,7 @@ import LoadingOverlay from '@/components/ui/LoadingOverlay';
 
 export default function VideosPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const { categoriesWithAll } = useArtistCategories();
   const [shareModal, setShareModal] = useState<{
     isOpen: boolean;
     videoId: string;
@@ -225,7 +226,7 @@ export default function VideosPage() {
           className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide bg-[#1B1B1B] p-4 border-y border-border-line sticky top-0 md:static z-10"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {VIDEO_CATEGORIES.map((category) => (
+          {categoriesWithAll.map((category) => (
             <button
               key={category.value}
               onClick={() => setSelectedCategory(category.value)}

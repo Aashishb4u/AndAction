@@ -1,18 +1,26 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-const ARTIST_CATEGORIES = [
-  "Signer",
-  "Devotional/Spiritual singer",
-  "Live band",
-  "Dj/Vj",
-  "Musician/Instrumentalist",
-];
+type ArtistCategorySearchRow = {
+  value: string;
+  label: string;
+};
 
-export async function GET(req:any) {
+export async function GET(req: any) {
   const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q")?.toLowerCase() || "";
-  const filtered = ARTIST_CATEGORIES.filter((cat) =>
-    cat.toLowerCase().includes(q)
-  );
-  return NextResponse.json({ categories: filtered });
+  const q = searchParams.get("q")?.trim() || "";
+
+  const categories = await prisma.$queryRaw<ArtistCategorySearchRow[]>`
+    SELECT "value", "label"
+    FROM "artist_categories"
+    WHERE "isActive" = true
+      AND (
+        ${q} = ''
+        OR "label" ILIKE ${`%${q}%`}
+        OR "value" ILIKE ${`%${q}%`}
+      )
+    ORDER BY "sortOrder" ASC, "label" ASC
+  `;
+
+  return NextResponse.json({ categories });
 }

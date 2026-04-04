@@ -3,69 +3,24 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ArtistSection from "./ArtistSection";
 import ArtistSectionSkeleton from "./ArtistSectionSkeleton";
-import { useAllArtists } from "@/hooks/use-artists";
-import { ARTIST_CATEGORIES } from "@/lib/constants";
+import { useArtistsByCategoryValues } from "@/hooks/use-artists";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 
 interface ArtistsProps {
   location: { lat: number; lng: number } | null;
   canFetch?: boolean;
 }
 
-const CATEGORY_KEY_TO_VALUE: Record<string, string> = {
-  singers: "singer",
-  dancers: "dancer",
-  anchors: "anchor",
-  djs: "dj",
-  djPercussionists: "dj-percussionist",
-  bands: "Live Band",
-  comedian: "comedian",
-  comedians: "comedian",
-  musicians: "musician",
-  magicians: "magician",
-  actors: "actor",
-  mimicry: "mimicry",
-  specialAct: "special-act",
-  spiritual: "spiritual",
-  kidsEntertainers: "kids-entertainer",
-};
-
-const CATEGORY_LABEL_BY_VALUE = ARTIST_CATEGORIES.reduce(
-  (acc, category) => {
-    acc[category.value] = category.label;
-    return acc;
-  },
-  {} as Record<string, string>,
-);
-
-// Preferred ordering for categories (unknown categories will be appended)
-const PREFERRED_ORDER = [
-  "singers",
-  "dancers",
-  "musicians",
-  "anchors",
-  "djs",
-  "djPercussionists",
-  "bands",
-  "comedians",
-  "magicians",
-  "actors",
-  "mimicry",
-  "specialAct",
-  "spiritual",
-  "kidsEntertainers",
-];
-
 // Number of categories to display initially and per load
 const CATEGORIES_PER_LOAD = 5;
-const EMPTY_ARTISTS: any[] = [];
-
-// Helper function to prettify category key to display title
-function prettifyKey(key: string) {
-  const withoutS = key.replace(/s$/, "");
-  return withoutS.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
 
 export default function Artists({ location, canFetch = true }: ArtistsProps) {
+  const { categories, isLoading: isCategoriesLoading } = useArtistCategories();
+  const categoryValues = useMemo(
+    () => categories.map((category) => category.value),
+    [categories],
+  );
+
   const normalizedLocation = useMemo(() => {
     if (!location) return null;
 
@@ -81,87 +36,34 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
     ? `${normalizedLocation.lat.toFixed(4)},${normalizedLocation.lng.toFixed(4)}`
     : "all";
 
-  const allArtists = useAllArtists(normalizedLocation, false, canFetch);
-
   const {
-    singers,
-    dancers,
-    anchors,
-    djs,
-    djPercussionists,
-    bands,
-    comedians: comediansFromHook,
-    musicians,
-    magicians,
-    actors,
-    mimicry,
-    specialAct,
-    spiritual,
-    kidsEntertainers,
-    isLoading,
-  } = allArtists;
-
-  const comedians =
-    comediansFromHook ||
-    ((allArtists as Record<string, any>).comedian as any[]) ||
-    EMPTY_ARTISTS;
-
-  const shouldShowLoading = !canFetch || isLoading;
-
-  // Map category keys to their artist arrays (memoized to keep stable ref)
-  const categoryData: Record<string, any[]> = useMemo(
-    () => ({
-      singers,
-      dancers,
-      anchors,
-      djs,
-      djPercussionists,
-      bands,
-      comedians,
-      musicians,
-      magicians,
-      actors,
-      mimicry,
-      specialAct,
-      spiritual,
-      kidsEntertainers,
-    }),
-    [
-      singers,
-      dancers,
-      anchors,
-      djs,
-      djPercussionists,
-      bands,
-      comedians,
-      musicians,
-      magicians,
-      actors,
-      mimicry,
-      specialAct,
-      spiritual,
-      kidsEntertainers,
-    ],
+    byType: artistsByType,
+    isLoading: isArtistsLoading,
+    isFetching: isArtistsFetching,
+  } = useArtistsByCategoryValues(
+    categoryValues,
+    normalizedLocation,
+    false,
+    canFetch && categoryValues.length > 0,
   );
 
-  // Derive categories dynamically from returned data keys and memoize
-  const categoriesWithArtists = useMemo(() => {
-    const derivedCategories = Object.keys(categoryData);
-    const ordered = [
-      ...PREFERRED_ORDER.filter((k) => derivedCategories.includes(k)),
-      ...derivedCategories.filter((k) => !PREFERRED_ORDER.includes(k)),
-    ];
-    return ordered
-      .map((key) => {
-        const categoryValue = CATEGORY_KEY_TO_VALUE[key];
-        const title = categoryValue
-          ? CATEGORY_LABEL_BY_VALUE[categoryValue]
-          : undefined;
+  const shouldShowLoading =
+    !canFetch ||
+    isCategoriesLoading ||
+    (categoryValues.length > 0 && (isArtistsLoading || isArtistsFetching));
 
-        return { key, title: title || prettifyKey(key) };
-      })
-      .filter((category) => (categoryData[category.key] || []).length > 0);
-  }, [categoryData]);
+  const categoriesWithArtists = useMemo(
+    () =>
+      categories
+        .map((category) => ({
+          key: category.value,
+          title: category.label,
+          artistsCount: (artistsByType[category.value] || []).length,
+        }))
+        .filter((category) => category.artistsCount > 0)
+        .map(({ key, title }) => ({ key, title })),
+    [categories, artistsByType],
+  );
 
   // State to track how many categories to show
   const [visibleCategoryCount, setVisibleCategoryCount] =
@@ -277,26 +179,23 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
       <div className="relative z-20 max-w-7xl mx-auto space-y-6">
         {shouldShowLoading ? (
           <>
-            {PREFERRED_ORDER.slice(0, CATEGORIES_PER_LOAD).map((key) => (
+            {Array.from({ length: CATEGORIES_PER_LOAD }).map((_, index) => (
               <ArtistSectionSkeleton
-                key={key}
-                title={
-                  CATEGORY_LABEL_BY_VALUE[CATEGORY_KEY_TO_VALUE[key]] ||
-                  prettifyKey(key)
-                }
+                key={`skeleton-${index}`}
               />
             ))}
           </>
         ) : (
           <>
             {visibleCategories.map((category) => {
-              const artists = categoryData[category.key] || [];
+              const artists = artistsByType[category.key] || [];
 
               return (
                 <ArtistSection
                   key={category.key}
                   title={category.title}
                   artists={artists}
+                  categoryValue={category.key}
                 />
               );
             })}

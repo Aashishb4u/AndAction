@@ -1,26 +1,3 @@
-// Artist categories aligned with database and API mapping
-export const ARTIST_CATEGORIES = [
-  { value: "singer", label: "Singer" },
-  { value: "spiritual", label: "Spiritual / Devotional Singer" },
-  { value: "dancer", label: "Dancer / Dance Group" },
-  { value: "musician", label: "Musician / Instrumentalist" },
-  { value: "comedian", label: "Comedian" },
-  { value: "mimicry", label: "Mimicry / Impressionist" },
-  { value: "magician", label: "Magician / Illusionist" },
-  { value: "actor", label: "Theatre Artist / Actor" },
-  { value: "anchor", label: "Anchor / Emcee / Host" },
-  { value: "Live Band", label: "Live Band / Group" },
-  { value: "dj", label: "DJ / VJ" },
-  { value: "dj-percussionist", label: "DJ Percussionist" },
-  { value: "special-act", label: "Special Act Performer" },
-  { value: "kids-entertainer", label: "Kids Entertainer" },
-];
-
-// Video categories (includes "All" option)
-export const VIDEO_CATEGORIES = [
-  { value: "all", label: "All" },
-  ...ARTIST_CATEGORIES,
-];
 // Indian States and Union Territories
 export const INDIAN_STATES = [
   { value: "andhra-pradesh", label: "Andhra Pradesh" },

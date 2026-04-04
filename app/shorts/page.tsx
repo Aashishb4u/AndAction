@@ -1,6 +1,6 @@
 "use client";
 
-import { VIDEO_CATEGORIES } from "@/lib/constants";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { useMemo } from "react";
 
 const SHORTS_PAGE_LIMIT = 5;
@@ -56,6 +56,7 @@ import { toast } from "react-toastify";
 
 export default function ShortsPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const { categoriesWithAll } = useArtistCategories();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -470,7 +471,7 @@ export default function ShortsPage() {
         className="fixed top-0 md:static md:mt-16 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-[#1B1B1B] backdrop-blur-sm p-4 border-y border-border-line"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        {VIDEO_CATEGORIES.map((category) => (
+        {categoriesWithAll.map((category) => (
           <button
             key={category.value}
             onClick={() => {
