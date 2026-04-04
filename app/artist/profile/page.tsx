@@ -105,6 +105,10 @@ function ArtistProfileContent() {
       : [],
     phone: artistProfile.contactNumber || "",
     whatsapp: artistProfile.whatsappNumber || artistProfile.contactNumber || "",
+    contactNumber: artistProfile.contactNumber || "",
+    whatsappNumber: artistProfile.whatsappNumber || artistProfile.contactNumber || "",
+    contactEmail: artistProfile.contactEmail || user.email || "",
+    email: user.email || "",
     videos: [],
     shorts: [],
     performances: [],
@@ -127,6 +131,28 @@ function ArtistProfileContent() {
     performingDurationTo: artistProfile.performingDurationTo || "",
     performingMembers: artistProfile.performingMembers || "",
     offStageMembers: artistProfile.offStageMembers || "",
+    soloChargesFrom:
+      artistProfile.soloChargesFrom !== null &&
+      artistProfile.soloChargesFrom !== undefined
+        ? Number(artistProfile.soloChargesFrom)
+        : undefined,
+    soloChargesTo:
+      artistProfile.soloChargesTo !== null &&
+      artistProfile.soloChargesTo !== undefined
+        ? Number(artistProfile.soloChargesTo)
+        : undefined,
+    soloChargesDescription: artistProfile.soloChargesDescription || "",
+    chargesWithBacklineFrom:
+      artistProfile.chargesWithBacklineFrom !== null &&
+      artistProfile.chargesWithBacklineFrom !== undefined
+        ? Number(artistProfile.chargesWithBacklineFrom)
+        : undefined,
+    chargesWithBacklineTo:
+      artistProfile.chargesWithBacklineTo !== null &&
+      artistProfile.chargesWithBacklineTo !== undefined
+        ? Number(artistProfile.chargesWithBacklineTo)
+        : undefined,
+    chargesWithBacklineDescription: artistProfile.chargesWithBacklineDescription || "",
     tags: [artistProfile.artistType || "", artistProfile.subArtistType || ""],
     userId: user.id
   };

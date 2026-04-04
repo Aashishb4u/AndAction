@@ -12,21 +12,22 @@ interface ArtistsProps {
 }
 
 const CATEGORY_KEY_TO_VALUE: Record<string, string> = {
+  liveBands: "live-band",
+  devotionalSpiritualSingers: "spiritual",
   singers: "singer",
-  dancers: "dancer",
-  anchors: "anchor",
-  djs: "dj",
+  anchorEmceeHosts: "anchor",
+  djVjs: "dj",
+  djBasedBands: "dj-based-band",
   djPercussionists: "dj-percussionist",
-  bands: "Live Band",
-  comedian: "comedian",
-  comedians: "comedian",
-  musicians: "musician",
-  magicians: "magician",
-  actors: "actor",
-  mimicry: "mimicry",
-  specialAct: "special-act",
-  spiritual: "spiritual",
+  musiciansInstrumentalists: "musician",
+  dancersDanceGroups: "dancer",
+  magicialIllusionists: "magician",
+  comedianMimicry: "comedian-mimicry",
+  specialActPerformers: "special-act",
+  motivationalSpeakers: "motivational-speaker",
   kidsEntertainers: "kids-entertainer",
+  folkArtists: "folk-artist",
+  models: "model",
 };
 
 const CATEGORY_LABEL_BY_VALUE = ARTIST_CATEGORIES.reduce(
@@ -39,25 +40,26 @@ const CATEGORY_LABEL_BY_VALUE = ARTIST_CATEGORIES.reduce(
 
 // Preferred ordering for categories (unknown categories will be appended)
 const PREFERRED_ORDER = [
+  "liveBands",
+  "devotionalSpiritualSingers",
   "singers",
-  "dancers",
-  "musicians",
-  "anchors",
-  "djs",
+  "anchorEmceeHosts",
+  "djVjs",
+  "djBasedBands",
   "djPercussionists",
-  "bands",
-  "comedians",
-  "magicians",
-  "actors",
-  "mimicry",
-  "specialAct",
-  "spiritual",
+  "musiciansInstrumentalists",
+  "dancersDanceGroups",
+  "magicialIllusionists",
+  "comedianMimicry",
+  "specialActPerformers",
+  "motivationalSpeakers",
   "kidsEntertainers",
+  "folkArtists",
+  "models",
 ];
 
 // Number of categories to display initially and per load
 const CATEGORIES_PER_LOAD = 5;
-const EMPTY_ARTISTS: any[] = [];
 
 // Helper function to prettify category key to display title
 function prettifyKey(key: string) {
@@ -84,63 +86,64 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
   const allArtists = useAllArtists(normalizedLocation, false, canFetch);
 
   const {
+    liveBands,
+    devotionalSpiritualSingers,
     singers,
-    dancers,
-    anchors,
-    djs,
+    anchorEmceeHosts,
+    djVjs,
+    djBasedBands,
     djPercussionists,
-    bands,
-    comedians: comediansFromHook,
-    musicians,
-    magicians,
-    actors,
-    mimicry,
-    specialAct,
-    spiritual,
+    musiciansInstrumentalists,
+    dancersDanceGroups,
+    magicialIllusionists,
+    comedianMimicry,
+    specialActPerformers,
+    motivationalSpeakers,
     kidsEntertainers,
+    folkArtists,
+    models,
     isLoading,
   } = allArtists;
-
-  const comedians =
-    comediansFromHook ||
-    ((allArtists as Record<string, any>).comedian as any[]) ||
-    EMPTY_ARTISTS;
 
   const shouldShowLoading = !canFetch || isLoading;
 
   // Map category keys to their artist arrays (memoized to keep stable ref)
   const categoryData: Record<string, any[]> = useMemo(
     () => ({
+      liveBands,
+      devotionalSpiritualSingers,
       singers,
-      dancers,
-      anchors,
-      djs,
+      anchorEmceeHosts,
+      djVjs,
+      djBasedBands,
       djPercussionists,
-      bands,
-      comedians,
-      musicians,
-      magicians,
-      actors,
-      mimicry,
-      specialAct,
-      spiritual,
+      musiciansInstrumentalists,
+      dancersDanceGroups,
+      magicialIllusionists,
+      comedianMimicry,
+      specialActPerformers,
+      motivationalSpeakers,
       kidsEntertainers,
+      folkArtists,
+      models,
     }),
     [
+      liveBands,
+      devotionalSpiritualSingers,
       singers,
-      dancers,
-      anchors,
-      djs,
+      anchorEmceeHosts,
+      djVjs,
+      djBasedBands,
       djPercussionists,
-      bands,
-      comedians,
-      musicians,
-      magicians,
-      actors,
-      mimicry,
-      specialAct,
-      spiritual,
+      musiciansInstrumentalists,
+      dancersDanceGroups,
+      magicialIllusionists,
+      comedianMimicry,
+      specialActPerformers,
+      motivationalSpeakers,
       kidsEntertainers,
+      folkArtists,
+      models,
     ],
   );
 
@@ -297,6 +300,7 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
                   key={category.key}
                   title={category.title}
                   artists={artists}
+                  categoryKey={category.key}
                 />
               );
             })}

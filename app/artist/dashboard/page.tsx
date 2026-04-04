@@ -413,7 +413,7 @@ export default function ArtistDashboard() {
                         key={booking.id}
                         status={booking.status}
                         clientName={`${booking.client.firstName} ${booking.client.lastName}`}
-                        clientPhone={booking.client.phoneNumber}
+                        clientPhone={booking.client?.phoneNumber ?? null}
                         location={booking.eventLocation}
                         date={formatDate(booking.eventDate)}
                         eventType={booking.eventType}

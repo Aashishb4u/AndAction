@@ -25,6 +25,8 @@ type ExtendedArtist = Artist & {
   state?: string;
   city?: string;
   shortBio?: string;
+  contactNumber?: string;
+  contactEmail?: string;
   subArtistType: string;
 };
 
@@ -71,9 +73,15 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
     if (v === "dj-percussionist" || v === "dj percussionist" || v === "djpercussionist") {
       return "Dj Percussionist";
     }
-    if (v === "dj") return "DJ / VJ";
-    if (v === "live band" || v === "band" || v === "bands") return "Live Band";
-    if (v === "spiritual") return "Spiritual / Devotional Singer";
+    if (v === "dj" || v === "dj/vj" || v === "dj / vj") return "DJ/VJ";
+    if (v === "live-band" || v === "live band" || v === "band" || v === "bands") return "Live Band";
+    if (v === "spiritual") return "Devotional/Spiritual Singer";
+    if (v === "dj-based-band" || v === "dj based band") return "DJ based Band";
+    if (v === "comedian-mimicry" || v === "comedian/mimicry") return "Comedian/Mimicry";
+    if (v === "special-act" || v === "special act performer") return "Special act performer";
+    if (v === "motivational-speaker") return "Motivational speaker";
+    if (v === "kids-entertainer") return "Kids entertainer";
+    if (v === "folk-artist") return "Folk Artist";
 
     return value.trim();
   };
@@ -97,9 +105,16 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
     if (byLabel) return byLabel.value;
 
     // 3) Common aliases
-    if (lower === "band" || lower === "bands" || lower === "live band" || lower === "liveband") return "Live Band";
-    if (lower === "spiritual" || lower === "spiritual / devotional singer" || lower === "devotional / spiritual singer") return "spiritual";
+    if (lower === "band" || lower === "bands" || lower === "live band" || lower === "liveband") return "live-band";
+    if (lower === "spiritual" || lower === "spiritual / devotional singer" || lower === "devotional / spiritual singer" || lower === "devotional/spiritual singer") return "spiritual";
+    if (lower === "dj/vj" || lower === "dj / vj") return "dj";
+    if (lower === "dj based band" || lower === "dj-based-band") return "dj-based-band";
     if (lower === "dj percussionist" || lower === "dj-percussionist" || lower === "djpercussionist") return "dj-percussionist";
+    if (lower === "comedian/mimicry" || lower === "comedian-mimicry") return "comedian-mimicry";
+    if (lower === "special act performer" || lower === "special-act") return "special-act";
+    if (lower === "motivational speaker" || lower === "motivational-speaker") return "motivational-speaker";
+    if (lower === "kids entertainer" || lower === "kids-entertainer") return "kids-entertainer";
+    if (lower === "folk artist" || lower === "folk-artist") return "folk-artist";
 
     return raw;
   };
@@ -119,6 +134,10 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
     pinCode: (artist as ExtendedArtist).pinCode || "",
     state: (artist as ExtendedArtist).state?.toLowerCase() || "",
     city: (artist as ExtendedArtist).city?.toLowerCase() || "",
+    contactNumber:
+      (artist as ExtendedArtist).contactNumber || (artist as any).phone || "",
+    email:
+      (artist as ExtendedArtist).contactEmail || (artist as any).email || "",
     subArtistType:
       (artist as ExtendedArtist).subArtistType?.toLowerCase() || "",
     achievements: Array.isArray(artist.achievements)
@@ -166,6 +185,9 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         pinCode: formData.pinCode,
         city: formData.city,
         state: formData.state,
+        contactNumber: formData.contactNumber,
+        whatsappNumber: formData.contactNumber,
+        contactEmail: formData.email,
         shortBio: formData.shortBio,
         achievements: formData.achievements,
         yearsOfExperience: formData.yearsOfExperience,
@@ -211,6 +233,10 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       pinCode: (artist as ExtendedArtist).pinCode || "",
       state: (artist as ExtendedArtist).state?.toLowerCase() || "",
       city: (artist as ExtendedArtist).city?.toLowerCase() || "",
+      contactNumber:
+        (artist as ExtendedArtist).contactNumber || (artist as any).phone || "",
+      email:
+        (artist as ExtendedArtist).contactEmail || (artist as any).email || "",
       subArtistType:
         (artist as ExtendedArtist).subArtistType?.toLowerCase() || "",
       achievements: Array.isArray(artist.achievements)
@@ -304,6 +330,36 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
           onChange={(value) => handleInputChange("city", value)}
           required
         />
+      </div>
+
+      {/* Contact Number */}
+      <div className="relative text-sm">
+        <Input
+          label="Contact / Whatsapp number*"
+          value={formData.contactNumber}
+          onChange={(e) => handleInputChange("contactNumber", e.target.value)}
+          required
+        />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Primary contact number shown to users and used for calls/WhatsApp fallback">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* Email ID */}
+      <div className="relative text-sm">
+        <Input
+          label="Email ID"
+          value={formData.email}
+          onChange={(e) => handleInputChange("email", e.target.value)}
+          type="email"
+        />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Professional email used for booking communication">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
       </div>
 
             {/* Artist Category */}

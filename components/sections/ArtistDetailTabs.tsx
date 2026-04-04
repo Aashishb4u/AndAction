@@ -328,100 +328,181 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
   const renderPerformanceContent = () => (
     <div className="space-y-4 max-w-4xl">
-      <div className="md:bg-background bg-card border rounded-lg md:p-6 p-4" style={{ borderColor: '#232323' }}>
-        <div className="mb-6">
-          <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
-          <div className="text-white mb-1">Starting from ₹ {artist.soloChargesFrom || 0}</div>
-          {artist.soloChargesDescription?.trim() ? (
-            <p className="footnote">{artist.soloChargesDescription.trim()}</p>
-          ) : null}
-        </div>
+      {(() => {
+        const hasSoloCharges =
+          artist.soloChargesFrom !== undefined &&
+          artist.soloChargesFrom !== null &&
+          `${artist.soloChargesFrom}`.trim() !== "";
+        const hasBacklineCharges =
+          artist.chargesWithBacklineFrom !== undefined &&
+          artist.chargesWithBacklineFrom !== null &&
+          `${artist.chargesWithBacklineFrom}`.trim() !== "";
+        const hasPricingSection =
+          hasSoloCharges ||
+          !!artist.soloChargesDescription?.trim() ||
+          hasBacklineCharges ||
+          !!artist.chargesWithBacklineDescription?.trim();
 
-        <div>
-          <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
-          <div className="text-white mb-1">Starting from ₹ {artist.chargesWithBacklineFrom || 0}</div>
-          {artist.chargesWithBacklineDescription?.trim() ? (
-            <p className="footnote">{artist.chargesWithBacklineDescription.trim()}</p>
-          ) : null}
-        </div>
-      </div>
+        const hasDuration =
+          !!artist.performingDurationFrom || !!artist.performingDurationTo;
+        const hasMembers = !!artist.performingMembers || !!artist.offStageMembers;
+        const hasCorePerformanceSection = hasDuration || hasMembers;
 
-      <div className="md:bg-background bg-card border rounded-lg p-4" style={{ borderColor: '#232323' }}>
-        <div className="mb-4">
-          <h4 className="text-text-gray secondary-text mb-1">Performing duration</h4>
-          <p className="text-white text-sm">
-            {artist.performingDurationFrom || 'N/A'} mins
-          </p>
-        </div>
+        const languages = artist.languages?.length
+          ? artist.languages
+              .flatMap((lang: string) =>
+                lang.split(",").map((l: string) => l.trim()),
+              )
+              .filter((l: string) => l)
+          : [];
 
-        <div className="mb-4">
-          <h4 className="text-text-gray secondary-text mb-1">Performing members</h4>
-          <p className="text-white text-sm">
-            {artist.performingMembers || "N/A"} members
-          </p>
-        </div>
+        const eventTypes = artist.performingEventType
+          ? artist.performingEventType
+              .split(",")
+              .map((e: string) => e.trim())
+              .filter((e: string) => e)
+          : [];
 
-        <div>
-          <h4 className="text-text-gray secondary-text mb-1">Off stage members</h4>
-          <p className="text-white text-sm">
-            {artist.offStageMembers || "N/A"}
-          </p>
-        </div>
-      </div>
+        const states = artist.performingStates
+          ? artist.performingStates
+              .split(",")
+              .map((s: string) => s.trim())
+              .filter((s: string) => s)
+          : [];
+        const hasPanIndia = states.some(
+          (s: string) => s.toLowerCase() === "pan india",
+        );
+        const normalizedStates = hasPanIndia ? ["Pan India"] : states;
 
-      <div className="md:bg-background bg-card border rounded-lg md:p-6 p-4" style={{ borderColor: '#232323' }}>
-        <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
-        <div className="flex  flex-wrap gap-1.5">
-          {(artist.languages?.length
-            ? artist.languages.flatMap((lang: string) => lang.split(',').map((l: string) => l.trim())).filter((l: string) => l)
-            : ["N/A"]
-          ).map((language: string, index: number) => (
-            <span
-              key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
-            >
-              {language || "N/A"}
-            </span>
-          ))}
-        </div>
-      </div>
+        return (
+          <>
+            {hasPricingSection && (
+              <div
+                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                style={{ borderColor: "#232323" }}
+              >
+                {(hasSoloCharges || !!artist.soloChargesDescription?.trim()) && (
+                  <div className={hasBacklineCharges || !!artist.chargesWithBacklineDescription?.trim() ? "mb-6" : ""}>
+                    <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
+                    {hasSoloCharges && (
+                      <div className="text-white mb-1">
+                        Starting from ₹ {artist.soloChargesFrom}
+                      </div>
+                    )}
+                    {artist.soloChargesDescription?.trim() ? (
+                      <p className="footnote">{artist.soloChargesDescription.trim()}</p>
+                    ) : null}
+                  </div>
+                )}
 
-      <div className="md:bg-background bg-card border rounded-lg md:p-6 p-4" style={{ borderColor: '#232323' }}>
-        <h3 className="text-text-gray secondary-text mb-1">Performing event type</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {(artist.performingEventType
-            ? artist.performingEventType.split(',').map((e: string) => e.trim()).filter((e: string) => e)
-            : ["N/A"]
-          ).map((eventType: string, index: number) => (
-            <span
-              key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
-            >
-              {eventType || "N/A"}
-            </span>
-          ))}
-        </div>
-      </div>
+                {(hasBacklineCharges || !!artist.chargesWithBacklineDescription?.trim()) && (
+                  <div>
+                    <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
+                    {hasBacklineCharges && (
+                      <div className="text-white mb-1">
+                        Starting from ₹ {artist.chargesWithBacklineFrom}
+                      </div>
+                    )}
+                    {artist.chargesWithBacklineDescription?.trim() ? (
+                      <p className="footnote">{artist.chargesWithBacklineDescription.trim()}</p>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            )}
 
-      <div className="md:bg-background bg-card border rounded-lg md:p-6 p-4" style={{ borderColor: '#232323' }}>
-        <h3 className="text-text-gray secondary-text mb-1">Performing States</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {(() => {
-            const states = artist.performingStates
-              ? artist.performingStates.split(',').map((s: string) => s.trim()).filter((s: string) => s)
-              : ["N/A"];
-            const hasPanIndia = states.some((s: string) => s.toLowerCase() === 'pan india');
-            return hasPanIndia ? ["Pan India"] : states;
-          })().map((state: string, index: number) => (
-            <span
-              key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
-            >
-              {state || "N/A"}
-            </span>
-          ))}
-        </div>
-      </div>
+            {hasCorePerformanceSection && (
+              <div
+                className="md:bg-background bg-card border rounded-lg p-4"
+                style={{ borderColor: "#232323" }}
+              >
+                {hasDuration && (
+                  <div className="mb-4">
+                    <h4 className="text-text-gray secondary-text mb-1">Performing duration</h4>
+                    <p className="text-white text-sm">
+                      {artist.performingDurationFrom || ""}
+                      {artist.performingDurationFrom && artist.performingDurationTo ? " - " : ""}
+                      {artist.performingDurationTo || ""}
+                      {(artist.performingDurationFrom || artist.performingDurationTo) ? " mins" : ""}
+                    </p>
+                  </div>
+                )}
+
+                {artist.performingMembers && (
+                  <div className={artist.offStageMembers ? "mb-4" : ""}>
+                    <h4 className="text-text-gray secondary-text mb-1">Performing members</h4>
+                    <p className="text-white text-sm">{artist.performingMembers} members</p>
+                  </div>
+                )}
+
+                {artist.offStageMembers && (
+                  <div>
+                    <h4 className="text-text-gray secondary-text mb-1">Off stage members</h4>
+                    <p className="text-white text-sm">{artist.offStageMembers} members</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {languages.length > 0 && ( 
+              <div
+                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                style={{ borderColor: "#232323" }}
+              >
+                <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {languages.map((language: string, index: number) => (
+                    <span
+                      key={index}
+                      className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
+                    >
+                      {language}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {eventTypes.length > 0 && (
+              <div
+                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                style={{ borderColor: "#232323" }}
+              >
+                <h3 className="text-text-gray secondary-text mb-1">Performing event type</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {eventTypes.map((eventType: string, index: number) => (
+                    <span
+                      key={index}
+                      className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
+                    >
+                      {eventType}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {normalizedStates.length > 0 && (
+              <div
+                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                style={{ borderColor: "#232323" }}
+              >
+                <h3 className="text-text-gray secondary-text mb-1">Performing States</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {normalizedStates.map((state: string, index: number) => (
+                    <span
+                      key={index}
+                      className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
+                    >
+                      {state}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 

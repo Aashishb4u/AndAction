@@ -9,6 +9,7 @@ import ContactPricingDetails from "@/components/artist/profile-setup/ContactPric
 import ProfileReview from "@/components/artist/profile-setup/ProfileReview";
 import VideosSocialMedia from "@/components/artist/profile-setup/VideosSocialMedia";
 import SuccessModal from "@/components/artist/profile-setup/SuccessModal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useSession } from "next-auth/react";
 
 type ProfileSetupStep =
@@ -26,7 +27,8 @@ export default function ProfileSetupPage() {
   // proceeding through the normal sequential flow.
   const [editingFromReview, setEditingFromReview] = useState<ProfileSetupStep | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showBackWarning, setShowBackWarning] = useState(false);
+  const [pendingBackStep, setPendingBackStep] = useState<ProfileSetupStep | "dashboard" | null>(null);
   const router = useRouter();
   const { data: session, status, update } = useSession();
 
@@ -103,34 +105,25 @@ export default function ProfileSetupPage() {
         performingDurationTo: profile.performingDurationTo || "",
         performingMembers: profile.performingMembers || "",
         offStageMembers: profile.offStageMembers || "",
-        contactNumber: profile.contactNumber || user.phoneNumber || "",
-        whatsappNumber: profile.whatsappNumber || user.phoneNumber || "",
+        contactNumber: profile.contactNumber || profile.whatsappNumber || "",
+        whatsappNumber: profile.whatsappNumber || profile.contactNumber || "",
         email: user.email || "",
       }));
     }
   }, [session]);
 
-  // Pre-fill contact number from session if user signed up with phone
+  // Pre-fill email from session if available
   useEffect(() => {
-    if (session?.user?.phoneNumber) {
-      const phone = session.user.phoneNumber;
-      setProfileData((prev) => ({
-        ...prev,
-        contactNumber: prev.contactNumber || phone,
-        whatsappNumber: prev.whatsappNumber || phone,
-      }));
-    }
     if (session?.user?.email) {
       setProfileData((prev) => ({
         ...prev,
         email: prev.email || session.user.email || "",
       }));
     }
-  }, [session?.user?.phoneNumber, session?.user?.email]);
+  }, [session?.user?.email]);
 
   const handleSubmitProfile = async () => {
     try {
-      setIsSubmitting(true);
       const userId = session?.user?.id;
 
       if (!userId) {
@@ -194,8 +187,6 @@ export default function ProfileSetupPage() {
       setCurrentStep("videosSocialMedia");
     } catch (err) {
       console.error("Unexpected Error Saving Artist Profile:", err);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -234,27 +225,46 @@ export default function ProfileSetupPage() {
     }
   };
 
-  const handleBack = () => {
+  const resolveBackTarget = (): ProfileSetupStep | "dashboard" => {
     switch (currentStep) {
       case "artistDetails":
-        setCurrentStep("overview");
-        break;
+        return "overview";
       case "performanceDetails":
-        setCurrentStep("artistDetails");
-        break;
+        return "artistDetails";
       case "contactPricing":
-        setCurrentStep("performanceDetails");
-        break;
+        return "performanceDetails";
       case "review":
-        setCurrentStep("contactPricing");
-        break;
+        return "contactPricing";
       case "videosSocialMedia":
-        setCurrentStep("review");
-        break;
+        return "review";
       case "overview":
-        router.push("/artist/dashboard");
-        break;
+      default:
+        return "dashboard";
     }
+  };
+
+  const performBackNavigation = (target: ProfileSetupStep | "dashboard") => {
+    if (target === "dashboard") {
+      router.push("/artist/dashboard");
+      return;
+    }
+    setCurrentStep(target);
+  };
+
+  const handleBack = () => {
+    const target = resolveBackTarget();
+    setPendingBackStep(target);
+    setShowBackWarning(true);
+  };
+
+  const handleConfirmBack = () => {
+    if (!pendingBackStep) {
+      setShowBackWarning(false);
+      return;
+    }
+    performBackNavigation(pendingBackStep);
+    setPendingBackStep(null);
+    setShowBackWarning(false);
   };
 
   const handleSkip = () => {
@@ -417,6 +427,17 @@ export default function ProfileSetupPage() {
         isOpen={showSuccessModal}
         onGoToDashboard={handleGoToDashboard}
         onAddAnotherProfile={handleAddAnotherProfile}
+      />
+      <ConfirmDialog
+        open={showBackWarning}
+        onOpenChange={setShowBackWarning}
+        title="Go Back?"
+        description="Your current step changes may not be saved yet. Are you sure you want to go back?"
+        confirmText="Go Back"
+        cancelText="Stay Here"
+        variant="warning"
+        onCancel={() => setPendingBackStep(null)}
+        onConfirm={handleConfirmBack}
       />
     </div>
   );
