@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
 import { Share2, Bookmark, BookmarkCheck } from "lucide-react";
 import Image from "next/image";
+import { getArtishName } from "@/lib/utils";
 
 export default function ShortDetailsPage() {
   const params = useParams();
@@ -49,9 +50,7 @@ export default function ShortDetailsPage() {
           bookmarkId: v.bookmarkId,
           artist: {
             id: v.user?.artist?.id,
-            name: v.user.name
-              ? v.user.name
-              : `${v.user.firstName} ${v.user.lastName}`,
+            name: getArtishName(v.user.name, v.user.firstName, v.user.lastName),
             avatar: v.user.avatar,
             verified: v.user.isArtistVerified,
           },
@@ -62,9 +61,7 @@ export default function ShortDetailsPage() {
           json.data.shorts.map((sv: any) => ({
             id: sv.id,
             title: sv.title,
-            creator: sv.user.name
-              ? sv.user.name
-              : `${sv.user.firstName} ${sv.user.lastName}`,
+            creator: getArtishName(sv.user.name, sv.user.firstName, sv.user.lastName),
             thumbnail: sv.thumbnailUrl,
             videoUrl: sv.url,
             isBookmarked: sv.isBookmarked,

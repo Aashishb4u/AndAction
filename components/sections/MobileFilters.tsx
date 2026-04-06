@@ -4,8 +4,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
-import { VIDEO_CATEGORIES, INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 
 interface FilterOption {
   value: string;
@@ -20,15 +21,6 @@ interface MobileFiltersProps {
   resultCount?: number;
   className?: string;
 }
-
-// Filter options - using VIDEO_CATEGORIES from constants
-const categoryOptions: FilterOption[] = [
-  { value: "", label: "Select Category" },
-  ...VIDEO_CATEGORIES.filter((cat) => cat.value !== "all").map((cat) => ({
-    value: cat.value,
-    label: cat.label,
-  })),
-];
 
 const genderOptions: FilterOption[] = [
   { value: "", label: "Select gender" },
@@ -82,6 +74,12 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   resultCount = 0,
   className = "",
 }) => {
+  const { categories } = useArtistCategories();
+  const categoryOptions: FilterOption[] = [
+    { value: "", label: "Select Category" },
+    ...categories.map((cat) => ({ value: cat.value, label: cat.label })),
+  ];
+
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);

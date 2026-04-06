@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { getArtishName } from "@/lib/utils";
+import { useQuery, useQueries } from "@tanstack/react-query";
 
 export interface Artist {
   id: string;
@@ -35,7 +36,7 @@ interface LocationParams {
 }
 
 interface FetchArtistsParams {
-  type: ArtistType;
+  type: string;
   location?: LocationParams | null;
   verified?: boolean;
   minResults?: number;
@@ -69,13 +70,24 @@ interface ArtistsApiResponse {
 const mockVideoUrl =
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
+function normalizeArtistTypeRequest(type: string): string {
+  const normalized = type.trim().toLowerCase();
+
+  const typeMap: Record<string, string> = {
+    band: "live-band",
+    spiritual: "spiritual-singer",
+  };
+
+  return typeMap[normalized] || normalized;
+}
+
 export const artistKeys = {
   all: ["artists"] as const,
   lists: () => [...artistKeys.all, "list"] as const,
   list: (filters: Partial<FetchArtistsParams>) =>
     [...artistKeys.lists(), filters] as const,
-  byType: (type: ArtistType) => [...artistKeys.all, type] as const,
-  byTypeWithLocation: (type: ArtistType, location: LocationParams | null) =>
+  byType: (type: string) => [...artistKeys.all, type] as const,
+  byTypeWithLocation: (type: string, location: LocationParams | null) =>
     [
       ...artistKeys.byType(type),
       location ? `${location.lat.toFixed(4)},${location.lng.toFixed(4)}` : null,
@@ -84,9 +96,7 @@ export const artistKeys = {
 
 const mapArtistData = (artist: any): Artist => ({
   id: artist.id,
-  name:
-    artist.stageName ||
-    `${artist.user.firstName} ${artist.user.lastName}`.trim(),
+  name: getArtishName(artist.user.name, artist.user.firstName, artist.user.lastName),
   location: artist.user.city || "Unknown",
   thumbnail: artist.user.avatar || "/avatars/default.jpg",
   videoUrl: mockVideoUrl,
@@ -103,26 +113,7 @@ async function fetchArtistsByType({
   artists: Artist[];
   metadata?: SearchMetadata;
 }> {
-  // Normalize type for request to keep category naming consistent across pages.
-  const typeParamByValue: Record<ArtistType, string> = {
-    "live-band": "Live Band",
-    spiritual: "Devotional/Spiritual Singer",
-    singer: "Singer",
-    anchor: "Anchor/Emcee/Host",
-    dj: "DJ/VJ",
-    "dj-based-band": "DJ based Band",
-    "dj-percussionist": "DJ Percussionist",
-    musician: "Musician/Instrumentalist",
-    dancer: "Dancer/Dance group",
-    magician: "Magicial/Illusionist",
-    "comedian-mimicry": "Comedian/Mimicry",
-    "special-act": "Special act performer",
-    "motivational-speaker": "Motivational speaker",
-    "kids-entertainer": "Kids entertainer",
-    "folk-artist": "Folk Artist",
-    model: "Model",
-  };
-  const typeParam = typeParamByValue[type] || type;
+  const typeParam = normalizeArtistTypeRequest(type);
 
   let url = `/api/artists/nearby?type=${encodeURIComponent(typeParam)}&verified=${verified}&minResults=${minResults}&maxRadius=${maxRadius}`;
 
@@ -145,7 +136,7 @@ async function fetchArtistsByType({
 }
 
 export function useArtistsByType(
-  type: ArtistType,
+  type: string,
   location: LocationParams | null = null,
   verified: boolean = false,
   enabled: boolean = true,
@@ -183,6 +174,48 @@ export const ALL_ARTIST_TYPES: ArtistType[] = [
   "folk-artist",
   "model",
 ];
+
+export function useArtistsByCategoryValues(
+  categoryValues: string[],
+  location: LocationParams | null = null,
+  verified: boolean = false,
+  enabled: boolean = true,
+) {
+  const queries = useQueries({
+    queries: categoryValues.map((type) => ({
+      queryKey: artistKeys.byTypeWithLocation(type, location),
+      queryFn: () => fetchArtistsByType({ type, location, verified }),
+      enabled,
+      staleTime: 1000 * 60 * 10,
+      gcTime: 1000 * 60 * 30,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      refetchOnMount: false,
+      refetchIntervalInBackground: false,
+      retryOnMount: false,
+    })),
+  });
+
+  const byType = categoryValues.reduce(
+    (acc, type, index) => {
+      acc[type] = queries[index]?.data?.artists || [];
+      return acc;
+    },
+    {} as Record<string, Artist[]>,
+  );
+
+  return {
+    byType,
+    isLoading: queries.some((query) => query.isLoading),
+    isFetching: queries.some((query) => query.isFetching),
+    isError: queries.some((query) => query.isError),
+    refetch: () => {
+      queries.forEach((query) => {
+        query.refetch();
+      });
+    },
+  };
+}
 
 export function useAllArtists(
   location: LocationParams | null = null,

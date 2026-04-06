@@ -2,7 +2,7 @@ import React from 'react';
 import ArtistCardSkeleton from '@/components/ui/ArtistCardSkeleton';
 
 interface ArtistSectionSkeletonProps {
-  title: string;
+  title?: string;
 }
 
 const ArtistSectionSkeleton: React.FC<ArtistSectionSkeletonProps> = ({ title }) => {
@@ -10,7 +10,11 @@ const ArtistSectionSkeleton: React.FC<ArtistSectionSkeletonProps> = ({ title }) 
     <div className="w-full">
       {/* Section Header */}
       <div className="flex items-center justify-between mb-1 px-6">
-        <h2 className="h2 text-white">{title}</h2>
+        {title ? (
+          <h2 className="h2 text-white">{title}</h2>
+        ) : (
+          <div className="h-7 w-36 rounded animate-pulse" style={{ backgroundColor: '#7F7F7F' }} />
+        )}
         <div className="h-6 w-20 rounded animate-pulse" style={{ backgroundColor: '#7F7F7F' }}/>
       </div>
 

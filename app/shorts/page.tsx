@@ -1,6 +1,6 @@
 "use client";
 
-import { VIDEO_CATEGORIES } from "@/lib/constants";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { useMemo } from "react";
 
 const SHORTS_PAGE_LIMIT = 5;
@@ -8,16 +8,16 @@ const SHORTS_PAGE_LIMIT = 5;
 const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
   const [_key, { category, seed }] = queryKey;
   const params = new URLSearchParams({
-    type: 'shorts',
+    type: "shorts",
     page: pageParam.toString(),
     limit: SHORTS_PAGE_LIMIT.toString(),
-    random: 'true',
+    random: "true",
   });
-  if (category && category !== 'all') {
-    params.set('category', category);
+  if (category && category !== "all") {
+    params.set("category", category);
   }
   if (seed !== undefined) {
-    params.set('seed', seed.toString());
+    params.set("seed", seed.toString());
   }
 
   const res = await fetch(`/api/videos?${params.toString()}`);
@@ -26,7 +26,7 @@ const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
   return json.data.videos.map((v: any) => ({
     id: v.id,
     title: v.title,
-    creator: `${v.user.firstName} ${v.user.lastName}`,
+    creator: getArtishName(v.user.name, v.user.firstName, v.user.lastName),
     creatorId: v.user.artist?.id,
     category: v.user.artist?.artistType || "",
     userId: v.user.id,
@@ -53,9 +53,11 @@ import {
   Linkedin,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { getArtishName } from "@/lib/utils";
 
 export default function ShortsPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const { categoriesWithAll } = useArtistCategories();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -103,25 +105,28 @@ export default function ShortsPage() {
     if (!shorts.length) return [];
 
     // Group by userId
-    const shortsByArtist = shorts.reduce((acc, short) => {
-      if (!acc[short.userId]) {
-        acc[short.userId] = [];
-      }
-      acc[short.userId].push(short);
-      return acc;
-    }, {} as Record<string, typeof shorts>);
+    const shortsByArtist = shorts.reduce(
+      (acc, short) => {
+        if (!acc[short.userId]) {
+          acc[short.userId] = [];
+        }
+        acc[short.userId].push(short);
+        return acc;
+      },
+      {} as Record<string, typeof shorts>,
+    );
 
     // Flatten back to array, maintaining artist grouping
     // Get unique artist IDs in order of first appearance
     const artistOrder: string[] = [];
-    shorts.forEach(short => {
+    shorts.forEach((short) => {
       if (!artistOrder.includes(short.userId)) {
         artistOrder.push(short.userId);
       }
     });
 
     // Return shorts grouped by artist
-    return artistOrder.flatMap(artistId => shortsByArtist[artistId]);
+    return artistOrder.flatMap((artistId) => shortsByArtist[artistId]);
   }, [shorts]);
 
   useEffect(() => {
@@ -326,7 +331,10 @@ export default function ShortsPage() {
   const getVisibleVideos = useCallback(() => {
     const bufferSize = 2;
     const startIndex = Math.max(0, currentIndex - bufferSize);
-    const endIndex = Math.min(groupedShorts.length - 1, currentIndex + bufferSize);
+    const endIndex = Math.min(
+      groupedShorts.length - 1,
+      currentIndex + bufferSize,
+    );
 
     return groupedShorts.slice(startIndex, endIndex + 1).map((short, idx) => ({
       ...short,
@@ -470,7 +478,7 @@ export default function ShortsPage() {
         className="fixed top-0 md:static md:mt-16 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-[#1B1B1B] backdrop-blur-sm p-4 border-y border-border-line"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        {VIDEO_CATEGORIES.map((category) => (
+        {categoriesWithAll.map((category) => (
           <button
             key={category.value}
             onClick={() => {

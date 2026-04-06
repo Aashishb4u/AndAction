@@ -11,7 +11,8 @@ import LoadingSpinner from "@/components/ui/Loading";
 import { transformArtist } from "./transformArtist";
 import ClientWrapper from "@/components/ui/client-wrapper";
 import { Search } from "lucide-react";
-import { VIDEO_CATEGORIES } from "@/lib/constants";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 const DEFAULT_LIMIT = 12;
 
@@ -60,7 +61,7 @@ const getArtistCount = async (
 const getArtists = async (
   query: string,
   filters: Filters,
-  page: number = 1
+  page: number = 1,
 ): Promise<{ artists: Artist[]; total: number }> => {
   try {
     const params = new URLSearchParams();
@@ -155,6 +156,7 @@ function ArtistsPageContent() {
   };
 
   const [artists, setArtists] = useState<Artist[]>([]);
+  const { categories } = useArtistCategories();
   const [filters, setFilters] = useState<Filters>(getInitialFilters);
   const [query, setQuery] = useState(searchParams.get("search") || "");
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
@@ -172,7 +174,11 @@ function ArtistsPageContent() {
     const fetchData = async () => {
       setLoading(true);
       setPage(1);
-      const { artists: newArtists, total } = await getArtists(query, filters, 1);
+      const { artists: newArtists, total } = await getArtists(
+        query,
+        filters,
+        1,
+      );
       setArtists(newArtists);
       setTotalResults(total);
       setHasMore(newArtists.length < total);
@@ -233,12 +239,25 @@ function ArtistsPageContent() {
     if (isFetchingMore || loading || !hasMore) return;
     setIsFetchingMore(true);
     const nextPage = page + 1;
-    const { artists: moreArtists } = await getArtists(query, filters, nextPage);
+    const { artists: moreArtists } = await getArtists(
+      query,
+      filters,
+      nextPage,
+    );
     setArtists((prev) => [...prev, ...moreArtists]);
     setPage(nextPage);
     setHasMore(artists.length + moreArtists.length < totalResults);
     setIsFetchingMore(false);
-  }, [isFetchingMore, loading, hasMore, page, query, filters, totalResults, artists.length]);
+  }, [
+    isFetchingMore,
+    loading,
+    hasMore,
+    page,
+    query,
+    filters,
+    totalResults,
+    artists.length,
+  ]);
 
   useEffect(() => {
     if (!observerRef.current) return;
@@ -289,7 +308,7 @@ function ArtistsPageContent() {
         language: "",
         location: "",
       },
-      1
+      1,
     ).then(({ artists, total }) => {
       setArtists(artists);
       setTotalResults(total);
@@ -406,13 +425,7 @@ function ArtistsPageContent() {
                 {/* Show active filter name if set */}
                 {filters.category && (
                   <span className=" py-1 h3 text-white flex-shrink-0">
-                    {(() => {
-                      // Find matching category from VIDEO_CATEGORIES (case-insensitive)
-                      const category = VIDEO_CATEGORIES.find(
-                        cat => cat.value.toLowerCase() === filters.category.toLowerCase()
-                      );
-                      return category?.label || filters.category;
-                    })()}
+                    {findCategoryLabel(categories, filters.category) || filters.category}
                   </span>
                 )}
               </div>

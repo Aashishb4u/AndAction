@@ -7,7 +7,8 @@ import ArtistProfileTabs from "@/components/artist/ArtistProfileTabs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
-import { ARTIST_CATEGORIES } from "@/lib/constants";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 function ArtistProfileContent() {
   const searchParams = useSearchParams();
@@ -18,6 +19,7 @@ function ArtistProfileContent() {
   const [activeTab, setActiveTab] = useState(tabParam || "about");
   const router = useRouter();
   const { data: session } = useSession();
+  const { categories } = useArtistCategories();
 
   // Handle URL tab parameter changes
   useEffect(() => {
@@ -60,12 +62,7 @@ function ArtistProfileContent() {
   const displayArtistType = (() => {
     const rawType = artistProfile?.artistType?.trim() || "";
     if (!rawType) return "Artist";
-
-    const match = ARTIST_CATEGORIES.find(
-      (item) => item.value.toLowerCase() === rawType.toLowerCase()
-    );
-
-    return match?.label || rawType;
+    return findCategoryLabel(categories, rawType) || rawType;
   })();
 
 

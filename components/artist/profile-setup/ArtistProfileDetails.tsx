@@ -10,7 +10,7 @@ import imageCompression from "browser-image-compression";
 import { ArtistProfileSetupData } from "@/types";
 import Cropper from "react-easy-crop";
 import { Area } from "react-easy-crop";
-import { ARTIST_CATEGORIES } from "@/lib/constants";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 
 interface ArtistProfileDetailsProps {
   data: ArtistProfileSetupData;
@@ -73,6 +73,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   onBack,
   onUpdateData,
 }) => {
+  const { categories: artistTypes } = useArtistCategories();
+
   const [formData, setFormData] = useState({
     profilePhoto: data.profilePhoto || null,
     avatarUrl: (data as any).avatarUrl || "",
@@ -136,8 +138,6 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     },
     [],
   );
-
-  const artistTypes = ARTIST_CATEGORIES;
 
   const subArtistTypes = [
     { value: "classical", label: "Classical" },

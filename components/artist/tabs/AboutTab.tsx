@@ -12,8 +12,12 @@ import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
 import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
 import { toast } from "react-toastify";
-import { INDIAN_STATES, INDIAN_CITIES, ARTIST_CATEGORIES } from "@/lib/constants";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 import { useQueryClient } from "@tanstack/react-query";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import {
+  normalizeArtistCategoryValue,
+} from "@/lib/artist-category-utils";
 
 // Extended artist type for profile management
 type ExtendedArtist = Artist & {
@@ -41,7 +45,7 @@ const genderOptions = [
   { value: "prefer-not-to-say", label: "Prefer not to say" },
 ];
 
-// Use `ARTIST_CATEGORIES` from constants for category options
+// Category options are loaded from artist_categories table.
 
 const subArtistTypeOptions = [
   { value: "classical", label: "Classical" },
@@ -63,60 +67,17 @@ const experienceOptions = [
 const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
   const { data: session, update } = useSession();
   const queryClient = useQueryClient();
+  const { categories } = useArtistCategories();
   const [isLoading, setIsLoading] = useState(false);
 
-  const mapArtistTypeForStorage = (value: string) => {
-    const v = (value || "").trim().toLowerCase();
-    if (!v) return "";
-
-    // Keep DB naming compatible with existing data/query mappings.
-    if (v === "dj-percussionist" || v === "dj percussionist" || v === "djpercussionist") {
-      return "Dj Percussionist";
-    }
-    if (v === "dj" || v === "dj/vj" || v === "dj / vj") return "DJ/VJ";
-    if (v === "live-band" || v === "live band" || v === "band" || v === "bands") return "Live Band";
-    if (v === "spiritual") return "Devotional/Spiritual Singer";
-    if (v === "dj-based-band" || v === "dj based band") return "DJ based Band";
-    if (v === "comedian-mimicry" || v === "comedian/mimicry") return "Comedian/Mimicry";
-    if (v === "special-act" || v === "special act performer") return "Special act performer";
-    if (v === "motivational-speaker") return "Motivational speaker";
-    if (v === "kids-entertainer") return "Kids entertainer";
-    if (v === "folk-artist") return "Folk Artist";
-
-    return value.trim();
-  };
-
   const normalizeArtistTypeValue = (rawValue?: string) => {
-    const raw = (rawValue || "").trim();
-    if (!raw) return "";
+    const normalized = normalizeArtistCategoryValue(rawValue || "");
+    if (!normalized) return "";
 
-    const lower = raw.toLowerCase();
-
-    // 1) Exact match by option value
-    const byValue = ARTIST_CATEGORIES.find(
-      (item) => item.value.toLowerCase() === lower,
+    const labelMatch = categories.find(
+      (item) => item.label.toLowerCase() === normalized.toLowerCase(),
     );
-    if (byValue) return byValue.value;
-
-    // 2) Match by display label
-    const byLabel = ARTIST_CATEGORIES.find(
-      (item) => item.label.toLowerCase() === lower,
-    );
-    if (byLabel) return byLabel.value;
-
-    // 3) Common aliases
-    if (lower === "band" || lower === "bands" || lower === "live band" || lower === "liveband") return "live-band";
-    if (lower === "spiritual" || lower === "spiritual / devotional singer" || lower === "devotional / spiritual singer" || lower === "devotional/spiritual singer") return "spiritual";
-    if (lower === "dj/vj" || lower === "dj / vj") return "dj";
-    if (lower === "dj based band" || lower === "dj-based-band") return "dj-based-band";
-    if (lower === "dj percussionist" || lower === "dj-percussionist" || lower === "djpercussionist") return "dj-percussionist";
-    if (lower === "comedian/mimicry" || lower === "comedian-mimicry") return "comedian-mimicry";
-    if (lower === "special act performer" || lower === "special-act") return "special-act";
-    if (lower === "motivational speaker" || lower === "motivational-speaker") return "motivational-speaker";
-    if (lower === "kids entertainer" || lower === "kids-entertainer") return "kids-entertainer";
-    if (lower === "folk artist" || lower === "folk-artist") return "folk-artist";
-
-    return raw;
+    return labelMatch?.value || normalized;
   };
 
   const initialArtistType = normalizeArtistTypeValue(
@@ -176,7 +137,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         userId: session.user.id,
 
         stageName: formData.stageName,
-        artistType: mapArtistTypeForStorage(formData.artistType),
+        artistType: normalizeArtistCategoryValue(formData.artistType),
         firstName: formData.firstName,
         lastName: formData.lastName,
         gender: formData.gender,
@@ -366,7 +327,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       <div className="relative text-sm">
         <Select
           label="Artist Category*"
-          options={ARTIST_CATEGORIES}
+          options={categories}
           value={formData.artistType}
           onChange={(value) => handleInputChange("artistType", value)}
           required
