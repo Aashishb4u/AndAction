@@ -19,6 +19,7 @@ import {
   Loader2,
 } from "lucide-react";
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
+import { getArtishName } from "@/lib/utils";
 
 export default function VideosPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -71,9 +72,7 @@ export default function VideosPage() {
       page.videos.map((v) => ({
         id: v.id,
         title: v.title,
-        creator: v.user.name
-          ? v.user.name
-          : `${v.user.firstName} ${v.user.lastName}`,
+        creator: getArtishName(v.user.name, v.user.firstName, v.user.lastName),
         userId: v.user.id, // Add userId for grouping
         thumbnail: v.thumbnailUrl,
         videoUrl: v.url,

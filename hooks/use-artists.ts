@@ -1,5 +1,6 @@
 "use client";
 
+import { getArtishName } from "@/lib/utils";
 import { useQuery, useQueries } from "@tanstack/react-query";
 
 export interface Artist {
@@ -93,9 +94,7 @@ export const artistKeys = {
 
 const mapArtistData = (artist: any): Artist => ({
   id: artist.id,
-  name:
-    artist.stageName ||
-    `${artist.user.firstName} ${artist.user.lastName}`.trim(),
+  name: getArtishName(artist.user.name, artist.user.firstName, artist.user.lastName),
   location: artist.user.city || "Unknown",
   thumbnail: artist.user.avatar || "/avatars/default.jpg",
   videoUrl: mockVideoUrl,
