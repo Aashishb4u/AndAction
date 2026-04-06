@@ -2,35 +2,41 @@
 // Source of truth for display labels used across the site.
 
 export const TITLE_MAP: Record<string, string> = {
+  liveBands: "Live Band",
+  devotionalSpiritualSingers: "Devotional/Spiritual Singer",
   singers: "Singer",
-  dancers: "Dancer / Dance Group",
-  anchors: "Anchor / Emcee / Host",
-  djs: "DJ",
-  bands: "Live Band / Group",
-  comedians: "Comedian",
-  musicians: "Musician / Instrumentalist",
-  magicians: "Magician / Illusionist",
-  actors: "Theatre Artist / Actor",
-  mimicry: "Mimicry / Impressionist",
-  specialAct: "Special Act Performer",
-  spiritual: "Spiritual / Devotional",
+  anchorEmceeHosts: "Anchor/Emcee/Host",
+  djVjs: "DJ/VJ",
+  djBasedBands: "DJ based Band",
+  djPercussionists: "DJ Percussionist",
+  musiciansInstrumentalists: "Musician/Instrumentalist",
+  dancersDanceGroups: "Dancer/Dance group",
+  magicialIllusionists: "Magicial/Illusionist",
+  comedianMimicry: "Comedian/Mimicry",
+  specialActPerformers: "Special act performer",
+  motivationalSpeakers: "Motivational speaker",
   kidsEntertainers: "Kids Entertainer",
+  folkArtists: "Folk Artist",
+  models: "Model",
 };
 
 export const PREFERRED_ORDER = [
+  "liveBands",
+  "devotionalSpiritualSingers",
   "singers",
-  "dancers",
-  "musicians",
-  "anchors",
-  "djs",
-  "bands",
-  "comedians",
-  "magicians",
-  "actors",
-  "mimicry",
-  "specialAct",
-  "spiritual",
+  "anchorEmceeHosts",
+  "djVjs",
+  "djBasedBands",
+  "djPercussionists",
+  "musiciansInstrumentalists",
+  "dancersDanceGroups",
+  "magicialIllusionists",
+  "comedianMimicry",
+  "specialActPerformers",
+  "motivationalSpeakers",
   "kidsEntertainers",
+  "folkArtists",
+  "models",
 ];
 
 export function prettifyKey(key: string) {
@@ -42,21 +48,35 @@ export function prettifyKey(key: string) {
 // This keeps existing value strings (query params) stable while using
 // the TITLE_MAP labels for display.
 export const VALUE_TO_KEY: Record<string, string> = {
+  "live-band": 'liveBands',
+  "live band": 'liveBands',
+  "live band ": 'liveBands',
+  "Live Band": 'liveBands',
+  "Live Band ": 'liveBands',
+  band: 'liveBands',
+  bands: 'liveBands',
   singer: 'singers',
-  dancer: 'dancers',
-  musician: 'musicians',
-  musicians: 'musicians',
-  anchor: 'anchors',
-  DJ: 'djs',
-  dj: 'djs',
-  band: 'bands',
-  comedian: 'comedians',
-  magician: 'magicians',
-  actor: 'actors',
-  mimicry: 'mimicry',
-  specialAct: 'specialAct',
-  spiritual: 'spiritual',
+  spiritual: 'devotionalSpiritualSingers',
+  "devotional-spiritual-singer": 'devotionalSpiritualSingers',
+  dancer: 'dancersDanceGroups',
+  musician: 'musiciansInstrumentalists',
+  anchor: 'anchorEmceeHosts',
+  dj: 'djVjs',
+  "dj-vj": 'djVjs',
+  "dj-based-band": 'djBasedBands',
+  "dj-percussionist": 'djPercussionists',
+  magician: 'magicialIllusionists',
+  "magicial-illusionist": 'magicialIllusionists',
+  "comedian-mimicry": 'comedianMimicry',
+  comedian: 'comedianMimicry',
+  mimicry: 'comedianMimicry',
+  "special-act": 'specialActPerformers',
+  "special-act-performer": 'specialActPerformers',
+  "motivational-speaker": 'motivationalSpeakers',
+  "kids-entertainer": 'kidsEntertainers',
   kidsEntertainer: 'kidsEntertainers',
+  "folk-artist": 'folkArtists',
+  model: 'models',
 };
 
 export function getLabelForValue(value: string) {
@@ -75,5 +95,15 @@ const KEY_TO_VALUE: Record<string, string> = Object.keys(VALUE_TO_KEY).reduce(
 );
 
 export function getValueForKey(key: string) {
+  const normalizedKey = key.trim().toLowerCase();
+  if (
+    key === "liveBands" ||
+    key === "live-band" ||
+    normalizedKey === "live band" ||
+    normalizedKey === "band" ||
+    normalizedKey === "bands"
+  ) {
+    return "Live Band";
+  }
   return KEY_TO_VALUE[key] || key;
 }

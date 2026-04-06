@@ -111,21 +111,27 @@ function normalizeTypeForRequest(type: string) {
   if (!type) return type;
   const t = type.trim().toLowerCase();
 
-  if (t === "band" || t === "bands" || t === "live band" || t === "liveband") return "Live Band";
-  if (t === "spiritual" || t === "spiritual / devotional singer" || t === "devotional / spiritual singer") return "spiritual";
+  if (t === "band" || t === "bands" || t === "live band" || t === "liveband") return "live-band";
+  if (t === "spiritual" || t === "spiritual / devotional singer" || t === "devotional / spiritual singer" || t === "devotional/spiritual singer") return "spiritual";
+  if (t === "dj/vj" || t === "dj / vj") return "dj";
+  if (t === "dj based band" || t === "dj-based-band") return "dj-based-band";
   if (t === "dj percussionist" || t === "dj-percussionist" || t === "djpercussionist") return "dj-percussionist";
-  if (t === "comedian" || t === "comedians" || t === "comedy") return "comedian";
+  if (t === "comedian" || t === "comedians" || t === "comedy" || t === "comedian/mimicry" || t === "comedian-mimicry") return "comedian-mimicry";
 
   // Keep common aliases stable with current constants values.
-  if (t === "special act" || t === "specialact" || t === "special-act") return "special-act";
+  if (t === "special act" || t === "specialact" || t === "special-act" || t === "special act performer") return "special-act";
   if (t === "kids entertainer" || t === "kids entertainers" || t === "kidsentertainer" || t === "kids-entertainer") return "kids-entertainer";
+  if (t === "motivational speaker" || t === "motivational-speaker") return "motivational-speaker";
+  if (t === "folk artist" || t === "folk-artist") return "folk-artist";
 
   return type.trim();
 }
 
 function normalizeTypeForUrl(type: string) {
-  // Keep URL query values canonical so filter controls can resolve selections reliably.
-  return normalizeTypeForRequest(type);
+  // Keep internal filter values stable, but format outgoing URL params for UX/readability.
+  const normalized = normalizeTypeForRequest(type);
+  if (normalized === "live-band") return "Live Band";
+  return normalized;
 }
 
 

@@ -20,13 +20,15 @@ export const createBooking = async (artistId: string, formData: any) => {
         eventDate: formData.eventDate,
         eventType: formData.eventType,
         eventLocation: `${formData.city}, ${formData.state}`,
+        mobileNumber: formData.mobileNumber,
+        phoneNumber: formData.mobileNumber,
         totalPrice: formData.totalPrice,
         notes: formData.note,
       }),
     });
 
     const data = await response.json();
-    return data;
+    return data;  
   } catch (error) {
     console.error("Error creating booking:", error);
     throw error;
@@ -127,16 +129,16 @@ export default function ArtistDetailPage() {
 
           bio: a.shortBio || "",
           yearsOfExperience: a.yearsOfExperience || 0,
-          achievements: [a.achievements],
-          subArtistTypes: [a.subArtistType],
-          languages: [a.performingLanguage],
+          achievements: a.achievements ? [a.achievements] : [],
+          subArtistTypes: a.subArtistType ? [a.subArtistType] : [],
+          languages: a.performingLanguage ? [a.performingLanguage] : [],
 
-          soloChargesFrom: a.soloChargesFrom || 0,
-          soloChargesTo: a.soloChargesTo || 0,
+          soloChargesFrom: a.soloChargesFrom ?? undefined,
+          soloChargesTo: a.soloChargesTo ?? undefined,
           soloChargesDescription: a.soloChargesDescription || "",
 
-          chargesWithBacklineFrom: a.chargesWithBacklineFrom || 0,
-          chargesWithBacklineTo: a.chargesWithBacklineTo || 0,
+          chargesWithBacklineFrom: a.chargesWithBacklineFrom ?? undefined,
+          chargesWithBacklineTo: a.chargesWithBacklineTo ?? undefined,
           chargesWithBacklineDescription: a.chargesWithBacklineDescription || "",
 
           performingDurationFrom: a.performingDurationFrom || "",
@@ -151,7 +153,7 @@ export default function ArtistDetailPage() {
           startingPrice: Number(a.soloChargesFrom) || 0,
 
           contactNumber: a.contactNumber || "",
-          whatsappNumber: a.whatsappNumber || "",
+          whatsappNumber: a.whatsappNumber || a.contactNumber || "",
           userId: a.user.id,
 
           // 🔥 bookmark state restored on reload
@@ -293,14 +295,15 @@ export default function ArtistDetailPage() {
       router.push("/auth/signin");
       return;
     }
-    if (artist.whatsappNumber) {
+    const whatsappTarget = artist.whatsappNumber || artist.contactNumber;
+    if (whatsappTarget) {
       const userName = `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'a user';
       const artistName = artist.name || 'Artist';
       const message = `Hi ${artistName}, I am ${userName} found your profile on ANDACTION`;
       const encodedMessage = encodeURIComponent(message);
       
       window.open(
-        `https://wa.me/${artist.whatsappNumber.replace(/[^0-9]/g, "")}?text=${encodedMessage}`,
+        `https://wa.me/${whatsappTarget.replace(/[^0-9]/g, "")}?text=${encodedMessage}`,
         "_blank"
       );
     }

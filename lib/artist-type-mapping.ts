@@ -6,6 +6,12 @@
 
 export function getArtistTypeMatches(queryType: string): string[] {
   const typeMap: Record<string, string[]> = {
+    // "live-band": ["live-band", "Live Band", "Live Band ", "band", "Band", "bands", "Live Band / Group"],
+    // "live band": ["live-band", "Live Band", "Live Band ", "band", "Band", "bands", "Live Band / Group"],
+    // band: ["live-band", "Live Band", "Live Band ", "band", "Band", "bands", "Live Band / Group"],
+    // bands: ["live-band", "Live Band", "Live Band ", "band", "Band", "bands", "Live Band / Group"],
+    // spiritual: ["spiritual", "Devotional/Spiritual Singer", "Spiritual / Devotional Singer", "Devotional / Spiritual Singer"],
+    // "devotional/spiritual singer": ["spiritual", "Devotional/Spiritual Singer", "Spiritual / Devotional Singer", "Devotional / Spiritual Singer"],
     singer: ["singer", "Singer"],
     dancer: ["dancer", "Dancer / Dance Group"],
     musician: ["musician", "Musician"],

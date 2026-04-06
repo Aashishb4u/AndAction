@@ -12,12 +12,17 @@ import PhoneInput from "@/components/ui/PhoneInput";
 import OTPInput from "@/components/ui/OTPInput";
 import DateInput from "@/components/ui/DateInput";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { signInWithGoogleAsArtist } from "@/lib/auth";
 import { signIn } from "next-auth/react";
 import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 
 type ArtistSignUpStep = "join" | "otp" | "password" | "userInfo" | "terms";
 type ContactType = "phone" | "email";
+type PendingNavigationAction =
+  | { type: "route"; to: string }
+  | { type: "step"; to: ArtistSignUpStep; resetSensitive?: boolean }
+  | null;
 
 function ArtistAuthContent() {
   const [step, setStep] = useState<ArtistSignUpStep>("join");
@@ -41,7 +46,7 @@ function ArtistAuthContent() {
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
-  const [locationFetched, setLocationFetched] = useState(false);
+  const [, setLocationFetched] = useState(false);
 
   // Terms step state
   const [noMarketing, setNoMarketing] = useState(true);
@@ -50,6 +55,9 @@ function ArtistAuthContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+  const [showExitWarning, setShowExitWarning] = useState(false);
+  const [pendingAction, setPendingAction] =
+    useState<PendingNavigationAction>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -62,6 +70,51 @@ function ArtistAuthContent() {
       setStep("userInfo");
     }
   }, [searchParams]);
+
+  const hasUnsavedProgress = useMemo(() => {
+    return (
+      step !== "join" ||
+      email.trim().length > 0 ||
+      phone.trim().length > 0 ||
+      otp.trim().length > 0 ||
+      password.trim().length > 0 ||
+      confirmPassword.trim().length > 0 ||
+      firstName.trim().length > 0 ||
+      lastName.trim().length > 0 ||
+      dateOfBirth.trim().length > 0 ||
+      gender.trim().length > 0 ||
+      address.trim().length > 0 ||
+      pinCode.trim().length > 0 ||
+      state.trim().length > 0 ||
+      city.trim().length > 0
+    );
+  }, [
+    step,
+    email,
+    phone,
+    otp,
+    password,
+    confirmPassword,
+    firstName,
+    lastName,
+    dateOfBirth,
+    gender,
+    address,
+    pinCode,
+    state,
+    city,
+  ]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedProgress) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedProgress]);
 
   // Timer countdown effect
   useEffect(() => {
@@ -142,6 +195,99 @@ function ArtistAuthContent() {
 
   // Password strength removed — allow any password (simple non-empty + match validation)
 
+  const getDraftIdentifier = () => {
+    if (contactType === "email") {
+      return email.toLowerCase().trim();
+    }
+    const normalizedPhone = phone.replace(/\D/g, "");
+    const normalizedCountryCode = countryCode.trim();
+    if (!normalizedPhone || !normalizedCountryCode) {
+      return "";
+    }
+    return `${normalizedCountryCode}${normalizedPhone}`;
+  };
+
+  const saveSignupDraft = async (nextStep: ArtistSignUpStep) => {
+    const identifier = getDraftIdentifier();
+    if (!identifier) return;
+
+    try {
+      await fetch("/api/auth/artist/signup-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier,
+          contactType,
+          step: nextStep,
+          draftData: {
+            email: email || null,
+            phoneNumber: phone || null,
+            countryCode: countryCode || null,
+            otp: otp || null,
+            password: contactType === "email" ? password : null,
+            firstName: firstName || null,
+            lastName: lastName || null,
+            dateOfBirth: dateOfBirth || null,
+            gender: gender || null,
+            address: address || null,
+            pinCode: pinCode || null,
+            state: state || null,
+            city: city || null,
+            noMarketing,
+            shareData,
+            images: null,
+          },
+        }),
+      });
+    } catch (draftError) {
+      console.error("Draft save failed:", draftError);
+    }
+  };
+
+  const clearSignupDraft = async () => {
+    const identifier = getDraftIdentifier();
+    if (!identifier) return;
+
+    try {
+      await fetch("/api/auth/artist/signup-draft", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier }),
+      });
+    } catch (draftError) {
+      console.error("Draft clear failed:", draftError);
+    }
+  };
+
+  const performNavigationAction = (action: PendingNavigationAction) => {
+    if (!action) return;
+    if (action.type === "route") {
+      router.push(action.to);
+      return;
+    }
+    if (action.resetSensitive) {
+      setOtp("");
+      setPassword("");
+      setConfirmPassword("");
+    }
+    setStep(action.to);
+  };
+
+  const requestNavigation = (action: Exclude<PendingNavigationAction, null>) => {
+    if (!hasUnsavedProgress) {
+      performNavigationAction(action);
+      return;
+    }
+    setPendingAction(action);
+    setShowExitWarning(true);
+  };
+
+  const handleConfirmExit = () => {
+    performNavigationAction(pendingAction);
+    setPendingAction(null);
+    setShowExitWarning(false);
+  };
+
   // Send OTP (matches user flow — no extra fields)
   const handleJoinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,6 +319,7 @@ function ArtistAuthContent() {
           throw new Error(
             data.error || data.message || "Failed to send verification code.",
           );
+        await saveSignupDraft("otp");
         setStep("otp");
         setResendTimer(30); // Start 30-second countdown
       } else {
@@ -191,6 +338,7 @@ function ArtistAuthContent() {
           throw new Error(
             data.error || data.message || "Failed to send verification email.",
           );
+        await saveSignupDraft("otp");
         setStep("otp");
         setResendTimer(30); // Start 30-second countdown
       }
@@ -232,9 +380,11 @@ function ArtistAuthContent() {
       // Move to next step based on contact type
       if (contactType === "phone") {
         // Phone signup: skip password, go directly to user info
+        await saveSignupDraft("userInfo");
         setStep("userInfo");
       } else {
         // Email signup: go to password creation
+        await saveSignupDraft("password");
         setStep("password");
       }
     } catch (err: any) {
@@ -260,6 +410,7 @@ function ArtistAuthContent() {
     }
 
     // No strict password validation: accept any non-empty password (matching confirm)
+    saveSignupDraft("userInfo");
     setStep("userInfo");
   };
 
@@ -308,6 +459,8 @@ function ArtistAuthContent() {
         );
       }
 
+      await clearSignupDraft();
+
       if (isOAuthSignup) {
         router.push("/artist/profile-setup");
         return;
@@ -342,7 +495,9 @@ function ArtistAuthContent() {
           signInPayload.password = artistData.password;
         }
 
-        const signInResult = await signIn("credentials", signInPayload);
+        const signInResult = (await signIn("credentials", signInPayload)) as
+          | { error?: string }
+          | undefined;
 
         console.log("🧩 signIn result:", signInResult);
 
@@ -425,10 +580,7 @@ function ArtistAuthContent() {
   };
 
   const handleChangeContact = () => {
-    setStep("join");
-    setOtp("");
-    setPassword("");
-    setConfirmPassword("");
+    requestNavigation({ type: "step", to: "join", resetSensitive: true });
   };
 
   const handleSocialSignUp = async (provider: "google" | "facebook") => {
@@ -456,12 +608,12 @@ function ArtistAuthContent() {
         <Image
           src="/logo.png"
           alt="ANDACTION Logo"
-          className="h-5 w-[180px] object-contain"
+          className="h-5 w-45 object-contain"
           width={180}
           height={20}
         />
         <button
-          onClick={() => router.push("/")}
+          onClick={() => requestNavigation({ type: "route", to: "/" })}
           className="text-white transition-colors duration-200"
           aria-label="Close"
         >
@@ -699,7 +851,7 @@ function ArtistAuthContent() {
               <div className="flex items-center gap-3 my-3">
                 <button
                   type="button"
-                  onClick={() => setStep("otp")}
+                  onClick={() => requestNavigation({ type: "step", to: "otp" })}
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
@@ -772,7 +924,12 @@ function ArtistAuthContent() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setStep(contactType === "phone" ? "otp" : "password")}
+                  onClick={() =>
+                    requestNavigation({
+                      type: "step",
+                      to: contactType === "phone" ? "otp" : "password",
+                    })
+                  }
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
@@ -799,6 +956,7 @@ function ArtistAuthContent() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                saveSignupDraft("terms");
                 setStep("terms");
               }}
               className="space-y-4"
@@ -843,7 +1001,9 @@ function ArtistAuthContent() {
                   label="Gender*"
                   placeholder="Select gender"
                   value={gender}
-                  onChange={setGender}
+                  onChange={(value) =>
+                    setGender(Array.isArray(value) ? (value[0] ?? "") : value)
+                  }
                   options={genderOptions}
                   required
                   disabled={isLoading}
@@ -894,7 +1054,9 @@ function ArtistAuthContent() {
                   label="State*"
                   placeholder="Select"
                   value={state}
-                  onChange={setState}
+                  onChange={(value) =>
+                    setState(Array.isArray(value) ? (value[0] ?? "") : value)
+                  }
                   options={INDIAN_STATES}
                   required
                   disabled={isLoading || isFetchingLocation}
@@ -903,7 +1065,9 @@ function ArtistAuthContent() {
                   label="City*"
                   placeholder="Select"
                   value={city}
-                  onChange={setCity}
+                  onChange={(value) =>
+                    setCity(Array.isArray(value) ? (value[0] ?? "") : value)
+                  }
                   options={INDIAN_CITIES}
                   required
                   disabled={isLoading || isFetchingLocation}
@@ -942,7 +1106,9 @@ function ArtistAuthContent() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setStep("userInfo")}
+                  onClick={() =>
+                    requestNavigation({ type: "step", to: "userInfo" })
+                  }
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
@@ -1024,6 +1190,18 @@ function ArtistAuthContent() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={showExitWarning}
+        onOpenChange={setShowExitWarning}
+        title="Leave Signup Flow?"
+        description="You have unsaved progress in this flow. If you go back now, your current step may be interrupted."
+        cancelText="Stay Here"
+        confirmText="Leave"
+        variant="warning"
+        onCancel={() => setPendingAction(null)}
+        onConfirm={handleConfirmExit}
+      />
     </div>
   );
 }

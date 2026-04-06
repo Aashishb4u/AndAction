@@ -129,6 +129,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     useState<string[]>(defaultSubTypes);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [uploadError, setUploadError] = useState("");
 
   const onCropComplete = useCallback(
     (croppedArea: Area, croppedAreaPixels: Area) => {
@@ -233,6 +235,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
     try {
       setUploading(true);
+      setUploadMessage("");
+      setUploadError("");
 
       // 1️⃣ Compress the file before uploading
       const options = {
@@ -262,6 +266,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
       if (!res.ok) {
         console.error(json.message);
+        setUploadError(json.message || "Failed to upload profile photo.");
         setUploading(false);
         return;
       }
@@ -275,10 +280,12 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
       setFormData((prev) => ({ ...prev, ...updatedData }));
       onUpdateData(updatedData);
+      setUploadMessage(json?.message || "Profile photo uploaded successfully.");
 
       setUploading(false);
     } catch (error) {
       console.error("Profile photo upload failed:", error);
+      setUploadError("Failed to upload profile photo. Please try again.");
       setUploading(false);
     }
   };
@@ -491,6 +498,13 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                 </Tooltip>
               </div>
             </div>
+
+            {uploadMessage && (
+              <p className="text-green-400 text-sm text-center -mt-2">{uploadMessage}</p>
+            )}
+            {uploadError && (
+              <p className="text-red-500 text-sm text-center -mt-2">{uploadError}</p>
+            )}
 
             {/* Stage Name */}
             <div>

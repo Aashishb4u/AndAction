@@ -29,6 +29,8 @@ type ExtendedArtist = Artist & {
   state?: string;
   city?: string;
   shortBio?: string;
+  contactNumber?: string;
+  contactEmail?: string;
   subArtistType: string;
 };
 
@@ -93,6 +95,10 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
     pinCode: (artist as ExtendedArtist).pinCode || "",
     state: (artist as ExtendedArtist).state?.toLowerCase() || "",
     city: (artist as ExtendedArtist).city?.toLowerCase() || "",
+    contactNumber:
+      (artist as ExtendedArtist).contactNumber || (artist as any).phone || "",
+    email:
+      (artist as ExtendedArtist).contactEmail || (artist as any).email || "",
     subArtistType:
       (artist as ExtendedArtist).subArtistType?.toLowerCase() || "",
     achievements: Array.isArray(artist.achievements)
@@ -140,6 +146,9 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         pinCode: formData.pinCode,
         city: formData.city,
         state: formData.state,
+        contactNumber: formData.contactNumber,
+        whatsappNumber: formData.contactNumber,
+        contactEmail: formData.email,
         shortBio: formData.shortBio,
         achievements: formData.achievements,
         yearsOfExperience: formData.yearsOfExperience,
@@ -185,6 +194,10 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       pinCode: (artist as ExtendedArtist).pinCode || "",
       state: (artist as ExtendedArtist).state?.toLowerCase() || "",
       city: (artist as ExtendedArtist).city?.toLowerCase() || "",
+      contactNumber:
+        (artist as ExtendedArtist).contactNumber || (artist as any).phone || "",
+      email:
+        (artist as ExtendedArtist).contactEmail || (artist as any).email || "",
       subArtistType:
         (artist as ExtendedArtist).subArtistType?.toLowerCase() || "",
       achievements: Array.isArray(artist.achievements)
@@ -278,6 +291,36 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
           onChange={(value) => handleInputChange("city", value)}
           required
         />
+      </div>
+
+      {/* Contact Number */}
+      <div className="relative text-sm">
+        <Input
+          label="Contact / Whatsapp number*"
+          value={formData.contactNumber}
+          onChange={(e) => handleInputChange("contactNumber", e.target.value)}
+          required
+        />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Primary contact number shown to users and used for calls/WhatsApp fallback">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* Email ID */}
+      <div className="relative text-sm">
+        <Input
+          label="Email ID"
+          value={formData.email}
+          onChange={(e) => handleInputChange("email", e.target.value)}
+          type="email"
+        />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Professional email used for booking communication">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
       </div>
 
             {/* Artist Category */}
