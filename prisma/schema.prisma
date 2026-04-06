@@ -244,6 +244,32 @@ model migrations {
   batch     Int
 }
 
+model artist_categories {
+  id        String   @id
+  value     String   @unique
+  label     String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+model otps {
+  id          String   @id
+  phoneNumber String
+  countryCode String   @default("+91")
+  otp         String
+  expiresAt   DateTime
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([otp])
+  @@index([phoneNumber, countryCode])
+}
+
 enum BookingStatus {
   PENDING
   APPROVED

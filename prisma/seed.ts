@@ -36,6 +36,35 @@ async function main() {
   console.log(
     `Updated ${approvedResult.count} videos to be approved (isApproved = true)`,
   );
+
+  const users = await prisma.user.findMany({
+    where: {
+      name: { not: null },
+    },
+  });
+
+  let splitCount = 0;
+  for (const user of users) {
+    if (user.name) {
+      const parts = user.name.split(" ");
+      const firstName = parts[0];
+      const lastName = parts.length > 1 ? parts.slice(1).join(" ") : null;
+
+      if (!user.firstName && !user.lastName) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            firstName,
+            lastName,
+          },
+        });
+        splitCount++;
+      }
+    }
+  }
+  console.log(
+    `Updated ${splitCount} users with split firstName and lastName from name`,
+  );
 }
 
 main()
