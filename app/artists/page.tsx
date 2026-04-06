@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import SiteLayout from "@/components/layout/SiteLayout";
 import ArtistFilters from "@/components/sections/ArtistFilters";
 import ArtistGrid from "@/components/sections/ArtistGrid";
@@ -10,6 +11,8 @@ import LoadingSpinner from "@/components/ui/Loading";
 import { transformArtist } from "./transformArtist";
 import ClientWrapper from "@/components/ui/client-wrapper";
 import { Search } from "lucide-react";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 const DEFAULT_LIMIT = 12;
 
@@ -30,13 +33,14 @@ const getArtistCount = async (
     }
 
     // Filters
-    if (filters.category) params.set("type", filters.category);
+    if (filters.category) params.set("type", normalizeTypeForRequest(filters.category));
     if (filters.subCategory) params.set("subType", filters.subCategory);
     if (filters.gender) params.set("gender", filters.gender);
     if (filters.language) params.set("language", filters.language);
     if (filters.eventType) params.set("eventType", filters.eventType);
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
+    if (filters.location) params.set("location", filters.location);
 
     const url = `/api/artists?${params.toString()}`;
     const res = await fetch(url, { cache: "no-store" });
@@ -57,7 +61,7 @@ const getArtistCount = async (
 const getArtists = async (
   query: string,
   filters: Filters,
-  page: number = 1
+  page: number = 1,
 ): Promise<{ artists: Artist[]; total: number }> => {
   try {
     const params = new URLSearchParams();
@@ -68,13 +72,14 @@ const getArtists = async (
     }
 
     // Filters
-    if (filters.category) params.set("type", filters.category);
+    if (filters.category) params.set("type", normalizeTypeForRequest(filters.category));
     if (filters.subCategory) params.set("subType", filters.subCategory);
     if (filters.gender) params.set("gender", filters.gender);
     if (filters.language) params.set("language", filters.language);
     if (filters.eventType) params.set("eventType", filters.eventType);
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
+    if (filters.location) params.set("location", filters.location);
 
     // Pagination
     params.set("page", page.toString());
@@ -101,30 +106,62 @@ const getArtists = async (
   }
 };
 
+// Normalize category values for API requests / URLs
+function normalizeTypeForRequest(type: string) {
+  if (!type) return type;
+  const t = type.trim().toLowerCase();
+
+  if (t === "band" || t === "bands" || t === "live band" || t === "liveband") return "live-band";
+  if (t === "spiritual" || t === "spiritual / devotional singer" || t === "devotional / spiritual singer" || t === "devotional/spiritual singer") return "spiritual";
+  if (t === "dj/vj" || t === "dj / vj") return "dj";
+  if (t === "dj based band" || t === "dj-based-band") return "dj-based-band";
+  if (t === "dj percussionist" || t === "dj-percussionist" || t === "djpercussionist") return "dj-percussionist";
+  if (t === "comedian" || t === "comedians" || t === "comedy" || t === "comedian/mimicry" || t === "comedian-mimicry") return "comedian-mimicry";
+
+  // Keep common aliases stable with current constants values.
+  if (t === "special act" || t === "specialact" || t === "special-act" || t === "special act performer") return "special-act";
+  if (t === "kids entertainer" || t === "kids entertainers" || t === "kidsentertainer" || t === "kids-entertainer") return "kids-entertainer";
+  if (t === "motivational speaker" || t === "motivational-speaker") return "motivational-speaker";
+  if (t === "folk artist" || t === "folk-artist") return "folk-artist";
+
+  return type.trim();
+}
+
+function normalizeTypeForUrl(type: string) {
+  // Keep internal filter values stable, but format outgoing URL params for UX/readability.
+  const normalized = normalizeTypeForRequest(type);
+  if (normalized === "live-band") return "Live Band";
+  return normalized;
+}
+
 
 function ArtistsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
 
   // Initialize filters from URL params on first render
   const getInitialFilters = () => {
     const params = searchParams;
     return {
-      category: params.get("type") || "",
+      category: normalizeTypeForRequest(params.get("type") || ""),
       subCategory: params.get("subType") || "",
       gender: params.get("gender") || "",
       budget: params.get("budget") || "",
       eventState: params.get("state") || "",
       eventType: params.get("eventType") || "",
       language: params.get("language") || "",
+      location: params.get("location") || "",
     };
   };
 
   const [artists, setArtists] = useState<Artist[]>([]);
+  const { categories } = useArtistCategories();
   const [filters, setFilters] = useState<Filters>(getInitialFilters);
   const [query, setQuery] = useState(searchParams.get("search") || "");
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -137,7 +174,11 @@ function ArtistsPageContent() {
     const fetchData = async () => {
       setLoading(true);
       setPage(1);
-      const { artists: newArtists, total } = await getArtists(query, filters, 1);
+      const { artists: newArtists, total } = await getArtists(
+        query,
+        filters,
+        1,
+      );
       setArtists(newArtists);
       setTotalResults(total);
       setHasMore(newArtists.length < total);
@@ -147,6 +188,17 @@ function ArtistsPageContent() {
     updateURL();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, JSON.stringify(filters)]);
+
+  // Detect mobile viewport to control spinner presentation
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Debounce search input - wait 2 seconds after user stops typing
   useEffect(() => {
@@ -169,13 +221,14 @@ function ArtistsPageContent() {
   const updateURL = () => {
     const params = new URLSearchParams();
     if (query) params.set("search", query);
-    if (filters.category) params.set("type", filters.category);
+    if (filters.category) params.set("type", normalizeTypeForUrl(filters.category));
     if (filters.subCategory) params.set("subType", filters.subCategory);
     if (filters.gender) params.set("gender", filters.gender);
     if (filters.language) params.set("language", filters.language);
     if (filters.eventType) params.set("eventType", filters.eventType);
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
+    if (filters.location) params.set("location", filters.location);
 
     const newURL = params.toString() ? `?${params.toString()}` : window.location.pathname;
     window.history.replaceState({}, "", newURL);
@@ -186,12 +239,25 @@ function ArtistsPageContent() {
     if (isFetchingMore || loading || !hasMore) return;
     setIsFetchingMore(true);
     const nextPage = page + 1;
-    const { artists: moreArtists } = await getArtists(query, filters, nextPage);
+    const { artists: moreArtists } = await getArtists(
+      query,
+      filters,
+      nextPage,
+    );
     setArtists((prev) => [...prev, ...moreArtists]);
     setPage(nextPage);
     setHasMore(artists.length + moreArtists.length < totalResults);
     setIsFetchingMore(false);
-  }, [isFetchingMore, loading, hasMore, page, query, filters, totalResults, artists.length]);
+  }, [
+    isFetchingMore,
+    loading,
+    hasMore,
+    page,
+    query,
+    filters,
+    totalResults,
+    artists.length,
+  ]);
 
   useEffect(() => {
     if (!observerRef.current) return;
@@ -222,6 +288,7 @@ function ArtistsPageContent() {
       eventState: "",
       eventType: "",
       language: "",
+      location: "",
     });
     setQuery("");
     setSearchInput("");
@@ -239,8 +306,9 @@ function ArtistsPageContent() {
         eventState: "",
         eventType: "",
         language: "",
+        location: "",
       },
-      1
+      1,
     ).then(({ artists, total }) => {
       setArtists(artists);
       setTotalResults(total);
@@ -268,6 +336,12 @@ function ArtistsPageContent() {
   // BOOKMARK TOGGLE LOGIC
   // -----------------------------
   const handleBookmark = async (artistId: string) => {
+    // Check if user is logged in
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
+    }
+
     // Instant UI feedback
     setArtists((prev) =>
       prev.map((a) =>
@@ -326,16 +400,16 @@ function ArtistsPageContent() {
       <SiteLayout showPreloader={false} hideNavbar={false} hideBottomBar={true} className="lg:pt-20">
         <div className="min-h-screen lg:pt-4 overflow-x-hidden">
           {/* Header */}
-          <div className="w-full px-4 lg:px-8 py-4 border-b border-gray-800">
+          <div className="w-full px-4 lg:px-8 py-4 border-b border-[var(--border-color)]">
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 md:gap-4 overflow-hidden">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => router.back()}
-                  className="p-2 text-white transition-colors flex-shrink-0"
+                  className=" text-white transition-colors flex-shrink-0"
                   aria-label="Go back"
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-8 h-8"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -350,19 +424,8 @@ function ArtistsPageContent() {
                 </button>
                 {/* Show active filter name if set */}
                 {filters.category && (
-                  <span className="ml-2 px-3 py-1 rounded bg-primary-pink/20 text-primary-pink font-semibold text-base capitalize flex-shrink-0">
-                    {(() => {
-                      // Map filter value to display name
-                      switch (filters.category) {
-                        case 'singer': return 'Singer';
-                        case 'dj': return 'DJ / VJ';
-                        case 'anchor': return 'Anchor/emcee';
-                        case 'band': return 'Live Band';
-                        case 'dancer': return 'Dancer';
-                        case 'comedian': return 'Comedian';
-                        default: return filters.category;
-                      }
-                    })()}
+                  <span className=" py-1 h3 text-white flex-shrink-0">
+                    {findCategoryLabel(categories, filters.category) || filters.category}
                   </span>
                 )}
               </div>
@@ -370,7 +433,7 @@ function ArtistsPageContent() {
               {/* Desktop Search Field - Hidden on Mobile */}
               <div className="hidden lg:flex flex-1 max-w-md mx-4">
                 <div className="relative w-full">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-6 h-6" />
                   <input
                     type="text"
                     value={searchInput}
@@ -386,7 +449,7 @@ function ArtistsPageContent() {
                       }}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
@@ -427,7 +490,11 @@ function ArtistsPageContent() {
             {/* Artists Grid */}
             <div className="flex-1">
               {loading ? (
-                <LoadingSpinner fullScreen={false} text="Loading artists..." />
+                isMobile ? (
+                  <LoadingSpinner fullScreen={true} text="Loading artists..." />
+                ) : (
+                  <LoadingSpinner fullScreen={true} text="Loading artists..." />
+                )
               ) : (
                 <>
                   <ArtistGrid artists={artists} onBookmark={handleBookmark} />

@@ -10,17 +10,36 @@ import Image from 'next/image';
 export default function Home() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [locationAsked, setLocationAsked] = useState(false);
+  const [isLocationResolved, setIsLocationResolved] = useState(false);
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 
   // Check if we should show the location modal on mount
   useEffect(() => {
     // Check if user has already responded to location request
     const locationPreference = sessionStorage.getItem('locationPermissionAsked');
     if (locationPreference) {
-      setLocationAsked(true);
       // If they previously allowed, try to get location silently
       if (locationPreference === 'allowed') {
+        const cachedLocation = sessionStorage.getItem('userLocationCoords');
+        if (cachedLocation) {
+          try {
+            const parsed = JSON.parse(cachedLocation) as { lat?: number; lng?: number };
+            if (
+              typeof parsed.lat === 'number' &&
+              Number.isFinite(parsed.lat) &&
+              typeof parsed.lng === 'number' &&
+              Number.isFinite(parsed.lng)
+            ) {
+              setLocation({ lat: parsed.lat, lng: parsed.lng });
+              setIsLocationResolved(true);
+            }
+          } catch {
+            // Ignore invalid cached location and continue with live geolocation.
+          }
+        }
         requestLocation();
+      } else {
+        setIsLocationResolved(true);
       }
     } else {
       // Show custom modal after a short delay
@@ -31,41 +50,51 @@ export default function Home() {
     }
   }, []);
 
-  const requestLocation = () => {
+  const requestLocation = (showLoader: boolean = false) => {
+    if (showLoader) setIsRequestingLocation(true);
+
     if (!navigator.geolocation) {
       setShowLocationModal(false);
+      setIsLocationResolved(true);
+      setIsRequestingLocation(false);
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLocation({
+        const nextLocation = {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
-        });
+        };
+        setLocation(nextLocation);
         sessionStorage.setItem('locationPermissionAsked', 'allowed');
+        sessionStorage.setItem('userLocationCoords', JSON.stringify(nextLocation));
         setShowLocationModal(false);
-        setLocationAsked(true);
+        setIsLocationResolved(true);
+        setIsRequestingLocation(false);
       },
       (err) => {
         console.error("Location permission denied", err);
         setLocation(null);
         sessionStorage.setItem('locationPermissionAsked', 'denied');
         setShowLocationModal(false);
-        setLocationAsked(true);
+        setIsLocationResolved(true);
+        setIsRequestingLocation(false);
       },
       { enableHighAccuracy: true }
     );
   };
 
   const handleEnableLocation = () => {
-    requestLocation();
+    if (isRequestingLocation) return;
+    requestLocation(true);
   };
 
   const handleSkipLocation = () => {
+    if (isRequestingLocation) return;
     sessionStorage.setItem('locationPermissionAsked', 'denied');
     setShowLocationModal(false);
-    setLocationAsked(true);
+    setIsLocationResolved(true);
   };
 
   return (
@@ -73,7 +102,7 @@ export default function Home() {
       <Hero />
 
       {/* PASS LOCATION DOWN TO CHILD */}
-      <Artists location={location} />
+      <Artists location={location} canFetch={isLocationResolved} />
 
       {/* Custom Location Permission Modal */}
       {showLocationModal && (
@@ -87,8 +116,8 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Enable Location</h2>
-              <p className="text-text-gray text-sm leading-relaxed">
+              <h2 className="text-xl font-bold text-white mb-2 h1">Enable Location</h2>
+              <p className="text-text-light-gray text-base leading-relaxed">
                 For better artist recommendations, please enable location access. This helps us show you artists near your area.
               </p>
             </div>
@@ -99,13 +128,42 @@ export default function Home() {
                 variant="primary"
                 size="md"
                 onClick={handleEnableLocation}
-                className="w-full"
+                disabled={isRequestingLocation}
+                className="w-full btn1"
               >
-                Enable Location
+                {isRequestingLocation ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="9"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeOpacity="0.35"
+                      />
+                      <path
+                        d="M21 12a9 9 0 00-9-9"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    Enabling...
+                  </span>
+                ) : (
+                  "Enable Location"
+                )}
               </Button>
               <button
                 onClick={handleSkipLocation}
-                className="w-full py-3 text-text-gray hover:text-white transition-colors text-sm"
+                disabled={isRequestingLocation}
+                className="w-full py-3 text-text-gray hover:text-white transition-colors btn2"
               >
                 Maybe Later
               </button>

@@ -50,11 +50,9 @@ export async function GET(request: NextRequest) {
         data: { role: "artist" },
       });
 
-      // Don't create artist profile yet - let them go through signup flow
-      // Redirect to artist auth page with OAuth success flag
-      // The page will detect they're logged in and show remaining fields
+     
       return NextResponse.redirect(
-        new URL("/artist/profile-setup?oauth=true", request.url)
+        new URL("/auth/artist?step=userInfo&oauth=true", request.url)
       );
     }
 

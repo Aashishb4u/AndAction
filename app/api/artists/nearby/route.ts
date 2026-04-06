@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { Prisma } from "@prisma/client";
+import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 
 interface SearchMetadata {
   strategy: "nearby" | "expanded" | "nationwide";
@@ -30,19 +31,52 @@ function getSearchMessage(strategy: string, radius: number): string {
   }
 }
 
+function calculateDistanceKm(
+  userLat: number,
+  userLng: number,
+  targetLat: number,
+  targetLng: number,
+): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(targetLat - userLat);
+  const dLng = toRad(targetLng - userLng);
+  const lat1 = toRad(userLat);
+  const lat2 = toRad(targetLat);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return 6371 * c;
+}
+
+function sortArtistsByDistance<T extends { distance: number | null }>(
+  artists: T[],
+): T[] {
+  return [...artists].sort((a, b) => {
+    if (a.distance === null && b.distance === null) return 0;
+    if (a.distance === null) return 1;
+    if (b.distance === null) return -1;
+    return a.distance - b.distance;
+  });
+}
+
 async function countArtistsInRadius(
   type: string,
   userLat: number,
   userLng: number,
   radius: number,
-  verified: boolean
+  verified: boolean,
 ): Promise<number> {
+  const typeMatches = getArtistTypeMatches(type);
+
   const result = await prisma.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*) as count
     FROM "artists" a
     INNER JOIN "users" u ON a."userId" = u.id
     WHERE 
-      a."artistType" ILIKE ${type}
+      (${Prisma.raw(typeMatches.map((t) => `a."artistType" = '${t}'`).join(" OR "))})
       AND u.role = 'artist'
       AND u.latitude IS NOT NULL
       AND u.longitude IS NOT NULL
@@ -70,8 +104,10 @@ async function fetchArtistsInRadius(
   userLng: number,
   radius: number,
   verified: boolean,
-  limit: number = 50
+  limit: number = 50,
 ) {
+  const typeMatches = getArtistTypeMatches(type);
+
   const artists = await prisma.$queryRaw<Array<any>>`
     SELECT 
       a.id,
@@ -100,7 +136,7 @@ async function fetchArtistsInRadius(
     FROM "artists" a
     INNER JOIN "users" u ON a."userId" = u.id
     WHERE 
-      a."artistType" ILIKE ${type}
+      (${Prisma.raw(typeMatches.map((t) => `a."artistType" = '${t}'`).join(" OR "))})
       AND u.role = 'artist'
       AND u.latitude IS NOT NULL
       AND u.longitude IS NOT NULL
@@ -139,15 +175,16 @@ async function fetchArtistsInRadius(
   }));
 }
 
-
 async function fetchTopRatedNationwide(
   type: string,
   verified: boolean,
-  limit: number = 50
+  limit: number = 50,
 ) {
+  const typeMatches = getArtistTypeMatches(type);
+
   const artists = await prisma.artist.findMany({
     where: {
-      artistType: { contains: type, mode: "insensitive" },
+      artistType: { in: typeMatches },
       user: {
         role: "artist",
         ...(verified && {
@@ -188,28 +225,31 @@ async function fetchTopRatedNationwide(
   }));
 }
 
-
 async function fetchArtistsWithProgressiveSearch(
   type: string,
   userLat: number,
   userLng: number,
   minResults: number,
   maxRadius: number,
-  verified: boolean
+  verified: boolean,
 ) {
-  const radiusSteps = [50, 100, 200, 350, 500,1000,2000].filter((r) => r <= maxRadius);
+  const radiusSteps = [50, 100, 200, 350, 500, 1000, 2000].filter(
+    (r) => r <= maxRadius,
+  );
 
   let nearbyCount = 0;
   let expandedCount = 0;
-  let nationwideCount = 0;
 
   // Try each radius progressively
   for (const radius of radiusSteps) {
-
     // Quick count check
-    const count = await countArtistsInRadius(type, userLat, userLng, radius, verified);
-
-    console.log(`   Found ${count} artists in ${radius}km`);
+    const count = await countArtistsInRadius(
+      type,
+      userLat,
+      userLng,
+      radius,
+      verified,
+    );
 
     // If we have enough, fetch them
     if (count >= minResults) {
@@ -219,12 +259,16 @@ async function fetchArtistsWithProgressiveSearch(
         userLng,
         radius,
         verified,
-        50
+        50,
       );
 
       // Count nearby vs expanded
-      nearbyCount = artists.filter((a) => a.distance && a.distance <= 50).length;
-      expandedCount = artists.filter((a) => a.distance && a.distance > 50).length;
+      nearbyCount = artists.filter(
+        (a) => a.distance && a.distance <= 50,
+      ).length;
+      expandedCount = artists.filter(
+        (a) => a.distance && a.distance > 50,
+      ).length;
 
       const strategy = radius <= 100 ? "nearby" : "expanded";
 
@@ -244,22 +288,69 @@ async function fetchArtistsWithProgressiveSearch(
     }
   }
 
-  // Fallback: Not enough in any radius, get nationwide
-  console.log(`⚠️ Not enough artists in ${maxRadius}km, fetching nationwide...`);
+  // Fallback: keep nearby artists first, then fill with additional artists and sort by proximity.
+  const nearbyArtists = await fetchArtistsInRadius(
+    type,
+    userLat,
+    userLng,
+    maxRadius,
+    verified,
+    50,
+  );
 
-  const artists = await fetchTopRatedNationwide(type, verified, minResults);
-  nationwideCount = artists.length;
+  const nearbyIds = new Set(nearbyArtists.map((artist) => artist.id));
+
+  const nationwideCandidates = await fetchTopRatedNationwide(type, verified, 50);
+  const supplementalArtists = nationwideCandidates
+    .filter((artist) => !nearbyIds.has(artist.id))
+    .map((artist) => {
+      if (
+        typeof artist.user.latitude === "number" &&
+        typeof artist.user.longitude === "number"
+      ) {
+        return {
+          ...artist,
+          distance: calculateDistanceKm(
+            userLat,
+            userLng,
+            artist.user.latitude,
+            artist.user.longitude,
+          ),
+        };
+      }
+
+      return {
+        ...artist,
+        distance: null,
+      };
+    });
+
+  const artists = sortArtistsByDistance([
+    ...nearbyArtists,
+    ...supplementalArtists,
+  ]).slice(0, 50);
+
+  nearbyCount = artists.filter((a) => a.distance && a.distance <= 50).length;
+  expandedCount = artists.filter((a) => a.distance && a.distance > 50).length;
+  const nationwideCount = artists.filter((a) => a.distance === null).length;
+
+  const strategy =
+    nationwideCount > 0
+      ? "nationwide"
+      : maxRadius <= 100
+        ? "nearby"
+        : "expanded";
 
   return {
     artists,
     metadata: {
-      strategy: "nationwide",
+      strategy,
       radiusUsed: maxRadius,
       totalFound: artists.length,
-      nearbyCount: 0,
-      expandedCount: 0,
+      nearbyCount,
+      expandedCount,
       nationwideCount,
-      message: getSearchMessage("nationwide", maxRadius),
+      message: getSearchMessage(strategy, maxRadius),
       userLocation: { lat: userLat, lng: userLng },
     } as SearchMetadata,
   };
@@ -271,7 +362,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Required parameters
     const type = searchParams.get("type");
-    
+
     // Optional location parameters
     const latParam = searchParams.get("lat");
     const lngParam = searchParams.get("lng");
@@ -289,8 +380,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     // If location not provided, return artists without distance filtering
-    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-
+    if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
       const artists = await fetchTopRatedNationwide(type, verified, 50);
 
       return successResponse(
@@ -308,7 +398,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           } as SearchMetadata,
         },
         "Artists retrieved successfully",
-        200
+        200,
       );
     }
 
@@ -317,9 +407,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return ApiErrors.badRequest("Invalid coordinates");
     }
 
-    console.log(`\n🌍 Location-based search: ${type}s near (${lat}, ${lng})`);
-    console.log(`   Min results: ${minResults}, Max radius: ${maxRadius}km\n`);
-
     // Execute smart progressive search
     const result = await fetchArtistsWithProgressiveSearch(
       type,
@@ -327,7 +414,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       lng,
       minResults,
       maxRadius,
-      verified
+      verified,
     );
 
     console.log(`\n✅ Strategy: ${result.metadata.strategy}`);
@@ -340,7 +427,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         metadata: result.metadata,
       },
       "Artists retrieved successfully",
-      200
+      200,
     );
   } catch (error) {
     console.error("❌ Nearby Artists API Error:", error);

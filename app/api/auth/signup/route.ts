@@ -30,9 +30,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
   const lowerCaseEmail = email ? email.toLowerCase() : undefined;
   const contactMethod = lowerCaseEmail || phone;
 
-  if (!contactMethod || !password || !firstName || !lastName) {
+  // Basic validation
+  if (!contactMethod || !firstName || !lastName) {
     return ApiErrors.badRequest(
-      'Contact method (email or phone), password, first name, and last name are required.'
+      'Contact method (email or phone), first name, and last name are required.'
     );
   }
 
@@ -40,10 +41,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     return ApiErrors.badRequest('Phone registration requires a country code.');
   }
 
-  const strengthCheck = validatePasswordStrength(password);
+  // Password is required for email signups, optional for phone signups
+  if (lowerCaseEmail && !password) {
+    return ApiErrors.badRequest('Password is required for email registration.');
+  }
 
-  if (!strengthCheck.isValid) {
-    return ApiErrors.badRequest(strengthCheck.message || 'Password strength requirements not met.');
+  // Validate password strength only if password is provided (email signups)
+  if (password) {
+    const strengthCheck = validatePasswordStrength(password);
+    if (!strengthCheck.isValid) {
+      return ApiErrors.badRequest(strengthCheck.message || 'Password strength requirements not met.');
+    }
   }
 
   try {
@@ -72,8 +80,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
       return ApiErrors.conflict(`A user with this ${conflictField} already exists.`);
     }
 
-    // Hash password
-    const hashedPassword = await hashPassword(password);
+    // Hash password only if provided (email signups)
+    const hashedPassword = password ? await hashPassword(password) : null;
 
     // Create user
     const newUser = await prisma.user.create({

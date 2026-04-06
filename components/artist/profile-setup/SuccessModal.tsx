@@ -29,24 +29,14 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
         <h2 className="text-2xl font-semibold text-white mb-4">You&apos;re All Set!</h2>
 
         {/* Description */}
-        <p className="text-text-gray text-sm leading-relaxed mb-8">
+        <p className="text-text-gray text-base leading-relaxed mb-8">
           Your artist profile is now live. You can start receiving booking requests from users.
           If you perform in more than one category, you can add another profile right away.
         </p>
 
-        {/* Action Buttons */}
+        {/* Action Buttons (swapped order) */}
         <div className="flex md:flex-row flex-col md:items-center gap-4">
-          {/* Add Another Profile Button */}
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={onAddAnotherProfile}
-            className="w-full gradient-text"
-          >
-            Add another profile
-          </Button>
-
-          {/* Go to Dashboard Button */}
+          {/* Go to Dashboard Button (was second, now first) */}
           <Button
             variant="primary"
             size="md"
@@ -54,6 +44,17 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
             className="w-full"
           >
             Go to Dashboard
+          </Button>
+
+          {/* Add Another Profile Button (was first, now second) with + icon */}
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={onAddAnotherProfile}
+            className="w-full gradient-text flex items-center justify-center"
+          >
+            <span className="gradient-text mr-2 text-lg">+</span>
+            Add another profile
           </Button>
         </div>
       </div>

@@ -59,6 +59,8 @@ export async function GET(
                 chargesWithBacklineFrom: true,
                 chargesWithBacklineTo: true,
                 chargesWithBacklineDescription: true,
+                contactNumber: true,
+                whatsappNumber: true,
                 youtubeChannelId: true,
                 instagramId: true,
                 createdAt: true,

@@ -30,6 +30,8 @@ interface BookingRequestBody {
     eventType: string;
     eventLocation: string;
     eventAddress?: string;
+    mobileNumber?: string;
+    phoneNumber?: string;
     totalPrice: number;
     notes?: string;
 }
@@ -56,6 +58,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
             eventType,
             eventLocation,
             eventAddress,
+            mobileNumber,
+            phoneNumber,
             totalPrice,
             notes
         } = body;
@@ -71,6 +75,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
 
         if (totalPrice <= 0) {
             return ApiErrors.badRequest('totalPrice must be greater than zero.');
+        }
+
+        const normalizedMobileNumber = (mobileNumber || phoneNumber)?.replace(/\D/g, '');
+        if (normalizedMobileNumber && (normalizedMobileNumber.length < 10 || normalizedMobileNumber.length > 15)) {
+            return ApiErrors.badRequest('Invalid mobileNumber format.');
         }
         
         // --- 3. Business Logic Checks ---
@@ -93,6 +102,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
 
         if (clientArtistCheck?.id === artistId) {
             return ApiErrors.forbidden();
+        }
+
+        if (normalizedMobileNumber) {
+            const existingPhoneOwner = await prisma.user.findUnique({
+                where: { phoneNumber: normalizedMobileNumber },
+                select: { id: true }
+            });
+
+            if (!existingPhoneOwner || existingPhoneOwner.id === clientId) {
+                await prisma.user.update({
+                    where: { id: clientId },
+                    data: { phoneNumber: normalizedMobileNumber }
+                });
+            }
         }
 
         // --- 4. Database Creation ---
@@ -211,7 +234,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
                 createdAt: true,
                 eventLocation: true,
                 // Include details of the other party for context
-                client: { select: { firstName: true, lastName: true, email: true } },
+                client: { select: { firstName: true, lastName: true, email: true, phoneNumber: true } },
                 artist: { select: { stageName: true } },
             },
         });

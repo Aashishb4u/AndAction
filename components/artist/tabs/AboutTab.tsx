@@ -12,6 +12,12 @@ import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
 import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
 import { toast } from "react-toastify";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { useQueryClient } from "@tanstack/react-query";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import {
+  normalizeArtistCategoryValue,
+} from "@/lib/artist-category-utils";
 
 // Extended artist type for profile management
 type ExtendedArtist = Artist & {
@@ -23,6 +29,8 @@ type ExtendedArtist = Artist & {
   state?: string;
   city?: string;
   shortBio?: string;
+  contactNumber?: string;
+  contactEmail?: string;
   subArtistType: string;
 };
 
@@ -37,31 +45,7 @@ const genderOptions = [
   { value: "prefer-not-to-say", label: "Prefer not to say" },
 ];
 
-const stateOptions = [
-  { value: "maharashtra", label: "Maharashtra" },
-  { value: "delhi", label: "Delhi" },
-  { value: "karnataka", label: "Karnataka" },
-  { value: "tamil-nadu", label: "Tamil Nadu" },
-  { value: "gujarat", label: "Gujarat" },
-  { value: "rajasthan", label: "Rajasthan" },
-  { value: "uttar-pradesh", label: "Uttar Pradesh" },
-  { value: "west-bengal", label: "West Bengal" },
-  { value: "punjab", label: "Punjab" },
-  { value: "haryana", label: "Haryana" },
-];
-
-const cityOptions = [
-  { value: "mumbai", label: "Mumbai" },
-  { value: "delhi", label: "Delhi" },
-  { value: "bangalore", label: "Bangalore" },
-  { value: "chennai", label: "Chennai" },
-  { value: "ahmedabad", label: "Ahmedabad" },
-  { value: "jaipur", label: "Jaipur" },
-  { value: "lucknow", label: "Lucknow" },
-  { value: "kolkata", label: "Kolkata" },
-  { value: "chandigarh", label: "Chandigarh" },
-  { value: "gurgaon", label: "Gurgaon" },
-];
+// Category options are loaded from artist_categories table.
 
 const subArtistTypeOptions = [
   { value: "classical", label: "Classical" },
@@ -82,9 +66,27 @@ const experienceOptions = [
 
 const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
   const { data: session, update } = useSession();
+  const queryClient = useQueryClient();
+  const { categories } = useArtistCategories();
   const [isLoading, setIsLoading] = useState(false);
+
+  const normalizeArtistTypeValue = (rawValue?: string) => {
+    const normalized = normalizeArtistCategoryValue(rawValue || "");
+    if (!normalized) return "";
+
+    const labelMatch = categories.find(
+      (item) => item.label.toLowerCase() === normalized.toLowerCase(),
+    );
+    return labelMatch?.value || normalized;
+  };
+
+  const initialArtistType = normalizeArtistTypeValue(
+    (artist as any)?.tags?.[0] || artist.category,
+  );
+
   const [formData, setFormData] = useState({
     stageName: artist.name,
+    artistType: initialArtistType,
     firstName: (artist as ExtendedArtist).firstName || "",
     lastName: (artist as ExtendedArtist).lastName || "",
     dateOfBirth: (artist as ExtendedArtist).dateOfBirth || "",
@@ -93,6 +95,10 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
     pinCode: (artist as ExtendedArtist).pinCode || "",
     state: (artist as ExtendedArtist).state?.toLowerCase() || "",
     city: (artist as ExtendedArtist).city?.toLowerCase() || "",
+    contactNumber:
+      (artist as ExtendedArtist).contactNumber || (artist as any).phone || "",
+    email:
+      (artist as ExtendedArtist).contactEmail || (artist as any).email || "",
     subArtistType:
       (artist as ExtendedArtist).subArtistType?.toLowerCase() || "",
     achievements: Array.isArray(artist.achievements)
@@ -102,10 +108,19 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
     shortBio: artist.bio || "",
   });
 
-  const handleInputChange = (field: string, value: string) => {
+  // Multi-select UI for sub-artist types (stores as CSV for backend)
+  const initialSelectedSubTypes = (artist as ExtendedArtist).subArtistType
+    ? (artist as ExtendedArtist).subArtistType.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+  const [selectedSubTypes, setSelectedSubTypes] = useState<string[]>(initialSelectedSubTypes);
+  const [subTypeInput, setSubTypeInput] = useState<string>('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const handleInputChange = (field: string, value: string | string[]) => {
+    const normalizedValue = Array.isArray(value) ? value.join(",") : value;
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: normalizedValue,
     }));
   };
 
@@ -122,6 +137,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         userId: session.user.id,
 
         stageName: formData.stageName,
+        artistType: normalizeArtistCategoryValue(formData.artistType),
         firstName: formData.firstName,
         lastName: formData.lastName,
         gender: formData.gender,
@@ -130,10 +146,13 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         pinCode: formData.pinCode,
         city: formData.city,
         state: formData.state,
+        contactNumber: formData.contactNumber,
+        whatsappNumber: formData.contactNumber,
+        contactEmail: formData.email,
         shortBio: formData.shortBio,
         achievements: formData.achievements,
         yearsOfExperience: formData.yearsOfExperience,
-        subArtistType: formData.subArtistType,
+        subArtistType: selectedSubTypes.join(','),
       };
 
       // Update DB
@@ -150,6 +169,10 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         update: sessionPayload,
       });
 
+      // Ensure home/category listings fetch fresh data after profile category change.
+      await queryClient.cancelQueries({ queryKey: ["artists"] });
+      queryClient.removeQueries({ queryKey: ["artists"] });
+
       toast.success("Profile updated!");
     } catch (err) {
       console.error(err);
@@ -162,6 +185,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
   const handleReset = () => {
     setFormData({
       stageName: artist.name,
+      artistType: normalizeArtistTypeValue((artist as any)?.tags?.[0] || artist.category),
       firstName: (artist as ExtendedArtist).firstName || "",
       lastName: (artist as ExtendedArtist).lastName || "",
       dateOfBirth: (artist as ExtendedArtist).dateOfBirth || "",
@@ -170,6 +194,10 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       pinCode: (artist as ExtendedArtist).pinCode || "",
       state: (artist as ExtendedArtist).state?.toLowerCase() || "",
       city: (artist as ExtendedArtist).city?.toLowerCase() || "",
+      contactNumber:
+        (artist as ExtendedArtist).contactNumber || (artist as any).phone || "",
+      email:
+        (artist as ExtendedArtist).contactEmail || (artist as any).email || "",
       subArtistType:
         (artist as ExtendedArtist).subArtistType?.toLowerCase() || "",
       achievements: Array.isArray(artist.achievements)
@@ -178,12 +206,13 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       yearsOfExperience: artist.yearsOfExperience?.toString() || "4",
       shortBio: artist.bio || "",
     });
+    setSelectedSubTypes((artist as ExtendedArtist).subArtistType ? (artist as ExtendedArtist).subArtistType.split(',').map(s => s.trim()).filter(Boolean) : []);
   };
 
   return (
     <div className="md:space-y-5 space-y-4 pb-24 md:pb-0">
       {/* Stage Name */}
-      <div className="relative">
+      <div className="relative text-sm">
         <Input
           label="Stage name*"
           value={formData.stageName}
@@ -197,9 +226,9 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         </div>
       </div>
 
+
       {/* First Name and Last Name */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Input
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">       <Input
           label="First name*"
           value={formData.firstName}
           onChange={(e) => handleInputChange("firstName", e.target.value)}
@@ -214,7 +243,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       </div>
 
       {/* Date of Birth and Gender */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <DateInput
           label="Date of birth*"
           value={formData.dateOfBirth}
@@ -241,7 +270,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       />
 
       {/* PIN Code, State, City */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
           label="PIN code*"
           value={formData.pinCode}
@@ -250,43 +279,157 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         />
         <Select
           label="State*"
-          options={stateOptions}
+          options={INDIAN_STATES}
           value={formData.state}
           onChange={(value) => handleInputChange("state", value)}
           required
         />
         <Select
           label="City*"
-          options={cityOptions}
+          options={INDIAN_CITIES}
           value={formData.city}
           onChange={(value) => handleInputChange("city", value)}
           required
         />
       </div>
 
-      {/* Sub-Artist Type */}
-      <div className="relative">
-        <Select
-          label="Sub-Artist type*"
-          options={subArtistTypeOptions}
-          value={formData.subArtistType}
-          onChange={(value) => handleInputChange("subArtistType", value)}
+      {/* Contact Number */}
+      <div className="relative text-sm">
+        <Input
+          label="Contact / Whatsapp number*"
+          value={formData.contactNumber}
+          onChange={(e) => handleInputChange("contactNumber", e.target.value)}
           required
         />
-        <div className="absolute top-11 right-11">
-          <Tooltip content="Specify your performance style or specialization">
-            <Info size={16} className="text-text-gray" />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Primary contact number shown to users and used for calls/WhatsApp fallback">
+            <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
       </div>
 
-      {/* Achievements and Years of Experience */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Email ID */}
+      <div className="relative text-sm">
         <Input
-          label="Achievements / Awards"
-          value={formData.achievements}
-          onChange={(e) => handleInputChange("achievements", e.target.value)}
+          label="Email ID"
+          value={formData.email}
+          onChange={(e) => handleInputChange("email", e.target.value)}
+          type="email"
         />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Professional email used for booking communication">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+      </div>
+
+            {/* Artist Category */}
+      <div className="relative text-sm">
+        <Select
+          label="Artist Category*"
+          options={categories}
+          value={formData.artistType}
+          onChange={(value) => handleInputChange("artistType", value)}
+          required
+        />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Select the primary category that best describes your art form">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* Sub-Artist Type (tag-style multi-select) */}      <div className="relative text-sm">
+        <label className="block secondary-text text-white mb-1">Sub-Artist type*</label>
+        <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
+          {selectedSubTypes.map((tag, idx) => (
+            <span key={tag + idx} className="inline-flex items-center gap-2 bg-background px-3 py-1 rounded-full text-sm">
+              <span>{tag}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = selectedSubTypes.filter(t => t !== tag);
+                  setSelectedSubTypes(next);
+                }}
+                className="text-text-gray hover:text-white"
+                aria-label={`Remove ${tag}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+
+          <input
+            className="flex-1 bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-text-gray"
+            placeholder="e.g. Classical, Bollywood, Fusion"
+            value={subTypeInput}
+            onChange={(e) => setSubTypeInput(e.target.value)}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const v = subTypeInput.trim().replace(/,$/, '');
+                if (v && !selectedSubTypes.includes(v)) {
+                  setSelectedSubTypes([v, ...selectedSubTypes]);
+                }
+                setSubTypeInput('');
+              } else if (e.key === 'Backspace' && !subTypeInput) {
+                setSelectedSubTypes(selectedSubTypes.slice(0, -1));
+              }
+            }}
+          />
+        </div>
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Specify your performance style or specialization">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+
+        {/* Suggestions dropdown */}
+        {showSuggestions && (
+          <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
+            {subArtistTypeOptions.filter(o => o.label.toLowerCase().includes((subTypeInput || '').toLowerCase())).length === 0 ? (
+              <div className="px-3 py-2 text-sm text-text-gray">No suggestions</div>
+            ) : (
+              subArtistTypeOptions
+                .filter(o => o.label.toLowerCase().includes((subTypeInput || '').toLowerCase()))
+                .map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); }}
+                    onClick={() => {
+                      if (!selectedSubTypes.includes(o.label)) {
+                        setSelectedSubTypes([o.label, ...selectedSubTypes]);
+                      }
+                      setSubTypeInput('');
+                      setShowSuggestions(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
+                  >
+                    {o.label}
+                  </button>
+                ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Achievements and Years of Experience */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+        <div className="relative">
+          <Input
+            label="Achievements / Awards"
+            value={formData.achievements}
+            onChange={(e) => handleInputChange("achievements", e.target.value)}
+          />
+          <div className="absolute top-0 right-0">
+            <Tooltip content="List notable achievements or awards separated by commas">
+              <Info size={16} className="text-blue" />
+            </Tooltip>
+          </div>
+        </div>
         <div className="relative">
           <Select
             label="Years of experience*"
@@ -295,9 +438,9 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
             onChange={(value) => handleInputChange("yearsOfExperience", value)}
             required
           />
-          <div className="absolute top-11 right-11">
+          <div className="absolute top-0 right-0">
             <Tooltip content="Total years of professional performing experience">
-              <Info size={16} className="text-text-gray" />
+              <Info size={16} className="text-blue" />
             </Tooltip>
           </div>
         </div>
@@ -314,18 +457,18 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         />
         <div className="absolute top-0 right-0">
           <Tooltip content="Write a brief description about yourself and your artistic journey">
-            <Info size={16} className="text-text-gray" />
+            <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
       </div>
 
       {/* Save Button */}
-      <div className="flex md:justify-end gap-4 items-center md:pt-5 p-4 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent z-50">
+      <div className="flex md:justify-end gap-4 items-center md:pt-5 py-2 px-3 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent z-50">
         <Button
           variant="secondary"
           onClick={handleReset}
           disabled={isLoading}
-          className="w-full md:w-auto text-xs! md:text-base"
+          className="w-full md:w-auto text-sm! md:text-base!"
         >
           <span className="gradient-text">Reset</span>
         </Button>
@@ -333,7 +476,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
           variant="primary"
           onClick={handleSave}
           disabled={isLoading}
-          className="w-full md:w-auto text-xs! md:text-base"
+          className="w-full md:w-auto text-xs! md:text-base!"
         >
           {isLoading ? "Saving..." : "Save Changes"}
         </Button>

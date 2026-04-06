@@ -4,17 +4,22 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ArtistSidebar from './ArtistSidebar';
+import Sidebar from './Sidebar';
 import { Menu } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
 interface ArtistDashboardLayoutProps {
   children: React.ReactNode;
   className?: string;
+  hideNavbar?: boolean;
+  useMainSidebar?: boolean;
 }
 
 const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
   children,
   className = '',
+  hideNavbar = false,
+  useMainSidebar = false,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -26,12 +31,13 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
     setIsSidebarOpen(false);
   };
 
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   return (
     <div className={`min-h-screen bg-black ${className}`}>
       {/* Navigation Bar */}
-      <nav className="flex items-center justify-between px-6 py-4 container mx-auto">
+      {!hideNavbar && (
+        <nav className="flex items-center justify-between px-6 py-4 container mx-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Image src="/logo.png" alt="ANDACTION Logo" width={180} height={180} />
@@ -63,10 +69,15 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
             <Menu className="w-6 h-6" />
           </button>
         </div>
-      </nav>
+        </nav>
+      )}
 
       {/* Sidebar */}
-      <ArtistSidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+      {useMainSidebar ? (
+        <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+      ) : (
+        <ArtistSidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+      )}
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto">

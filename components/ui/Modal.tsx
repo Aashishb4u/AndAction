@@ -14,6 +14,7 @@ export interface ModalProps {
   showCloseButton?: boolean;
   closeOnBackdropClick?: boolean;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  variant?: 'center' | 'bottom-sheet';
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -26,6 +27,7 @@ const Modal: React.FC<ModalProps> = ({
   closeOnBackdropClick = true,
   size = 'md',
   headerClassName = '',
+  variant = 'center',
 }) => {
   // Handle escape key press
   useEffect(() => {
@@ -60,14 +62,16 @@ const Modal: React.FC<ModalProps> = ({
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
-    full: 'max-w-full mx-4',
+    full: 'max-w-full md:mx-4',
   };
+
+  const isBottomSheet = (variant === 'bottom-sheet');
 
   if (!isOpen) return null;
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+      className={`fixed inset-0 z-50 flex ${isBottomSheet ? 'items-end' : 'items-center'} justify-center ${isBottomSheet ? 'md:p-4' : 'md:p-4'} modal-backdrop`}
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
@@ -76,33 +80,33 @@ const Modal: React.FC<ModalProps> = ({
       {/* Modal Content */}
       <div
         className={`
-          relative w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden
-          bg-background border border-border-color rounded-2xl shadow-2xl
-          modal-content
+          relative w-full ${sizeClasses[size]} ${isBottomSheet ? 'max-h-[90vh] rounded-t-2xl md:rounded-2xl' : 'max-h-[90vh] rounded-2xl'} overflow-hidden
+          bg-background border border-border-color shadow-2xl
+          ${isBottomSheet ? 'modal-bottom-sheet' : 'modal-content'}
           ${className}
         `}
       >
         {showCloseButton && title && (
           <div className={`border-b border-border-color px-8 py-6 ${headerClassName}`}>
             <div className='flex justify-between items-center'>
-              <div className="absolute top-4 right-4 z-10">
-                <button
-                  onClick={onClose}
-                  className="p-2 text-white hover:text-white hover:bg-[#2D2D2D] rounded-full transition-all duration-200"
-                  aria-label="Close modal"
-                >
-                  <X size={20} />
-                </button>
-              </div>
               <div>
                 <h2 className='text-white h1'>{title}</h2>
+              </div>
+              <div className="z-10">
+                <button
+                  onClick={onClose}
+                  className="text-white hover:text-white hover:bg-[#2D2D2D] rounded-full justify-items-center items-center transition-all duration-200"
+                  aria-label="Close modal"
+                >
+                  <X className="w-6 h-6 md:w-8 md:h-8" />
+                </button>
               </div>
             </div>
           </div>
         )}
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-60px)] modal-scroll">
+        <div className={`overflow-y-auto ${isBottomSheet ? 'max-h-[calc(90vh-60px)]' : 'max-h-[calc(90vh-60px)]'} modal-scroll`}>
           {children}
         </div>
       </div>

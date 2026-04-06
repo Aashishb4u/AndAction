@@ -41,13 +41,13 @@ const ContactPage = () => {
 
   const quickLinks = [
     {
-      icon: <MessageCircle className="w-5 h-5" />,
+      icon: <MessageCircle className="w-6 h-6" />,
       title: 'FAQs',
       description: 'Find quick answers to common questions',
       link: '/faqs',
     },
     {
-      icon: <Clock className="w-5 h-5" />,
+      icon: <Clock className="w-6 h-6" />,
       title: 'Support Hours',
       description: 'Monday to Saturday: 9:00 AM - 6:00 PM IST',
       link: null,

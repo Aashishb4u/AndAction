@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Button from '@/components/ui/Button';
 import FindArtistModal from '@/components/modals/FindArtistModal';
 import { HeroProps } from '@/types';
@@ -20,8 +21,8 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
 
   return (
     <section
-      className={`relative h-[75vh] md:h-[80vh] flex flex-col overflow-hidden ${className} pt-16 md:pt-20`}
-      style={{ overflow: 'hidden' }}
+      className={`relative h-[75vh] md:h-[80vh] flex flex-col ${className} pt-16 md:pt-20 z-10`}
+      style={{ overflow: 'visible' }}
     /* pt-16 = 64px for mobile navbar, md:pt-20 = 80px for desktop */
     /* h-[75vh] = 75% of viewport height for mobile, md:h-[70vh] = 70% for desktop */
     >
@@ -35,38 +36,41 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           className={`object-cover object-center w-full h-full ${isLoaded ? 'hero-bg-animate' : ''}`}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
         >
-          <source src="/file.mp4" type="video/mp4" />
+          <source src=" /file.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
         {/* Dark Overlay */}
-        <div className={`absolute inset-0 bg-black/10 ${isLoaded ? 'hero-overlay-animate' : ''}`} />
+        <div
+          className={`absolute inset-0 ${isLoaded ? 'hero-overlay-animate' : ''}`}
+          style={{ backgroundColor: '#0F0F0F88' }}
+        />
       </div>
       {/* Black Overlay */}
       <div
-        className={`absolute inset-0 bg-black/70 pointer-events-none ${isLoaded ? 'hero-overlay-animate' : ''
-          }`}
+        className={`absolute inset-0 pointer-events-none ${isLoaded ? 'hero-overlay-animate' : ''}`}
+        style={{ backgroundColor: '#0F0F0F88' }}
       />
 
       {/* Content - centered in the video area */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-end md:justify-center items-center pb-20 md:pb-0">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex-1 flex flex-col justify-end md:justify-center items-center pb-20 md:pb-6">
         <div className="max-w-4xl mx-auto w-full">
           {/* Main Heading */}
-          <h1 className={`text-4xl leading-10 lg:leading-14 lg:text-5xl font-bold text-white mb-3 max-w-3xl ${isLoaded ? 'hero-title-animate' : 'opacity-0'}`}>
+          <h1 className={`t1 text-text-white mb-3 max-w-3xl md:max-w-4xl ${isLoaded ? 'hero-title-animate' : 'opacity-0'}`}>
             Discover and Book Perfect Artists for your Events
           </h1>
 
           {/* Subtitle */}
-          <p className={`text-text-gray max-w-2xl mx-auto mb-5 ${isLoaded ? 'hero-subtitle-animate' : 'opacity-0'}`}>
+          <p className={`text-text-gray secondary-grey-text max-w-2xl md:max-w-3xl mx-auto mb-5 ${isLoaded ? 'hero-subtitle-animate' : 'opacity-0'}`}>
             Connecting talent with unforgettable experiences, all in one place!
           </p>
 
           {/* CTA Button */}
-          <div className={`flex justify-center ${isLoaded ? 'hero-button-animate' : 'opacity-0'}`}>
+          <div className={`flex justify-center ${isLoaded ? 'hero-button-animate translate-y-0 md:translate-y-12' : 'opacity-0'}`}>
             <Button
               variant="primary"
               size="md"
               onClick={handleFindArtist}
-              className="px-8 py-3 w-full max-w-96 font-semibold shadow-2xl hover:shadow-pink-500/25 transform hover:scale-105 transition-all duration-300 btn1"
+              className="px-8 py-3 w-full max-w-96 shadow-2xl hover:shadow-pink-500/25 transform hover:scale-105 transition-all duration-300 btn1-responsive"
             >
               Find your Artist
             </Button>
@@ -74,87 +78,45 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         </div>
       </div>
 
-      {/* Curve - positioned at the bottom of hero section */}
-      <div className="absolute left-0 right-0 bottom-0 z-50 pointer-events-none select-none">
-        <svg
-          viewBox="0 0 1400 80"
-          width="100%"
-          height="85"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="none"
-          className="block"
-        >
-          <defs>
-            {/* Pink glow gradient under curve stroke - centered 40% width, fades vertically */}
-            {/* <linearGradient id="pinkGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
-              <stop offset="20%" stopColor="#FF2D7A" stopOpacity="0.18" />
-              <stop offset="30%" stopColor="#FF2D7A" stopOpacity="0.2" />
-              <stop offset="40%" stopColor="#FF2D7A" stopOpacity="0.3" />
-              <stop offset="50%" stopColor="#FF2D7A" stopOpacity="0.3" />
-              <stop offset="60%" stopColor="#FF2D7A" stopOpacity="0.3" />
-              <stop offset="70%" stopColor="#FF2D7A" stopOpacity="0.2" />
-              <stop offset="80%" stopColor="#FF2D7A" stopOpacity="0.18" />
-              <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
-            </linearGradient> */}
-
-            {/* Combined radial gradient - centered horizontally, fades down */}
-            <radialGradient id="pinkGlow" cx="50%" cy="0%" r="60%" fx="50%" fy="0%">
-              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0.3" />
-              <stop offset="80%" stopColor="#FF2D7A" stopOpacity="0.24" />
-              <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
-            </radialGradient>
-
-            {/* Main curve stroke gradient */}
-            <linearGradient id="strokeFade" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#FF2D7A" stopOpacity="0" />
-              <stop offset="15%" stopColor="#FF2D7A" stopOpacity="0.6" />
-              <stop offset="50%" stopColor="#FF2D7A" stopOpacity="1" />
-              <stop offset="85%" stopColor="#FF2D7A" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#FF2D7A" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-
-          {/* Black curve fill that creates the transition */}
-          <path
-            d="M0,80 Q720,10 1440,80 L1440,80 L0,80 Z"
-            fill="black"
+      {/* Curve with pink spotlight - positioned at the bottom of hero section */}
+      <div className="absolute left-0 right-0 pointer-events-none select-none -bottom-[10vh] md:-bottom-[12vh]" style={{ zIndex: 1 }}>
+        {/* Mobile Curve SVG */}
+        <div className="block md:hidden w-full">
+          <Image
+            src="/icons/Mobile_Curve.svg"
+            alt=""
+            width={1440}
+            height={200}
+            className="w-full h-auto"
+            priority
           />
-
-          {/* Pink gradient overlay slightly inside black curve */}
-          <path
-            d="M0,80 Q720,10 1440,80 L1440,160 L0,80 Z"
-            fill="url(#pinkGlow)"
+        </div>
+        
+        {/* Desktop Curve SVG */}
+        <div className="hidden md:block w-full">
+          <Image
+            src="/icons/Curve.svg"
+            alt=""
+            width={1440}
+            height={200}
+            className="w-full h-auto"
+            priority
           />
-
-          {/* Main curve stroke */}
-          <path
-            d="M0,80 Q720,10 1440,80"
-            fill="none"
-            stroke="url(#strokeFade)"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-
-          {/* Inner thin highlight */}
-          <path
-            d="M0,80 Q720,10 1440,80"
-            fill="none"
-            stroke="#FF2D7A"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            opacity="0.6"
-          />
-        </svg>
+        </div>
+        
+        {/* Pink spotlight — originates from curve center, extends into Artists section */}
+        <div
+          className="absolute left-1/2 top-0 pointer-events-none"
+          style={{
+            width: '85%',
+            height: '1800px',
+            transform: 'translate(-50%, 0)',
+            background: 'radial-gradient(ellipse 55% 65% at 50% 0%, rgba(255,45,122,0.32) 0%, rgba(255,45,122,0.16) 20%, rgba(255,45,122,0.08) 45%, rgba(255,45,122,0.03) 70%, transparent 95%)',
+            zIndex: 1,
+            mixBlendMode: 'screen',
+          }}
+        />
       </div>
-
-
-
-
-
-
-
 
       {/* Find Artist Modal */}
       <FindArtistModal

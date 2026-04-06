@@ -1,9 +1,9 @@
 /**
- * GET /api/videos/related?videoId=<id>
+ * GET /api/videos/related?videoId=<id>&videosPage=1&shortsPage=1&videosLimit=12&shortsLimit=12
  * Returns:
- *  - main video
- *  - related (full videos)
- *  - shorts (videos where isShort = true)
+ *  - main video (only on first page)
+ *  - related (full videos) with pagination
+ *  - shorts (videos where isShort = true) with pagination
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -17,6 +17,11 @@ export async function GET(req: NextRequest) {
     if (!videoId) {
       return ApiErrors.badRequest("videoId query parameter is required.");
     }
+
+    const videosPage = parseInt(req.nextUrl.searchParams.get("videosPage") || "1", 10);
+    const shortsPage = parseInt(req.nextUrl.searchParams.get("shortsPage") || "1", 10);
+    const videosLimit = Math.min(parseInt(req.nextUrl.searchParams.get("videosLimit") || "12", 10), 50);
+    const shortsLimit = Math.min(parseInt(req.nextUrl.searchParams.get("shortsLimit") || "12", 10), 50);
 
     // 1️⃣ Fetch main video
     const mainVideo = await prisma.video.findUnique({
@@ -34,6 +39,7 @@ export async function GET(req: NextRequest) {
         user: {
           select: {
             id: true,
+            name: true,
             firstName: true,
             lastName: true,
             avatar: true,
@@ -55,43 +61,67 @@ export async function GET(req: NextRequest) {
 
     const artistId = mainVideo.user.id;
 
-    // 2️⃣ Fetch all videos from this artist (excluding this video)
-    const artistVideos = await prisma.video.findMany({
-      where: {
-        userId: artistId,
-        id: { not: videoId },
-      },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        title: true,
-        url: true,
-        thumbnailUrl: true,
-        duration: true,
-        views: true,
-        createdAt: true,
-        isShort: true,
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-            isArtistVerified: true,
-          },
-        },
-      },
-    });
+    const baseWhere = {
+      userId: artistId,
+      id: { not: videoId },
+      isApproved: true,
+    };
 
-    // Split into shorts & videos
-    const relatedVideos = artistVideos.filter((v) => !v.isShort);
-    const shorts = artistVideos.filter((v) => v.isShort);
+    const userSelect = {
+      id: true,
+      name: true,
+      firstName: true,
+      lastName: true,
+      avatar: true,
+      isArtistVerified: true,
+      artist: { select: { id: true } },
+    };
+
+    // 2️⃣ Fetch videos and shorts separately with pagination
+    const [relatedVideos, relatedVideosCount, shortsVideos, shortsCount] = await Promise.all([
+      prisma.video.findMany({
+        where: { ...baseWhere, isShort: false },
+        orderBy: { createdAt: "desc" },
+        skip: (videosPage - 1) * videosLimit,
+        take: videosLimit,
+        select: {
+          id: true, title: true, url: true, thumbnailUrl: true,
+          duration: true, views: true, createdAt: true, isShort: true,
+          user: { select: userSelect },
+        },
+      }),
+      prisma.video.count({ where: { ...baseWhere, isShort: false } }),
+      prisma.video.findMany({
+        where: { ...baseWhere, isShort: true },
+        orderBy: { createdAt: "desc" },
+        skip: (shortsPage - 1) * shortsLimit,
+        take: shortsLimit,
+        select: {
+          id: true, title: true, url: true, thumbnailUrl: true,
+          duration: true, views: true, createdAt: true, isShort: true,
+          user: { select: userSelect },
+        },
+      }),
+      prisma.video.count({ where: { ...baseWhere, isShort: true } }),
+    ]);
 
     return successResponse(
       {
         video: mainVideo,
         related: relatedVideos,
-        shorts: shorts,
+        shorts: shortsVideos,
+        videosPagination: {
+          page: videosPage,
+          limit: videosLimit,
+          totalCount: relatedVideosCount,
+          hasNextPage: videosPage * videosLimit < relatedVideosCount,
+        },
+        shortsPagination: {
+          page: shortsPage,
+          limit: shortsLimit,
+          totalCount: shortsCount,
+          hasNextPage: shortsPage * shortsLimit < shortsCount,
+        },
       },
       "Fetched related videos successfully.",
     );

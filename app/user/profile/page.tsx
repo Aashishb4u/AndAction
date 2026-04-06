@@ -8,28 +8,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import { toast } from "react-toastify";
-
-const INDIAN_STATES = [
-  { value: "maharashtra", label: "Maharashtra" },
-  { value: "delhi", label: "Delhi" },
-  { value: "karnataka", label: "Karnataka" },
-  { value: "tamil-nadu", label: "Tamil Nadu" },
-  { value: "gujarat", label: "Gujarat" },
-  { value: "rajasthan", label: "Rajasthan" },
-  { value: "west-bengal", label: "West Bengal" },
-  { value: "uttar-pradesh", label: "Uttar Pradesh" },
-];
-
-const CITIES = [
-  { value: "mumbai", label: "Mumbai" },
-  { value: "delhi", label: "Delhi" },
-  { value: "bangalore", label: "Bangalore" },
-  { value: "hyderabad", label: "Hyderabad" },
-  { value: "ahmedabad", label: "Ahmedabad" },
-  { value: "chennai", label: "Chennai" },
-  { value: "kolkata", label: "Kolkata" },
-  { value: "pune", label: "Pune" },
-];
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -37,6 +16,7 @@ export default function UserProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string>("");
   
   // Avatar selection - total 24 avatars
   const avatars = [
@@ -107,10 +87,39 @@ export default function UserProfilePage() {
       ...prev,
       [field]: value,
     }));
+
+    // Validate phone number in real-time
+    if (field === "phoneNumber") {
+      if (value && !validatePhoneNumber(value)) {
+        const digitsOnly = value.replace(/\D/g, "");
+        if (digitsOnly.length < 10) {
+          setPhoneError("Phone number must be 10 digits");
+        } else if (digitsOnly.length > 10) {
+          setPhoneError("Phone number cannot exceed 10 digits");
+        }
+      } else {
+        setPhoneError("");
+      }
+    }
+  };
+
+  const validatePhoneNumber = (phoneNumber: string): boolean => {
+    // Remove all non-digit characters
+    const digitsOnly = phoneNumber.replace(/\D/g, "");
+
+    // Check if it has exactly 10 digits for Indian phone numbers
+    return digitsOnly.length === 10;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate phone number before submission
+    if (formData.phoneNumber && !validatePhoneNumber(formData.phoneNumber)) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -155,14 +164,14 @@ export default function UserProfilePage() {
   return (
     <div className="min-h-screen bg-background md:p-4 p-0 ">
       {/* Back Button and Title - Title Centered */}
-      <div className="relative flex items-center md:justify-center md:mb-8 mb-4 md:mt-4 mt-2 md:px-0 px-4">
+      <div className="relative flex items-center md:justify-center md:mb-8 md:mt-4 mt-2 md:px-0 px-4">
         <button
           onClick={() => router.back()}
-          className="absolute left-0 md:left-0 text-white m-3 hover:text-primary-pink transition-colors duration-200 flex items-center gap-2"
+          className="absolute left-0 md:left-0 text-white m-3 hover:text-primary-pink transition-colors duration-200 flex items-center gap-4"
           aria-label="Back"
         >
           <svg
-            className="w-6 h-6"
+            className="w-8 h-8"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -176,7 +185,7 @@ export default function UserProfilePage() {
           </svg>
           <span className="md:inline hidden">Back</span>
         </button>
-        <h1 className="h1 ml-6 font-semibold text-white">
+        <h1 className="h1 ml-6 text-white gap-4 p-4 md:text-3xl">
           Edit your profile
         </h1>
       </div>
@@ -188,7 +197,7 @@ export default function UserProfilePage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Avatar Selection */}
             <div className="space-y-4">
-              <h3 className="text-white text-center text-lg font-medium">
+              <h3 className="text-white text-center md:text-lg font- secondary-text">
                 Choose avatar
               </h3>
               <div className="flex items-center justify-center md:gap-3 gap-2">
@@ -202,7 +211,7 @@ export default function UserProfilePage() {
                   }
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-6 h-6 md:w-12 md:h-12"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -296,7 +305,7 @@ export default function UserProfilePage() {
                   }
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-6 h-6 md:w-12 md:h-12"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -338,7 +347,7 @@ export default function UserProfilePage() {
 
             {/* Mobile Number with Country Code */}
             <div className="space-y-1">
-              <label className="block section-text mb-1">
+              <label className="block section-text mb-1 text-sm">
                 Mobile number*
               </label>
               <div className="flex gap-2">
@@ -356,6 +365,9 @@ export default function UserProfilePage() {
                   className="flex-1"
                 />
               </div>
+              {phoneError && (
+                <p className="text-red-400 text-sm mt-1">{phoneError}</p>
+              )}
             </div>
 
             {/* Email (Read-only) */}
@@ -369,7 +381,7 @@ export default function UserProfilePage() {
             />
 
             {/* Location Fields */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
               {/* State Dropdown */}
               <div className="relative">
                 <label className="block section-text mb-1">State*</label>
@@ -382,7 +394,7 @@ export default function UserProfilePage() {
                   <span className={formData.state ? "text-white" : "text-text-gray"}>
                     {formData.state ? INDIAN_STATES.find(s => s.value === formData.state)?.label : "Select state"}
                   </span>
-                  <svg className="w-5 h-5 text-text-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-text-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
@@ -419,15 +431,15 @@ export default function UserProfilePage() {
                   className="w-full px-3 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between hover:border-gray-500 focus:border-primary-pink transition-all duration-200 disabled:opacity-50"
                 >
                   <span className={formData.city ? "text-white" : "text-text-gray"}>
-                    {formData.city ? CITIES.find(c => c.value === formData.city)?.label : "Select city"}
+                    {formData.city ? INDIAN_CITIES.find(c => c.value === formData.city)?.label : "Select city"}
                   </span>
-                  <svg className="w-5 h-5 text-text-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-text-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 {activeDropdown === 'city' && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-gray-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-                    {CITIES.map((option) => (
+                    {INDIAN_CITIES.map((option) => (
                       <button
                         key={option.value}
                         type="button"

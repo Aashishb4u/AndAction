@@ -10,6 +10,7 @@ interface CheckboxProps {
   description?: string;
   disabled?: boolean;
   className?: string;
+  small?: boolean;
 }
 
 const Checkbox: React.FC<CheckboxProps> = ({
@@ -20,6 +21,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
   description,
   disabled = false,
   className = ''
+  , small = false
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!disabled) {
@@ -29,7 +31,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
 
   return (
     <div className={`flex gap-3 ${className}`}>
-      <div className="relative flex-shrink-0 md:mt-1">
+      <div className="relative flex-shrink-0">
         <input
           id={id}
           type="checkbox"
@@ -40,11 +42,12 @@ const Checkbox: React.FC<CheckboxProps> = ({
         />
         <div
           onClick={() => !disabled && onChange(!checked)}
+          style={{ background: checked ? 'var(--gradient-primary)' : undefined }}
           className={`
-            w-5 h-5 rounded border-2 cursor-pointer transition-all duration-200
+            ${small ? 'w-4 h-4' : 'w-6 h-6'} rounded border-2 cursor-pointer transition-all duration-200
             flex items-center justify-center
             ${checked 
-              ? 'bg-primary-pink border-primary-pink' 
+              ? 'border-transparent' 
               : 'bg-transparent border-[#404040] hover:border-[#606060]'
             }
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
@@ -52,7 +55,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
         >
           {checked && (
             <svg 
-              className="w-3 h-3 text-white" 
+              className={`${small ? 'w-2 h-2' : 'w-3 h-3'} text-white`} 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -74,7 +77,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
             <label 
               htmlFor={id}
               className={`
-                block section-text cursor-pointer
+                block ${small ? 'text-sm' : 'section-text'} cursor-pointer
                 ${disabled ? 'opacity-50' : ''}
               `}
             >

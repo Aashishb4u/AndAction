@@ -54,13 +54,7 @@ export function usePWAInstall() {
     }
     
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      alert('App is already installed!');
       return { success: false, message: 'Already installed' };
-    }
-
-    if (isIOSSafari()) {
-      alert('To install this app on iOS:\n\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" in the top right corner');
-      return { success: false, message: 'iOS installation instructions shown' };
     }
 
     if (deferredPrompt) {
@@ -81,19 +75,14 @@ export function usePWAInstall() {
       }
     }
 
-    const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-    const isEdge = /Edg/.test(navigator.userAgent);
-    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-    
-    if (isChrome || isEdge) {
-      alert('To install ANDACTION:\n\n1. Click the install icon (⊕) in your browser\'s address bar\n2. Or open browser menu (⋮) → "Install ANDACTION"\n3. Follow the prompts to add to your home screen');
-    } else if (isSafari) {
-      alert('To install ANDACTION:\n\n1. Tap the Share button in Safari\n2. Scroll and select "Add to Home Screen"\n3. Tap "Add" to install');
-    } else {
-      alert('To install ANDACTION:\n\nLook for the install or "Add to Home Screen" option in your browser menu.\n\nFor best experience, use Chrome, Edge, or Safari.');
+    // No deferred prompt available — only show iOS share sheet hint since
+    // iOS Safari doesn't support the beforeinstallprompt event at all.
+    if (isIOSSafari()) {
+      alert('To install this app:\n\n1. Tap the Share button (square with arrow)\n2. Tap "Add to Home Screen"');
+      return { success: false, message: 'iOS instructions shown' };
     }
     
-    return { success: false, message: 'Installation instructions shown' };
+    return { success: false, message: 'Install prompt not available' };
   };
 
   const isIOSSafari = () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -11,6 +11,7 @@ import Support from "../icons/support";
 import { useSession, signOut } from "next-auth/react";
 import { usePWAInstall } from "@/hooks/use-pwa-install";
 import { buildArtishProfileUrl } from "@/lib/utils";
+import { toast } from "react-toastify";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,8 +23,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user;
-  const { isInstallable, isInstalled, installApp, isIOSSafari } =
-    usePWAInstall();
+  const { isInstalled, installApp } = usePWAInstall();
+  const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -39,7 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const navigationItems = [
     { label: "Home", href: "/", isActive: pathname === "/" },
     { label: "About us", href: "/about", isActive: pathname === "/about" },
-    { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
+    // { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
     {
       label: "Terms & Conditions",
       href: "/terms",
@@ -60,9 +61,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   const handleInstallApp = async () => {
-    const result = await installApp();
-    if (result.success) {
-      onClose();
+    if (isInstalling) return;
+
+    setIsInstalling(true);
+    try {
+      const result = await installApp();
+      if (result.success) {
+        toast.success("Install prompt opened.");
+        onClose();
+        return;
+      }
+
+      if (result.message === "Already installed") {
+        toast.info("App is already installed.");
+      } else if (result.message === "iOS instructions shown") {
+        toast.info("Follow iOS instructions to add app to Home Screen.");
+      } else {
+        toast.info("Install prompt is not available yet. Please try again in a moment.");
+      }
+    } finally {
+      setIsInstalling(false);
     }
   };
 
@@ -98,7 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       >
         <div className="flex flex-col h-full min-h-0 overflow-y-auto">
           {/* Header Close */}
-          <div className="flex items-center justify-end px-6 pt-4">
+          <div className="flex items-center justify-end px-4 pt-4">
             <button
               onClick={onClose}
               className="p-2 text-text-light-gray hover:text-white transition-colors duration-200"
@@ -121,12 +139,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           {/* Logged-in user section */}
           {user ? (
-            <div className="px-6 pt-2 pb-3">
+            <div className="px-4 pt-2 pb-3">
               <button
                 onClick={() => {
                   onClose();
                   if (user.role === "artist") {
-                    router.push("/artist/profile");
+                    router.push("/artist/dashboard");
                   } else {
                     router.push("/user/profile");
                   }
@@ -138,7 +156,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     src={
                       user.avatar && /^\d+$/.test(String(user.avatar))
                         ? `/avatars/${user.avatar}.png`
-                        : user.avatar || "/avatars/default-avatar.jpeg"
+                        : user.avatar || "/avatars/default.jpg"
                     }
                     alt={user.firstName || "User"}
                     width={48}
@@ -148,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   />
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="text-white font-medium">
+                  <h3 className="text-white font-medium text-xl ">
                     {user.firstName} {user.lastName}
                   </h3>
                   {user?.email ? (
@@ -162,7 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     </p>
                   )}
                 </div>
-                <ChevronRight className="w-5 h-5 text-white group-hover:text-primary-pink transition-colors duration-300" />
+                <ChevronRight className="w-6 h-6 text-white group-hover:text-primary-pink transition-colors duration-300" />
               </button>
 
               {/* Join as artist - Only show for non-artist users */}
@@ -177,55 +195,51 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </div>
           ) : (
             // Guest state - Match prototype design
-            <div className="px-6 pt-2 pb-3">
+            <div className="px-4 pt-2 pb-3">
               <button
                 onClick={() => {
                   router.push(createAuthRedirectUrl("/auth/signin", pathname));
                   onClose();
                 }}
-                className="text-white text-xl font-medium mb-2 hover:text-primary-pink transition-colors"
+                className="text-white h1 hover:text-primary-pink transition-colors mb-2"
               >
                 Sign-In / Sign-Up
               </button>
               <br />
               <button
                 onClick={handleJoinArtist}
-                className="block gradient-text hover:opacity-80 transition-opacity duration-200 text-lg"
+                className="block gradient-text hover:opacity-80 transition-opacity duration-200 h1"
               >
-                Join as a artist
+                Join as an artist
               </button>
             </div>
           )}
 
           {/* Divider */}
-          <div className="h-px bg-linear-to-r from-transparent via-gray-800 to-transparent" />
+          <div className="h-px [background:var(--border-gradient-dark)] mt-2" />
 
           {/* Navigation Links */}
-          <div className="flex-1 px-6 md:py-5 mt-3">
-            <div className="space-y-3">
+          <div className="flex-1 px-4 md:py-5 mt-4">
+            <div className="space-y-3 mb-6">
               {navigationItems.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
                   onClick={handleItemClick}
-                  className={`block h3 hover:text-primary-pink transition-colors duration-200 ${
-                    item.isActive ? "gradient-text" : "text-white"
-                  }`}
+                  className={`block h3 hover:text-primary-pink transition-colors duration-200 text-white`}
                 >
                   {item.label}
                 </Link>
               ))}
             </div>
-
+            <div className="h-px [background:var(--border-gradient-dark)]" />
             {/* Contact Info - For any query */}
             <div className="mt-8 p-4 bg-card border border-border-color rounded-xl">
               <div className="flex items-center space-x-3 mb-2">
-                <Support className="size-5 text-text-gray" />
-                <span className="text-text-gray text-sm">For any query</span>
+                <Support className="size-6 text-text-gray" />
+                <span className="text-text-gray secondary-text">For any query</span>
               </div>
-              <p className="text-white text-sm">
-                Contact Us : 8860014889
-              </p>
+              <p className="text-white secondary-grey-text">Contact Us : 8860014889</p>
             </div>
           </div>
 
@@ -234,9 +248,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             {user && (
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-start gap-2 text-white hover:text-primary-pink transition-colors duration-200 mb-4"
+                className="w-full flex items-start gap-2 text-white hover:text-primary-pink transition-colors duration-200 mb-4 md:text-base"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-6 h-6" />
                 <span>Signout</span>
               </button>
             )}
@@ -244,11 +258,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             {!isInstalled && (
               <button
                 onClick={handleInstallApp}
-                className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-card border border-border-color rounded-full hover:border-primary-pink/30 transition-all duration-300 group"
+                disabled={isInstalling}
+                className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-card border border-border-color rounded-full hover:border-primary-pink/30 transition-all duration-300 group disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Download className="size-5 text-primary-orange group-hover:scale-110 transition-transform duration-300" />
-                <span className="gradient-text text-sm">
-                  Install our web application
+                <span className="gradient-text text-bold text-sm md:text-base">
+                  {isInstalling ? "Checking install..." : "Install our web application"}
                 </span>
               </button>
             )}

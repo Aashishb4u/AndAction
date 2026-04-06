@@ -148,7 +148,7 @@ export const signInWithGoogle = async (
           baseUrl
         )}`
       : baseUrl;
-  await nextAuthSignIn("google", { callbackUrl });
+  await nextAuthSignIn("google", { callbackUrl, redirect: true });
 };
 
 export const signInWithFacebook = async (
@@ -161,7 +161,7 @@ export const signInWithFacebook = async (
           baseUrl
         )}`
       : baseUrl;
-  await nextAuthSignIn("facebook", { callbackUrl });
+  await nextAuthSignIn("facebook", { callbackUrl, redirect: true });
 };
 
 export const signInWithApple = async (
@@ -174,7 +174,7 @@ export const signInWithApple = async (
           baseUrl
         )}`
       : baseUrl;
-  await nextAuthSignIn("apple", { callbackUrl });
+  await nextAuthSignIn("apple", { callbackUrl, redirect: true });
 };
 
 // Artist-specific OAuth functions for convenience

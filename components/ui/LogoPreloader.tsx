@@ -52,18 +52,10 @@ const LogoPreloader: React.FC<LogoPreloaderProps> = ({
 
   return (
     <div className={`
-      fixed inset-0 z-[9999] flex items-center justify-center
+      fixed inset-0 z-9999 flex items-center justify-center
       bg-black transition-all duration-500 ease-out
       ${!logoLoaded || !isVisible ? 'opacity-0' : 'opacity-100'}
     `}>
-      {/* Background with subtle gradient and animated particles */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black">
-        {/* Subtle animated background elements */}
-        <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-primary-pink/20 rounded-full animate-pulse"></div>
-        <div className="absolute top-3/4 right-1/4 w-2 h-2 bg-primary-orange/30 rounded-full animate-pulse delay-300"></div>
-        <div className="absolute bottom-1/4 left-3/4 w-1.5 h-1.5 bg-primary-pink/15 rounded-full animate-pulse delay-500"></div>
-      </div>
-
       {/* Logo container */}
       <div className="relative z-10 flex items-center justify-center">
         <div className={`
@@ -73,15 +65,15 @@ const LogoPreloader: React.FC<LogoPreloaderProps> = ({
             : 'opacity-0 scale-90 transform translate-y-8'
           }
         `}>
-          <div className="relative">
+          <div className="rounded-[52px] bg-[#090D12] p-8 sm:rounded-[60px] sm:p-10">
             <Image
-              src="/logo.png"
+              src="/icons/logo.jpeg"
               alt="ANDACTION Logo"
-              width={250}
-              height={250}
+              width={220}
+              height={220}
               priority
               className={`
-                w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56
+                h-40 w-40 sm:h-44 sm:w-44 md:h-48 md:w-48
                 object-contain
                 transition-all duration-1200 ease-out
                 ${logoLoaded

@@ -220,7 +220,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         {isYT ? (
           <iframe
             className="w-full h-full object-cover"
-            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=1&playsinline=1&rel=0`}
+            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=0&controls=1&playsinline=1&rel=0`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
@@ -286,15 +286,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   {isPlaying ? (
-                    <Pause className="w-5 h-5" />
+                    <Pause className="w-6 h-6" />
                   ) : (
-                    <Play className="w-5 h-5" />
+                    <Play className="w-6 h-6" />
                   )}
                 </button>
 
                 {/* Volume */}
                 <button onClick={toggleMute} className="text-white hover:text-primary-pink">
-                  {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                  {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
                 </button>
 
                 <input
@@ -312,11 +312,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </div>
 
               <button onClick={toggleFullscreen} className="text-white hover:text-primary-pink">
-                <Maximize className="w-5 h-5" />
+                <Maximize className="w-6 h-6" />
               </button>
 
               <button onClick={() => setShareModalOpen(true)} className="text-white hover:text-primary-pink">
-                <Share2 className="w-5 h-5" />
+                <Share2 className="w-6 h-6" />
               </button>
             </div>
           </div>
@@ -352,7 +352,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 onClick={() => setShareModalOpen(false)}
                 className="p-2 rounded-full hover:bg-gray-700 transition-colors"
               >
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-6 h-6 text-gray-400" />
               </button>
             </div>
 

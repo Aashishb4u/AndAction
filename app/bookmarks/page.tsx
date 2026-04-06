@@ -1,7 +1,10 @@
-'use client';
+"use client";
 
 import React, { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import SiteLayout from '@/components/layout/SiteLayout';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import ArtistGrid from '@/components/sections/ArtistGrid';
 import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
@@ -9,6 +12,8 @@ import ShortsCard from '@/components/ui/ShortsCard';
 type TabType = 'Artist' | 'Videos' | 'Shorts';
 
 export default function BookmarksPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('Artist');
 
   const [artistBookmarks, setArtistBookmarks] = useState<any[]>([]);
@@ -65,6 +70,7 @@ export default function BookmarksPage() {
               thumbnail: v.thumbnailUrl,
               videoUrl: v.url,
               isBookmarked: true,
+              artistId: (v.user as any).artist?.id || "",
             };
           });
 
@@ -100,6 +106,24 @@ export default function BookmarksPage() {
     fetchBookmarks();
   }, []);
 
+  // Redirect unauthenticated users to the signin page (no modal)
+  React.useEffect(() => {
+    if (status !== 'loading' && !session) {
+      router.push('/auth/signin');
+    }
+  }, [status, session, router]);
+
+  // While session is loading or redirecting, show a small placeholder
+  if (status === 'loading' || !session) {
+    return (
+      <SiteLayout showPreloader={false}>
+        <div className="min-h-screen pt-14 lg:pt-24 bg-background flex items-center justify-center">
+          <div className="text-white">Redirecting to sign in...</div>
+        </div>
+      </SiteLayout>
+    );
+  }
+
   // ------------------------------------------------------
   // REMOVE BOOKMARK — WORKS FOR ARTIST + VIDEO + SHORT
   // ------------------------------------------------------
@@ -133,7 +157,7 @@ export default function BookmarksPage() {
 
   return (
     <SiteLayout showPreloader={false}>
-      <div className="min-h-screen pt-20 lg:pt-24 bg-background">
+      <div className="min-h-screen pt-14 lg:pt-24 bg-background">
 
         {/* Tabs */}
         <div className="flex bg-card border-b border-b-[#2D2D2D]">
@@ -141,8 +165,8 @@ export default function BookmarksPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 px-4 text-base font-medium transition-colors relative ${
-                activeTab === tab ? 'gradient-text' : 'text-text-gray hover:text-gray-300'
+              className={`flex-1 py-3 px-4 btn1 transition-colors relative ${
+                activeTab === tab ? 'text-white' : 'text-text-gray hover:text-gray-300'
               }`}
             >
               {tab}
@@ -155,13 +179,13 @@ export default function BookmarksPage() {
 
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 py-8">
 
-          {loading && <div className="text-center text-white py-12">Loading...</div>}
+          {loading && <LoadingOverlay text="Loading bookmarks..." />}
 
           {/* ARTISTS */}
           {activeTab === "Artist" && !loading && (
             <>
               {artistBookmarks.length > 0 ? (
-                <ArtistGrid
+                <ArtistGrid className='px-4'
                   artists={artistBookmarks}
                   onBookmark={(artistId: string) => {
                     const a = artistBookmarks.find(x => x.id === artistId);
@@ -169,8 +193,11 @@ export default function BookmarksPage() {
                   }}
                 />
               ) : (
-                <div className="text-center text-gray-400 py-12">
-                  No bookmarked artists.
+                <div className="w-full min-h-[50vh] flex items-center justify-center">
+                  <div className="text-center text-gray-400">
+                    <img src="/blank.png" alt="No bookmarks" className="w-48 h-48 mx-auto mb-4" />
+                    No bookmarked artists.
+                  </div>
                 </div>
               )}
             </>
@@ -178,7 +205,7 @@ export default function BookmarksPage() {
 
           {/* VIDEOS */}
           {activeTab === "Videos" && !loading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 px-4">
               {videoBookmarks.length > 0 ? (
                 videoBookmarks.map((v) => (
                   <VideoCard
@@ -192,17 +219,23 @@ export default function BookmarksPage() {
                     bookmarkId={v.bookmarkId}
                     onBookmark={({ bookmarkId }) => bookmarkId && deleteBookmark(bookmarkId, "video")}
                     onShare={() => {}}
+                    artistId={v.artistId}
                   />
                 ))
               ) : (
-                <div className="text-center text-gray-400 py-12 w-full col-span-full justify-self-center">No bookmarked videos.</div>
+                <div className="w-full min-h-[50vh] flex items-center justify-center col-span-full">
+                  <div className="text-center text-gray-400">
+                    <img src="/blank.png" alt="No bookmarks" className="w-48 h-48 mx-auto mb-4" />
+                    No bookmarked videos.
+                  </div>
+                </div>
               )}
             </div>
           )}
 
           {/* SHORTS */}
           {activeTab === "Shorts" && !loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 px-4">
               {shortBookmarks.length > 0 ? (
                 shortBookmarks.map((s) => (
                   <ShortsCard
@@ -219,7 +252,12 @@ export default function BookmarksPage() {
                   />
                 ))
               ) : (
-                <div className="text-center text-gray-400 py-12 w-full col-span-full justify-self-center">No bookmarked shorts.</div>
+                <div className="w-full min-h-[50vh] flex items-center justify-center col-span-full">
+                  <div className="text-center text-gray-400">
+                    <img src="/blank.png" alt="No bookmarks" className="w-48 h-48 mx-auto mb-4" />
+                    No bookmarked shorts.
+                  </div>
+                </div>
               )}
             </div>
           )}

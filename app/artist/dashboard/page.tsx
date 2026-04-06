@@ -9,6 +9,8 @@ import Button from "@/components/ui/Button";
 import { Pencil } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { BookingStatus } from "@prisma/client";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 /* ----------------------------------------------------
    FORMAT DATE
@@ -66,6 +68,7 @@ const defaultBookingsState: BookingStatusMap = {
 export default function ArtistDashboard() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { categories } = useArtistCategories();
 
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<BookingStatusMap>(defaultBookingsState);
@@ -153,19 +156,105 @@ export default function ArtistDashboard() {
     session?.user?.lastName ?? ""
   }`.trim();
 
+  const displayArtistType = (() => {
+    const rawType = artist?.artistType?.trim() || "";
+    if (!rawType) return "";
+    return findCategoryLabel(categories, rawType) || rawType;
+  })();
+
   const totalBookings = Object.values(bookings).flat().length;
 
   /* ----------------------------------------------------
      PAGE JSX
   ---------------------------------------------------- */
   return (
-    <ArtistDashboardLayout>
-      <div className="md:flex w-full">
+    <ArtistDashboardLayout useMainSidebar={true}>
+      <div className="w-full bg-[#0F0F0F] md:flex">
         {/* ----------------------------------------------------
              LEFT SIDEBAR
         ---------------------------------------------------- */}
-        <div className="md:w-80 p-5">
-          <div className="relative rounded-2xl overflow-hidden mb-3 bg-card border border-border-color">
+        <div className="px-4 pb-4 pt-2 md:w-80 md:p-5">
+          {/* Mobile compact profile card */}
+          <div className="mb-3 rounded-xl border border-border-color bg-card p-3.5 md:hidden sm:p-4">
+            <div className="flex items-start gap-3">
+              <div className="relative h-31 w-22 shrink-0 overflow-hidden rounded-xl border border-[#e6d7c8] sm:h-35 sm:w-25">
+                <Image
+                  src={session?.user?.avatar || "/icons/images.jpeg"}
+                  alt={artist?.stageName || fullName || "Artist"}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-lg font-semibold leading-tight text-white sm:text-xl">
+                  {artist?.stageName || fullName}
+                </h2>
+                <p className="truncate text-sm text-text-gray sm:text-base">
+                  {session?.user?.email}
+                </p>
+                <p className="mt-1 truncate text-sm sm:text-base">{displayArtistType}</p>
+
+                <div className="mt-2 w-full sm:mt-3">
+                  <Button
+                    onClick={() => router.push("/artist/profile")}
+                    variant="secondary"
+                    size="sm"
+                    className="w-full min-w-0 rounded-full border-[1.5px] border-border-color px-3 py-2 text-sm"
+                  >
+                    <Pencil className="mr-2 h-4 w-4 shrink-0 text-primary-orange" />
+                    <span className="truncate gradient-text">Edit Profile</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile profile progress (50%) */}
+          <div className="mb-3 flex items-center gap-3 rounded-xl border border-border-color bg-card p-3.5 md:hidden sm:p-4">
+            <div className="relative h-24 w-24 shrink-0 sm:h-28 sm:w-28">
+              <svg className="h-24 w-24 -rotate-90 transform sm:h-28 sm:w-28" viewBox="0 0 36 36">
+                <defs>
+                  <linearGradient id="progressGradientMobile">
+                    <stop offset="0%" stopColor="#E8047E" />
+                    <stop offset="100%" stopColor="#ED4B22" />
+                  </linearGradient>
+                </defs>
+
+                <path
+                  strokeWidth="3"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32"
+                  className="text-[#404040]"
+                />
+                <path
+                  stroke="url(#progressGradientMobile)"
+                  strokeWidth="3.5"
+                  strokeDasharray="80, 100"
+                  strokeLinecap="round"
+                  fill="none"
+                  d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32"
+                />
+              </svg>
+
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <span className="text-xl font-bold text-white sm:text-2xl">80%</span>
+                  <div className="text-[10px] text-text-gray">Completed</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h3 className="text-lg font-semibold text-white sm:text-xl">Profile Progress</h3>
+              <p className="mt-1 text-sm text-text-gray sm:text-base">Your overall profile progress is showing here.</p>
+            </div>
+          </div>
+
+          {/* Desktop / tablet large profile card (original) */}
+          <div className="hidden md:block relative rounded-2xl overflow-hidden mb-3 bg-card border border-border-color">
             <div className="relative aspect-[4/5]">
               <Image
                 src={session?.user?.avatar || "/icons/images.jpeg"}
@@ -181,7 +270,7 @@ export default function ArtistDashboard() {
                 <h2 className="text-xl font-bold mb-1">
                   {artist?.stageName || fullName}
                   <span className="text-sm font-medium ml-1">
-                    ({artist?.artistType || "Performer"})
+                    ({displayArtistType || "Performer"})
                   </span>
                 </h2>
 
@@ -208,8 +297,8 @@ export default function ArtistDashboard() {
             </div>
           </div>
 
-          {/* Profile Progress Box (unchanged) */}
-          <div className="bg-card border border-border-color rounded-xl p-4 text-center">
+          {/* Profile Progress Box (original centered for md+) */}
+          <div className="hidden md:block bg-card border border-border-color rounded-xl p-4 text-center">
             <div className="relative w-28 h-28 mx-auto mb-4">
               <svg
                 className="w-28 h-28 transform -rotate-90"
@@ -257,22 +346,24 @@ export default function ArtistDashboard() {
         {/* ----------------------------------------------------
              RIGHT CONTENT - BOOKINGS
         ---------------------------------------------------- */}
-        <div className="flex-1 p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-white h1">Leads / Bookings</h1>
+        <div className="flex-1 px-4 pb-4  md:p-5">
+          <div className="mb-4 flex items-start justify-between gap-2 sm:items-center">
+            <h1 className="text-white h1 leading-tight">Leads / Bookings</h1>
             <button
-              className="flex items-center gap-1 bg-[#262626] py-2 px-4 border-[1.5px] border-border-color rounded-full btn2"
+              className="btn2 flex shrink-0 items-center gap-1 rounded-full border-[1.5px] border-border-color bg-[#262626] px-3 py-2 sm:px-4"
               onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
               title="Sort by event date"
+              aria-label={`Sort by event date, currently ${sortOrder === 'desc' ? 'newest first' : 'oldest first'}`}
             >
-              <span className="gradient-text">
-                Sort by: {sortOrder === 'desc' ? 'Newest' : 'Oldest'}
+              <span className="gradient-text text-sm sm:text-base">
+                Sort by
               </span>
               <Image
                 src="/icons/up-down.svg"
                 width={18}
                 height={18}
                 alt="Sort"
+                className="shrink-0"
                 style={{ transform: sortOrder === 'desc' ? 'rotate(0deg)' : 'rotate(180deg)' }}
               />
             </button>
@@ -306,21 +397,20 @@ export default function ArtistDashboard() {
 
               return (
                 <section key={status} className="space-y-6">
-                  <h2 className="text-2xl font-semibold text-white">
+                  <h2 className="text-xl font-semibold text-white sm:text-2xl">
                     {sectionTitle}
                     <span className="ml-3 text-sm text-gray-400">
                       ({bookingsList.length})
                     </span>
                   </h2>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
                     {bookingsList.map((booking) => (
                       <BookingCard
                         key={booking.id}
                         status={booking.status}
                         clientName={`${booking.client.firstName} ${booking.client.lastName}`}
-                        clientEmail={booking.client.email}
-                        clientPhone={booking.client.phoneNumber}
+                        clientPhone={booking.client?.phoneNumber ?? null}
                         location={booking.eventLocation}
                         date={formatDate(booking.eventDate)}
                         eventType={booking.eventType}

@@ -1,14 +1,17 @@
 export async function sendOtpSms(
   countryCode: string,
   phoneNumber: string,
-  otp: string
+  otp: string,
 ) {
   try {
     const url = "https://smsapi.edumarcsms.com/api/v1/sendsms";
 
+    // Format phone number with country code (e.g., 918438877682)
+    const formattedNumber = `${countryCode.replace('+', '')}${phoneNumber}`;
+
     const body = {
-      number: [phoneNumber],
-      message: `Your OTP Verification Code is ${otp}. Do not share it with anyone. with anyone. AndAction.`,
+      number: [formattedNumber],
+      message: `Your OTP Verification Code is ${otp}. Do not share it with anyone. -Myorderslip.`,
       senderId: process.env.EDUMARC_SENDER_ID!,
       templateId: process.env.EDUMARC_TEMPLATE_ID!,
     };
@@ -23,7 +26,8 @@ export async function sendOtpSms(
     });
 
     const data = await response.json();
-    console.log("SMS API Response:", data, phoneNumber);
+    console.log("SMS API Response:", data, formattedNumber);
+    console.log("SMS Config - Template:", process.env.EDUMARC_TEMPLATE_ID, "Sender:", process.env.EDUMARC_SENDER_ID);
 
     // Check for invalid phone number error
     if (data?.success === false && data?.message) {

@@ -7,6 +7,8 @@ import ArtistProfileTabs from "@/components/artist/ArtistProfileTabs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 function ArtistProfileContent() {
   const searchParams = useSearchParams();
@@ -17,6 +19,7 @@ function ArtistProfileContent() {
   const [activeTab, setActiveTab] = useState(tabParam || "about");
   const router = useRouter();
   const { data: session } = useSession();
+  const { categories } = useArtistCategories();
 
   // Handle URL tab parameter changes
   useEffect(() => {
@@ -56,6 +59,12 @@ function ArtistProfileContent() {
   const user = session?.user;
   const artistProfile = user?.artistProfile;
 
+  const displayArtistType = (() => {
+    const rawType = artistProfile?.artistType?.trim() || "";
+    if (!rawType) return "Artist";
+    return findCategoryLabel(categories, rawType) || rawType;
+  })();
+
 
   if (!user || !artistProfile) {
     return (
@@ -72,7 +81,7 @@ function ArtistProfileContent() {
     name:
       artistProfile.stageName ||
       `${user.firstName || ""} ${user.lastName || ""}`.trim(),
-    category: artistProfile.artistType || "Artist",
+    category: displayArtistType,
     location: `${user.city || ""}${user.state ? `, ${user.state}` : ""}`,
     duration: "2-4 hours",
     startingPrice: 25000,
@@ -93,6 +102,10 @@ function ArtistProfileContent() {
       : [],
     phone: artistProfile.contactNumber || "",
     whatsapp: artistProfile.whatsappNumber || artistProfile.contactNumber || "",
+    contactNumber: artistProfile.contactNumber || "",
+    whatsappNumber: artistProfile.whatsappNumber || artistProfile.contactNumber || "",
+    contactEmail: artistProfile.contactEmail || user.email || "",
+    email: user.email || "",
     videos: [],
     shorts: [],
     performances: [],
@@ -115,16 +128,38 @@ function ArtistProfileContent() {
     performingDurationTo: artistProfile.performingDurationTo || "",
     performingMembers: artistProfile.performingMembers || "",
     offStageMembers: artistProfile.offStageMembers || "",
+    soloChargesFrom:
+      artistProfile.soloChargesFrom !== null &&
+      artistProfile.soloChargesFrom !== undefined
+        ? Number(artistProfile.soloChargesFrom)
+        : undefined,
+    soloChargesTo:
+      artistProfile.soloChargesTo !== null &&
+      artistProfile.soloChargesTo !== undefined
+        ? Number(artistProfile.soloChargesTo)
+        : undefined,
+    soloChargesDescription: artistProfile.soloChargesDescription || "",
+    chargesWithBacklineFrom:
+      artistProfile.chargesWithBacklineFrom !== null &&
+      artistProfile.chargesWithBacklineFrom !== undefined
+        ? Number(artistProfile.chargesWithBacklineFrom)
+        : undefined,
+    chargesWithBacklineTo:
+      artistProfile.chargesWithBacklineTo !== null &&
+      artistProfile.chargesWithBacklineTo !== undefined
+        ? Number(artistProfile.chargesWithBacklineTo)
+        : undefined,
+    chargesWithBacklineDescription: artistProfile.chargesWithBacklineDescription || "",
     tags: [artistProfile.artistType || "", artistProfile.subArtistType || ""],
     userId: user.id
   };
 
   return (
-    <ArtistDashboardLayout>
+    <ArtistDashboardLayout hideNavbar={true}>
       <div className="flex flex-col lg:flex-row md:gap-5 md:p-6 min-h-screen">
         {/* Left Side - Artist Profile Card */}
-        <div className="w-full lg:w-80 flex-shrink-0 max-w-screen overflow-hidden">
-          <ArtistProfileCard onBack={() => router.push("/artist/dashboard")} onEdit={() => setActiveTab("about")} artist={artistData} />
+          <div className="w-full lg:w-80 flex-shrink-0 max-w-screen overflow-hidden">
+          <ArtistProfileCard onBack={() => router.push("/artist/dashboard")} onEdit={() => router.push('/artist/profile-setup')} artist={artistData} />
         </div>
 
         {/* Right Side - Tabs and Content */}

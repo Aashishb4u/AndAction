@@ -22,11 +22,17 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
   const user = session?.user;
+
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
     const handleScroll = () => {
@@ -46,12 +52,13 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
     };
   }, [lastScrollY]);
 
+
   const navItems: NavItem[] = [
     { label: "Home", href: "/", isActive: pathname === "/" },
     { label: "Videos", href: "/videos", isActive: pathname === "/videos" },
     { label: "Shorts", href: "/shorts", isActive: pathname === "/shorts" },
     {
-      label: "Bookmarks",
+      label: "Favourites",
       href: "/bookmarks",
       isActive: pathname === "/bookmarks",
     },
@@ -63,13 +70,17 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
-        isScrolled
-          ? "bg-background/80 backdrop-blur-md border-b border-background-light"
-          : "bg-background/60 backdrop-blur-sm border-b border-transparent"
+      className={`fixed top-0 left-0 right-0 z-[9999] ${
+        mounted ? 'transition-all duration-300 ease-in-out' : ''
       } ${
-        isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
-      } ${className}`}
+        // glass blur only when the page is scrolled AND the navbar is visible
+        isScrolled && isVisible ? "backdrop-blur-xl" : ""
+      } ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"} ${className}`}
+      style={
+        isScrolled && isVisible
+          ? { backgroundColor: '#0F0F0F1A', WebkitBackdropFilter: 'blur(2px)', backdropFilter: 'blur(2px)' }
+          : undefined
+      }
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 lg:h-16">
@@ -92,7 +103,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`px-3 py-3 text-sm font-medium transition-colors duration-200 relative ${
+                  className={`px-3 py-3 btn1 transition-colors duration-200 relative ${
                     item.isActive
                       ? "gradient-text nav-active-underline text-center"
                       : "text-text-light-gray hover:text-white"
@@ -111,34 +122,39 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
               onClick={() => router.push("/artists")}
               className="p-2 text-text-light-gray hover:text-white transition-colors duration-200"
             >
-              <Search className="size-5" />
+              <Search className="size-6" />
             </button>
 
-            {/* Sign In (only show when logged out) */}
-            {!user && status !== "loading" && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() =>
-                  router.push(createAuthRedirectUrl("/auth/signin", pathname))
-                }
-                className="btn2"
-              >
-                Sign In
-              </Button>
-            )}
+            {/* Only render session-dependent buttons after mount + session resolved */}
+            {mounted && status !== "loading" && (
+              <>
+                {/* Sign In (only show when logged out) */}
+                {!user && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() =>
+                      router.push(createAuthRedirectUrl("/auth/signin", pathname))
+                    }
+                    className="signup"
+                  >
+                    Sign In
+                  </Button>
+                )}
 
-            {/* Join as an artist - Only show for non-artist users */}
-            {user?.role !== "artist" && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() =>
-                  router.push(createAuthRedirectUrl("/auth/artist", pathname))
-                }
-              >
-                <span className="gradient-text btn2">Join as an Artist</span>
-              </Button>
+                {/* Join as an artist - Only show for non-artist users */}
+                {user?.role !== "artist" && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      router.push(createAuthRedirectUrl("/auth/artist", pathname))
+                    }
+                  >
+                    <span className="gradient-text signup">Join as an Artist</span>
+                  </Button>
+                )}
+              </>
             )}
 
             {user ? (
@@ -162,7 +178,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                 className="p-2 text-text-light-gray hover:text-white transition-colors duration-200"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-6 h-6 md:w-8 md:h-8"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

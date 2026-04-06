@@ -28,7 +28,7 @@ interface ShortsTabProps {
 const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
   const router = useRouter();
   const [bookmarkedShorts, setBookmarkedShorts] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shortToDelete, setShortToDelete] = useState<string | null>(null);
@@ -78,7 +78,7 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
             onSuccess: resolve,
             onError: reject,
           });
-        })
+        }),
       );
     }
 
@@ -89,7 +89,7 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
             onSuccess: resolve,
             onError: reject,
           });
-        })
+        }),
       );
     }
 
@@ -268,7 +268,7 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
       </div>
 
       {/* Shorts Grid - 4 columns for vertical videos */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 lg:grid-cols-4 gap-2">
         {shorts.map((short) => (
           <ShortsCard
             key={short.id}
@@ -277,7 +277,6 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
             creator={artist.name}
             thumbnail={short.thumbnail || "/images/video-placeholder.png"}
             videoUrl={short.videoUrl}
-            onBookmark={handleBookmark}
             onShare={handleShare}
             onDelete={handleDelete}
             isBookmarked={bookmarkedShorts.has(short.id)}

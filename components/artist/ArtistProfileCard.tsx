@@ -2,16 +2,63 @@
 
 import React, { useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, Edit, Pencil } from "lucide-react";
+import { ArrowLeft, Edit, Pencil, Plus } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
+import { buildArtishProfileUrl } from '@/lib/utils';
+import Cropper, { Area } from "react-easy-crop";
 
 interface ArtistProfileCardProps {
   artist: any;
   onBack?: () => void;
   onEdit?: () => void;
 }
+
+const createImage = (url: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const image = new window.Image();
+    image.addEventListener("load", () => resolve(image));
+    image.addEventListener("error", (error) => reject(error));
+    image.crossOrigin = "anonymous";
+    image.src = url;
+  });
+
+const getCroppedImg = async (
+  imageSrc: string,
+  pixelCrop: Area,
+): Promise<Blob | null> => {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) return null;
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height,
+  );
+
+  return new Promise((resolve) => {
+    canvas.toBlob(
+      (blob) => {
+        resolve(blob);
+      },
+      "image/jpeg",
+      0.95,
+    );
+  });
+};
 
 const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   artist,
@@ -21,10 +68,23 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { update } = useSession();
   const [uploading, setUploading] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [uploadError, setUploadError] = useState("");
+
+  const onCropComplete = (_croppedArea: Area, croppedPixels: Area) => {
+    setCroppedAreaPixels(croppedPixels);
+  };
 
   const handleProfilePhotoUpload = async (file: File) => {
     try {
       setUploading(true);
+      setUploadMessage("");
+      setUploadError("");
 
       const formData = new FormData();
       formData.append("file", file);
@@ -35,7 +95,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       });
 
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message);
+      if (!res.ok) throw new Error(json.message || "Failed to upload profile photo.");
 
       const imageUrl = json.data.imageUrl;
 
@@ -46,10 +106,60 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         },
       });
 
+      setUploadMessage(json?.message || "Profile photo uploaded successfully.");
+
       setUploading(false);
     } catch (err) {
       console.error("Upload error:", err);
+      setUploadError(
+        err instanceof Error
+          ? err.message
+          : "Failed to upload profile photo. Please try again.",
+      );
       setUploading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const imageUrl = URL.createObjectURL(file);
+    setImageToCrop(imageUrl);
+    setShowCropModal(true);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleCropSave = async () => {
+    if (!imageToCrop || !croppedAreaPixels) return;
+
+    try {
+      const croppedBlob = await getCroppedImg(imageToCrop, croppedAreaPixels);
+      if (!croppedBlob) return;
+
+      const croppedFile = new File([croppedBlob], "cropped-profile.jpg", {
+        type: "image/jpeg",
+      });
+
+      setShowCropModal(false);
+      setImageToCrop(null);
+
+      await handleProfilePhotoUpload(croppedFile);
+    } catch (error) {
+      console.error("Crop failed:", error);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setImageToCrop(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -60,6 +170,14 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
     fileInputRef.current?.click();
   };
 
+  const categoryParts = artist.category
+    ? artist.category.split(",").map((s: string) => s.trim())
+    : [];
+  const categoryTags = Array.from(new Set(categoryParts.filter(Boolean)));
+  const hasLongCategory =
+    categoryTags.some((tag) => tag.length > 16) ||
+    (artist.category?.length ?? 0) > 18;
+
   return (
     <div className="relative md:rounded-2xl overflow-hidden h-[85vh] lg:h-[500px]">
       {/* hidden file input */}
@@ -68,21 +186,13 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         accept="image/*"
         ref={fileInputRef}
         className="hidden"
-        onChange={(e) => {
-          if (e.target.files?.[0]) {
-            handleProfilePhotoUpload(e.target.files[0]);
-          }
-        }}
+        onChange={handleFileChange}
       />
 
       {/* Full Background Image */}
       <div className="absolute inset-0">
         <Image
-          src={
-            artist.image && /^\d+$/.test(String(artist.image))
-              ? `/avatars/${artist.image}.png`
-              : artist.image || "/avatars/placeholder.png"
-          }
+          src={buildArtishProfileUrl(artist.image || '')}
           alt={artist.name}
           fill
           unoptimized
@@ -114,40 +224,119 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
         {/* Artist Info (unchanged UI) */}
         <div className="p-6 space-y-4">
-          <div>
-            <h2 className="t1 text-white mb-2 drop-shadow-lg">{artist.name}</h2>
+          <div className="flex flex-col items-start gap-3">
+            {uploadMessage && (
+              <p className="text-green-400 text-sm">{uploadMessage}</p>
+            )}
+            {uploadError && <p className="text-red-400 text-sm">{uploadError}</p>}
+            <h2 className="t1-heading text-white mb-2 drop-shadow-lg">{artist.name}</h2>
 
-            <div className="flex justify-between gap-4 flex-col">
-              <div className="flex flex-wrap gap-2">
-                {[artist.category, artist.subCategory]
-                  .filter((tag): tag is string => Boolean(tag))
-                  .map((tag, index) => (
-                    <span
-                      key={index}
-                      className={`px-4 md:py-2 py-1.5 rounded-full btn2 backdrop-blur-sm ${
-                        tag === artist.category
-                          ? "bg-white text-primary-pink"
-                          : "bg-card border border-border-color text-white"
-                      }`}
-                    >
-                      {tag}
-                    </span>
-                  ))}
+            <div className="flex w-full flex-wrap items-center gap-3">
+              <div
+                className={`flex min-w-0 flex-wrap items-center justify-start gap-2 ${
+                  hasLongCategory ? "w-full flex-none" : "flex-1"
+                }`}
+              >
+                {categoryTags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className={`px-4 md:py-2 py-1.5 rounded-full btn2 backdrop-blur-sm ${
+                      tag === (artist.category || "")
+                        ? "bg-white text-primary-pink"
+                        : "bg-card border border-border-color text-white"
+                    }`}
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
 
               <Button
                 variant="primary"
                 size="sm"
                 onClick={onEdit}
-                className="w-full md:w-auto"
+                className="shrink-0 self-start rounded-full px-3 py-1.5"
               >
-                <Pencil className="w-4 h-4 mr-2" />
-                Edit Profile
+                <Plus className="w-4 h-4 mr-2" />
+                Add Profile
               </Button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Crop Modal */}
+      {showCropModal && imageToCrop && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <div className="bg-card border border-border-color rounded-xl w-[90vw] max-w-md overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-border-color">
+              <h3 className="text-white font-semibold">Crop Image</h3>
+              <button
+                onClick={handleCropCancel}
+                className="text-text-gray hover:text-white transition-colors"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="relative h-[360px] bg-black">
+              <Cropper
+                image={imageToCrop}
+                crop={crop}
+                zoom={zoom}
+                aspect={3 / 4}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            </div>
+
+            <div className="p-4 border-t border-border-color">
+              <label className="block text-text-gray text-sm mb-2">Zoom</label>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.1}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-full h-2 bg-[#2D2D2D] rounded-lg appearance-none cursor-pointer accent-primary-pink"
+              />
+            </div>
+
+            <div className="flex gap-3 p-4 border-t border-border-color">
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={handleCropCancel}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleCropSave}
+                className="flex-1"
+              >
+                Apply
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

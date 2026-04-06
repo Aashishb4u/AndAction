@@ -2,14 +2,14 @@
 
 import React, { useState } from "react";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import YouTubeConnectModal from "@/components/modals/YouTubeConnectModal";
 import Image from "next/image";
 import { Loader2, CheckCircle } from "lucide-react";
-import { toast } from "react-toastify";
 import {
   useIntegrationStatus,
-  useYouTubeConnect,
   useYouTubeConnectByChannel,
+  useInstagramConnect,
+  useInstagramDisconnect,
 } from "@/hooks/use-integrations";
 
 interface VideosSocialMediaProps {
@@ -23,43 +23,35 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
   onSkip,
   onBack,
 }) => {
-  const [showChannelInput, setShowChannelInput] = useState(false);
-  const [channelInput, setChannelInput] = useState("");
+  const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
 
   const { data: integrationStatus, isLoading: isLoadingStatus } =
     useIntegrationStatus();
-  const connectYouTubeMutation = useYouTubeConnect();
   const connectYouTubeByChannelMutation = useYouTubeConnectByChannel();
+
+  const instagramConnectMutation = useInstagramConnect();
+  const instagramDisconnectMutation = useInstagramDisconnect();
 
   const youtubeConnected = integrationStatus?.youtube.connected ?? false;
   const instagramConnected = integrationStatus?.instagram.connected ?? false;
+  const isInstagramLoading =
+    instagramConnectMutation.isPending || instagramDisconnectMutation.isPending;
 
-  const connectYouTube = () => {
-    connectYouTubeMutation.mutate();
+  const handleYouTubeConnect = () => {
+    setYoutubeModalOpen(true);
   };
 
-  const handleShowChannelInput = () => {
-    setShowChannelInput(true);
-  };
-
-  const handleConnectByChannel = () => {
-    if (channelInput.trim()) {
-      connectYouTubeByChannelMutation.mutate(channelInput.trim(), {
-        onSuccess: () => {
-          setShowChannelInput(false);
-          setChannelInput("");
-        },
-      });
-    }
-  };
-
-  const handleCancelChannelInput = () => {
-    setShowChannelInput(false);
-    setChannelInput("");
+  const handleYouTubeConnectConfirm = async (channelId: string) => {
+    await connectYouTubeByChannelMutation.mutateAsync(channelId);
+    setYoutubeModalOpen(false);
   };
 
   const connectInstagram = () => {
-    toast.info("Instagram integration coming soon!");
+    instagramConnectMutation.mutate();
+  };
+
+  const disconnectInstagram = () => {
+    instagramDisconnectMutation.mutate();
   };
 
   return (
@@ -71,7 +63,7 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
           className="flex items-center gap-2 text-white hover:text-primary-pink transition-colors duration-200"
         >
           <svg
-            className="w-5 h-5"
+            className="w-6 h-6"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -152,58 +144,32 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
                   Checking status...
                 </div>
               ) : youtubeConnected ? (
-                <div className="flex items-center justify-center text-center gap-2 text-green-500 text-sm">
-                  <CheckCircle className="w-4 h-4" />
-                  Connected
-                  {integrationStatus?.youtube.channelName && (
-                    <span className="text-text-gray ml-1">
-                      ({integrationStatus.youtube.channelName})
-                    </span>
-                  )}
-                </div>
-              ) : showChannelInput ? (
                 <div className="space-y-3">
-                  <Input
-                    placeholder="Enter channel name or ID"
-                    value={channelInput}
-                    onChange={(e) => setChannelInput(e.target.value)}
-                    variant="filled"
-                    disabled={connectYouTubeByChannelMutation.isPending}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleConnectByChannel}
-                      disabled={
-                        connectYouTubeByChannelMutation.isPending ||
-                        !channelInput.trim()
-                      }
-                      className="flex-1 w-full py-2 text-sm bg-white rounded-full font-medium hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {connectYouTubeByChannelMutation.isPending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
-                          <span className="gradient-text">Connecting...</span>
-                        </>
-                      ) : (
-                        <span className="gradient-text">Connect</span>
-                      )}
-                    </button>
-                    <button
-                      onClick={handleCancelChannelInput}
-                      disabled={connectYouTubeByChannelMutation.isPending}
-                      className="flex-1 w-full py-2 text-sm border border-border-color text-white rounded-full font-medium hover:bg-card transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Cancel
-                    </button>
+                  <div className="flex items-center justify-center text-center gap-2 text-green-500 text-sm">
+                    <CheckCircle className="w-4 h-4" />
+                    Connected
+                    {integrationStatus?.youtube.channelName && (
+                      <span className="text-text-gray ml-1">
+                        ({integrationStatus.youtube.channelName})
+                      </span>
+                    )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleYouTubeConnect}
+                    className="w-full py-2 text-sm border border-border-color text-white rounded-full font-medium hover:bg-card transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                    <span className="gradient-text">Change YouTube Channel</span>
+                  </button>
                 </div>
               ) : (
                 <button
-                  onClick={handleShowChannelInput}
-                  disabled={connectYouTubeMutation.isPending}
+                  type="button"
+                  onClick={handleYouTubeConnect}
+                  disabled={connectYouTubeByChannelMutation.isPending}
                   className="w-full py-2 text-sm bg-white rounded-full font-medium hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {connectYouTubeMutation.isPending ? (
+                  {connectYouTubeByChannelMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
                       <span className="gradient-text">Connecting...</span>
@@ -237,17 +203,44 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
               </div>
 
               {instagramConnected ? (
-                <div className="flex items-center justify-center text-center gap-2 text-green-500 text-sm">
-                  <CheckCircle className="w-4 h-4" />
-                  Connected
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center text-center gap-2 text-green-500 text-sm">
+                    <CheckCircle className="w-4 h-4" />
+                    Connected
+                    {integrationStatus?.instagram.username && (
+                      <span className="text-text-gray ml-1">
+                        (@{integrationStatus.instagram.username})
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={disconnectInstagram}
+                    disabled={isInstagramLoading}
+                    className="w-full py-2 text-sm border border-red-400/30 text-red-400 rounded-full font-medium hover:bg-red-400/10 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isInstagramLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Disconnect"
+                    )}
+                  </button>
                 </div>
               ) : (
                 <button
+                  type="button"
                   onClick={connectInstagram}
-                  className="w-full py-2 text-sm bg-gray-600 rounded-full font-medium cursor-not-allowed opacity-60"
-                  disabled
+                  disabled={isInstagramLoading}
+                  className="w-full py-2 text-sm bg-white rounded-full font-medium hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  <span className="text-gray-300">Coming Soon</span>
+                  {isInstagramLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
+                      <span className="gradient-text">Connecting...</span>
+                    </>
+                  ) : (
+                    <span className="gradient-text">Connect Instagram</span>
+                  )}
                 </button>
               )}
             </div>
@@ -257,20 +250,18 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
 
       {/* Fixed Bottom Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color md:px-6 px-5 py-4">
-        <div className="max-w-md mx-auto flex items-center justify-between gap-4">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={onSkip}
-            className="gradient-text hover:bg-card"
-          >
-            Skip & Next
-          </Button>
-          <Button variant="primary" size="md" onClick={onNext}>
-            Next
+        <div className="max-w-md mx-auto">
+          <Button variant="primary" size="md" onClick={onNext} className="w-full">
+            Save
           </Button>
         </div>
       </div>
+
+      <YouTubeConnectModal
+        isOpen={youtubeModalOpen}
+        onClose={() => setYoutubeModalOpen(false)}
+        onConnect={handleYouTubeConnectConfirm}
+      />
     </div>
   );
 };

@@ -7,7 +7,9 @@ import ArtistProfileDetails from "@/components/artist/profile-setup/ArtistProfil
 import PerformanceDetails from "@/components/artist/profile-setup/PerformanceDetails";
 import ContactPricingDetails from "@/components/artist/profile-setup/ContactPricingDetails";
 import ProfileReview from "@/components/artist/profile-setup/ProfileReview";
+import VideosSocialMedia from "@/components/artist/profile-setup/VideosSocialMedia";
 import SuccessModal from "@/components/artist/profile-setup/SuccessModal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useSession } from "next-auth/react";
 
 type ProfileSetupStep =
@@ -15,14 +17,34 @@ type ProfileSetupStep =
   | "artistDetails"
   | "performanceDetails"
   | "contactPricing"
-  | "review";
+  | "review"
+  | "videosSocialMedia";
 
 export default function ProfileSetupPage() {
   const [currentStep, setCurrentStep] = useState<ProfileSetupStep>("overview");
+  // When a user clicks "Edit" from the Review page, we set this to the step
+  // being edited so that after saving we can return to the review instead of
+  // proceeding through the normal sequential flow.
+  const [editingFromReview, setEditingFromReview] = useState<ProfileSetupStep | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showBackWarning, setShowBackWarning] = useState(false);
+  const [pendingBackStep, setPendingBackStep] = useState<ProfileSetupStep | "dashboard" | null>(null);
   const router = useRouter();
-  const { data: session, update } = useSession();
+  const { data: session, status, update } = useSession();
+
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (status === "unauthenticated") {
+      router.push("/auth/signin?redirect=/artist/profile-setup");
+      return;
+    }
+
+    if (session?.user?.role !== "artist") {
+      router.push("/");
+      return;
+    }
+  }, [status, session, router]);
 
   // Form data states
   const [profileData, setProfileData] = useState({
@@ -55,27 +77,53 @@ export default function ProfileSetupPage() {
     backingDescription: "",
   });
 
-  // Pre-fill contact number from session if user signed up with phone
+  // Pre-fill existing artist profile data when editing
   useEffect(() => {
-    if (session?.user?.phoneNumber) {
-      const phone = session.user.phoneNumber;
+    if (session?.user?.artistProfile) {
+      const profile = session.user.artistProfile;
+      const user = session.user;
+      
       setProfileData((prev) => ({
         ...prev,
-        contactNumber: prev.contactNumber || phone,
-        whatsappNumber: prev.whatsappNumber || phone,
+        avatarUrl: user.avatar || "",
+        stageName: profile.stageName || "",
+        artistType: profile.artistType || "",
+        subArtistType: profile.subArtistType || "",
+        achievements: profile.achievements || "",
+        yearsOfExperience: profile.yearsOfExperience?.toString() || "",
+        shortBio: profile.shortBio || "",
+        performingLanguages: profile.performingLanguage 
+          ? profile.performingLanguage.split(",").map((l: string) => l.trim())
+          : [],
+        performingEventTypes: profile.performingEventType
+          ? profile.performingEventType.split(",").map((t: string) => t.trim())
+          : [],
+        performingStates: profile.performingStates
+          ? profile.performingStates.split(",").map((s: string) => s.trim())
+          : [],
+        performingDurationFrom: profile.performingDurationFrom || "",
+        performingDurationTo: profile.performingDurationTo || "",
+        performingMembers: profile.performingMembers || "",
+        offStageMembers: profile.offStageMembers || "",
+        contactNumber: profile.contactNumber || profile.whatsappNumber || "",
+        whatsappNumber: profile.whatsappNumber || profile.contactNumber || "",
+        email: user.email || "",
       }));
     }
+  }, [session]);
+
+  // Pre-fill email from session if available
+  useEffect(() => {
     if (session?.user?.email) {
       setProfileData((prev) => ({
         ...prev,
         email: prev.email || session.user.email || "",
       }));
     }
-  }, [session?.user?.phoneNumber, session?.user?.email]);
+  }, [session?.user?.email]);
 
   const handleSubmitProfile = async () => {
     try {
-      setIsSubmitting(true);
       const userId = session?.user?.id;
 
       if (!userId) {
@@ -127,7 +175,7 @@ export default function ProfileSetupPage() {
         (profileData as any).avatarUrl &&
         (profileData as any).avatarUrl.trim() !== ""
           ? (profileData as any).avatarUrl
-          : session?.user?.avatar ?? null;
+          : (session?.user?.avatar ?? null);
 
       await update({
         avatar: avatarToUse,
@@ -135,15 +183,26 @@ export default function ProfileSetupPage() {
         isArtistVerified: true,
       });
 
-      setShowSuccessModal(true);
+      // Navigate to Videos & Social Media step after successful save
+      setCurrentStep("videosSocialMedia");
     } catch (err) {
       console.error("Unexpected Error Saving Artist Profile:", err);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleNext = async () => {
+    // If we're editing a specific step initiated from the Review page,
+    // then Save on that step should return to Review instead of continuing
+    // the sequential flow.
+    if (editingFromReview) {
+      if (editingFromReview === currentStep) {
+        // Clear editing flag and go back to review
+        setEditingFromReview(null);
+        setCurrentStep("review");
+        return;
+      }
+    }
+
     switch (currentStep) {
       case "overview":
         setCurrentStep("artistDetails");
@@ -160,27 +219,52 @@ export default function ProfileSetupPage() {
       case "review":
         await handleSubmitProfile();
         break;
+      case "videosSocialMedia":
+        setShowSuccessModal(true);
+        break;
     }
   };
 
-  const handleBack = () => {
+  const resolveBackTarget = (): ProfileSetupStep | "dashboard" => {
     switch (currentStep) {
       case "artistDetails":
-        setCurrentStep("overview");
-        break;
+        return "overview";
       case "performanceDetails":
-        setCurrentStep("artistDetails");
-        break;
+        return "artistDetails";
       case "contactPricing":
-        setCurrentStep("performanceDetails");
-        break;
+        return "performanceDetails";
       case "review":
-        setCurrentStep("contactPricing");
-        break;
+        return "contactPricing";
+      case "videosSocialMedia":
+        return "review";
       case "overview":
-        router.push("/artist/dashboard");
-        break;
+      default:
+        return "dashboard";
     }
+  };
+
+  const performBackNavigation = (target: ProfileSetupStep | "dashboard") => {
+    if (target === "dashboard") {
+      router.push("/artist/dashboard");
+      return;
+    }
+    setCurrentStep(target);
+  };
+
+  const handleBack = () => {
+    const target = resolveBackTarget();
+    setPendingBackStep(target);
+    setShowBackWarning(true);
+  };
+
+  const handleConfirmBack = () => {
+    if (!pendingBackStep) {
+      setShowBackWarning(false);
+      return;
+    }
+    performBackNavigation(pendingBackStep);
+    setPendingBackStep(null);
+    setShowBackWarning(false);
   };
 
   const handleSkip = () => {
@@ -194,12 +278,15 @@ export default function ProfileSetupPage() {
   const handleEdit = (step: string) => {
     switch (step) {
       case "artistDetails":
+        setEditingFromReview("artistDetails");
         setCurrentStep("artistDetails");
         break;
       case "performanceDetails":
+        setEditingFromReview("performanceDetails");
         setCurrentStep("performanceDetails");
         break;
       case "contactPricing":
+        setEditingFromReview("contactPricing");
         setCurrentStep("contactPricing");
         break;
     }
@@ -207,8 +294,8 @@ export default function ProfileSetupPage() {
 
   const handleGoToDashboard = () => {
     setShowSuccessModal(false);
-    // Redirect to integrations tab to connect YouTube/Instagram
-    router.push("/artist/profile?tab=integrations");
+    // Redirect to artist dashboard
+    router.push("/artist/dashboard");
   };
 
   const handleAddAnotherProfile = () => {
@@ -290,6 +377,14 @@ export default function ProfileSetupPage() {
             onEdit={handleEdit}
           />
         );
+      case "videosSocialMedia":
+        return (
+          <VideosSocialMedia
+            onNext={handleNext}
+            onSkip={handleNext}
+            onBack={handleBack}
+          />
+        );
       default:
         return (
           <div className="text-center text-white">
@@ -308,6 +403,23 @@ export default function ProfileSetupPage() {
     }
   };
 
+  // Show loading state while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-pink mx-auto mb-4"></div>
+          <p className="text-text-gray">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authorized (will redirect)
+  if (!session || session.user?.role !== "artist") {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
       {renderCurrentStep()}
@@ -315,6 +427,17 @@ export default function ProfileSetupPage() {
         isOpen={showSuccessModal}
         onGoToDashboard={handleGoToDashboard}
         onAddAnotherProfile={handleAddAnotherProfile}
+      />
+      <ConfirmDialog
+        open={showBackWarning}
+        onOpenChange={setShowBackWarning}
+        title="Go Back?"
+        description="Your current step changes may not be saved yet. Are you sure you want to go back?"
+        confirmText="Go Back"
+        cancelText="Stay Here"
+        variant="warning"
+        onCancel={() => setPendingBackStep(null)}
+        onConfirm={handleConfirmBack}
       />
     </div>
   );

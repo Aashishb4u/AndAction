@@ -25,8 +25,8 @@ type RawArtistFromAPI = {
 
 export function transformArtist(raw: RawArtistFromAPI): Artist {
   const fullName =
+    (raw.stageName || "").trim() ||
     `${raw.user.firstName || ""} ${raw.user.lastName || ""}`.trim() ||
-    raw.stageName ||
     "Unknown Artist";
 
   let duration = "N/A";
@@ -84,7 +84,7 @@ export function transformArtist(raw: RawArtistFromAPI): Artist {
     startingPrice: raw.soloChargesFrom || 0,
     languages:
       raw.performingLanguage?.split(",").map((s) => capitalize(s.trim())) || [],
-    image: raw.user.avatar || "",
+    image: raw.user.avatar || "/avatars/default.jpg",
     // TODO: Implement bookmark logic
     isBookmarked: false,
     yearsOfExperience: raw.yearsOfExperience || undefined,

@@ -6,7 +6,6 @@ import VideoCard from "@/components/ui/VideoCard";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { Loader2, Youtube, RefreshCw, Download } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import {
   useSyncedVideos,
@@ -19,9 +18,8 @@ interface VideosTabProps {
 }
 
 const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
-  const router = useRouter();
   const [bookmarkedVideos, setBookmarkedVideos] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
@@ -35,6 +33,10 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
 
   const syncMutation = useSyncYouTubeVideos();
   const deleteMutation = useDeleteVideo();
+
+  const handleSync = () => {
+    syncMutation.mutate();
+  };
 
   const videos =
     videosData?.map((v) => ({
@@ -50,10 +52,6 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
       isShort: v.isShort,
       source: v.source,
     })) || [];
-
-  const handleSync = () => {
-    syncMutation.mutate();
-  };
 
   const handleDelete = (videoId: string) => {
     if (deleteMutation.isPending) return;
@@ -71,13 +69,17 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
     });
   };
 
-  const handleBookmark = (videoId: string) => {
+  const handleBookmark = (data: {
+    id: string;
+    bookmarkId?: string | null;
+    isBookmarked: boolean;
+  }) => {
     setBookmarkedVideos((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(videoId)) {
-        newSet.delete(videoId);
+      if (newSet.has(data.id)) {
+        newSet.delete(data.id);
       } else {
-        newSet.add(videoId);
+        newSet.add(data.id);
       }
       return newSet;
     });
@@ -96,10 +98,6 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
         toast.success("Link copied to clipboard!");
       }
     }
-  };
-
-  const handleConnectYouTube = () => {
-    router.push("/artist/profile?tab=integrations");
   };
 
   // Loading state
@@ -178,7 +176,7 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
 
   return (
     <div className="space-y-6">
-      {/* Header with sync and refresh buttons */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-text-gray text-sm">
           {videos.length} video{videos.length !== 1 ? "s" : ""} synced
@@ -224,6 +222,8 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
             onDelete={handleDelete}
             isBookmarked={bookmarkedVideos.has(video.id)}
             showDeleteButton={true}
+            enableMobileAutoplay={true}
+            artistId={artist.id}
           />
         ))}
       </div>

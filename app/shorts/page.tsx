@@ -1,14 +1,35 @@
 "use client";
 
-const fetchShortsPage = async ({ pageParam = 1 }) => {
-  const res = await fetch(`/api/videos?type=shorts&page=${pageParam}`);
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { useMemo } from "react";
+
+const SHORTS_PAGE_LIMIT = 5;
+
+const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
+  const [_key, { category, seed }] = queryKey;
+  const params = new URLSearchParams({
+    type: "shorts",
+    page: pageParam.toString(),
+    limit: SHORTS_PAGE_LIMIT.toString(),
+    random: "true",
+  });
+  if (category && category !== "all") {
+    params.set("category", category);
+  }
+  if (seed !== undefined) {
+    params.set("seed", seed.toString());
+  }
+
+  const res = await fetch(`/api/videos?${params.toString()}`);
   const json = await res.json();
 
   return json.data.videos.map((v: any) => ({
     id: v.id,
     title: v.title,
-    creator: `${v.user.firstName} ${v.user.lastName}`,
+    creator: getArtishName(v.user.name, v.user.firstName, v.user.lastName),
     creatorId: v.user.artist?.id,
+    category: v.user.artist?.artistType || "",
+    userId: v.user.id,
     avatar: v.user.avatar || v.user.image,
     videoUrl: v.url,
     thumbnail: v.thumbnailUrl,
@@ -32,10 +53,13 @@ import {
   Linkedin,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { getArtishName } from "@/lib/utils";
 
 export default function ShortsPage() {
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const { categoriesWithAll } = useArtistCategories();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [isDesktop, setIsDesktop] = useState(false);
   const queryClient = useQueryClient();
   const [shareModal, setShareModal] = useState<{
@@ -58,13 +82,16 @@ export default function ShortsPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Stable seed for consistent random ordering across pages
+  const [shortsSeed] = useState(() => Math.random() * 2 - 1);
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ["shorts"],
+      queryKey: ["shorts", { category: selectedCategory, seed: shortsSeed }],
       queryFn: fetchShortsPage,
       initialPageParam: 1,
       getNextPageParam: (lastPage, allPages) => {
-        return lastPage && lastPage.length > 0
+        return lastPage && lastPage.length >= SHORTS_PAGE_LIMIT
           ? allPages.length + 1
           : undefined;
       },
@@ -73,10 +100,47 @@ export default function ShortsPage() {
 
   const shorts = data?.pages.flat() || [];
 
+  // Group shorts by artist (all shorts from one artist together)
+  const groupedShorts = useMemo(() => {
+    if (!shorts.length) return [];
+
+    // Group by userId
+    const shortsByArtist = shorts.reduce(
+      (acc, short) => {
+        if (!acc[short.userId]) {
+          acc[short.userId] = [];
+        }
+        acc[short.userId].push(short);
+        return acc;
+      },
+      {} as Record<string, typeof shorts>,
+    );
+
+    // Flatten back to array, maintaining artist grouping
+    // Get unique artist IDs in order of first appearance
+    const artistOrder: string[] = [];
+    shorts.forEach((short) => {
+      if (!artistOrder.includes(short.userId)) {
+        artistOrder.push(short.userId);
+      }
+    });
+
+    // Return shorts grouped by artist
+    return artistOrder.flatMap((artistId) => shortsByArtist[artistId]);
+  }, [shorts]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = sessionStorage.getItem("shorts_sound");
-      if (saved === "on") setSoundEnabled(true);
+      if (saved === null) {
+        // First time - set to "on" and ensure sound is enabled
+        sessionStorage.setItem("shorts_sound", "on");
+        setSoundEnabled(true);
+      } else if (saved === "off") {
+        setSoundEnabled(false);
+      } else {
+        setSoundEnabled(true);
+      }
     }
   }, []);
 
@@ -89,10 +153,10 @@ export default function ShortsPage() {
   const velocityRef = useRef<number>(0);
   const lastTouchTime = useRef<number>(0);
 
-  // Load more videos when approaching the end
+  // Load more videos when approaching the end (trigger 3 items before end)
   const loadMoreVideos = useCallback(() => {
     if (
-      currentIndex >= shorts.length - 2 &&
+      currentIndex >= groupedShorts.length - 3 &&
       hasNextPage &&
       !isFetchingNextPage
     ) {
@@ -100,7 +164,7 @@ export default function ShortsPage() {
     }
   }, [
     currentIndex,
-    shorts.length,
+    groupedShorts.length,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
@@ -120,17 +184,17 @@ export default function ShortsPage() {
       setCurrentIndex((prevIndex) => {
         const newIndex =
           direction === "down"
-            ? Math.min(prevIndex + 1, shorts.length - 1)
+            ? Math.min(prevIndex + 1, groupedShorts.length - 1)
             : Math.max(prevIndex - 1, 0);
 
         if (newIndex === prevIndex) return prevIndex;
 
-        if (newIndex >= shorts.length - 2) loadMoreVideos();
+        if (newIndex >= groupedShorts.length - 2) loadMoreVideos();
 
         return newIndex;
       });
     },
-    [shorts.length, loadMoreVideos],
+    [groupedShorts.length, loadMoreVideos],
   );
 
   // Wheel (desktop)
@@ -267,13 +331,16 @@ export default function ShortsPage() {
   const getVisibleVideos = useCallback(() => {
     const bufferSize = 2;
     const startIndex = Math.max(0, currentIndex - bufferSize);
-    const endIndex = Math.min(shorts.length - 1, currentIndex + bufferSize);
+    const endIndex = Math.min(
+      groupedShorts.length - 1,
+      currentIndex + bufferSize,
+    );
 
-    return shorts.slice(startIndex, endIndex + 1).map((short, idx) => ({
+    return groupedShorts.slice(startIndex, endIndex + 1).map((short, idx) => ({
       ...short,
       absoluteIndex: startIndex + idx,
     }));
-  }, [currentIndex, shorts]);
+  }, [currentIndex, groupedShorts]);
 
   // Bookmark handler: persist to backend and update state
   const handleBookmark = async (id: string) => {
@@ -283,7 +350,7 @@ export default function ShortsPage() {
       return;
     }
 
-    const short = shorts.find((s) => s.id === id);
+    const short = groupedShorts.find((s) => s.id === id);
     if (!short) return;
 
     const previousData = queryClient.getQueryData(["shorts"]);
@@ -328,7 +395,7 @@ export default function ShortsPage() {
 
   // Share handler: open share modal
   const handleShare = async (id: string) => {
-    const short = shorts.find((s) => s.id === id);
+    const short = groupedShorts.find((s) => s.id === id);
     const shareTitle = short?.title || "Check out this short";
     setShareModal({ isOpen: true, shortId: id, title: shareTitle });
   };
@@ -405,32 +472,64 @@ export default function ShortsPage() {
   const visibleVideos = getVisibleVideos();
 
   return (
-    <SiteLayout showPreloader={false}>
+    <SiteLayout showPreloader={false} hideNavbarOnMobile={true}>
+      {/* Category Filter Header */}
+      <div
+        className="fixed top-0 md:static md:mt-16 left-0 right-0 z-50 flex gap-2 overflow-x-auto scrollbar-hide bg-[#1B1B1B] backdrop-blur-sm p-4 border-y border-border-line"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {categoriesWithAll.map((category) => (
+          <button
+            key={category.value}
+            onClick={() => {
+              setSelectedCategory(category.value);
+              setCurrentIndex(0);
+            }}
+            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all whitespace-nowrap ${
+              selectedCategory === category.value
+                ? "bg-white border-white"
+                : "bg-background text-white border-[#2D2D2D] hover:border-gray-400"
+            }`}
+          >
+            <span
+              className={
+                selectedCategory === category.value
+                  ? "text-transparent bg-clip-text bg-linear-to-r from-[#ED4B22] to-[#E8047E]"
+                  : ""
+              }
+            >
+              {category.label}
+            </span>
+          </button>
+        ))}
+      </div>
+
       {/* MOBILE */}
       <div className="md:hidden">
         <div
           ref={mobileContainerRef}
-          className="fixed inset-0 bg-black overflow-hidden shorts-scrollbar-hide"
+          className="fixed left-0 right-0 bg-black overflow-hidden shorts-scrollbar-hide"
           style={{
-            height: "100vh",
-            width: "100vw",
+            top: 0,
+            bottom: "4rem", // Leave space for bottom bar
             zIndex: 0,
-            paddingTop: "4rem",
-          }} // Add top padding for navbar height
+            paddingTop: "4.5rem", // Add top padding for category header
+          }}
         >
           <div
-            className="relative h-full pb-16" // Only bottom padding, top handled by parent
+            className="relative h-full"
             style={{
-              transform: `translateY(-${currentIndex * 100}vh)`,
+              transform: `translateY(-${currentIndex * 100}%)`,
               transition: "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
               willChange: "transform",
+              height: "100%", // Ensure container takes full height of parent
             }}
           >
             {visibleVideos.map((video) => (
               <div
                 key={`${video.id}-${video.absoluteIndex}`}
                 className="absolute inset-0 w-full h-full"
-                style={{ top: `${video.absoluteIndex * 100}vh` }}
+                style={{ top: `${video.absoluteIndex * 100}%` }}
               >
                 <ShortsPlayer
                   short={video}
@@ -454,7 +553,7 @@ export default function ShortsPage() {
       </div>
 
       {/* DESKTOP */}
-      <div className="hidden md:block pt-20 lg:pt-24 min-h-screen bg-black">
+      <div className="hidden md:block pt-4 min-h-screen bg-black">
         <div className="max-w-md mx-auto">
           <div
             ref={desktopContainerRef}
@@ -512,7 +611,7 @@ export default function ShortsPage() {
                 }
                 className="p-2 rounded-full hover:bg-gray-700 transition-colors"
               >
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-6 h-6 text-gray-400" />
               </button>
             </div>
 

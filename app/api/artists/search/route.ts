@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { Prisma } from "@prisma/client";
+import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 
 // Define pagination defaults
 const DEFAULT_PAGE_SIZE = 10;
@@ -45,9 +46,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const queryTerm = searchParams.get("q")?.trim();
 
     if (queryTerm) {
-      // Search across stageName, artistType, and user fields
+      // Try to match as artist type first
+      const typeMatches = getArtistTypeMatches(queryTerm);
+      
+      // Search across stageName, artistType (with mapping), and user fields
       where.OR = [
         { stageName: { contains: queryTerm, mode: "insensitive" } },
+        { artistType: { in: typeMatches } },
         { artistType: { contains: queryTerm, mode: "insensitive" } },
         {
           user: {

@@ -147,7 +147,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
               scrollableYearDropdown
             />
 
-          <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+          <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />
         </div>
 
         {error && <p className="mt-2 text-sm text-red-500">{error}</p>}

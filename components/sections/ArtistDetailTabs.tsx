@@ -1,28 +1,71 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Artist } from '@/types';
-import VideoCard from '@/components/ui/VideoCard';
-import ShortsCard from '@/components/ui/ShortsCard';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { Artist } from "@/types";
+import VideoCard from "@/components/ui/VideoCard";
+import ShortsCard from "@/components/ui/ShortsCard";
+import { Loader2 } from "lucide-react";
+import { get } from "node:http";
+import { getArtishName } from "@/lib/utils";
 
 interface ArtistDetailTabsProps {
   artist: Artist;
   isMobile?: boolean;
 }
 
-type TabType = 'about' | 'performance' | 'videos' | 'shorts';
+type TabType = "about" | "performance" | "videos" | "shorts";
 
 const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   artist,
   isMobile = false,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('about');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const t = searchParams.get("tab") as TabType | null;
+    return t && ["about", "performance", "videos", "shorts"].includes(t)
+      ? t
+      : "about";
+  });
   const [isBioExpanded, setIsBioExpanded] = useState(false);
   const [showBioMoreButton, setShowBioMoreButton] = useState(false);
   const bioRef = useRef<HTMLParagraphElement>(null);
 
+  // Paginated video state
   const [artistVideos, setArtistVideos] = useState<any[]>([]);
+  const [videosPage, setVideosPage] = useState(1);
+  const [hasMoreVideos, setHasMoreVideos] = useState(true);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(false);
+  const [isInitialLoadingVideos, setIsInitialLoadingVideos] = useState(true);
+  const videosObserverRef = useRef<HTMLDivElement>(null);
+
+  // Paginated shorts state
   const [artistShorts, setArtistShorts] = useState<any[]>([]);
+  const [shortsPage, setShortsPage] = useState(1);
+  const [hasMoreShorts, setHasMoreShorts] = useState(true);
+  const [isLoadingShorts, setIsLoadingShorts] = useState(false);
+  const [isInitialLoadingShorts, setIsInitialLoadingShorts] = useState(true);
+  const shortsObserverRef = useRef<HTMLDivElement>(null);
+
+  const VIDEOS_PER_PAGE = 6;
+  const SHORTS_PER_PAGE = 9;
+
+  // Keep tab in sync when browser back/forward changes URL
+  useEffect(() => {
+    const t = searchParams.get("tab") as TabType | null;
+    const valid =
+      t && ["about", "performance", "videos", "shorts"].includes(t)
+        ? t
+        : "about";
+    setActiveTab(valid);
+  }, [searchParams]);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    router.replace(`${pathname}?tab=${tab}`, { scroll: false });
+  };
 
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
     try {
@@ -30,16 +73,16 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         // DELETE bookmark
         await fetch(`/api/bookmarks/${bookmarkId}`, { method: "DELETE" });
 
-        setArtistVideos(prev =>
-          prev.map(v =>
-            v.id === id ? { ...v, isBookmarked: false, bookmarkId: null } : v
-          )
+        setArtistVideos((prev) =>
+          prev.map((v) =>
+            v.id === id ? { ...v, isBookmarked: false, bookmarkId: null } : v,
+          ),
         );
 
-        setArtistShorts(prev =>
-          prev.map(s =>
-            s.id === id ? { ...s, isBookmarked: false, bookmarkId: null } : s
-          )
+        setArtistShorts((prev) =>
+          prev.map((s) =>
+            s.id === id ? { ...s, isBookmarked: false, bookmarkId: null } : s,
+          ),
         );
 
         return;
@@ -55,240 +98,494 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       const json = await res.json();
       const newBookmarkId = json?.data?.bookmark?.id;
 
-      setArtistVideos(prev =>
-        prev.map(v =>
-          v.id === id ? { ...v, isBookmarked: true, bookmarkId: newBookmarkId } : v
-        )
+      setArtistVideos((prev) =>
+        prev.map((v) =>
+          v.id === id
+            ? { ...v, isBookmarked: true, bookmarkId: newBookmarkId }
+            : v,
+        ),
       );
 
-      setArtistShorts(prev =>
-        prev.map(s =>
-          s.id === id ? { ...s, isBookmarked: true, bookmarkId: newBookmarkId } : s
-        )
+      setArtistShorts((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? { ...s, isBookmarked: true, bookmarkId: newBookmarkId }
+            : s,
+        ),
       );
-
     } catch (err) {
       console.error("Bookmark error:", err);
     }
   };
 
+  // Fetch videos page
+  const fetchVideosPage = useCallback(
+    async (page: number) => {
+      if (!artist?.userId) return;
+      try {
+        if (page === 1) setIsInitialLoadingVideos(true);
+        setIsLoadingVideos(true);
+        const res = await fetch(
+          `/api/videos?type=videos&artistId=${artist.userId}&withBookmarks=true&page=${page}&limit=${VIDEOS_PER_PAGE}`,
+        );
+        const json = await res.json();
+        const newVideos = json?.data?.videos || [];
+        const pagination = json?.data?.pagination;
 
+        setArtistVideos((prev) =>
+          page === 1 ? newVideos : [...prev, ...newVideos],
+        );
+        setHasMoreVideos(pagination?.hasNextPage ?? false);
+      } catch (err) {
+        console.error("Videos fetch error:", err);
+      } finally {
+        setIsLoadingVideos(false);
+        setIsInitialLoadingVideos(false);
+      }
+    },
+    [artist?.userId],
+  );
 
+  // Fetch shorts page
+  const fetchShortsPage = useCallback(
+    async (page: number) => {
+      if (!artist?.userId) return;
+      try {
+        if (page === 1) setIsInitialLoadingShorts(true);
+        setIsLoadingShorts(true);
+        const res = await fetch(
+          `/api/videos?type=shorts&artistId=${artist.userId}&withBookmarks=true&page=${page}&limit=${SHORTS_PER_PAGE}`,
+        );
+        const json = await res.json();
+        const newShorts = json?.data?.videos || [];
+        const pagination = json?.data?.pagination;
+
+        setArtistShorts((prev) =>
+          page === 1 ? newShorts : [...prev, ...newShorts],
+        );
+        setHasMoreShorts(pagination?.hasNextPage ?? false);
+      } catch (err) {
+        console.error("Shorts fetch error:", err);
+      } finally {
+        setIsLoadingShorts(false);
+        setIsInitialLoadingShorts(false);
+      }
+    },
+    [artist?.userId],
+  );
+
+  // Initial fetch
   useEffect(() => {
     if (!artist?.userId) return;
+    setArtistVideos([]);
+    setArtistShorts([]);
+    setVideosPage(1);
+    setShortsPage(1);
+    setHasMoreVideos(true);
+    setHasMoreShorts(true);
+    fetchVideosPage(1);
+    fetchShortsPage(1);
+  }, [artist?.userId, fetchVideosPage, fetchShortsPage]);
 
-    async function fetchMedia() {
-      try {
-        console.log(`Artist id : ${artist.id}`);
+  // Fetch more videos when page changes (after initial)
+  useEffect(() => {
+    if (videosPage > 1) fetchVideosPage(videosPage);
+  }, [videosPage, fetchVideosPage]);
 
-        // 🔥 Fetch VIDEOS with bookmark info
-        const videosRes = await fetch(
-          `/api/videos?type=videos&artistId=${artist.userId}&withBookmarks=true`
-        );
-        const videosJson = await videosRes.json();
+  // Fetch more shorts when page changes (after initial)
+  useEffect(() => {
+    if (shortsPage > 1) fetchShortsPage(shortsPage);
+  }, [shortsPage, fetchShortsPage]);
 
-        setArtistVideos(videosJson?.data?.videos || []);
+  // Infinite scroll observer for videos
+  useEffect(() => {
+    if (!videosObserverRef.current || !hasMoreVideos || isLoadingVideos) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVideosPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" },
+    );
+    const el = videosObserverRef.current;
+    observer.observe(el);
+    return () => {
+      if (el) observer.unobserve(el);
+    };
+  }, [hasMoreVideos, isLoadingVideos, artistVideos.length]);
 
-        // 🔥 Fetch SHORTS with bookmark info
-        const shortsRes = await fetch(
-          `/api/videos?type=shorts&artistId=${artist.userId}&withBookmarks=true`
-        );
-        const shortsJson = await shortsRes.json();
-
-        setArtistShorts(shortsJson?.data?.videos || []);
-
-      } catch (err) {
-        console.error("Media fetch error:", err);
-      }
-    }
-
-    fetchMedia();
-  }, [artist?.id]);
+  // Infinite scroll observer for shorts
+  useEffect(() => {
+    if (!shortsObserverRef.current || !hasMoreShorts || isLoadingShorts) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setShortsPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" },
+    );
+    const el = shortsObserverRef.current;
+    observer.observe(el);
+    return () => {
+      if (el) observer.unobserve(el);
+    };
+  }, [hasMoreShorts, isLoadingShorts, artistShorts.length]);
 
   // Check if bio text overflows (more than 2 lines)
   useEffect(() => {
     const checkBioOverflow = () => {
       if (bioRef.current) {
-        const lineHeight = parseFloat(getComputedStyle(bioRef.current).lineHeight) || 20;
-        const maxHeight = lineHeight * 2; // 2 lines
+        const lineHeight =
+          parseFloat(getComputedStyle(bioRef.current).lineHeight) || 20;
+        const maxHeight = lineHeight * 4; // 4 lines
         setShowBioMoreButton(bioRef.current.scrollHeight > maxHeight + 2);
       }
     };
 
     // Small delay to ensure DOM is ready
     const timer = setTimeout(checkBioOverflow, 100);
-    window.addEventListener('resize', checkBioOverflow);
+    window.addEventListener("resize", checkBioOverflow);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', checkBioOverflow);
+      window.removeEventListener("resize", checkBioOverflow);
     };
   }, [artist.bio, activeTab]);
 
-
   const tabs = [
-    { id: 'about' as TabType, label: 'About' },
-    { id: 'performance' as TabType, label: 'Performance' },
-    { id: 'videos' as TabType, label: 'Videos' },
-    { id: 'shorts' as TabType, label: 'Shorts' },
+    { id: "about" as TabType, label: "About" },
+    { id: "performance" as TabType, label: "Performance" },
+    { id: "videos" as TabType, label: "Videos" },
+    { id: "shorts" as TabType, label: "Shorts" },
   ];
 
   const renderAboutContent = () => (
     <div className="space-y-4 max-w-4xl">
-      <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
-        <h3 className="text-text-gray secondary-text mb-1">Bio</h3>
-        <p 
-          ref={bioRef}
-          className={`leading-relaxed text-sm ${isBioExpanded ? '' : 'line-clamp-2'}`}
-        >
-          {artist.bio || 'Borem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero Borem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero'}
-        </p>
-        {showBioMoreButton && (
-          <button 
-            onClick={() => setIsBioExpanded(!isBioExpanded)}
-            className="text-blue hover:text-primary-pink transition-colors font-medium text-sm mt-1"
+      {artist.bio &&
+        artist.bio.trim() !== "" &&
+        (() => {
+          const sanitizedBio = artist.bio
+            .replaceAll("\\r\\n", "\n")
+            .replaceAll("\\r", "")
+            .replaceAll("\\n", "\n")
+            .replace(/\r\n/g, "\n")
+            .replace(/\r/g, "");
+          return (
+            <div
+              className="p-4 md:bg-background bg-card border rounded-xl"
+              style={{ borderColor: "#232323" }}
+            >
+              <h3 className="text-text-gray secondary-text mb-2">Bio</h3>
+              <p
+                ref={bioRef}
+                className={`leading-relaxed secondary-grey-text whitespace-pre-line ${isBioExpanded ? "" : "line-clamp-4"}`}
+              >
+                {sanitizedBio}
+              </p>
+              {showBioMoreButton && (
+                <button
+                  onClick={() => setIsBioExpanded(!isBioExpanded)}
+                  className="text-blue hover:text-primary-pink transition-colors font-medium text-sm mt-1"
+                >
+                  {isBioExpanded ? "less" : "more..."}
+                </button>
+              )}
+            </div>
+          );
+        })()}
+      {/* Years of experience: show only when a positive number is provided */}
+      {typeof artist.yearsOfExperience === "number" &&
+        artist.yearsOfExperience > 0 && (
+          <div
+            className="p-4 md:bg-background bg-card border rounded-xl"
+            style={{ borderColor: "#232323" }}
           >
-            {isBioExpanded ? 'less' : 'more...'}
-          </button>
+            <h3 className="text-text-gray secondary-text mb-2">
+              Years of experience
+            </h3>
+            <p className="secondary-grey-text">
+              {artist.yearsOfExperience} Years
+            </p>
+          </div>
         )}
-      </div>
 
-      <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
-        <h3 className="text-text-gray secondary-text mb-1">Years of experience</h3>
-        <p className="footnote">{artist.yearsOfExperience || 4} Years</p>
-      </div>
+      {/* Sub-artist types: filter out empty / N/A values */}
+      {/* Resolve sub-artist types whether provided as array or CSV string */}
+      {(() => {
+        const a: any = artist as any;
+        const artistSubTypes = Array.isArray(a.subArtistTypes)
+          ? a.subArtistTypes
+          : a.subArtistType
+            ? (a.subArtistType as string)
+                .split(",")
+                .map((s: string) => s.trim())
+                .filter(Boolean)
+            : [];
 
-      <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
-        <h3 className="text-text-gray secondary-text mb-1">Sub-Artist Type</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {(artist.subArtistTypes || ['Singer', 'DJ', 'Anker']).map((type, index) => (
-            <span
-              key={index}
-              className="px-3 py-1.5 text-gray-300 rounded-full border border-border-color text-xs font-medium bg-background"
-            >
-              {type}
-            </span>
-          ))}
-        </div>
-      </div>
+        if (
+          artistSubTypes.filter(
+            (t: string) => t && t.trim() && t.toLowerCase() !== "n/a",
+          ).length === 0
+        )
+          return null;
 
-      <div className='p-4 md:bg-background bg-card border border-border-color rounded-xl'>
-        <h3 className="text-text-gray secondary-text mb-1">Achievements / Awards</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {(artist.achievements || ['Singer', 'DJ', 'Anker']).map((achievement, index) => (
-            <span
-              key={index}
-              className="px-3 py-1.5 text-gray-300 rounded-full border border-border-color text-xs font-medium bg-background"
-            >
-              {achievement}
-            </span>
-          ))}
-        </div>
-      </div>
+        return (
+          <div
+            className="p-4 md:bg-background bg-card border rounded-xl"
+            style={{ borderColor: "#232323" }}
+          >
+            <h3 className="text-text-gray secondary-text mb-2">
+              Sub-Artist Type
+            </h3>
+            <div className="flex flex-wrap gap-1.5">
+              {artistSubTypes
+                .filter(
+                  (t: string) => t && t.trim() && t.toLowerCase() !== "n/a",
+                )
+                .map((type: string, index: number) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
+                  >
+                    {type}
+                  </span>
+                ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Achievements: filter out empty / N/A values */}
+      {Array.isArray(artist.achievements) &&
+        artist.achievements.filter(
+          (a: string) => a && a.trim() && a.toLowerCase() !== "n/a",
+        ).length > 0 && (
+          <div
+            className="p-4 md:bg-background bg-card border rounded-xl"
+            style={{ borderColor: "#232323" }}
+          >
+            <h3 className="text-text-gray secondary-text mb-2">
+              Achievements / Awards
+            </h3>
+            <div className="flex flex-wrap gap-1.5">
+              {artist.achievements
+                .filter(
+                  (a: string) => a && a.trim() && a.toLowerCase() !== "n/a",
+                )
+                .map((achievement: string, index: number) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
+                  >
+                    {achievement}
+                  </span>
+                ))}
+            </div>
+          </div>
+        )}
     </div>
   );
 
   const renderPerformanceContent = () => (
     <div className="space-y-4 max-w-4xl">
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
-        <div className="text-white mb-1">
-          Starting from ₹ {artist.soloChargesFrom || 0}
-        </div>
-        <p className="footnote">
-          {artist.soloChargesDescription?.trim() || "No description provided."}
-        </p>
-      </div>
+      {(() => {
+        const hasSoloCharges =
+          artist.soloChargesFrom !== undefined &&
+          artist.soloChargesFrom !== null &&
+          `${artist.soloChargesFrom}`.trim() !== "";
+        const hasBacklineCharges =
+          artist.chargesWithBacklineFrom !== undefined &&
+          artist.chargesWithBacklineFrom !== null &&
+          `${artist.chargesWithBacklineFrom}`.trim() !== "";
+        const hasPricingSection =
+          hasSoloCharges ||
+          !!artist.soloChargesDescription?.trim() ||
+          hasBacklineCharges ||
+          !!artist.chargesWithBacklineDescription?.trim();
 
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
-        <div className="text-white mb-1">
-          Starting from ₹ {artist.chargesWithBacklineFrom || 0}
-        </div>
-        <p className="footnote">
-          {artist.chargesWithBacklineDescription?.trim() || "No description provided."}
-        </p>
-      </div>
+        const hasDuration =
+          !!artist.performingDurationFrom || !!artist.performingDurationTo;
+        const hasMembers = !!artist.performingMembers || !!artist.offStageMembers;
+        const hasCorePerformanceSection = hasDuration || hasMembers;
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
-          <h4 className="text-text-gray secondary-text mb-1">Performing duration</h4>
-          <p className="text-white text-sm">
-            {artist.performingDurationFrom || "N/A"} - {artist.performingDurationTo || "N/A"} mins
-          </p>
-        </div>
+        const languages = artist.languages?.length
+          ? artist.languages
+              .flatMap((lang: string) =>
+                lang.split(",").map((l: string) => l.trim()),
+              )
+              .filter((l: string) => l)
+          : [];
 
-        <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
-          <h4 className="text-text-gray secondary-text mb-1">Performing members</h4>
-          <p className="text-white text-sm">
-            {artist.performingMembers || "N/A"} members
-          </p>
-        </div>
+        const eventTypes = artist.performingEventType
+          ? artist.performingEventType
+              .split(",")
+              .map((e: string) => e.trim())
+              .filter((e: string) => e)
+          : [];
 
-        <div className="md:bg-background bg-card border border-border-color rounded-lg p-4">
-          <h4 className="text-text-gray secondary-text mb-1">Off stage members</h4>
-          <p className="text-white text-sm">
-            {artist.offStageMembers || "N/A"}
-          </p>
-        </div>
-      </div>
+        const states = artist.performingStates
+          ? artist.performingStates
+              .split(",")
+              .map((s: string) => s.trim())
+              .filter((s: string) => s)
+          : [];
+        const hasPanIndia = states.some(
+          (s: string) => s.toLowerCase() === "pan india",
+        );
+        const normalizedStates = hasPanIndia ? ["Pan India"] : states;
 
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {(artist.languages?.length
-            ? artist.languages.flatMap((lang: string) => lang.split(',').map((l: string) => l.trim())).filter((l: string) => l)
-            : ["N/A"]
-          ).map((language: string, index: number) => (
-            <span
-              key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
-            >
-              {language}
-            </span>
-          ))}
-        </div>
-      </div>
+        return (
+          <>
+            {hasPricingSection && (
+              <div
+                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                style={{ borderColor: "#232323" }}
+              >
+                {(hasSoloCharges || !!artist.soloChargesDescription?.trim()) && (
+                  <div className={hasBacklineCharges || !!artist.chargesWithBacklineDescription?.trim() ? "mb-6" : ""}>
+                    <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
+                    {hasSoloCharges && (
+                      <div className="text-white mb-1">
+                        Starting from ₹ {artist.soloChargesFrom}
+                      </div>
+                    )}
+                    {artist.soloChargesDescription?.trim() ? (
+                      <p className="footnote">{artist.soloChargesDescription.trim()}</p>
+                    ) : null}
+                  </div>
+                )}
 
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Performing event type</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {(artist.performingEventType
-            ? artist.performingEventType.split(',').map((e: string) => e.trim()).filter((e: string) => e)
-            : ["N/A"]
-          ).map((eventType: string, index: number) => (
-            <span
-              key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
-            >
-              {eventType}
-            </span>
-          ))}
-        </div>
-      </div>
+                {(hasBacklineCharges || !!artist.chargesWithBacklineDescription?.trim()) && (
+                  <div>
+                    <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
+                    {hasBacklineCharges && (
+                      <div className="text-white mb-1">
+                        Starting from ₹ {artist.chargesWithBacklineFrom}
+                      </div>
+                    )}
+                    {artist.chargesWithBacklineDescription?.trim() ? (
+                      <p className="footnote">{artist.chargesWithBacklineDescription.trim()}</p>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            )}
 
-      <div className="md:bg-background bg-card border border-border-color rounded-lg md:p-6 p-4">
-        <h3 className="text-text-gray secondary-text mb-1">Performing States</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {(() => {
-            const states = artist.performingStates
-              ? artist.performingStates.split(',').map((s: string) => s.trim()).filter((s: string) => s)
-              : ["N/A"];
-            const hasPanIndia = states.some((s: string) => s.toLowerCase() === 'pan india');
-            return hasPanIndia ? ["Pan India"] : states;
-          })().map((state: string, index: number) => (
-            <span
-              key={index}
-              className="bg-background px-3 py-1.5 border border-border-color text-gray-300 rounded-full text-xs font-medium"
-            >
-              {state}
-            </span>
-          ))}
-        </div>
-      </div>
+            {hasCorePerformanceSection && (
+              <div
+                className="md:bg-background bg-card border rounded-lg p-4"
+                style={{ borderColor: "#232323" }}
+              >
+                {hasDuration && (
+                  <div className="mb-4">
+                    <h4 className="text-text-gray secondary-text mb-1">Performing duration</h4>
+                    <p className="text-white text-sm">
+                      {artist.performingDurationFrom || ""}
+                      {artist.performingDurationFrom && artist.performingDurationTo ? " - " : ""}
+                      {artist.performingDurationTo || ""}
+                      {(artist.performingDurationFrom || artist.performingDurationTo) ? " mins" : ""}
+                    </p>
+                  </div>
+                )}
+
+                {artist.performingMembers && (
+                  <div className={artist.offStageMembers ? "mb-4" : ""}>
+                    <h4 className="text-text-gray secondary-text mb-1">Performing members</h4>
+                    <p className="text-white text-sm">{artist.performingMembers} members</p>
+                  </div>
+                )}
+
+                {artist.offStageMembers && (
+                  <div>
+                    <h4 className="text-text-gray secondary-text mb-1">Off stage members</h4>
+                    <p className="text-white text-sm">{artist.offStageMembers} members</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {languages.length > 0 && ( 
+              <div
+                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                style={{ borderColor: "#232323" }}
+              >
+                <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {languages.map((language: string, index: number) => (
+                    <span
+                      key={index}
+                      className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
+                    >
+                      {language}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {eventTypes.length > 0 && (
+              <div
+                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                style={{ borderColor: "#232323" }}
+              >
+                <h3 className="text-text-gray secondary-text mb-1">Performing event type</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {eventTypes.map((eventType: string, index: number) => (
+                    <span
+                      key={index}
+                      className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
+                    >
+                      {eventType}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {normalizedStates.length > 0 && (
+              <div
+                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                style={{ borderColor: "#232323" }}
+              >
+                <h3 className="text-text-gray secondary-text mb-1">Performing States</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {normalizedStates.map((state: string, index: number) => (
+                    <span
+                      key={index}
+                      className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
+                    >
+                      {state}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 
   const renderVideosContent = () => {
+    if (isInitialLoadingVideos) {
+      return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((n) => (
+            <div key={n} className="animate-pulse">
+              <div className="w-full aspect-video rounded-lg bg-[#2a2a2a]" />
+              <div className="mt-3 flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#2a2a2a] shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-[#2a2a2a] rounded w-3/4" />
+                  <div className="h-3 bg-[#2a2a2a] rounded w-1/2" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
     if (artistVideos.length === 0) {
       return (
         <div className="text-center py-12">
@@ -299,29 +596,58 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     }
 
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {artistVideos.map((video) => (
-          <VideoCard
-            key={video.id}
-            id={video.id}
-            title={video.title}
-            creator={`${video.user.firstName} ${video.user.lastName}`}
-            thumbnail={video.thumbnailUrl}
-            videoUrl={video.url}
-
-            isBookmarked={video.isBookmarked}         // 🔥 NEW
-            bookmarkId={video.bookmarkId}             // 🔥 NEW
-
-            onBookmark={(data) => toggleBookmark(data)}
-            onShare={() => { }}
-          />
-
-        ))}
-      </div>
+      <>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {artistVideos.map((video) => (
+            <VideoCard
+              key={video.id}
+              id={video.id}
+              title={video.title}
+              creator={
+                video.user.name ||
+                `${video.user.firstName || ""} ${video.user.lastName || ""}`.trim() ||
+                "Unknown Artist"
+              }
+              thumbnail={video.thumbnailUrl}
+              videoUrl={video.url}
+              isBookmarked={video.isBookmarked}
+              bookmarkId={video.bookmarkId}
+              onBookmark={(data) => toggleBookmark(data)}
+              onShare={() => {}}
+              artistId={(video.user as any)?.artist?.id}
+              enableMobileAutoplay={true}
+            />
+          ))}
+        </div>
+        {/* Infinite scroll sentinel */}
+        {hasMoreVideos && (
+          <div ref={videosObserverRef} className="flex justify-center py-6">
+            {isLoadingVideos && (
+              <Loader2 className="w-6 h-6 animate-spin text-primary-pink" />
+            )}
+          </div>
+        )}
+        {!hasMoreVideos && artistVideos.length > 0 && (
+          <p className="text-center text-gray-500 text-sm py-4">
+            No more videos
+          </p>
+        )}
+      </>
     );
   };
 
   const renderShortsContent = () => {
+    if (isInitialLoadingShorts) {
+      return (
+        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div key={n} className="animate-pulse">
+              <div className="w-full aspect-[9/16] rounded-xl bg-[#2a2a2a]" />
+            </div>
+          ))}
+        </div>
+      );
+    }
     if (artistShorts.length === 0) {
       return (
         <div className="text-center py-12">
@@ -332,35 +658,53 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     }
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {artistShorts.map((short) => (
-          <ShortsCard
-            key={short.id}
-            id={short.id}
-            title={short.title}
-            creator={`${short.user.firstName} ${short.user.lastName}`}
-            thumbnail={short.thumbnailUrl}
-            videoUrl={short.url}
-            isBookmarked={short.isBookmarked}       
-            bookmarkId={short.bookmarkId}   
-            onBookmark={(data) => toggleBookmark(data)}
-            onShare={() => { }}
-          />
-
-        ))}
-      </div>
+      <>
+        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {artistShorts.map((short) => (
+            <ShortsCard
+              key={short.id}
+              id={short.id}
+              title={short.title}
+              creator={getArtishName(
+                short.user.name,
+                short.user.firstName,
+                short.user.lastName,
+              )}
+              thumbnail={short.thumbnailUrl}
+              videoUrl={short.url}
+              isBookmarked={short.isBookmarked}
+              bookmarkId={short.bookmarkId}
+              onBookmark={(data) => toggleBookmark(data)}
+              onShare={() => {}}
+            />
+          ))}
+        </div>
+        {/* Infinite scroll sentinel */}
+        {hasMoreShorts && (
+          <div ref={shortsObserverRef} className="flex justify-center py-6">
+            {isLoadingShorts && (
+              <Loader2 className="w-6 h-6 animate-spin text-primary-pink" />
+            )}
+          </div>
+        )}
+        {!hasMoreShorts && artistShorts.length > 0 && (
+          <p className="text-center text-gray-500 text-sm py-4">
+            No more shorts
+          </p>
+        )}
+      </>
     );
   };
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'about':
+      case "about":
         return renderAboutContent();
-      case 'performance':
+      case "performance":
         return renderPerformanceContent();
-      case 'videos':
+      case "videos":
         return renderVideosContent();
-      case 'shorts':
+      case "shorts":
         return renderShortsContent();
       default:
         return renderAboutContent();
@@ -370,58 +714,68 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   if (isMobile) {
     return (
       <div className="bg-background min-h-screen">
-        <div className="sticky top-0 bg-background border-b border-border-color z-40">
+        <div
+          className="sticky top-0 bg-background border-b z-40"
+          style={{ borderColor: "#232323" }}
+        >
           <div className="flex bg-card overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-4 px-4 text-base font-medium transition-colors relative ${activeTab === tab.id
-                  ? 'gradient-text'
-                  : 'text-text-gray hover:text-gray-300'
-                  }`}
+                onClick={() => handleTabChange(tab.id)}
+                className={`flex-1 py-4 px-4 text-base font-medium transition-colors relative ${
+                  activeTab === tab.id
+                    ? "text-white"
+                    : "text-text-gray hover:text-gray-300"
+                }`}
               >
                 {tab.label}
                 {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-orange to-primary-pink" />
+                  <div
+                    className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-primary-orange to-primary-pink z-50"
+                    style={{ bottom: "-1px" }}
+                  />
                 )}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="md:p-6 p-4 pb-32">
-          {renderContent()}
-        </div>
+        <div className="md:p-6 p-4 pb-32">{renderContent()}</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-card rounded-2xl border border-border-color">
+    <div
+      className="min-h-screen bg-card rounded-2xl border"
+      style={{ borderColor: "#232323" }}
+    >
       <div className="border-b border-border-color">
         <div className="flex px-8">
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-4 px-6 text-base font-medium transition-colors relative ${activeTab === tab.id
-                ? 'gradient-text'
-                : 'text-text-gray hover:text-gray-300'
-                }`}
+              onClick={() => handleTabChange(tab.id)}
+              className={`py-4 px-6 text-base font-medium transition-colors relative ${
+                activeTab === tab.id
+                  ? "gradient-text"
+                  : "text-text-gray hover:text-gray-300"
+              }`}
             >
               {tab.label}
               {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-orange to-primary-pink" />
+                <div
+                  className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-primary-orange to-primary-pink z-50"
+                  style={{ bottom: "-1px" }}
+                />
               )}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="p-8 h-full overflow-y-auto">
-        {renderContent()}
-      </div>
+      <div className="p-8">{renderContent()}</div>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense, useMemo } from "react";
+import React, { useState, Suspense, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,15 +11,18 @@ import Checkbox from "@/components/ui/Checkbox";
 import PhoneInput from "@/components/ui/PhoneInput";
 import OTPInput from "@/components/ui/OTPInput";
 import DateInput from "@/components/ui/DateInput";
-import {
-  signInWithGoogleAsArtist,
-  signInWithFacebookAsArtist,
-} from "@/lib/auth";
+import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { signInWithGoogleAsArtist } from "@/lib/auth";
 import { signIn } from "next-auth/react";
-import { validatePassword } from "@/lib/validators";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 
 type ArtistSignUpStep = "join" | "otp" | "password" | "userInfo" | "terms";
 type ContactType = "phone" | "email";
+type PendingNavigationAction =
+  | { type: "route"; to: string }
+  | { type: "step"; to: ArtistSignUpStep; resetSensitive?: boolean }
+  | null;
 
 function ArtistAuthContent() {
   const [step, setStep] = useState<ArtistSignUpStep>("join");
@@ -42,16 +45,128 @@ function ArtistAuthContent() {
   const [pinCode, setPinCode] = useState("");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  const [, setLocationFetched] = useState(false);
 
   // Terms step state
   const [noMarketing, setNoMarketing] = useState(true);
-  const [shareData, setShareData] = useState(false);
+  const [shareData, setShareData] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resendTimer, setResendTimer] = useState(0);
+  const [showExitWarning, setShowExitWarning] = useState(false);
+  const [pendingAction, setPendingAction] =
+    useState<PendingNavigationAction>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const stepParam = searchParams.get("step");
+    const oauthParam = searchParams.get("oauth");
+
+    if (stepParam === "userInfo" && oauthParam === "true") {
+      setStep("userInfo");
+    }
+  }, [searchParams]);
+
+  const hasUnsavedProgress = useMemo(() => {
+    return (
+      step !== "join" ||
+      email.trim().length > 0 ||
+      phone.trim().length > 0 ||
+      otp.trim().length > 0 ||
+      password.trim().length > 0 ||
+      confirmPassword.trim().length > 0 ||
+      firstName.trim().length > 0 ||
+      lastName.trim().length > 0 ||
+      dateOfBirth.trim().length > 0 ||
+      gender.trim().length > 0 ||
+      address.trim().length > 0 ||
+      pinCode.trim().length > 0 ||
+      state.trim().length > 0 ||
+      city.trim().length > 0
+    );
+  }, [
+    step,
+    email,
+    phone,
+    otp,
+    password,
+    confirmPassword,
+    firstName,
+    lastName,
+    dateOfBirth,
+    gender,
+    address,
+    pinCode,
+    state,
+    city,
+  ]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedProgress) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedProgress]);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
+
+  // Fetch location from PIN code
+  useEffect(() => {
+    const fetchLocationFromPinCode = async () => {
+      // Only fetch if PIN code is exactly 6 digits and user hasn't manually entered location
+      if (pinCode.length === 6 && /^\d{6}$/.test(pinCode)) {
+        setIsFetchingLocation(true);
+        try {
+          const response = await fetch(`/api/geocode/pincode?pin=${pinCode}`);
+          const data = await response.json();
+
+          if (data.success && data.data) {
+            // Normalize state to match dropdown values (lowercase with hyphens)
+            const normalizedState = data.data.state
+              ? data.data.state.toLowerCase().replace(/\s+/g, "-")
+              : "";
+            
+            // Normalize city to match dropdown values (lowercase)
+            const normalizedCity = (data.data.city || data.data.district || "")
+              .toLowerCase();
+            
+            setState(normalizedState);
+            setCity(normalizedCity);
+            setLocationFetched(true);
+            setError(""); // Clear any previous errors
+          } else {
+            setLocationFetched(false);
+            // Don't show error, just let user enter manually
+          }
+        } catch (err) {
+          console.error("Failed to fetch location:", err);
+          setLocationFetched(false);
+          // Don't show error, just let user enter manually
+        } finally {
+          setIsFetchingLocation(false);
+        }
+      } else if (pinCode.length < 6) {
+        // Reset location when PIN code is incomplete
+        setLocationFetched(false);
+      }
+    };
+
+    fetchLocationFromPinCode();
+  }, [pinCode]);
 
   // Check for OAuth errors from URL
   const oauthError = useMemo(() => {
@@ -71,67 +186,106 @@ function ArtistAuthContent() {
     setError(oauthError);
   }
 
-  // Location data
-  const states = [
-    { value: "maharashtra", label: "Maharashtra" },
-    { value: "delhi", label: "Delhi" },
-    { value: "karnataka", label: "Karnataka" },
-    { value: "tamil-nadu", label: "Tamil Nadu" },
-    { value: "gujarat", label: "Gujarat" },
-    { value: "rajasthan", label: "Rajasthan" },
-    { value: "uttar-pradesh", label: "Uttar Pradesh" },
-    { value: "west-bengal", label: "West Bengal" },
-    { value: "punjab", label: "Punjab" },
-    { value: "haryana", label: "Haryana" },
-  ];
-
-  const cities = [
-    { value: "mumbai", label: "Mumbai" },
-    { value: "delhi", label: "Delhi" },
-    { value: "bangalore", label: "Bangalore" },
-    { value: "chennai", label: "Chennai" },
-    { value: "ahmedabad", label: "Ahmedabad" },
-    { value: "jaipur", label: "Jaipur" },
-    { value: "lucknow", label: "Lucknow" },
-    { value: "kolkata", label: "Kolkata" },
-    { value: "chandigarh", label: "Chandigarh" },
-    { value: "gurgaon", label: "Gurgaon" },
-  ];
+  // Location data from centralized constants
 
   const genderOptions = [
     { value: "male", label: "Male" },
     { value: "female", label: "Female" },
-    { value: "other", label: "Other" },
-    { value: "prefer-not-to-say", label: "Prefer not to say" },
   ];
 
-  // Simple password strength calculation (same as user signup)
-  const getPasswordStrength = (pwd: string) => {
-    if (!pwd) return { strength: 0, label: "", color: "" };
+  // Password strength removed — allow any password (simple non-empty + match validation)
 
-    let score = 0;
-    let label = "";
-    let color = "";
-
-    if (pwd.length >= 8) score += 1;
-    if (pwd.length >= 12) score += 1;
-    if (/[a-z]/.test(pwd)) score += 1;
-    if (/[A-Z]/.test(pwd)) score += 1;
-    if (/[0-9]/.test(pwd)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
-
-    if (score <= 2) {
-      label = "Weak";
-      color = "bg-red-400";
-    } else if (score <= 4) {
-      label = "Medium";
-      color = "bg-yellow-400";
-    } else {
-      label = "Strong";
-      color = "bg-green-400";
+  const getDraftIdentifier = () => {
+    if (contactType === "email") {
+      return email.toLowerCase().trim();
     }
+    const normalizedPhone = phone.replace(/\D/g, "");
+    const normalizedCountryCode = countryCode.trim();
+    if (!normalizedPhone || !normalizedCountryCode) {
+      return "";
+    }
+    return `${normalizedCountryCode}${normalizedPhone}`;
+  };
 
-    return { strength: Math.min(score, 6), label, color };
+  const saveSignupDraft = async (nextStep: ArtistSignUpStep) => {
+    const identifier = getDraftIdentifier();
+    if (!identifier) return;
+
+    try {
+      await fetch("/api/auth/artist/signup-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier,
+          contactType,
+          step: nextStep,
+          draftData: {
+            email: email || null,
+            phoneNumber: phone || null,
+            countryCode: countryCode || null,
+            otp: otp || null,
+            password: contactType === "email" ? password : null,
+            firstName: firstName || null,
+            lastName: lastName || null,
+            dateOfBirth: dateOfBirth || null,
+            gender: gender || null,
+            address: address || null,
+            pinCode: pinCode || null,
+            state: state || null,
+            city: city || null,
+            noMarketing,
+            shareData,
+            images: null,
+          },
+        }),
+      });
+    } catch (draftError) {
+      console.error("Draft save failed:", draftError);
+    }
+  };
+
+  const clearSignupDraft = async () => {
+    const identifier = getDraftIdentifier();
+    if (!identifier) return;
+
+    try {
+      await fetch("/api/auth/artist/signup-draft", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier }),
+      });
+    } catch (draftError) {
+      console.error("Draft clear failed:", draftError);
+    }
+  };
+
+  const performNavigationAction = (action: PendingNavigationAction) => {
+    if (!action) return;
+    if (action.type === "route") {
+      router.push(action.to);
+      return;
+    }
+    if (action.resetSensitive) {
+      setOtp("");
+      setPassword("");
+      setConfirmPassword("");
+    }
+    setStep(action.to);
+  };
+
+  const requestNavigation = (action: Exclude<PendingNavigationAction, null>) => {
+    if (!hasUnsavedProgress) {
+      performNavigationAction(action);
+      return;
+    }
+    setPendingAction(action);
+    setShowExitWarning(true);
+  };
+
+  const handleConfirmExit = () => {
+    performNavigationAction(pendingAction);
+    setPendingAction(null);
+    setShowExitWarning(false);
   };
 
   // Send OTP (matches user flow — no extra fields)
@@ -165,7 +319,9 @@ function ArtistAuthContent() {
           throw new Error(
             data.error || data.message || "Failed to send verification code.",
           );
+        await saveSignupDraft("otp");
         setStep("otp");
+        setResendTimer(30); // Start 30-second countdown
       } else {
         const emailToSend = email.toLowerCase().trim();
         if (!emailToSend)
@@ -182,7 +338,9 @@ function ArtistAuthContent() {
           throw new Error(
             data.error || data.message || "Failed to send verification email.",
           );
+        await saveSignupDraft("otp");
         setStep("otp");
+        setResendTimer(30); // Start 30-second countdown
       }
     } catch (err: any) {
       console.error("Send OTP error:", err);
@@ -219,8 +377,16 @@ function ArtistAuthContent() {
         );
       }
 
-      // move to password step for artist (per requested flow)
-      setStep("password");
+      // Move to next step based on contact type
+      if (contactType === "phone") {
+        // Phone signup: skip password, go directly to user info
+        await saveSignupDraft("userInfo");
+        setStep("userInfo");
+      } else {
+        // Email signup: go to password creation
+        await saveSignupDraft("password");
+        setStep("password");
+      }
     } catch (err: any) {
       console.error("Verify OTP error:", err);
       setError(err.message || "Invalid verification code. Please try again.");
@@ -243,30 +409,9 @@ function ArtistAuthContent() {
       return;
     }
 
-    const validation = validatePassword(password);
-    if (!validation.isValid) {
-      setError(validation.message || "Invalid password.");
-      return;
-    }
-
-    // Optionally: you could validate strength here; but keep same as user flow
+    // No strict password validation: accept any non-empty password (matching confirm)
+    saveSignupDraft("userInfo");
     setStep("userInfo");
-  };
-
-  const handleUserInfoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      // Simulate API call for user info saving (keeps existing behavior)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setStep("terms");
-    } catch {
-      setError("Failed to save user information. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleTermsSubmit = async (e: React.FormEvent) => {
@@ -275,13 +420,14 @@ function ArtistAuthContent() {
     setIsLoading(true);
 
     try {
-      // ✅ Prepare artist signup payload
+      const isOAuthSignup = searchParams.get("oauth") === "true";
+
       const artistData = {
         email: contactType === "email" ? email : undefined,
         phoneNumber:
           contactType === "phone" ? phone.replace(/\D/g, "") : undefined,
         countryCode: contactType === "phone" ? countryCode : undefined,
-        password: password || undefined,
+        password: contactType === "email" ? password : undefined,
         firstName,
         lastName,
         dateOfBirth,
@@ -292,35 +438,39 @@ function ArtistAuthContent() {
         city,
         noMarketing,
         shareData,
+        isOAuthSignup, // Flag to indicate OAuth user
       };
 
-      console.log("📤 Sending artist signup data:", artistData);
+      const apiEndpoint = isOAuthSignup
+        ? "/api/auth/artist/update-profile"
+        : "/api/auth/artist/signup";
 
-      // ✅ Call signup API
-      const response = await fetch("/api/auth/artist/signup", {
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(artistData),
       });
 
       const data = await response.json();
-      console.log("📥 Signup response:", data);
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.error || data.message || "Failed to create artist account.",
+          data.error || data.message || "Failed to complete registration.",
         );
       }
 
-      console.log("✅ Artist signup successful");
+      await clearSignupDraft();
 
-      // ✅ Construct contact identifier for auto-signin
+      if (isOAuthSignup) {
+        router.push("/artist/profile-setup");
+        return;
+      }
+
       let contactIdentifier: string | null = null;
 
       if (data?.data?.user?.email) {
         contactIdentifier = data.data.user.email;
       } else if (data?.data?.user?.phoneNumber) {
-        // ✅ Remove country code — backend will handle phone normalization
         contactIdentifier = data.data.user.phoneNumber;
       } else if (artistData.email) {
         contactIdentifier = artistData.email;
@@ -331,12 +481,23 @@ function ArtistAuthContent() {
       console.log("📞 Auto-signin contactIdentifier:", contactIdentifier);
 
       // ✅ Attempt to auto Sign In via NextAuth
-      if (contactIdentifier && artistData.password) {
-        const signInResult = await signIn("credentials", {
+      if (contactIdentifier) {
+        const signInPayload: any = {
           contact: contactIdentifier,
-          password: artistData.password,
           redirect: false,
-        });
+        };
+
+        // Use appropriate authentication method based on contact type
+        if (contactType === "phone") {
+          signInPayload.countryCode = artistData.countryCode;
+          signInPayload.isOtpVerified = "true";
+        } else if (artistData.password) {
+          signInPayload.password = artistData.password;
+        }
+
+        const signInResult = (await signIn("credentials", signInPayload)) as
+          | { error?: string }
+          | undefined;
 
         console.log("🧩 signIn result:", signInResult);
 
@@ -347,14 +508,14 @@ function ArtistAuthContent() {
         }
       } else {
         console.warn(
-          "⚠️ Missing contactIdentifier or password for auto Sign In.",
+          "⚠️ Missing contactIdentifier for auto Sign In.",
         );
       }
 
       // ✅ Redirect to profile setup (session will now exist)
       router.push("/artist/profile-setup");
     } catch (err: any) {
-      console.error("❌ Artist signup error:", err);
+      console.error("Registration error:", err);
       setError(
         err.message || "Failed to complete registration. Please try again.",
       );
@@ -389,6 +550,7 @@ function ArtistAuthContent() {
           );
         setError("A new verification code has been sent.");
         setOtp("");
+        setResendTimer(30); // Start 30-second countdown
       } else {
         const response = await fetch("/api/users/send-otp", {
           method: "POST",
@@ -405,6 +567,7 @@ function ArtistAuthContent() {
           );
         setError("A new verification code has been sent to your email.");
         setOtp("");
+        setResendTimer(30); // Start 30-second countdown
       }
     } catch (err: any) {
       console.error("Resend OTP error:", err);
@@ -417,10 +580,7 @@ function ArtistAuthContent() {
   };
 
   const handleChangeContact = () => {
-    setStep("join");
-    setOtp("");
-    setPassword("");
-    setConfirmPassword("");
+    requestNavigation({ type: "step", to: "join", resetSensitive: true });
   };
 
   const handleSocialSignUp = async (provider: "google" | "facebook") => {
@@ -430,8 +590,8 @@ function ArtistAuthContent() {
     try {
       if (provider === "google") {
         await signInWithGoogleAsArtist();
-      } else if (provider === "facebook") {
-        await signInWithFacebookAsArtist();
+      } else {
+        throw new Error(`${provider} sign-up is not implemented yet.`);
       }
     } catch (err) {
       setError(`${provider} sign-up is not available yet.`);
@@ -444,19 +604,21 @@ function ArtistAuthContent() {
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
       {/* Header with Logo and Close Button */}
-      <div className="flex justify-between items-center mr-4 ml-4 pt-4">
+      <div className="flex justify-between items-center mr-4 ml-4 pt-4 md:pt-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
         <Image
           src="/logo.png"
           alt="ANDACTION Logo"
-          className="h-8 object-contain" width={150} height={24}
+          className="h-5 w-45 object-contain"
+          width={180}
+          height={20}
         />
         <button
-          onClick={() => router.push("/")}
-          className="p-2 text-white transition-colors duration-200"
+          onClick={() => requestNavigation({ type: "route", to: "/" })}
+          className="text-white transition-colors duration-200"
           aria-label="Close"
         >
           <svg
-            className="w-6 h-6"
+            className="w-6 h-6 md:w-8 md:h-8"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -470,11 +632,11 @@ function ArtistAuthContent() {
           </svg>
         </button>
       </div>
-
-      <div className="md:p-8 p-5">
+      <div className="hidden md:block h-px bg-border-line " />
+      <div className="md:p-8 p-5 overflow-visible mt-6">
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <div className="p-4 mb-6 md:p-0 md:mr-12 md:ml-12 md:mt-6 md:mb-8 bg-red-500/10 border border-red-500/20 rounded-lg">
             <p className="text-red-400 text-sm text-center">{error}</p>
           </div>
         )}
@@ -494,33 +656,35 @@ function ArtistAuthContent() {
               <form onSubmit={handleJoinSubmit} className="space-y-6">
                 {contactType === "phone" ? (
                   <div>
-                    <label className="secondary-text  block mb-1">Mobile number</label>
-                  <PhoneInput
-                    placeholder="Enter mobile number"
-                    value={phone}
-                    onChange={setPhone}
-                    onCountryChange={(country) =>
-                      setCountryCode(country.dialCode)
-                    }
-                    required
-                    disabled={isLoading}
-                    variant="filled"
-                    id="phoneNumber"
-                  />
+                    <label className="secondary-text  block mb-1">
+                      Mobile number
+                    </label>
+                    <PhoneInput
+                      placeholder="Enter mobile number"
+                      value={phone}
+                      onChange={setPhone}
+                      onCountryChange={(country) =>
+                        setCountryCode(country.dialCode)
+                      }
+                      required
+                      disabled={isLoading}
+                      variant="filled"
+                      id="phoneNumber"
+                    />
                   </div>
                 ) : (
                   <div>
                     <label className="secondary-text  block mb-1">Email</label>
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    variant="filled"
-                    id="email"
-                  />
+                    <Input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      variant="filled"
+                      id="email"
+                    />
                   </div>
                 )}
 
@@ -573,7 +737,8 @@ function ArtistAuthContent() {
                     }
                     disabled={isLoading}
                   >
-                    Sign up with {contactType === "phone" ? "Email" : "Mobile"}
+                    Sign up with{" "}
+                    {contactType === "phone" ? "Email" : "Mobile Number"}
                   </Button>
 
                   <Button
@@ -584,7 +749,7 @@ function ArtistAuthContent() {
                     onClick={() => handleSocialSignUp("google")}
                     disabled={isLoading}
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6" viewBox="0 0 24 24">
                       <path
                         fill="#4285F4"
                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -605,19 +770,7 @@ function ArtistAuthContent() {
                     <span className="btn2">Sign up with Google</span>
                   </Button>
 
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="md"
-                    className="w-full flex items-center justify-center gap-3"
-                    onClick={() => handleSocialSignUp("facebook")}
-                    disabled={isLoading}
-                  >
-                    <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                    </svg>
-                    <span className="btn2">Sign up with Facebook</span>
-                  </Button>
+                  {/* Facebook signup removed per design request */}
                 </div>
               </form>
             </div>
@@ -626,7 +779,7 @@ function ArtistAuthContent() {
           /* OTP Verification Step */
           <div className="space-y-6">
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold text-white h1">
                 OTP Verification
               </h2>
               <div className="flex flex-col gap-2">
@@ -646,7 +799,7 @@ function ArtistAuthContent() {
                     onClick={handleChangeContact}
                     className="text-white btn1 hover:text-primary-pink transition-colors duration-200 underline"
                   >
-                    Change number
+                    Change {contactType === "phone" ? "number" : "email"}
                   </button>
                 </div>
               </div>
@@ -661,16 +814,18 @@ function ArtistAuthContent() {
               />
 
               <div>
-                <span className="text-text-gray section-text">
+                <span className="text-text-gray section-text secondary-text">
                   Haven&apos;t received the OTP?{" "}
                 </span>
                 <button
                   type="button"
                   onClick={handleResendOTP}
                   disabled={isLoading}
-                  className="text-white btn1 hover:text-primary-pink transition-colors duration-200 font-medium underline"
+                  className="text-white hover:text-primary-pink transition-colors duration-200 secondary-text underline"
                 >
-                  Resend OTP
+                  {resendTimer > 0
+                    ? `Resend OTP (${resendTimer}s)`
+                    : "Resend OTP"}
                 </button>
               </div>
 
@@ -696,11 +851,11 @@ function ArtistAuthContent() {
               <div className="flex items-center gap-3 my-3">
                 <button
                   type="button"
-                  onClick={() => setStep("otp")}
+                  onClick={() => requestNavigation({ type: "step", to: "otp" })}
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -714,8 +869,8 @@ function ArtistAuthContent() {
                   </svg>
                 </button>
                 <div>
-                  <p className="text-xs text-text-gray">Step 1 of 3</p>
-                  <h2 className="text-lg font-semibold text-white">
+                  <p className="secondary-text text-text-gray">Step 1 of 3</p>
+                  <h2 className="btn1  text-white">
                     Create Password
                   </h2>
                 </div>
@@ -733,39 +888,7 @@ function ArtistAuthContent() {
                 variant="filled"
               />
 
-              {/* Password Strength Indicator */}
-              {password && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-text-gray">
-                      Password Strength:
-                    </span>
-                    <span
-                      className={`text-sm font-medium ${
-                        getPasswordStrength(password).label === "Weak"
-                          ? "text-red-400"
-                          : getPasswordStrength(password).label === "Medium"
-                            ? "text-yellow-400"
-                            : "text-green-400"
-                      }`}
-                    >
-                      {getPasswordStrength(password).label}
-                    </span>
-                  </div>
-                  <div className="w-full bg-[#2D2D2D] rounded-full h-1">
-                    <div
-                      className={`${
-                        getPasswordStrength(password).color
-                      } h-1 rounded-full transition-all duration-300`}
-                      style={{
-                        width: `${
-                          (getPasswordStrength(password).strength / 6) * 100
-                        }%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              )}
+              {/* Password strength removed: no UI shown */}
 
               <PasswordInput
                 label="Confirm Password*"
@@ -801,11 +924,16 @@ function ArtistAuthContent() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setStep("otp")}
+                  onClick={() =>
+                    requestNavigation({
+                      type: "step",
+                      to: contactType === "phone" ? "otp" : "password",
+                    })
+                  }
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -819,13 +947,20 @@ function ArtistAuthContent() {
                   </svg>
                 </button>
                 <div>
-                  <p className="text-xs text-text-gray">Step 1 of 2</p>
+                  <p className="secondary-text text-text-gray">Step 1 of 2</p>
                   <h2 className="btn1 text-white">Tell us about yourself</h2>
                 </div>
               </div>
             </div>
 
-            <form onSubmit={handleUserInfoSubmit} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveSignupDraft("terms");
+                setStep("terms");
+              }}
+              className="space-y-4"
+            >
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
@@ -849,7 +984,7 @@ function ArtistAuthContent() {
               </div>
 
               {/* Date of Birth and Gender */}
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <DateInput
                   label="Date of birth*"
                   placeholder="DD / MM / YYYY"
@@ -859,25 +994,35 @@ function ArtistAuthContent() {
                   disabled={isLoading}
                   variant="filled"
                   maxDate={new Date()}
+                  className=""
                 />
 
                 <Select
                   label="Gender*"
                   placeholder="Select gender"
                   value={gender}
-                  onChange={setGender}
+                  onChange={(value) =>
+                    setGender(Array.isArray(value) ? (value[0] ?? "") : value)
+                  }
                   options={genderOptions}
                   required
                   disabled={isLoading}
                 />
               </div>
 
-              {/* Address */}
-              <Input
+              {/* Address with Location Picker */}
+              <AddressAutocomplete
                 label="Office/Home full address*"
-                placeholder="Enter your full address"
+                placeholder="Search for your address or use location"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={setAddress}
+                onLocationSelect={(loc) => {
+                  setAddress(loc.address);
+                  if (loc.pinCode) setPinCode(loc.pinCode);
+                  if (loc.state) setState(loc.state);
+                  if (loc.city) setCity(loc.city);
+                  setLocationFetched(true);
+                }}
                 required
                 disabled={isLoading}
                 variant="filled"
@@ -888,31 +1033,44 @@ function ArtistAuthContent() {
                 label="PIN code*"
                 placeholder="Enter PIN code"
                 value={pinCode}
-                onChange={(e) => setPinCode(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  setPinCode(value);
+                }}
                 required
                 disabled={isLoading}
                 variant="filled"
+                maxLength={6}
               />
+              {isFetchingLocation && (
+                <p className="text-sm text-primary-pink -mt-2">
+                  Fetching location...
+                </p>
+              )}
 
               {/* State and City */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 <Select
                   label="State*"
                   placeholder="Select"
                   value={state}
-                  onChange={setState}
-                  options={states}
+                  onChange={(value) =>
+                    setState(Array.isArray(value) ? (value[0] ?? "") : value)
+                  }
+                  options={INDIAN_STATES}
                   required
-                  disabled={isLoading}
+                  disabled={isLoading || isFetchingLocation}
                 />
                 <Select
                   label="City*"
                   placeholder="Select"
                   value={city}
-                  onChange={setCity}
-                  options={cities}
+                  onChange={(value) =>
+                    setCity(Array.isArray(value) ? (value[0] ?? "") : value)
+                  }
+                  options={INDIAN_CITIES}
                   required
-                  disabled={isLoading}
+                  disabled={isLoading || isFetchingLocation}
                 />
               </div>
 
@@ -948,11 +1106,13 @@ function ArtistAuthContent() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setStep("userInfo")}
+                  onClick={() =>
+                    requestNavigation({ type: "step", to: "userInfo" })
+                  }
                   className="text-white hover:text-primary-pink transition-colors duration-200"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -966,8 +1126,8 @@ function ArtistAuthContent() {
                   </svg>
                 </button>
                 <div>
-                  <p className="text-xs text-text-gray">Step 2 of 2</p>
-                  <h2 className="text-lg font-semibold text-white">
+                  <p className="secondary-text text-text-gray">Step 2 of 2</p>
+                  <h2 className="btn1 font-semibold text-white">
                     Terms & Conditions
                   </h2>
                 </div>
@@ -981,19 +1141,19 @@ function ArtistAuthContent() {
                   checked={noMarketing}
                   onChange={setNoMarketing}
                   label="I would prefer not to receive marketing messages from AndAction"
-                  className="p-4 bg-card border border-border-color rounded-lg"
+                  className="p-4 secondary-text bg-card border border-border-color rounded-lg"
                 />
 
                 <Checkbox
                   checked={shareData}
                   onChange={setShareData}
                   label="Share my registration data with AndAction's content providers for marketing purposes."
-                  className="p-4 bg-card border border-border-color rounded-lg"
+                  className="p-4 secondary-text bg-card border border-border-color rounded-lg"
                 />
               </div>
 
               {/* Terms Text */}
-              <div className="space-y-4 section-text">
+              <div className="space-y-4  secondary-text">
                 <p>
                   By clicking on sign-up, you agree to AndAction&apos;s{" "}
                   <Link
@@ -1030,6 +1190,18 @@ function ArtistAuthContent() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={showExitWarning}
+        onOpenChange={setShowExitWarning}
+        title="Leave Signup Flow?"
+        description="You have unsaved progress in this flow. If you go back now, your current step may be interrupted."
+        cancelText="Stay Here"
+        confirmText="Leave"
+        variant="warning"
+        onCancel={() => setPendingAction(null)}
+        onConfirm={handleConfirmExit}
+      />
     </div>
   );
 }

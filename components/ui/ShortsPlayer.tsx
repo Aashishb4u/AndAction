@@ -4,23 +4,27 @@ import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Bookmark from "@/components/icons/bookmark";
 import Share from "@/components/icons/share";
-import MoreVertical from "@/components/icons/more-vertical";
 import Play from "@/components/icons/play";
 import Pause from "@/components/icons/pause";
 import Link from "next/link";
 
 const SoundOnIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
-    <path d="M5 9v6h4l5 5V4L9 9H5z"></path>
-    <path d="M16.5 12c0-1.77-.77-3.29-2-4.3v8.59c1.23-1.01 2-2.53 2-4.29z"></path>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M5 9v6h4l5 5V4L9 9H5z" />
+    <path
+      d="M16.5 8.5a4.5 4.5 0 010 7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
 const SoundOffIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
-    <path d="M16.5 12c0-1.77-.77-3.29-2-4.3v2.59l2 2v-.29z"></path>
-    <path d="M5 9v6h4l5 5V4L9 9H5z"></path>
-    <path d="M19 13.59L17.59 15 15 12.41 12.41 15 11 13.59 13.59 11 11 8.41 12.41 7 15 9.59 17.59 7 19 8.41 16.41 11 19 13.59z"></path>
+  <svg width="24" height="24" viewBox="0 0 24 24">
+    <path d="M5 9v6h4l5 5V4L9 9H5z" fill="currentColor" />
+    <path d="M19 5L5 19" stroke="currentColor" strokeWidth="2" />
   </svg>
 );
 
@@ -29,6 +33,7 @@ interface Short {
   title: string;
   creator: string;
   creatorId: string;
+  category: string;
   avatar: string;
   videoUrl: string;
   thumbnail: string;
@@ -46,7 +51,6 @@ interface ShortsPlayerProps {
   setSoundEnabled: (v: boolean) => void;
 }
 
-// Extract YouTube ID
 function extractYouTubeId(url: string) {
   const regExp = /(?:v=|youtu\.be\/|embed\/)([0-9A-Za-z_-]{11})/;
   const match = url.match(regExp);
@@ -73,9 +77,13 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   const youtubeId = extractYouTubeId(short.videoUrl);
   const isYouTube = Boolean(youtubeId);
 
-  /**
-   * NATIVE VIDEO: play/pause only (sound handled by `muted` prop)
-   */
+  const avatarSrc =
+    short.avatar && /^\d+$/.test(String(short.avatar))
+      ? `/avatars/${short.avatar}.png`
+      : short.avatar || "/default.jpg";
+
+  /* ---------------- NATIVE VIDEO CONTROL ---------------- */
+
   useEffect(() => {
     if (isYouTube) return;
 
@@ -83,80 +91,123 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     if (!video) return;
 
     if (isActive && isVideoLoaded) {
-      const t = setTimeout(() => {
-        video
-          .play()
-          .then(() => setIsPlaying(true))
-          .catch(() => setIsPlaying(false));
-      }, 100);
-
-      return () => clearTimeout(t);
+      video.muted = !soundEnabled;
+      video.play().then(() => setIsPlaying(true)).catch(() => {});
     } else {
       video.pause();
+      video.currentTime = 0;
       setIsPlaying(false);
     }
   }, [isActive, isVideoLoaded, isYouTube]);
 
-  /**
-   * YOUTUBE IFRAME: control via postMessage
-   * - soundEnabled -> mute / unMute
-   * - isActive     -> playVideo / pauseVideo
-   */
+  /* ------------- NATIVE VIDEO: sync muted property ------------- */
+
+  useEffect(() => {
+    if (isYouTube) return;
+    const video = videoRef.current;
+    if (video) video.muted = !soundEnabled;
+  }, [soundEnabled, isYouTube]);
+
+  /* ---------------- YOUTUBE CONTROL: play/pause ---------------- */
   useEffect(() => {
     if (!isYouTube) return;
 
     const iframe = document.getElementById(
-      `yt-${short.id}`,
+      `yt-${short.id}`
     ) as HTMLIFrameElement | null;
-    if (!iframe || !iframe.contentWindow) return;
+    if (!iframe?.contentWindow) return;
 
-    const commands = [
-      {
+    const sendCommand = (func: string) => {
+      iframe.contentWindow?.postMessage(
+        JSON.stringify({ event: "command", func, args: [] }),
+        "*"
+      );
+    };
+
+    // Send immediately and again after a delay to catch late-loading iframes
+    if (isActive) {
+      sendCommand("playVideo");
+    } else {
+      sendCommand("pauseVideo");
+      sendCommand("mute");
+    }
+
+    const timer = setTimeout(() => {
+      if (isActive) {
+        sendCommand("playVideo");
+        sendCommand(soundEnabled ? "unMute" : "mute");
+      } else {
+        sendCommand("pauseVideo");
+        sendCommand("mute");
+      }
+    }, 300);
+
+    setIsPlaying(isActive);
+    return () => clearTimeout(timer);
+  }, [isActive, isYouTube, short.id]);
+
+  /* ---------------- YOUTUBE CONTROL: mute/unmute ---------------- */
+  useEffect(() => {
+    if (!isYouTube) return;
+
+    const iframe = document.getElementById(
+      `yt-${short.id}`
+    ) as HTMLIFrameElement | null;
+    if (!iframe?.contentWindow) return;
+
+    iframe.contentWindow.postMessage(
+      JSON.stringify({
         event: "command",
         func: soundEnabled ? "unMute" : "mute",
-        args: [] as unknown[],
-      },
-      {
-        event: "command",
-        func: isActive ? "playVideo" : "pauseVideo",
-        args: [] as unknown[],
-      },
-    ];
+        args: [],
+      }),
+      "*"
+    );
+  }, [soundEnabled, isYouTube, short.id]);
 
-    commands.forEach((cmd) => {
-      iframe.contentWindow?.postMessage(JSON.stringify(cmd), "*");
-    });
-  }, [isActive, soundEnabled, isYouTube, short.id]);
+  /* ---------------- PROGRESS BAR ---------------- */
 
-  /**
-   * NATIVE VIDEO PROGRESS
-   */
   useEffect(() => {
     if (isYouTube) return;
 
     const video = videoRef.current;
+
     if (isPlaying && video) {
       progressInterval.current = setInterval(() => {
         if (!video.duration) return;
         setProgress((video.currentTime / video.duration) * 100);
       }, 100);
     } else {
-      if (progressInterval.current) {
-        clearInterval(progressInterval.current);
-        progressInterval.current = null;
-      }
+      if (progressInterval.current) clearInterval(progressInterval.current);
     }
 
     return () => {
-      if (progressInterval.current) {
-        clearInterval(progressInterval.current);
-        progressInterval.current = null;
-      }
+      if (progressInterval.current) clearInterval(progressInterval.current);
     };
   }, [isPlaying, isYouTube]);
 
+  /* ---------------- CLICK PLAY / PAUSE ---------------- */
+
   const handleVideoClick = () => {
-    if (isYouTube) return;
+    if (isYouTube) {
+      const iframe = document.getElementById(
+        `yt-${short.id}`
+      ) as HTMLIFrameElement | null;
+
+      if (!iframe?.contentWindow) return;
+
+      iframe.contentWindow.postMessage(
+        JSON.stringify({
+          event: "command",
+          func: isPlaying ? "pauseVideo" : "playVideo",
+          args: [],
+        }),
+        "*"
+      );
+
+      setIsPlaying(!isPlaying);
+      return;
+    }
 
     const video = videoRef.current;
     if (!video) return;
@@ -172,33 +223,43 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   const handleSoundToggle = () => {
     const newState = !soundEnabled;
     setSoundEnabled(newState);
-    try {
-      sessionStorage.setItem("shorts_sound", newState ? "on" : "off");
-    } catch {
-      // ignore if sessionStorage isn't available
+
+    if (isYouTube) {
+      const iframe = document.getElementById(
+        `yt-${short.id}`
+      ) as HTMLIFrameElement | null;
+
+      iframe?.contentWindow?.postMessage(
+        JSON.stringify({
+          event: "command",
+          func: newState ? "unMute" : "mute",
+          args: [],
+        }),
+        "*"
+      );
     }
   };
 
   return (
     <div className="relative w-full h-full bg-black overflow-hidden">
-      {/* Background thumbnail */}
+
       <Image
         src={short.thumbnail}
         alt={short.title}
         fill
         className="absolute inset-0 object-cover"
-        priority={isActive}
       />
 
-      {/* -------- VIDEO / YOUTUBE -------- */}
       {shouldLoad &&
         (isYouTube ? (
-          <iframe
-            id={`yt-${short.id}`}
-            className="absolute inset-0 w-full h-full"
-            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&controls=0&playsinline=1&enablejsapi=1&mute=${soundEnabled ? 0 : 1}&origin=${typeof window !== "undefined" ? window.location.origin : ""}`}
-            allow="autoplay; encrypted-media; picture-in-picture"
-          />
+<iframe
+  id={`yt-${short.id}`}
+  className="absolute inset-0 w-full h-full pointer-events-none"
+  src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=0&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
+    typeof window !== "undefined" ? window.location.origin : ""
+  }`}
+  allow="autoplay; encrypted-media"
+/>
         ) : (
           <video
             ref={videoRef}
@@ -208,17 +269,14 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
             playsInline
             muted={!soundEnabled}
             onLoadedData={() => setIsVideoLoaded(true)}
-            onClick={handleVideoClick}
           />
         ))}
 
-      {/* Gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
 
-      {/* Play/Pause overlay */}
       {showControls && !isYouTube && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="bg-black/50 rounded-full p-4 backdrop-blur-sm">
+          <div className="bg-black/50 rounded-full p-4">
             {isPlaying ? (
               <Pause className="w-12 h-12 text-white" />
             ) : (
@@ -228,55 +286,50 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
         </div>
       )}
 
-      {/* Progress Bar */}
       {!isYouTube && (
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
           <div className="h-full bg-white" style={{ width: `${progress}%` }} />
         </div>
       )}
 
-      {/* Click overlay */}
-      {!isYouTube && (
-        <div
-          className="absolute inset-0 z-0"
-          onClick={handleVideoClick}
-          onMouseEnter={() => setShowControls(true)}
-          onMouseLeave={() => setShowControls(false)}
-        />
-      )}
+      <div
+        className="absolute inset-0 z-10"
+        onClick={handleVideoClick}
+        onMouseEnter={() => setShowControls(true)}
+        onMouseLeave={() => setShowControls(false)}
+      />
 
-      {/* Content Overlay */}
       <div className="absolute inset-0 flex z-20 pointer-events-none">
-        <div className="flex-1 flex flex-col justify-end p-4 pb-20 md:pb-8">
-          <Link
-            href={`/artists/${short.creatorId}`}
-            className="pointer-events-auto"
-          >
+
+        <div className="flex-1 flex flex-col justify-end p-4 pb-8">
+          <Link href={`/artists/${short.creatorId}`} className="pointer-events-auto">
             <div className="flex items-center space-x-2 mb-4 cursor-pointer">
               <Image
-                src={short.avatar}
+                src={avatarSrc}
                 alt={short.creator}
                 width={40}
                 height={40}
                 className="rounded-full"
               />
+
               <div>
                 <h3 className="text-white">{short.creator}</h3>
-                <p className="text-gray-300">@{short.creatorId}</p>
+                {short.category && (
+                  <p className="text-gray-300 text-sm capitalize">{short.category}</p>
+                )}
               </div>
             </div>
           </Link>
         </div>
 
-        <div className="flex flex-col items-center justify-end space-y-4 p-4 pb-24 md:pb-8">
-          {/* Sound button (above Share) */}
+        <div className="absolute right-4 bottom-16 z-30 flex flex-col items-center space-y-4 pointer-events-auto">
 
           <button
             onClick={(e) => {
               e.stopPropagation();
               onShare(short.id);
             }}
-            className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
+            className="p-3 rounded-full bg-black/30 text-white"
           >
             <Share className="w-6 h-6" />
           </button>
@@ -286,8 +339,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
               e.stopPropagation();
               onBookmark(short.id);
             }}
-            className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
-            aria-label={short.isBookmarked ? "Remove bookmark" : "Add bookmark"}
+            className="p-3 rounded-full bg-black/30 text-white"
           >
             <Bookmark className="w-6 h-6" active={short.isBookmarked} />
           </button>
@@ -297,17 +349,11 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
               e.stopPropagation();
               handleSoundToggle();
             }}
-            className="p-3 rounded-full bg-white/30 text-white pointer-events-auto"
+            className="p-3 rounded-full bg-black/30 text-white"
           >
             {soundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
           </button>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-            className="p-3 rounded-full bg-black/30 text-white pointer-events-auto"
-          ></button>
         </div>
       </div>
     </div>

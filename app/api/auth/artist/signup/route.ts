@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, validatePasswordStrength } from '@/lib/password';
 import { ApiErrors, successResponse } from '@/lib/api-response';
+import { geocodeAddress } from '@/lib/geocoding';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -32,15 +33,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     /* -------------------------------------------------------------------------- */
     /*                      1️⃣ Basic Validation - Either Email or Phone            */
     /* -------------------------------------------------------------------------- */
-    if ((!email && !phoneNumber) || !password || !firstName || !lastName) {
+    if ((!email && !phoneNumber) || !firstName || !lastName) {
       return ApiErrors.badRequest(
-        'Either email or phone number is required, along with password, first name, and last name.'
+        'Either email or phone number is required, along with first name and last name.'
       );
     }
 
     const lowerCaseEmail = email ? email.toLowerCase().trim() : null;
     const normalizedPhone = phoneNumber ? String(phoneNumber).replace(/\D/g, '') : null;
     const normalizedCountryCode = countryCode ? String(countryCode).trim() : '+91';
+
+    // Password is required for email signups, optional for phone signups
+    if (lowerCaseEmail && !password) {
+      return ApiErrors.badRequest('Password is required for email registration.');
+    }
 
     /* -------------------------------------------------------------------------- */
     /*                      2️⃣ Duplicate Check for Existing Users                  */
@@ -61,16 +67,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     /* -------------------------------------------------------------------------- */
     /*                      3️⃣ Password Strength Validation                       */
     /* -------------------------------------------------------------------------- */
-    const strength = validatePasswordStrength(password);
-    if (!strength.isValid) {
-      return ApiErrors.badRequest(strength.message || 'Weak password.');
+    // Validate password strength only if password is provided (email signups)
+    if (password) {
+      const strength = validatePasswordStrength(password);
+      if (!strength.isValid) {
+        return ApiErrors.badRequest(strength.message || 'Weak password.');
+      }
     }
 
     /* -------------------------------------------------------------------------- */
     /*                      4️⃣ Create User Record (Role: artist)                   */
     /* -------------------------------------------------------------------------- */
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = password ? await hashPassword(password) : null;
     const parsedDob = dateOfBirth ? new Date(dateOfBirth) : null;
+
+    // Geocode location if city and state are provided
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+
+    if (city && state) {
+      try {
+        const geocodeResult = await geocodeAddress(city, state);
+        if (geocodeResult) {
+          latitude = geocodeResult.lat;
+          longitude = geocodeResult.lng;
+          console.log(`✅ Geocoded artist location: ${city}, ${state} -> (${latitude}, ${longitude})`);
+        }
+      } catch (geoError) {
+        console.error('⚠️ Failed to geocode artist location:', geoError);
+        // Continue with signup even if geocoding fails
+      }
+    }
 
     const newUser = await prisma.user.create({
       data: {
@@ -86,6 +113,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         zip: pinCode || null,
         state: state || null,
         city: city || null,
+        latitude: latitude,
+        longitude: longitude,
+        geocodedAt: latitude && longitude ? new Date() : null,
         role: 'artist',
         isMarketingOptIn: !noMarketing,
         isDataSharingOptIn: !!shareData,

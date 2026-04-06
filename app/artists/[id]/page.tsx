@@ -20,13 +20,15 @@ export const createBooking = async (artistId: string, formData: any) => {
         eventDate: formData.eventDate,
         eventType: formData.eventType,
         eventLocation: `${formData.city}, ${formData.state}`,
+        mobileNumber: formData.mobileNumber,
+        phoneNumber: formData.mobileNumber,
         totalPrice: formData.totalPrice,
         notes: formData.note,
       }),
     });
 
     const data = await response.json();
-    return data;
+    return data;  
   } catch (error) {
     console.error("Error creating booking:", error);
     throw error;
@@ -106,6 +108,7 @@ export default function ArtistDetailPage() {
       try {
         const res = await fetch(`/api/artists/${artistId}`);
         const json = await res.json();
+        console.log("Fetched artist data:", json);  
 
         if (!json.success || !json.data?.artist) {
           setArtist(null);
@@ -126,16 +129,16 @@ export default function ArtistDetailPage() {
 
           bio: a.shortBio || "",
           yearsOfExperience: a.yearsOfExperience || 0,
-          achievements: [a.achievements],
-          subArtistTypes: [a.subArtistType],
-          languages: [a.performingLanguage],
+          achievements: a.achievements ? [a.achievements] : [],
+          subArtistTypes: a.subArtistType ? [a.subArtistType] : [],
+          languages: a.performingLanguage ? [a.performingLanguage] : [],
 
-          soloChargesFrom: a.soloChargesFrom || 0,
-          soloChargesTo: a.soloChargesTo || 0,
+          soloChargesFrom: a.soloChargesFrom ?? undefined,
+          soloChargesTo: a.soloChargesTo ?? undefined,
           soloChargesDescription: a.soloChargesDescription || "",
 
-          chargesWithBacklineFrom: a.chargesWithBacklineFrom || 0,
-          chargesWithBacklineTo: a.chargesWithBacklineTo || 0,
+          chargesWithBacklineFrom: a.chargesWithBacklineFrom ?? undefined,
+          chargesWithBacklineTo: a.chargesWithBacklineTo ?? undefined,
           chargesWithBacklineDescription: a.chargesWithBacklineDescription || "",
 
           performingDurationFrom: a.performingDurationFrom || "",
@@ -149,8 +152,8 @@ export default function ArtistDetailPage() {
           duration: `${a.performingDurationFrom || ""} - ${a.performingDurationTo || ""} minutes`,
           startingPrice: Number(a.soloChargesFrom) || 0,
 
-          phone: a.contactNumber || "+918248621277", // Fallback for testing
-          whatsapp: a.whatsappNumber || "+918248621277", // Fallback for testing
+          contactNumber: a.contactNumber || "",
+          whatsappNumber: a.whatsappNumber || a.contactNumber || "",
           userId: a.user.id,
 
           // 🔥 bookmark state restored on reload
@@ -271,16 +274,36 @@ export default function ArtistDetailPage() {
     alert("Profile link copied!");
   };
 
-  const handleRequestBooking = () => console.log("Request booking");
+  const handleRequestBooking = () => {
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
+    }
+    console.log("Request booking");
+  };
   const handleCall = () => {
-    if (artist.phone) {
-      window.open(`tel:${artist.phone}`, "_self");
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
+    }
+    if (artist.contactNumber) {
+      window.open(`tel:${artist.contactNumber}`, "_self");
     }
   };
   const handleWhatsApp = () => {
-    if (artist.whatsapp) {
+    if (!session?.user) {
+      router.push("/auth/signin");
+      return;
+    }
+    const whatsappTarget = artist.whatsappNumber || artist.contactNumber;
+    if (whatsappTarget) {
+      const userName = `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'a user';
+      const artistName = artist.name || 'Artist';
+      const message = `Hi ${artistName}, I am ${userName} found your profile on ANDACTION`;
+      const encodedMessage = encodeURIComponent(message);
+      
       window.open(
-        `https://wa.me/${artist.whatsapp.replace(/[^0-9]/g, "")}`,
+        `https://wa.me/${whatsappTarget.replace(/[^0-9]/g, "")}?text=${encodedMessage}`,
         "_blank"
       );
     }

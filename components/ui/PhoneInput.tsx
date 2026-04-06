@@ -30,6 +30,7 @@ interface PhoneInputProps {
   value: string;
   onChange: (value: string) => void;
   onCountryChange?: (country: Country) => void;
+  error?: string;
   variant?: 'filled' | 'outlined';
   required?: boolean;
   disabled?: boolean;
@@ -43,6 +44,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   value,
   onChange,
   onCountryChange,
+  error,
   variant = 'filled',
   required = false,
   disabled = false,
@@ -74,20 +76,20 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   return (
     <div className={`space-y-2 ${className}`}>
       {label && (
-        <label className="block secotion-text text-white">
+        <label className="block secotion-text text-white text-sm">
           {label}
         </label>
       )}
 
       <div className="relative">
-        <div className={`${baseClasses} ${variantClasses[variant]} flex items-center`}>
+        <div className={`phone-input ${baseClasses} ${variantClasses[variant]} ${error ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/50' : ''} flex items-center overflow-hidden`}>
           {/* Country Selector */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               disabled={disabled}
-              className="flex items-center gap-2 pr-2 border-r border-[#404040] mr-2 hover:bg-[#404040] rounded-l-lg md:px-1 py-1 transition-colors duration-200"
+              className="flex items-center gap-2 pr-2 border-r border-[#404040] mr-2 hover:bg-[#404040] md:px-1 py-1 transition-colors duration-200 rounded-none"
             >
               <span className="flex items-center justify-center" style={{ width: '17px', height: '17px', fontSize: '17px' }}>{selectedCountry.flag}</span>
               <span className="text-white text-sm">{selectedCountry.dialCode}</span>
@@ -123,10 +125,10 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
             required={required}
-            className="flex-1 bg-transparent border-none outline-none text-white placeholder-text-gray autofill-fix"
+            className="flex-1 bg-transparent border-none outline-none text-white placeholder-text-gray autofill-fix pl-0 rounded-none"
             id={id}
             autoComplete="tel"
-            style={{ WebkitTextFillColor: 'white' }}
+            
           />
         </div>
 
@@ -138,6 +140,8 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
           />
         )}
       </div>
+
+      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
     </div>
   );
 };

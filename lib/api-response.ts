@@ -72,8 +72,11 @@ export const ApiErrors = {
   // Helpers now return the correct NextResponse type
   unauthorized: () => errorResponse('Unauthorized', 'UNAUTHORIZED', 401),
   forbidden: () => errorResponse('Forbidden', 'FORBIDDEN', 403),
-  notFound: (resource: string = 'Resource') => 
-    errorResponse(`${resource} not found`, 'NOT_FOUND', 404),
+  notFound: (resource: string = 'Resource') => {
+    const hasNotFoundPhrase = /not\s+found/i.test(resource);
+    const message = hasNotFoundPhrase ? resource : `${resource}`;
+    return errorResponse(message, 'NOT_FOUND', 404);
+  },
   badRequest: (message: string) => 
     errorResponse(message, 'BAD_REQUEST', 400),
   conflict: (message: string) =>

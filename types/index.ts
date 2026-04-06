@@ -180,6 +180,11 @@ export interface Artist {
   chargesWithBacklineFrom?: number;
   chargesWithBacklineTo?: number;
   chargesWithBacklineDescription?: string;
+  
+  // Contact fields
+  contactNumber?: string;
+  whatsappNumber?: string;
+  
   userId: string
 }
 
@@ -222,6 +227,7 @@ export interface Filters {
   eventState: string;
   eventType: string;
   language: string;
+  location: string;
 }
 
 // Artist Profile Setup Types

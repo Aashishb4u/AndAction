@@ -8,7 +8,7 @@ import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
 import Textarea from "../ui/Textarea";
 import PhoneInput from "../ui/PhoneInput";
-import { format, formatDate, startOfDay } from "date-fns";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 
 interface BookingRequestModalProps {
   isOpen: boolean;
@@ -28,7 +28,7 @@ export interface BookingFormData {
   eventDate: string;
   time: string;
   note: string;
-  totalPrice: number;
+  totalPrice: number | "";
 }
 
 const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
@@ -48,28 +48,10 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
     eventDate: "",
     time: "",
     note: "",
-    totalPrice: 1000,
+    totalPrice: "",
   });
 
-  const [errors, setErrors] = useState<Partial<BookingFormData>>({});
-
-  // Sample data - in real app, these would come from API
-  const stateOptions = [
-    { value: "gujarat", label: "Gujarat" },
-    { value: "maharashtra", label: "Maharashtra" },
-    { value: "rajasthan", label: "Rajasthan" },
-    { value: "delhi", label: "Delhi" },
-    { value: "mumbai", label: "Mumbai" },
-  ];
-
-  const cityOptions = [
-    { value: "ahmedabad", label: "Ahmedabad" },
-    { value: "surat", label: "Surat" },
-    { value: "vadodara", label: "Vadodara" },
-    { value: "rajkot", label: "Rajkot" },
-    { value: "mumbai", label: "Mumbai" },
-    { value: "pune", label: "Pune" },
-  ];
+  const [errors, setErrors] = useState<Partial<Record<keyof BookingFormData, string>>>({});
 
   const eventTypeOptions = [
     { value: "wedding", label: "Wedding" },
@@ -89,11 +71,11 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
 
   // State for confirmation and success modals
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [showSubmitSuccess, setShowSubmitSuccess] = useState(false);
 
-  const handleInputChange = (field: keyof BookingFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof BookingFormData, value: string | string[]) => {
+    const normalizedValue = Array.isArray(value) ? value.join(",") : value;
+    setFormData((prev) => ({ ...prev, [field]: normalizedValue }));
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -101,7 +83,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<BookingFormData> = {};
+    const newErrors: Partial<Record<keyof BookingFormData, string>> = {};
 
     if (!formData.firstName.trim())
       newErrors.firstName = "First name is required";
@@ -113,6 +95,9 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
     if (!formData.eventType) newErrors.eventType = "Event type is required";
     if (!formData.eventDate) newErrors.eventDate = "Event date is required";
     if (!formData.time) newErrors.time = "Time slot is required";
+    if (formData.totalPrice === "") {
+      newErrors.totalPrice = "Budget is required";
+    }
 
     // Validate mobile number format
     if (
@@ -142,7 +127,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
         eventDate: "",
         time: "",
         note: "",
-        totalPrice: 1000,
+        totalPrice: "",
       });
       setErrors({});
     }
@@ -159,7 +144,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
       eventDate: "",
       time: "",
       note: "",
-      totalPrice: 1000,
+      totalPrice: "",
     });
     setErrors({});
     onClose();
@@ -182,14 +167,14 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
       onClose={handleRequestClose}
       title="Request booking"
       size="lg"
-      className="max-h-[90vh]"
+      className="max-h-[90vh] mx-4!"
       headerClassName="md:px-8 md:py-6 px-4! py-4!"
     >
       <form onSubmit={handleSubmit} className="flex flex-col h-full">
         {/* Scrollable Content */}
         <div className="flex-1 md:px-8 px-4 md:py-6 py-4 space-y-6 overflow-y-auto md:max-h-[calc(100vh-300px)] max-h-[calc(90vh-180px)]">
           {/* Name Fields */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <Input
               label="First name*"
               placeholder="First name"
@@ -215,15 +200,16 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
             placeholder="Enter mobile number"
             value={formData.mobileNumber}
             onChange={(value) => handleInputChange("mobileNumber", value)}
+            error={errors.mobileNumber}
             required
           />
 
           {/* Location Fields */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <Select
               label="State*"
               placeholder="Select"
-              options={stateOptions}
+              options={INDIAN_STATES}
               value={formData.state}
               onChange={(value) => handleInputChange("state", value)}
               error={errors.state}
@@ -232,7 +218,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
             <Select
               label="City*"
               placeholder="Select"
-              options={cityOptions}
+              options={INDIAN_CITIES}
               value={formData.city}
               onChange={(value) => handleInputChange("city", value)}
               error={errors.city}
@@ -252,7 +238,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
           />
 
           {/* Date and Time */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <DateInput
               label="Event date*"
               placeholder="DD/MM/YYYY"
@@ -276,12 +262,13 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
           </div>
           <div className="relative">
             <Input
-              label="Total Price*"
-              placeholder="Total Price"
+              label="Budget*"
+              placeholder="Enter budget"
               value={formData.totalPrice}
               onChange={(e) => handleInputChange("totalPrice", e.target.value)}
               type="number"
-              min={1000}
+              min={0}
+              error={errors.totalPrice}
               required
             />
           </div>

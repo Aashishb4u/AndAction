@@ -10,6 +10,7 @@ import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
 import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
 import { toast } from "react-toastify";
+import { INDIAN_STATES } from "@/lib/constants";
 
 interface PerformanceTabProps {
   artist: Artist;
@@ -37,45 +38,31 @@ const eventTypeOptions = [
   { value: "religious", label: "Religious Event" },
 ];
 
-const performingStatesOptions = [
-  { value: "maharashtra", label: "Maharashtra" },
-  { value: "delhi", label: "Delhi" },
-  { value: "karnataka", label: "Karnataka" },
-  { value: "tamil-nadu", label: "Tamil Nadu" },
-  { value: "gujarat", label: "Gujarat" },
-  { value: "rajasthan", label: "Rajasthan" },
-  { value: "uttar-pradesh", label: "Uttar Pradesh" },
-  { value: "west-bengal", label: "West Bengal" },
-  { value: "punjab", label: "Punjab" },
-  { value: "haryana", label: "Haryana" },
-];
+
 
 const performingMembersOptions = [
-  { value: "1", label: "1 member" },
-  { value: "2", label: "2 members" },
-  { value: "3", label: "3 members" },
-  { value: "4", label: "4 members" },
-  { value: "5", label: "5+ members" },
+  { value: "1", label: "1 Member" },
+  { value: "2-5", label: "2-5 Members" },
+  { value: "6-10", label: "6-10 Members" },
+  { value: "11-20", label: "11-20 Members" },
+  { value: "20+", label: "20+ Members" },
 ];
 
-const offStageMembersOptions = [
-  { value: "0", label: "0 members" },
-  { value: "1", label: "1 member" },
-  { value: "2", label: "2 members" },
-  { value: "3", label: "3 members" },
-  { value: "4", label: "4+ members" },
-];
+const offStageMembersOptions = performingMembersOptions;
 
 // Helper function to parse comma-separated string to array
 const parseCSV = (value: string | undefined | null): string[] => {
   if (!value) return [];
-  return value.split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
+  return value
+    .split(",")
+    .map((v) => v.trim().toLowerCase())
+    .filter(Boolean);
 };
 
 const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
   const { data: session, update } = useSession();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Dropdown visibility states
   const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
   const [showEventTypesDropdown, setShowEventTypesDropdown] = useState(false);
@@ -89,6 +76,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
     maxDuration: artist.performingDurationTo || "",
     performingMembers: artist.performingMembers || "",
     offStageMembers: artist.offStageMembers || "",
+    soloChargesFrom: artist.soloChargesFrom?.toString() || "",
+    soloChargesTo: artist.soloChargesTo?.toString() || "",
+    soloChargesDescription: artist.soloChargesDescription || "",
+    chargesWithBacklineFrom: artist.chargesWithBacklineFrom?.toString() || "",
+    chargesWithBacklineTo: artist.chargesWithBacklineTo?.toString() || "",
+    chargesWithBacklineDescription: artist.chargesWithBacklineDescription || "",
   });
 
   const handleInputChange = (field: string, value: string | string[]) => {
@@ -113,7 +106,9 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
   // Toggle all languages
   const toggleAllLanguages = () => {
     const allValues = performingLanguageOptions.map((l) => l.value);
-    if (formData.performingLanguages.length === performingLanguageOptions.length) {
+    if (
+      formData.performingLanguages.length === performingLanguageOptions.length
+    ) {
       handleInputChange("performingLanguages", []);
     } else {
       handleInputChange("performingLanguages", allValues);
@@ -156,8 +151,8 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
   // Toggle PAN India (all states)
   const togglePanIndia = () => {
-    const allValues = performingStatesOptions.map((s) => s.value);
-    if (formData.performingStates.length === performingStatesOptions.length) {
+    const allValues = INDIAN_STATES.map((s) => s.value);
+    if (formData.performingStates.length === INDIAN_STATES.length) {
       handleInputChange("performingStates", []);
     } else {
       handleInputChange("performingStates", allValues);
@@ -171,9 +166,13 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         return;
       }
 
+      // close all dropdowns before saving
+      setShowLanguagesDropdown(false);
+      setShowEventTypesDropdown(false);
+      setShowStatesDropdown(false);
+
       setIsLoading(true);
 
-      // Join arrays to comma-separated strings for storage
       const payload = {
         userId: session.user.id,
         performingLanguage: formData.performingLanguages.join(","),
@@ -183,18 +182,21 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         performingDurationTo: formData.maxDuration,
         performingMembers: formData.performingMembers,
         offStageMembers: formData.offStageMembers,
+        soloChargesFrom: formData.soloChargesFrom,
+        soloChargesTo: formData.soloChargesTo,
+        soloChargesDescription: formData.soloChargesDescription,
+        chargesWithBacklineFrom: formData.chargesWithBacklineFrom,
+        chargesWithBacklineTo: formData.chargesWithBacklineTo,
+        chargesWithBacklineDescription: formData.chargesWithBacklineDescription,
       };
 
-      // 1️⃣ Update DB
       const res = await updateArtistProfile(payload);
 
       const refreshedUser = res.data.user;
       const refreshedArtist = res.data.artistProfile;
 
-      // 2️⃣ Build the correct NextAuth structure:
       const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
 
-      // 3️⃣ Update session
       await update({
         update: sessionPayload,
       });
@@ -210,13 +212,19 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
   const handleReset = () => {
     setFormData({
-      performingLanguages: ["english", "hindi", "gujarati"],
-      eventTypes: ["party", "concert", "events"],
-      performingStates: ["gujarat", "rajasthan", "maharashtra"],
-      minDuration: "120",
-      maxDuration: "160",
-      performingMembers: "2",
-      offStageMembers: "0",
+      performingLanguages: parseCSV(artist.performingLanguage),
+      eventTypes: parseCSV(artist.performingEventType),
+      performingStates: parseCSV(artist.performingStates),
+      minDuration: artist.performingDurationFrom || "",
+      maxDuration: artist.performingDurationTo || "",
+      performingMembers: artist.performingMembers || "",
+      offStageMembers: artist.offStageMembers || "",
+      soloChargesFrom: artist.soloChargesFrom?.toString() || "",
+      soloChargesTo: artist.soloChargesTo?.toString() || "",
+      soloChargesDescription: artist.soloChargesDescription || "",
+      chargesWithBacklineFrom: artist.chargesWithBacklineFrom?.toString() || "",
+      chargesWithBacklineTo: artist.chargesWithBacklineTo?.toString() || "",
+      chargesWithBacklineDescription: artist.chargesWithBacklineDescription || "",
     });
   };
 
@@ -225,18 +233,30 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       {/* Performing Language - Multi-select */}
       <div className="relative">
         <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm font-medium text-white">Performing language*</label>
+          <label className="block text-sm font-medium text-white">
+            Performing language*
+          </label>
           <Tooltip content="Select the languages you can perform in during your shows">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        
+
         {/* Selected values display */}
         <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
-          <span className={formData.performingLanguages.length > 0 ? "text-white" : "text-text-gray"}>
+          <span
+            className={
+              formData.performingLanguages.length > 0
+                ? "text-white"
+                : "text-text-gray"
+            }
+          >
             {formData.performingLanguages.length > 0
               ? formData.performingLanguages
-                  .map((val) => performingLanguageOptions.find((opt) => opt.value === val)?.label || val)
+                  .map(
+                    (val) =>
+                      performingLanguageOptions.find((opt) => opt.value === val)
+                        ?.label || val,
+                  )
                   .join(", ")
               : "No languages selected"}
           </span>
@@ -250,12 +270,17 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         >
           <span className="text-text-gray">Select languages</span>
           <svg
-            className={`w-5 h-5 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
+            className={`w-6 h-6 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
 
@@ -266,13 +291,16 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
               <input
                 type="checkbox"
-                checked={formData.performingLanguages.length === performingLanguageOptions.length}
+                checked={
+                  formData.performingLanguages.length ===
+                  performingLanguageOptions.length
+                }
                 onChange={toggleAllLanguages}
                 className="w-4 h-4 accent-primary-pink rounded"
               />
               <span className="text-white font-medium">All Languages</span>
             </label>
-            
+
             {/* Individual language checkboxes */}
             {performingLanguageOptions.map((language) => (
               <label
@@ -281,7 +309,9 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               >
                 <input
                   type="checkbox"
-                  checked={formData.performingLanguages.includes(language.value)}
+                  checked={formData.performingLanguages.includes(
+                    language.value,
+                  )}
                   onChange={() => toggleLanguageSelection(language.value)}
                   className="w-4 h-4 accent-primary-pink rounded"
                 />
@@ -295,18 +325,28 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       {/* Performing Event Type - Multi-select */}
       <div className="relative">
         <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm font-medium text-white">Performing event type*</label>
+          <label className="block text-sm font-medium text-white">
+            Performing event type*
+          </label>
           <Tooltip content="Choose the types of events where you typically perform">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        
+
         {/* Selected values display */}
         <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
-          <span className={formData.eventTypes.length > 0 ? "text-white" : "text-text-gray"}>
+          <span
+            className={
+              formData.eventTypes.length > 0 ? "text-white" : "text-text-gray"
+            }
+          >
             {formData.eventTypes.length > 0
               ? formData.eventTypes
-                  .map((val) => eventTypeOptions.find((opt) => opt.value === val)?.label || val)
+                  .map(
+                    (val) =>
+                      eventTypeOptions.find((opt) => opt.value === val)
+                        ?.label || val,
+                  )
                   .join(", ")
               : "No event types selected"}
           </span>
@@ -320,12 +360,17 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         >
           <span className="text-text-gray">Select event types</span>
           <svg
-            className={`w-5 h-5 text-text-gray transition-transform ${showEventTypesDropdown ? "rotate-180" : ""}`}
+            className={`w-6 h-6 text-text-gray transition-transform ${showEventTypesDropdown ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
 
@@ -342,7 +387,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               />
               <span className="text-white font-medium">All Event Types</span>
             </label>
-            
+
             {/* Individual event type checkboxes */}
             {eventTypeOptions.map((eventType) => (
               <label
@@ -365,20 +410,33 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       {/* Performing States - Multi-select */}
       <div className="relative">
         <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm font-medium text-white">Performing states*</label>
+          <label className="block text-sm font-medium text-white">
+            Performing states*
+          </label>
           <Tooltip content="Enter the states where you are willing to perform">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        
+
         {/* Selected values display */}
         <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
-          <span className={formData.performingStates.length > 0 ? "text-white" : "text-text-gray"}>
+          <span
+            className={
+              formData.performingStates.length > 0
+                ? "text-white"
+                : "text-text-gray"
+            }
+          >
             {formData.performingStates.length > 0
-              ? formData.performingStates.length === performingStatesOptions.length
+              ? formData.performingStates.length ===
+                INDIAN_STATES.length
                 ? "PAN India (All States)"
                 : formData.performingStates
-                    .map((val) => performingStatesOptions.find((opt) => opt.value === val)?.label || val)
+                    .map(
+                      (val) =>
+                        INDIAN_STATES.find((opt) => opt.value === val)
+                          ?.label || val,
+                    )
                     .join(", ")
               : "No states selected"}
           </span>
@@ -392,12 +450,17 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         >
           <span className="text-text-gray">Select states</span>
           <svg
-            className={`w-5 h-5 text-text-gray transition-transform ${showStatesDropdown ? "rotate-180" : ""}`}
+            className={`w-6 h-6 text-text-gray transition-transform ${showStatesDropdown ? "rotate-180" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
 
@@ -408,15 +471,18 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
               <input
                 type="checkbox"
-                checked={formData.performingStates.length === performingStatesOptions.length}
+                checked={
+                  formData.performingStates.length ===
+                  INDIAN_STATES.length
+                }
                 onChange={togglePanIndia}
                 className="w-4 h-4 accent-primary-pink rounded"
               />
               <span className="text-white font-medium">PAN India</span>
             </label>
-            
+
             {/* Individual state checkboxes */}
-            {performingStatesOptions.map((state) => (
+            {INDIAN_STATES.map((state) => (
               <label
                 key={state.value}
                 className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"
@@ -436,11 +502,17 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
       {/* Performing Duration */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-white">
+        
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">
           Performing duration{" "}
           <span className="text-text-gray">(in minutes)</span>
           <span className="text-red-500 ml-1">*</span>
         </label>
+          <Tooltip content="Specify the minimum and maximum duration (in minutes) for your performances">
+              <Info size={16} className="text-blue" />
+            </Tooltip>
+        </div>
         <div className="relative">
           <div className="grid grid-cols-2 gap-6">
             <Input
@@ -456,16 +528,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               required
             />
           </div>
-          <div className="absolute top-4 right-4">
-            <Tooltip content="Specify the minimum and maximum duration (in minutes) for your performances">
-              <Info size={16} className="text-text-gray" />
-            </Tooltip>
-          </div>
         </div>
       </div>
 
       {/* Performing Members and Off Stage Members */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         {/* Performing Members */}
         <div className="relative">
           <Select
@@ -499,8 +566,94 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         </div>
       </div>
 
+      {/* Solo Charges */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">
+            Solo charges <span className="text-red-500 ml-1">*</span>
+          </label>
+          <Tooltip content="Amount range you usually charge when performing solo">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+        <div className="grid grid-cols-2 gap-6">
+          <Input
+            value={formData.soloChargesFrom}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("soloChargesFrom", value);
+              }
+            }}
+            placeholder="From"
+            required
+          />
+          <Input
+            value={formData.soloChargesTo}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("soloChargesTo", value);
+              }
+            }}
+            placeholder="To"
+            required
+          />
+        </div>
+        <textarea
+          placeholder="What services do you include while charging solo"
+          value={formData.soloChargesDescription}
+          onChange={(e) => handleInputChange("soloChargesDescription", e.target.value)}
+          rows={3}
+          className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-white placeholder-text-gray focus:outline-none focus:border-primary-pink transition-colors duration-200 resize-none"
+        />
+      </div>
+
+      {/* Charges with Backing */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">
+            Charges with backing
+          </label>
+          <Tooltip content="Amount range including backline like sound, stage, and support setup">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+        <div className="grid grid-cols-2 gap-6">
+          <Input
+            value={formData.chargesWithBacklineFrom}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("chargesWithBacklineFrom", value);
+              }
+            }}
+            placeholder="From"
+          />
+          <Input
+            value={formData.chargesWithBacklineTo}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("chargesWithBacklineTo", value);
+              }
+            }}
+            placeholder="To"
+          />
+        </div>
+        <textarea
+          placeholder="Please include backline like sound system, stage, chorus, etc."
+          value={formData.chargesWithBacklineDescription}
+          onChange={(e) =>
+            handleInputChange("chargesWithBacklineDescription", e.target.value)
+          }
+          rows={3}
+          className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-white placeholder-text-gray focus:outline-none focus:border-primary-pink transition-colors duration-200 resize-none"
+        />
+      </div>
+
       {/* Action Buttons */}
-      <div className="flex md:justify-end gap-4 items-center md:pt-5 p-4 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent">
+      <div className="flex md:justify-end gap-4 items-center md:pt-5 py-2 px-3 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent z-50">
         <Button
           variant="secondary"
           onClick={handleReset}

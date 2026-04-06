@@ -110,8 +110,27 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
       return { success: false, message: "YouTube not connected" };
     }
 
+    // Call internal sync function
+    return await syncYouTubeVideosInternal(artist.id, session.user.id, artist.youtubeChannelId, artist.youtubeAccessToken);
+  } catch (error) {
+    console.error("Error syncing YouTube videos:", error);
+    return { success: false, message: "Failed to sync videos" };
+  }
+}
+
+/**
+ * Internal sync function that can be called directly with artist details
+ * Used for auto-sync after channel connection
+ */
+export async function syncYouTubeVideosInternal(
+  artistId: string,
+  userId: string,
+  youtubeChannelId: string,
+  youtubeAccessToken: string | null
+): Promise<SyncResult> {
+  try {
     // Determine whether to use OAuth or API key
-    const useOAuth = !!artist.youtubeAccessToken;
+    const useOAuth = !!youtubeAccessToken;
     const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
     let authHeader: Record<string, string> = {};
@@ -119,7 +138,7 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
 
     if (useOAuth) {
       // Get valid access token for OAuth
-      const accessToken = await getValidYouTubeToken(artist.id);
+      const accessToken = await getValidYouTubeToken(artistId);
 
       if (!accessToken) {
         return {
@@ -141,8 +160,8 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
 
     // Get uploads playlist ID
     const channelUrl = useOAuth
-      ? `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${artist.youtubeChannelId}`
-      : `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${artist.youtubeChannelId}${apiKeyParam}`;
+      ? `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${youtubeChannelId}`
+      : `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${youtubeChannelId}${apiKeyParam}`;
 
     const channelResponse = await fetch(channelUrl, { headers: authHeader });
 
@@ -161,8 +180,8 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
 
     // Fetch videos from playlist
     const playlistUrl = useOAuth
-      ? `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50`
-      : `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50${apiKeyParam}`;
+      ? `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=30`
+      : `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=30${apiKeyParam}`;
 
     const playlistResponse = await fetch(playlistUrl, { headers: authHeader });
 
@@ -219,7 +238,7 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
         where: {
           youtubeVideoId_userId: {
             youtubeVideoId: videoId,
-            userId: session.user.id,
+            userId: userId,
           }
         },
       });
@@ -230,7 +249,7 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
           where: {
             youtubeVideoId_userId: {
               youtubeVideoId: videoId,
-              userId: session.user.id
+              userId: userId
             }
           },
           data: {
@@ -250,7 +269,7 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
         await prisma.video.create({
           data: {
             youtubeVideoId: videoId,
-            userId: session.user.id,
+            userId: userId,
             title: item.snippet.title,
             description: item.snippet.description,
             url: `https://www.youtube.com/watch?v=${videoId}`,
@@ -281,7 +300,7 @@ export async function syncYouTubeVideos(): Promise<SyncResult> {
       total: videoItems.length,
     };
   } catch (error) {
-    console.error("Error syncing YouTube videos:", error);
+    console.error("Error syncing YouTube videos (internal):", error);
     return { success: false, message: "Failed to sync videos" };
   }
 }
