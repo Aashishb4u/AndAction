@@ -42,6 +42,7 @@ function SignUpContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+  const phoneInputWrapperRef = React.useRef<HTMLDivElement | null>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -71,6 +72,29 @@ function SignUpContent() {
   if (oauthError && !error) {
     setError(oauthError);
   }
+
+  // Keep focus on the relevant input when switching between mobile/email modes.
+  useEffect(() => {
+    if (step !== "contact") return;
+
+    const focusTarget = () => {
+      if (contactType === "email") {
+        const emailInput = document.getElementById(
+          "signup-email-input",
+        ) as HTMLInputElement | null;
+        emailInput?.focus();
+        return;
+      }
+
+      const phoneInput = phoneInputWrapperRef.current?.querySelector(
+        "input",
+      ) as HTMLInputElement | null;
+      phoneInput?.focus();
+    };
+
+    const frame = window.requestAnimationFrame(focusTarget);
+    return () => window.cancelAnimationFrame(frame);
+  }, [contactType, step]);
 
   // Avatar data
   const avatars = [
@@ -434,7 +458,7 @@ function SignUpContent() {
           <div className="space-y-6">
             <form onSubmit={handleContactSubmit} className="space-y-6">
               {contactType === "phone" ? (
-                <div>
+                <div ref={phoneInputWrapperRef}>
                   <label className="secondary-text  block mb-1">
                     Mobile number
                   </label>
@@ -455,6 +479,7 @@ function SignUpContent() {
                 <div>
                   <label className="secondary-text block mb-1">Email*</label>
                   <Input
+                    id="signup-email-input"
                     type="email"
                     placeholder="Enter your email"
                     value={email}
