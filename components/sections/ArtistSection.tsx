@@ -4,7 +4,6 @@ import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ArtistCard from '@/components/ui/ArtistCard';
 import Modal from '@/components/ui/Modal';
-import { getValueForKey } from '@/lib/artistCategories';
 
 interface Artist {
   id: string;
@@ -18,6 +17,7 @@ interface ArtistSectionProps {
   title: string;
   artists: Artist[];
   categoryKey?: string;
+  categoryValue?: string;
   className?: string;
 }
 
@@ -27,6 +27,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   title,
   artists,
   categoryKey,
+  categoryValue,
   className = '',
 }) => {
 
@@ -56,9 +57,11 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   };
 
   const getTypeParam = () => {
+    if (categoryValue) {
+      return categoryValue;
+    }
     if (categoryKey) {
-      const value = getValueForKey(categoryKey);
-      return value;
+      return categoryKey;
     }
     let typeParam = title.toLowerCase();
     if (typeParam.includes('percussion')) typeParam = 'dj-percussionist';

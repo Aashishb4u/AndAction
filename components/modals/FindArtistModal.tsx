@@ -6,9 +6,9 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
-import { getValueForKey } from '@/lib/artistCategories';
-import { ARTIST_CATEGORIES, INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 
 export interface FindArtistModalProps {
   isOpen: boolean;
@@ -46,6 +46,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
 
   // Fetch sub-artist types from database
   const { subTypes: subArtistSuggestions } = useSubArtistTypes();
+  const { categories } = useArtistCategories();
 
   // Sub-category multi-tag UI state
   const [subInput, setSubInput] = useState<string>("");
@@ -168,7 +169,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
   const handleViewResults = () => {
     const params = new URLSearchParams();
 
-    if (formData.artistCategory) params.set("type", getValueForKey(formData.artistCategory));
+    if (formData.artistCategory) params.set("type", formData.artistCategory);
     if (formData.subCategory && formData.subCategory.length > 0) params.set("subType", formData.subCategory.join(","));
     if (formData.artistGender) params.set("gender", formData.artistGender);
     if (formData.budget) params.set("budget", formData.budget);
@@ -204,7 +205,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
           <label className="secondary-text  block mb-1">Artist Category</label>
           <Select
             placeholder="Select category"
-            options={ARTIST_CATEGORIES}
+            options={categories}
             value={formData.artistCategory}
             onChange={(value) => handleInputChange("artistCategory", value)}
             required

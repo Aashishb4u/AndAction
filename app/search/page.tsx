@@ -8,7 +8,7 @@ import MobileBottomBar from "@/components/layout/MobileBottomBar";
 import LoadingSpinner from "@/components/ui/Loading";
 import { buildArtishProfileUrl } from "@/lib/utils";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ARTIST_CATEGORIES } from "@/lib/constants";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 
 const fetchArtists = async ({
   pageParam = 1,
@@ -18,9 +18,13 @@ const fetchArtists = async ({
   query: string;
 }) => {
   if (!query.trim()) return [];
-  const res = await fetch(
-    `/api/artists/search?q=${encodeURIComponent(query)}&page=${pageParam}`,
-  );
+  const params = new URLSearchParams({
+    search: query,
+    page: String(pageParam),
+    limit: "10",
+  });
+
+  const res = await fetch(`/api/artists?${params.toString()}`);
   const json = await res.json();
   return json.data?.artists || [];
 };
@@ -30,6 +34,7 @@ export default function MobileSearchPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const { categoriesWithAll } = useArtistCategories();
   const router = useRouter();
 
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
@@ -68,36 +73,8 @@ export default function MobileSearchPage() {
 
   // Show all categories if no search, otherwise only those with artists
   const filterCategories = useMemo(() => {
-    // Map category value to label for lookup
-    // const categoryMap = ARTIST_CATEGORIES.reduce((acc, cat) => {
-    //   acc[cat.value.toLowerCase()] = cat.label;
-    //   return acc;
-    // }, {} as Record<string, string>);
-
-    // // If no search, show all categories
-    // if (!search.trim()) {
-    //   return [{ label: "All", value: "all" }, ...ARTIST_CATEGORIES.map(cat => ({ label: cat.label, value: cat.value }))];
-    // }
-
-    // // Find unique categories present in the current artists list
-    // const presentCategories = Array.from(
-    //   new Set(
-    //     artists
-    //       .map((artist) => artist.category && artist.category.toLowerCase())
-    //       .filter((cat) => cat && categoryMap[cat])
-    //   )
-    // );
-
-    // // Build the filter list: All + only categories with artists
-    // const filtered = [
-    //   { label: "All", value: "all" },
-    //   ...presentCategories.map((cat) => ({ label: categoryMap[cat], value: cat }))
-    // ];
-    // return filtered;
-
-    // Fix 1 - i must see all the options in the header as it is like (all mmusicians dancer dj  etc etc etc) 
-    return [{ label: "All", value: "all" }, ...ARTIST_CATEGORIES.map(cat => ({ label: cat.label, value: cat.value }))];
-  }, [artists, search]);
+    return categoriesWithAll;
+  }, [categoriesWithAll]);
 
   // Debounce search input
   useEffect(() => {

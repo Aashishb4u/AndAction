@@ -4,8 +4,9 @@ import React, { useState } from "react";
 import { Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
-import { VIDEO_CATEGORIES, INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 
 interface FilterOption {
   value: string;
@@ -20,11 +21,6 @@ interface ArtistFiltersProps {
   resultCount?: number;
   className?: string;
 }
-
-// Use categories from constants, excluding 'all'
-const categoryOptions: FilterOption[] = VIDEO_CATEGORIES.filter(
-  (cat) => cat.value !== "all",
-).map((cat) => ({ value: cat.value, label: cat.label }));
 
 const genderOptions: FilterOption[] = [
   { value: "male", label: "Male" },
@@ -87,6 +83,12 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
   resultCount = 0,
   className = "",
 }) => {
+  const { categories } = useArtistCategories();
+  const categoryOptions: FilterOption[] = categories.map((cat) => ({
+    value: cat.value,
+    label: cat.label,
+  }));
+
   const { subTypes: subArtistSuggestions } = useSubArtistTypes();
   const [subInput, setSubInput] = useState("");
   const [showSubSuggestions, setShowSubSuggestions] = useState(false);

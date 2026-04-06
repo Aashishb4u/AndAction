@@ -150,6 +150,20 @@ model Artist {
   @@map("artists")
 }
 
+model ArtistCategory {
+  id        String   @id @default(cuid())
+  value     String   @unique
+  label     String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@index([isActive])
+  @@map("artist_categories")
+}
+
 model Video {
   id                String     @id @default(cuid())
   
