@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SiteLayout from "@/components/layout/SiteLayout";
 import ArtistProfileHeader from "@/components/sections/ArtistProfileHeader";
 import ArtistDetailTabs from "@/components/sections/ArtistDetailTabs";
 import { BookingStatus } from "@prisma/client";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 export const createBooking = async (artistId: string, formData: any) => {
   try {
@@ -74,6 +76,7 @@ export default function ArtistDetailPage() {
   const router = useRouter();
   const { id: artistId } = useParams();
   const { data: session } = useSession();
+  const { categories } = useArtistCategories();
   const [artist, setArtist] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
@@ -187,6 +190,15 @@ export default function ArtistDetailPage() {
     fetchData();
   }, [artistId, session?.user]);
 
+  const displayArtist = useMemo(() => {
+    if (!artist) return null;
+
+    return {
+      ...artist,
+      category: findCategoryLabel(categories, artist.category) || artist.category,
+    };
+  }, [artist, categories]);
+
   if (loading) {
     return (
       <SiteLayout>
@@ -197,7 +209,7 @@ export default function ArtistDetailPage() {
     );
   }
 
-  if (!artist) {
+  if (!artist || !displayArtist) {
     return (
       <SiteLayout>
         <div className="min-h-screen flex items-center justify-center">
@@ -314,7 +326,7 @@ export default function ArtistDetailPage() {
       <div className="hidden max-w-7xl mx-auto lg:flex min-h-screen bg-background py-10 lg:py-14">
         <div className="w-[400px] flex-shrink-0">
           <ArtistProfileHeader
-            artist={artist}
+            artist={displayArtist}
             disabledDates={disabledDates}
             onBack={handleBack}
             onBookmark={handleBookmark}
@@ -326,13 +338,13 @@ export default function ArtistDetailPage() {
         </div>
 
         <div className="flex-1">
-          <ArtistDetailTabs artist={artist} />
+          <ArtistDetailTabs artist={displayArtist} />
         </div>
       </div>
 
       <div className="lg:hidden min-h-screen bg-background">
         <ArtistProfileHeader
-          artist={artist}
+          artist={displayArtist}
           disabledDates={disabledDates}
           onBack={handleBack}
           onBookmark={handleBookmark}
@@ -342,7 +354,7 @@ export default function ArtistDetailPage() {
           onWhatsApp={handleWhatsApp}
           isMobile={true}
         />
-        <ArtistDetailTabs artist={artist} isMobile={true} />
+        <ArtistDetailTabs artist={displayArtist} isMobile={true} />
       </div>
     </SiteLayout>
   );
