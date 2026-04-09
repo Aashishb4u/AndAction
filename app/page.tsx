@@ -21,6 +21,7 @@ export default function Home() {
       // If they previously allowed, try to get location silently
       if (locationPreference === 'allowed') {
         const cachedLocation = sessionStorage.getItem('userLocationCoords');
+        let hasValidCachedLocation = false;
         if (cachedLocation) {
           try {
             const parsed = JSON.parse(cachedLocation) as { lat?: number; lng?: number };
@@ -32,12 +33,17 @@ export default function Home() {
             ) {
               setLocation({ lat: parsed.lat, lng: parsed.lng });
               setIsLocationResolved(true);
+              hasValidCachedLocation = true;
             }
           } catch {
             // Ignore invalid cached location and continue with live geolocation.
           }
         }
-        requestLocation();
+
+        // Only re-request geolocation when we don't already have valid cached coords.
+        if (!hasValidCachedLocation) {
+          requestLocation();
+        }
       } else {
         setIsLocationResolved(true);
       }
@@ -62,9 +68,10 @@ export default function Home() {
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const rounded = (value: number) => Number(value.toFixed(4));
         const nextLocation = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
+          lat: rounded(pos.coords.latitude),
+          lng: rounded(pos.coords.longitude),
         };
         setLocation(nextLocation);
         sessionStorage.setItem('locationPermissionAsked', 'allowed');

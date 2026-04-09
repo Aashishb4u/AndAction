@@ -39,7 +39,6 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
   const {
     byType: artistsByType,
     isLoading: isArtistsLoading,
-    isFetching: isArtistsFetching,
   } = useArtistsByCategoryValues(
     categoryValues,
     normalizedLocation,
@@ -50,7 +49,7 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
   const shouldShowLoading =
     !canFetch ||
     isCategoriesLoading ||
-    (categoryValues.length > 0 && (isArtistsLoading || isArtistsFetching));
+    (categoryValues.length > 0 && isArtistsLoading);
 
   const categoriesWithArtists = useMemo(
     () =>
