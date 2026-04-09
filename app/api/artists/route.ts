@@ -13,19 +13,24 @@ import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
-async function getStateFromLatLng(lat: number, lng: number) {
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": "Artist-App" },
-      cache: "no-store",
-    });
+function calculateDistanceKm(
+  userLat: number,
+  userLng: number,
+  targetLat: number,
+  targetLng: number,
+): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(targetLat - userLat);
+  const dLng = toRad(targetLng - userLng);
+  const lat1 = toRad(userLat);
+  const lat2 = toRad(targetLat);
 
-    const data = await res.json();
-    return data?.address?.state || null;
-  } catch {
-    return null;
-  }
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return 6371 * c;
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse<any>> {
@@ -42,6 +47,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // ---------------------------
     const lat = parseFloat(searchParams.get("lat") || "");
     const lng = parseFloat(searchParams.get("lng") || "");
+    const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
 
     // ---------------------------
     // COUNT ONLY MODE (for filter preview)
@@ -73,8 +79,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const budget = searchParams.get("budget");
     const location = searchParams.get("location");
 
-    let state = searchParams.get("state");
-    if (!state && lat && lng) state = await getStateFromLatLng(lat, lng);
+    const requestedState = searchParams.get("state")?.trim() || "";
 
     console.log("Filter Params:", {
       search,
@@ -143,10 +148,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       });
     }
 
-    // Only apply state filter if location is provided
-    if (state && lat && lng) {
+    // Explicit state filter from user selection.
+    if (requestedState) {
       dynamicOrFilters.push({
-        performingStates: { contains: state, mode: "insensitive" },
+        performingStates: { contains: requestedState, mode: "insensitive" },
       });
     }
 
@@ -239,39 +244,84 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       );
     }
 
-    const artists = await prisma.artist.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        stageName: true,
-        artistType: true,
-        subArtistType: true,
-        shortBio: true,
-        performingLanguage: true,
-        performingEventType: true,
-        performingStates: true,
-        yearsOfExperience: true,
-        soloChargesFrom: true,
-        soloChargesTo: true,
-        chargesWithBacklineFrom: true,
-        chargesWithBacklineTo: true,
-        performingDurationFrom: true,
-        performingDurationTo: true,
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-            city: true,
-            state: true,
-          },
+    const baseSelect = {
+      id: true,
+      stageName: true,
+      artistType: true,
+      subArtistType: true,
+      shortBio: true,
+      performingLanguage: true,
+      performingEventType: true,
+      performingStates: true,
+      yearsOfExperience: true,
+      soloChargesFrom: true,
+      soloChargesTo: true,
+      chargesWithBacklineFrom: true,
+      chargesWithBacklineTo: true,
+      performingDurationFrom: true,
+      performingDurationTo: true,
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          avatar: true,
+          city: true,
+          state: true,
+          latitude: true,
+          longitude: true,
         },
       },
-    });
+    } as const;
+
+    let artists: any[] = [];
+
+    if (hasCoords && !requestedState) {
+      const allArtists = await prisma.artist.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        select: baseSelect,
+      });
+
+      const withDistance = allArtists.map((artist) => {
+        const artistLat = artist.user.latitude;
+        const artistLng = artist.user.longitude;
+
+        if (
+          typeof artistLat === "number" &&
+          Number.isFinite(artistLat) &&
+          typeof artistLng === "number" &&
+          Number.isFinite(artistLng)
+        ) {
+          return {
+            ...artist,
+            distance: calculateDistanceKm(lat, lng, artistLat, artistLng),
+          };
+        }
+
+        return {
+          ...artist,
+          distance: null,
+        };
+      });
+
+      withDistance.sort((a, b) => {
+        if (a.distance === null && b.distance === null) return 0;
+        if (a.distance === null) return 1;
+        if (b.distance === null) return -1;
+        return a.distance - b.distance;
+      });
+
+      artists = withDistance.slice(skip, skip + limit);
+    } else {
+      artists = await prisma.artist.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        select: baseSelect,
+      });
+    }
 
     console.log(
       `Fetched ${artists.length} artists (Page: ${page}, Limit: ${limit})`,
