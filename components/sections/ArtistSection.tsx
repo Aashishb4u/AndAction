@@ -18,6 +18,7 @@ interface ArtistSectionProps {
   artists: Artist[];
   categoryKey?: string;
   categoryValue?: string;
+  location?: { lat: number; lng: number } | null;
   className?: string;
 }
 
@@ -28,6 +29,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   artists,
   categoryKey,
   categoryValue,
+  location,
   className = '',
 }) => {
 
@@ -87,6 +89,16 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
       setShowNoArtistModal(true);
     } else {
       const params = new URLSearchParams({ type: getTypeParam() });
+
+      if (
+        location &&
+        Number.isFinite(location.lat) &&
+        Number.isFinite(location.lng)
+      ) {
+        params.set("lat", String(location.lat));
+        params.set("lng", String(location.lng));
+      }
+
       router.push(`/artists?${params.toString()}`);
     }
   };

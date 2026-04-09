@@ -195,6 +195,7 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
                   title={category.title}
                   artists={artists}
                   categoryValue={category.key}
+                  location={normalizedLocation}
                 />
               );
             })}

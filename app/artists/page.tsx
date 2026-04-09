@@ -1,5 +1,12 @@
 "use client";
-import React, { useState, useEffect, useRef, Suspense, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  Suspense,
+  useCallback,
+  useMemo,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SiteLayout from "@/components/layout/SiteLayout";
@@ -16,10 +23,16 @@ import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 const DEFAULT_LIMIT = 12;
 
+interface LocationParams {
+  lat: number;
+  lng: number;
+}
+
 // Fetch artist count only (lightweight)
 const getArtistCount = async (
   query: string,
-  filters: Filters
+  filters: Filters,
+  location: LocationParams | null = null,
 ): Promise<number> => {
   try {
     const params = new URLSearchParams();
@@ -41,6 +54,10 @@ const getArtistCount = async (
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
     if (filters.location) params.set("location", filters.location);
+    if (location) {
+      params.set("lat", String(location.lat));
+      params.set("lng", String(location.lng));
+    }
 
     const url = `/api/artists?${params.toString()}`;
     const res = await fetch(url, { cache: "no-store" });
@@ -62,6 +79,7 @@ const getArtists = async (
   query: string,
   filters: Filters,
   page: number = 1,
+  location: LocationParams | null = null,
 ): Promise<{ artists: Artist[]; total: number }> => {
   try {
     const params = new URLSearchParams();
@@ -80,6 +98,10 @@ const getArtists = async (
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
     if (filters.location) params.set("location", filters.location);
+    if (location) {
+      params.set("lat", String(location.lat));
+      params.set("lng", String(location.lng));
+    }
 
     // Pagination
     params.set("page", page.toString());
@@ -140,6 +162,40 @@ function ArtistsPageContent() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
 
+  const pageLocation = useMemo(() => {
+    const latFromUrl = parseFloat(searchParams.get("lat") || "");
+    const lngFromUrl = parseFloat(searchParams.get("lng") || "");
+
+    if (Number.isFinite(latFromUrl) && Number.isFinite(lngFromUrl)) {
+      return { lat: latFromUrl, lng: lngFromUrl };
+    }
+
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const cachedLocation = sessionStorage.getItem("userLocationCoords");
+    if (!cachedLocation) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(cachedLocation) as { lat?: number; lng?: number };
+      if (
+        typeof parsed.lat === "number" &&
+        Number.isFinite(parsed.lat) &&
+        typeof parsed.lng === "number" &&
+        Number.isFinite(parsed.lng)
+      ) {
+        return { lat: parsed.lat, lng: parsed.lng };
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }, [searchParams]);
+
   // Initialize filters from URL params on first render
   const getInitialFilters = () => {
     const params = searchParams;
@@ -169,6 +225,15 @@ function ArtistsPageContent() {
   const observerRef = useRef<HTMLDivElement | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const artistsWithCategoryLabels = useMemo(
+    () =>
+      artists.map((artist) => ({
+        ...artist,
+        category: findCategoryLabel(categories, artist.category) || artist.category,
+      })),
+    [artists, categories],
+  );
+
   // Initial load and when filters/query change
   useEffect(() => {
     const fetchData = async () => {
@@ -178,6 +243,7 @@ function ArtistsPageContent() {
         query,
         filters,
         1,
+        pageLocation,
       );
       setArtists(newArtists);
       setTotalResults(total);
@@ -187,7 +253,7 @@ function ArtistsPageContent() {
     fetchData();
     updateURL();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, JSON.stringify(filters)]);
+  }, [query, JSON.stringify(filters), pageLocation?.lat, pageLocation?.lng]);
 
   // Detect mobile viewport to control spinner presentation
   useEffect(() => {
@@ -229,6 +295,10 @@ function ArtistsPageContent() {
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
     if (filters.location) params.set("location", filters.location);
+    if (pageLocation) {
+      params.set("lat", String(pageLocation.lat));
+      params.set("lng", String(pageLocation.lng));
+    }
 
     const newURL = params.toString() ? `?${params.toString()}` : window.location.pathname;
     window.history.replaceState({}, "", newURL);
@@ -243,6 +313,7 @@ function ArtistsPageContent() {
       query,
       filters,
       nextPage,
+      pageLocation,
     );
     setArtists((prev) => [...prev, ...moreArtists]);
     setPage(nextPage);
@@ -257,6 +328,7 @@ function ArtistsPageContent() {
     filters,
     totalResults,
     artists.length,
+    pageLocation,
   ]);
 
   useEffect(() => {
@@ -309,6 +381,7 @@ function ArtistsPageContent() {
         location: "",
       },
       1,
+      pageLocation,
     ).then(({ artists, total }) => {
       setArtists(artists);
       setTotalResults(total);
@@ -320,7 +393,7 @@ function ArtistsPageContent() {
   const handleViewResult = () => {
     setLoading(true);
     setPage(1);
-    getArtists(query, filters, 1)
+    getArtists(query, filters, 1, pageLocation)
       .then(({ artists, total }) => {
         setArtists(artists);
         setTotalResults(total);
@@ -497,7 +570,7 @@ function ArtistsPageContent() {
                 )
               ) : (
                 <>
-                  <ArtistGrid artists={artists} onBookmark={handleBookmark} />
+                  <ArtistGrid artists={artistsWithCategoryLabels} onBookmark={handleBookmark} />
                   {/* Infinite scroll trigger */}
                   {hasMore && (
                     <div ref={observerRef} style={{ height: 1 }} />
