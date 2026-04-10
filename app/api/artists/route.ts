@@ -155,40 +155,51 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     }
 
     // ---------------------------
-    // BUDGET FILTER (supports null ranges)
+    // BUDGET FILTER
+    // Use only soloChargesFrom:
+    // - min-max: soloChargesFrom is between [min, max]
+    // - min+:    soloChargesFrom is >= min
+    // Applied as AND so it narrows results instead of broadening global OR filters.
     // ---------------------------
-    if (budget?.includes("-")) {
-      const [minStr, maxStr] = budget.split("-");
-      const min = Number(minStr);
-      const max = Number(maxStr);
+    if (budget) {
+      let minBudget: number | null = null;
+      let maxBudget: number | null = null;
 
-      if (!isNaN(min) && !isNaN(max)) {
-        where.OR = [
-          ...(where.OR ?? []),
+      if (budget.includes("-")) {
+        const [minStr, maxStr] = budget.split("-");
+        const parsedMin = Number(minStr);
+        const parsedMax = Number(maxStr);
 
-          // SOLO charges
-          {
-            AND: [
-              { soloChargesFrom: { gte: min } },
-              {
-                OR: [{ soloChargesTo: null }, { soloChargesTo: { lte: max } }],
-              },
-            ],
-          },
+        if (!isNaN(parsedMin) && !isNaN(parsedMax)) {
+          minBudget = parsedMin;
+          maxBudget = parsedMax;
+        }
+      } else if (budget.endsWith("+")) {
+        const parsedMin = Number(budget.replace("+", ""));
+        if (!isNaN(parsedMin)) {
+          minBudget = parsedMin;
+        }
+      }
 
-          // BACKLINE charges
-          {
-            AND: [
-              { chargesWithBacklineFrom: { gte: min } },
-              {
-                OR: [
-                  { chargesWithBacklineTo: null },
-                  { chargesWithBacklineTo: { lte: max } },
-                ],
-              },
-            ],
-          },
-        ];
+      if (minBudget !== null) {
+        let budgetFromCondition: Prisma.ArtistWhereInput;
+
+        if (maxBudget !== null) {
+          budgetFromCondition = {
+            soloChargesFrom: { gte: minBudget, lte: maxBudget },
+          };
+        } else {
+          budgetFromCondition = {
+            soloChargesFrom: { gte: minBudget },
+          };
+        }
+
+        const existingAnd: Prisma.ArtistWhereInput[] = Array.isArray(where.AND)
+          ? where.AND
+          : where.AND
+            ? [where.AND]
+            : [];
+        where.AND = [...existingAnd, budgetFromCondition];
       }
     }
 
