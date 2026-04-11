@@ -354,7 +354,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     if (hasCoords && !requestedState) {
       const allArtists = await prisma.artist.findMany({
         where,
-        orderBy: { createdAt: "desc" },
         select: baseSelect,
       });
 
@@ -384,7 +383,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         if (a.distance === null && b.distance === null) return 0;
         if (a.distance === null) return 1;
         if (b.distance === null) return -1;
-        return a.distance - b.distance;
+        const distanceDelta = a.distance - b.distance;
+        if (distanceDelta !== 0) return distanceDelta;
+        return String(a.id).localeCompare(String(b.id));
       });
 
       artists = withDistance.slice(skip, skip + limit);

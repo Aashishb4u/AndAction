@@ -58,7 +58,11 @@ function sortArtistsByDistance<T extends { distance: number | null }>(
     if (a.distance === null && b.distance === null) return 0;
     if (a.distance === null) return 1;
     if (b.distance === null) return -1;
-    return a.distance - b.distance;
+    const distanceDelta = a.distance - b.distance;
+    if (distanceDelta !== 0) return distanceDelta;
+    return String((a as { id?: string }).id ?? "").localeCompare(
+      String((b as { id?: string }).id ?? ""),
+    );
   });
 }
 
@@ -151,6 +155,7 @@ async function fetchArtistsInRadius(
         )
       ) <= ${radius}
     ORDER BY distance ASC
+      , a.id ASC
     LIMIT ${limit}
   `;
 
