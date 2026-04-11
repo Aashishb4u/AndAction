@@ -276,7 +276,23 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     }
 
     if (location) {
-      userFilter.city = { contains: location, mode: "insensitive" };
+      const trimmedLocation = location.trim();
+      const normalizedState = trimmedLocation.replace(/-/g, " ");
+      const stateTerms = Array.from(
+        new Set([trimmedLocation, normalizedState]),
+      ).filter(Boolean);
+
+      const locationClauses: Prisma.UserWhereInput[] = stateTerms.flatMap(
+        (term) => [
+          { state: { contains: term, mode: "insensitive" } },
+          // Fallback for legacy data where state was saved in city.
+          { city: { contains: term, mode: "insensitive" } },
+        ],
+      );
+
+      if (locationClauses.length > 0) {
+        userFilter.OR = [...(userFilter.OR ?? []), ...locationClauses];
+      }
     }
 
     where.user = { is: userFilter };
