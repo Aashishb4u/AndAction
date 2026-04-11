@@ -218,11 +218,15 @@ function ArtistsPageContent() {
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isMobileFiltersFixed, setIsMobileFiltersFixed] = useState(false);
+  const [mobileFiltersHeight, setMobileFiltersHeight] = useState(0);
   const [totalResults, setTotalResults] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const mobileFiltersRef = useRef<HTMLDivElement | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pageRef = useRef(1);
   const inFlightPageRef = useRef<number | null>(null);
@@ -268,6 +272,45 @@ function ArtistsPageContent() {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Keep mobile filters at top only after user scrolls beyond the page header.
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileFiltersFixed(false);
+      return;
+    }
+
+    const handleMobileFilterPin = () => {
+      const headerHeight = headerRef.current?.offsetHeight ?? 72;
+      setIsMobileFiltersFixed(window.scrollY > headerHeight);
+    };
+
+    handleMobileFilterPin();
+    window.addEventListener("scroll", handleMobileFilterPin, {
+      passive: true,
+    });
+
+    return () => window.removeEventListener("scroll", handleMobileFilterPin);
+  }, [isMobile]);
+
+  // Track filter bar height so layout doesn't jump when it switches to fixed positioning.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!mobileFiltersRef.current) return;
+
+    const updateHeight = () => {
+      if (mobileFiltersRef.current) {
+        setMobileFiltersHeight(mobileFiltersRef.current.offsetHeight);
+      }
+    };
+
+    updateHeight();
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(mobileFiltersRef.current);
+
+    return () => observer.disconnect();
   }, []);
 
   // Debounce search input - wait 2 seconds after user stops typing
@@ -523,7 +566,7 @@ function ArtistsPageContent() {
       <SiteLayout showPreloader={false} hideNavbar={false} hideBottomBar={true} className="lg:pt-20">
         <div className="min-h-screen lg:pt-4 overflow-x-hidden">
           {/* Header */}
-          <div className="w-full px-4 lg:px-8 py-4 border-b border-[var(--border-color)]">
+          <div ref={headerRef} className="w-full px-4 lg:px-8 py-4 border-b border-[var(--border-color)]">
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 md:gap-4 overflow-hidden">
               <div className="flex items-center gap-3">
                 <button
@@ -587,7 +630,14 @@ function ArtistsPageContent() {
           </div>
 
           {/* Mobile Filters */}
-          <div className="lg:hidden">
+          <div
+            ref={mobileFiltersRef}
+            className={`lg:hidden bg-background ${
+              isMobileFiltersFixed
+                ? "fixed top-0 left-0 right-0 z-40"
+                : "relative z-20"
+            }`}
+          >
             <MobileFilters
               filters={filters}
               onFilterChange={handleFilterChange}
@@ -596,6 +646,14 @@ function ArtistsPageContent() {
               resultCount={totalResults}
             />
           </div>
+
+          {isMobileFiltersFixed && mobileFiltersHeight > 0 && (
+            <div
+              className="lg:hidden"
+              style={{ height: `${mobileFiltersHeight}px` }}
+              aria-hidden="true"
+            />
+          )}
 
           {/* Main Layout */}
           <div className="max-w-7xl mx-auto px-4 lg:px-8 md:py-6 flex gap-8 overflow-x-hidden">
