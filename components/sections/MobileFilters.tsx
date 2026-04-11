@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
-import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES } from "@/lib/constants";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 
@@ -62,8 +62,8 @@ const languageOptions: FilterOption[] = [
 ];
 
 const locationOptions: FilterOption[] = [
-  { value: "", label: "Select location" },
-  ...INDIAN_CITIES,
+  { value: "", label: "Select state" },
+  ...INDIAN_STATES,
 ];
 
 const MobileFilters: React.FC<MobileFiltersProps> = ({
@@ -474,14 +474,14 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                   />
                 </div>
 
-                {/* Artist Location */}
+                {/* Artist State */}
                 <div>
                   <Select
-                    label="Artist Location"
+                    label="Artist State"
                     value={filters.location}
                     options={locationOptions}
                     onChange={(value) => onFilterChange("location", value as string)}
-                    placeholder="Select location"
+                    placeholder="Select state"
                   />
                 </div>
               </div>
