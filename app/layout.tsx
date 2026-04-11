@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Raleway, Poppins } from 'next/font/google';
-// import './globals.css';
+import './globals.css';
 import { Providers } from './providers';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 
