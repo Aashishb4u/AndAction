@@ -224,6 +224,8 @@ function ArtistsPageContent() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pageRef = useRef(1);
+  const inFlightPageRef = useRef<number | null>(null);
 
   const artistsWithCategoryLabels = useMemo(
     () =>
@@ -239,6 +241,8 @@ function ArtistsPageContent() {
     const fetchData = async () => {
       setLoading(true);
       setPage(1);
+      pageRef.current = 1;
+      inFlightPageRef.current = null;
       const { artists: newArtists, total } = await getArtists(
         query,
         filters,
@@ -307,45 +311,87 @@ function ArtistsPageContent() {
   // Infinite scroll: fetch more artists when bottom is reached
   const fetchMoreArtists = useCallback(async () => {
     if (isFetchingMore || loading || !hasMore) return;
+
+    const nextPage = pageRef.current + 1;
+    if (inFlightPageRef.current === nextPage) return;
+
+    inFlightPageRef.current = nextPage;
     setIsFetchingMore(true);
-    const nextPage = page + 1;
-    const { artists: moreArtists } = await getArtists(
-      query,
-      filters,
-      nextPage,
-      pageLocation,
-    );
-    setArtists((prev) => [...prev, ...moreArtists]);
-    setPage(nextPage);
-    setHasMore(artists.length + moreArtists.length < totalResults);
-    setIsFetchingMore(false);
+
+    try {
+      const { artists: moreArtists } = await getArtists(
+        query,
+        filters,
+        nextPage,
+        pageLocation,
+      );
+
+      setArtists((prev) => {
+        const existingIds = new Set(prev.map((artist) => artist.id));
+        const dedupedMoreArtists = moreArtists.filter(
+          (artist) => !existingIds.has(artist.id),
+        );
+
+        return [...prev, ...dedupedMoreArtists];
+      });
+
+      pageRef.current = nextPage;
+      setPage(nextPage);
+
+      const reachedEnd =
+        moreArtists.length < DEFAULT_LIMIT ||
+        nextPage * DEFAULT_LIMIT >= totalResults;
+      setHasMore(!reachedEnd);
+    } finally {
+      inFlightPageRef.current = null;
+      setIsFetchingMore(false);
+    }
   }, [
     isFetchingMore,
     loading,
     hasMore,
-    page,
     query,
     filters,
     totalResults,
-    artists.length,
     pageLocation,
   ]);
 
   useEffect(() => {
     if (!observerRef.current) return;
+
+    const target = observerRef.current;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading && !isFetchingMore) {
           fetchMoreArtists();
         }
       },
-      { threshold: 1 }
+      { threshold: 0, rootMargin: "250px 0px" }
     );
-    observer.observe(observerRef.current);
+
+    observer.observe(target);
+
     return () => {
-      if (observerRef.current) observer.unobserve(observerRef.current);
+      observer.unobserve(target);
     };
   }, [fetchMoreArtists, hasMore, loading, isFetchingMore]);
+
+  // Fallback for mobile where IntersectionObserver can miss bottom triggers.
+  useEffect(() => {
+    if (!isMobile || loading || isFetchingMore || !hasMore) return;
+
+    const handleScroll = () => {
+      const scrolled = window.scrollY + window.innerHeight;
+      const threshold = document.documentElement.scrollHeight - 300;
+
+      if (scrolled >= threshold) {
+        fetchMoreArtists();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isMobile, loading, isFetchingMore, hasMore, fetchMoreArtists]);
 
   const handleFilterChange = (filterType: keyof Filters, value: string) => {
     setFilters((prev) => ({ ...prev, [filterType]: value }));
@@ -365,6 +411,8 @@ function ArtistsPageContent() {
     setQuery("");
     setSearchInput("");
     setPage(1);
+    pageRef.current = 1;
+    inFlightPageRef.current = null;
 
     // Reload all artists
     setLoading(true);
@@ -393,6 +441,8 @@ function ArtistsPageContent() {
   const handleViewResult = () => {
     setLoading(true);
     setPage(1);
+    pageRef.current = 1;
+    inFlightPageRef.current = null;
     getArtists(query, filters, 1, pageLocation)
       .then(({ artists, total }) => {
         setArtists(artists);
