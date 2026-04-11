@@ -133,44 +133,15 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
 
   return (
     <section className="relative w-full pt-2 pb-20 md:pb-8 overflow-hidden">
-      {/* Full-height Gradient Background */}
+      {/* Responsive Background Images */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        {/* Base background */}
-        <div className="absolute inset-0 bg-background" />
-
-        {/* Centered pink spotlight at top — connects with Hero curve glow (faded start) */}
         <div
-          className="absolute inset-x-0 top-0"
-          style={{
-            height: '600px',
-            background: `
-              radial-gradient(
-                ellipse 40% 75% at 50% 0%,
-                rgba(255,45,122,0.02) 0%,
-                rgba(255,45,122,0.06) 20%,
-                rgba(255,45,122,0.10) 40%,
-                rgba(255,45,122,0.04) 65%,
-                transparent 90%
-              )
-            `,
-          }}
+          className="absolute inset-0 bg-top bg-no-repeat bg-cover md:hidden"
+          style={{ backgroundImage: "url('/icons/focus_spotlight.svg')" }}
         />
-
-        {/* Center spotlight starting at top and extending downward (~5 rows) */}
         <div
-          className="pointer-events-none"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '-20px',
-            transform: 'translateX(-50%)',
-            width: '75%',
-            height: '1800px',
-            borderRadius: '50%',
-            background: `radial-gradient(ellipse 55% 65% at 50% 0%, rgba(255,45,122,0.02) 0%, rgba(255,45,122,0.06) 10%, rgba(255,45,122,0.12) 30%, rgba(255,45,122,0.08) 55%, rgba(255,45,122,0.03) 80%, transparent 95%)`,
-            zIndex: 1,
-            mixBlendMode: 'screen',
-          }}
+          className="absolute inset-0 hidden bg-top bg-no-repeat bg-cover md:block"
+          style={{ backgroundImage: "url('/icons/web_focus.svg')" }}
         />
       </div>
 

@@ -187,7 +187,17 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     router.push(`/artists?${params.toString()}`);
   };
 
-  const isFormValid = formData.artistCategory;
+  const isFormValid = Boolean(
+    formData.artistCategory ||
+    formData.subCategory.length > 0 ||
+    formData.artistGender ||
+    formData.budget ||
+    formData.eventState ||
+    formData.eventDate ||
+    formData.eventType ||
+    formData.performingLanguage.length > 0 ||
+    formData.location,
+  );
 
   return (
     <Modal

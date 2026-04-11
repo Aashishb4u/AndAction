@@ -31,11 +31,11 @@ const genderOptions: FilterOption[] = [
 
 const budgetOptions: FilterOption[] = [
   { value: "", label: "Select budget" },
-  { value: "0-50000", label: "₹0 - ₹50,000" },
+  { value: "0-10000", label: "₹0 - ₹10,000" },
+  { value: "10000-25000", label: "₹10,000 - ₹25,000" },
+  { value: "25000-50000", label: "₹25,000 - ₹50,000" },
   { value: "50000-100000", label: "₹50,000 - ₹1,00,000" },
-  { value: "100000-200000", label: "₹1,00,000 - ₹2,00,000" },
-  { value: "200000-500000", label: "₹2,00,000 - ₹5,00,000" },
-  { value: "500000+", label: "₹5,00,000+" },
+  { value: "100000+", label: "₹1,00,000+" },
 ];
 
 const eventStateOptions: FilterOption[] = [
