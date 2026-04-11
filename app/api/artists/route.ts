@@ -13,6 +13,38 @@ import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
+function parseBudgetFilter(rawBudget: string):
+  | { mode: "range"; min: number; max: number }
+  | { mode: "min"; min: number }
+  | null {
+  const budget = rawBudget.trim();
+  if (!budget) return null;
+
+  if (budget.endsWith("+")) {
+    const min = Number(budget.slice(0, -1));
+    if (Number.isFinite(min)) {
+      return { mode: "min", min };
+    }
+    return null;
+  }
+
+  if (budget.includes("-")) {
+    const [minStr, maxStr] = budget.split("-");
+    const minBudget = Number(minStr);
+    const maxBudget = Number(maxStr);
+
+    if (Number.isFinite(minBudget) && Number.isFinite(maxBudget)) {
+      return {
+        mode: "range",
+        min: Math.min(minBudget, maxBudget),
+        max: Math.max(minBudget, maxBudget),
+      };
+    }
+  }
+
+  return null;
+}
+
 function calculateDistanceKm(
   userLat: number,
   userLng: number,
@@ -91,6 +123,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // ---------------------------
     const where: Prisma.ArtistWhereInput = {};
 
+    const appendAndFilter = (filter: Prisma.ArtistWhereInput) => {
+      if (!where.AND) {
+        where.AND = [filter];
+        return;
+      }
+
+      if (Array.isArray(where.AND)) {
+        where.AND = [...where.AND, filter];
+        return;
+      }
+
+      where.AND = [where.AND, filter];
+    };
+
     // 🔍 SEARCH (name, bio, or user firstName/lastName)
     if (search) {
       where.OR = [
@@ -160,40 +206,53 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     }
 
     // ---------------------------
-    // BUDGET FILTER (supports null ranges)
+    // BUDGET FILTER (solo charges only)
     // ---------------------------
-    if (budget?.includes("-")) {
-      const [minStr, maxStr] = budget.split("-");
-      const min = Number(minStr);
-      const max = Number(maxStr);
+    if (budget) {
+      const parsedBudget = parseBudgetFilter(budget);
 
-      if (!isNaN(min) && !isNaN(max)) {
-        where.OR = [
-          ...(where.OR ?? []),
+      if (parsedBudget?.mode === "range") {
+        appendAndFilter({
+          OR: [
+            {
+              // Fixed/open-ended solo fee falls inside selected range.
+              AND: [
+                { soloChargesTo: null },
+                { soloChargesFrom: { gte: parsedBudget.min } },
+                { soloChargesFrom: { lte: parsedBudget.max } },
+              ],
+            },
+            {
+              // Explicit solo fee range overlaps selected range.
+              AND: [
+                { soloChargesTo: { not: null } },
+                { soloChargesFrom: { lte: parsedBudget.max } },
+                { soloChargesTo: { gte: parsedBudget.min } },
+              ],
+            },
+          ],
+        });
+      }
 
-          // SOLO charges
-          {
-            AND: [
-              { soloChargesFrom: { gte: min } },
-              {
-                OR: [{ soloChargesTo: null }, { soloChargesTo: { lte: max } }],
-              },
-            ],
-          },
-
-          // BACKLINE charges
-          {
-            AND: [
-              { chargesWithBacklineFrom: { gte: min } },
-              {
-                OR: [
-                  { chargesWithBacklineTo: null },
-                  { chargesWithBacklineTo: { lte: max } },
-                ],
-              },
-            ],
-          },
-        ];
+      if (parsedBudget?.mode === "min") {
+        appendAndFilter({
+          OR: [
+            {
+              // Fixed/open-ended solo fee at or above the selected floor.
+              AND: [
+                { soloChargesTo: null },
+                { soloChargesFrom: { gte: parsedBudget.min } },
+              ],
+            },
+            {
+              // Explicit solo fee range reaches or exceeds the selected floor.
+              AND: [
+                { soloChargesTo: { not: null } },
+                { soloChargesTo: { gte: parsedBudget.min } },
+              ],
+            },
+          ],
+        });
       }
     }
 
