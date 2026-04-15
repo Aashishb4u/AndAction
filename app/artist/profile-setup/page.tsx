@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ProfileOverview from "@/components/artist/profile-setup/ProfileOverview";
 import ArtistProfileDetails from "@/components/artist/profile-setup/ArtistProfileDetails";
 import PerformanceDetails from "@/components/artist/profile-setup/PerformanceDetails";
@@ -29,7 +29,9 @@ export default function ProfileSetupPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showBackWarning, setShowBackWarning] = useState(false);
   const [pendingBackStep, setPendingBackStep] = useState<ProfileSetupStep | "dashboard" | null>(null);
+  const [didInitFromQuery, setDidInitFromQuery] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status, update } = useSession();
 
   useEffect(() => {
@@ -45,6 +47,23 @@ export default function ProfileSetupPage() {
       return;
     }
   }, [status, session, router]);
+
+  useEffect(() => {
+    if (didInitFromQuery) return;
+    const stepParam = searchParams.get("step");
+    const allowedSteps: ProfileSetupStep[] = [
+      "overview",
+      "artistDetails",
+      "performanceDetails",
+      "contactPricing",
+      "review",
+      "videosSocialMedia",
+    ];
+    if (stepParam && allowedSteps.includes(stepParam as ProfileSetupStep)) {
+      setCurrentStep(stepParam as ProfileSetupStep);
+    }
+    setDidInitFromQuery(true);
+  }, [searchParams, didInitFromQuery]);
 
   // Form data states
   const [profileData, setProfileData] = useState({
