@@ -4,6 +4,7 @@ import React from "react";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
 import { ArtistProfileSetupData } from "@/types";
+import { ARTIST_CATEGORIES } from "@/lib/constants";
 
 interface ProfileReviewProps {
   data: ArtistProfileSetupData;
@@ -85,6 +86,22 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
 
   const subArtistTypes = parseList((data as any).subArtistTypes ?? data.subArtistType);
   const achievementsList = parseList((data as any).achievements ?? data.achievements);
+
+  const artistTypeLabel = React.useMemo(() => {
+    const rawArtistType = (data.artistType || "").trim();
+    if (!rawArtistType) return "Singer";
+
+    const normalize = (value: string) => value.toLowerCase().trim().replace(/[\s_]+/g, "-");
+
+    const normalizedRaw = normalize(rawArtistType);
+    const matchedCategory = ARTIST_CATEGORIES.find((category) => {
+      const normalizedValue = normalize(category.value);
+      const normalizedLabel = normalize(category.label);
+      return normalizedRaw === normalizedValue || normalizedRaw === normalizedLabel;
+    });
+
+    return matchedCategory?.label || rawArtistType;
+  }, [data.artistType]);
 
   // Map experience values to labels
   const getExperienceLabel = (value: string) => {
@@ -240,7 +257,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                     Artist type
                   </span>
                       <div className="flex gap-2 flex-wrap">
-                        <span className="text-white text-base">{data.artistType || "Singer"}</span>
+                        <span className="text-white text-base">{artistTypeLabel}</span>
                       </div>
                 </div>
                 <div className="flex flex-col gap-1">

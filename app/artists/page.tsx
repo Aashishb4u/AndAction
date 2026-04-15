@@ -11,7 +11,8 @@ import LoadingSpinner from "@/components/ui/Loading";
 import { transformArtist } from "./transformArtist";
 import ClientWrapper from "@/components/ui/client-wrapper";
 import { Search } from "lucide-react";
-import { VIDEO_CATEGORIES } from "@/lib/constants";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 const DEFAULT_LIMIT = 12;
 
@@ -60,7 +61,7 @@ const getArtistCount = async (
 const getArtists = async (
   query: string,
   filters: Filters,
-  page: number = 1
+  page: number = 1,
 ): Promise<{ artists: Artist[]; total: number }> => {
   try {
     const params = new URLSearchParams();
@@ -110,21 +111,27 @@ function normalizeTypeForRequest(type: string) {
   if (!type) return type;
   const t = type.trim().toLowerCase();
 
-  if (t === "band" || t === "bands" || t === "live band" || t === "liveband") return "Live Band";
-  if (t === "spiritual" || t === "spiritual / devotional singer" || t === "devotional / spiritual singer") return "spiritual";
+  if (t === "band" || t === "bands" || t === "live band" || t === "liveband") return "live-band";
+  if (t === "spiritual" || t === "spiritual / devotional singer" || t === "devotional / spiritual singer" || t === "devotional/spiritual singer") return "spiritual";
+  if (t === "dj/vj" || t === "dj / vj") return "dj";
+  if (t === "dj based band" || t === "dj-based-band") return "dj-based-band";
   if (t === "dj percussionist" || t === "dj-percussionist" || t === "djpercussionist") return "dj-percussionist";
-  if (t === "comedian" || t === "comedians" || t === "comedy") return "comedian";
+  if (t === "comedian" || t === "comedians" || t === "comedy" || t === "comedian/mimicry" || t === "comedian-mimicry") return "comedian-mimicry";
 
   // Keep common aliases stable with current constants values.
-  if (t === "special act" || t === "specialact" || t === "special-act") return "special-act";
+  if (t === "special act" || t === "specialact" || t === "special-act" || t === "special act performer") return "special-act";
   if (t === "kids entertainer" || t === "kids entertainers" || t === "kidsentertainer" || t === "kids-entertainer") return "kids-entertainer";
+  if (t === "motivational speaker" || t === "motivational-speaker") return "motivational-speaker";
+  if (t === "folk artist" || t === "folk-artist") return "folk-artist";
 
   return type.trim();
 }
 
 function normalizeTypeForUrl(type: string) {
-  // Keep URL query values canonical so filter controls can resolve selections reliably.
-  return normalizeTypeForRequest(type);
+  // Keep internal filter values stable, but format outgoing URL params for UX/readability.
+  const normalized = normalizeTypeForRequest(type);
+  if (normalized === "live-band") return "Live Band";
+  return normalized;
 }
 
 
@@ -149,6 +156,7 @@ function ArtistsPageContent() {
   };
 
   const [artists, setArtists] = useState<Artist[]>([]);
+  const { categories } = useArtistCategories();
   const [filters, setFilters] = useState<Filters>(getInitialFilters);
   const [query, setQuery] = useState(searchParams.get("search") || "");
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
@@ -166,7 +174,11 @@ function ArtistsPageContent() {
     const fetchData = async () => {
       setLoading(true);
       setPage(1);
-      const { artists: newArtists, total } = await getArtists(query, filters, 1);
+      const { artists: newArtists, total } = await getArtists(
+        query,
+        filters,
+        1,
+      );
       setArtists(newArtists);
       setTotalResults(total);
       setHasMore(newArtists.length < total);
@@ -227,12 +239,25 @@ function ArtistsPageContent() {
     if (isFetchingMore || loading || !hasMore) return;
     setIsFetchingMore(true);
     const nextPage = page + 1;
-    const { artists: moreArtists } = await getArtists(query, filters, nextPage);
+    const { artists: moreArtists } = await getArtists(
+      query,
+      filters,
+      nextPage,
+    );
     setArtists((prev) => [...prev, ...moreArtists]);
     setPage(nextPage);
     setHasMore(artists.length + moreArtists.length < totalResults);
     setIsFetchingMore(false);
-  }, [isFetchingMore, loading, hasMore, page, query, filters, totalResults, artists.length]);
+  }, [
+    isFetchingMore,
+    loading,
+    hasMore,
+    page,
+    query,
+    filters,
+    totalResults,
+    artists.length,
+  ]);
 
   useEffect(() => {
     if (!observerRef.current) return;
@@ -283,7 +308,7 @@ function ArtistsPageContent() {
         language: "",
         location: "",
       },
-      1
+      1,
     ).then(({ artists, total }) => {
       setArtists(artists);
       setTotalResults(total);
@@ -400,13 +425,7 @@ function ArtistsPageContent() {
                 {/* Show active filter name if set */}
                 {filters.category && (
                   <span className=" py-1 h3 text-white flex-shrink-0">
-                    {(() => {
-                      // Find matching category from VIDEO_CATEGORIES (case-insensitive)
-                      const category = VIDEO_CATEGORIES.find(
-                        cat => cat.value.toLowerCase() === filters.category.toLowerCase()
-                      );
-                      return category?.label || filters.category;
-                    })()}
+                    {findCategoryLabel(categories, filters.category) || filters.category}
                   </span>
                 )}
               </div>

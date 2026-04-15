@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SiteLayout from "@/components/layout/SiteLayout";
 import ArtistProfileHeader from "@/components/sections/ArtistProfileHeader";
 import ArtistDetailTabs from "@/components/sections/ArtistDetailTabs";
 import { BookingStatus } from "@prisma/client";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 export const createBooking = async (artistId: string, formData: any) => {
   try {
@@ -20,13 +22,15 @@ export const createBooking = async (artistId: string, formData: any) => {
         eventDate: formData.eventDate,
         eventType: formData.eventType,
         eventLocation: `${formData.city}, ${formData.state}`,
+        mobileNumber: formData.mobileNumber,
+        phoneNumber: formData.mobileNumber,
         totalPrice: formData.totalPrice,
         notes: formData.note,
       }),
     });
 
     const data = await response.json();
-    return data;
+    return data;  
   } catch (error) {
     console.error("Error creating booking:", error);
     throw error;
@@ -72,6 +76,7 @@ export default function ArtistDetailPage() {
   const router = useRouter();
   const { id: artistId } = useParams();
   const { data: session } = useSession();
+  const { categories } = useArtistCategories();
   const [artist, setArtist] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
@@ -127,16 +132,16 @@ export default function ArtistDetailPage() {
 
           bio: a.shortBio || "",
           yearsOfExperience: a.yearsOfExperience || 0,
-          achievements: [a.achievements],
-          subArtistTypes: [a.subArtistType],
-          languages: [a.performingLanguage],
+          achievements: a.achievements ? [a.achievements] : [],
+          subArtistTypes: a.subArtistType ? [a.subArtistType] : [],
+          languages: a.performingLanguage ? [a.performingLanguage] : [],
 
-          soloChargesFrom: a.soloChargesFrom || 0,
-          soloChargesTo: a.soloChargesTo || 0,
+          soloChargesFrom: a.soloChargesFrom ?? undefined,
+          soloChargesTo: a.soloChargesTo ?? undefined,
           soloChargesDescription: a.soloChargesDescription || "",
 
-          chargesWithBacklineFrom: a.chargesWithBacklineFrom || 0,
-          chargesWithBacklineTo: a.chargesWithBacklineTo || 0,
+          chargesWithBacklineFrom: a.chargesWithBacklineFrom ?? undefined,
+          chargesWithBacklineTo: a.chargesWithBacklineTo ?? undefined,
           chargesWithBacklineDescription: a.chargesWithBacklineDescription || "",
 
           performingDurationFrom: a.performingDurationFrom || "",
@@ -151,7 +156,7 @@ export default function ArtistDetailPage() {
           startingPrice: Number(a.soloChargesFrom) || 0,
 
           contactNumber: a.contactNumber || "",
-          whatsappNumber: a.whatsappNumber || "",
+          whatsappNumber: a.whatsappNumber || a.contactNumber || "",
           userId: a.user.id,
 
           // 🔥 bookmark state restored on reload
@@ -185,6 +190,15 @@ export default function ArtistDetailPage() {
     fetchData();
   }, [artistId, session?.user]);
 
+  const displayArtist = useMemo(() => {
+    if (!artist) return null;
+
+    return {
+      ...artist,
+      category: findCategoryLabel(categories, artist.category) || artist.category,
+    };
+  }, [artist, categories]);
+
   if (loading) {
     return (
       <SiteLayout>
@@ -195,7 +209,7 @@ export default function ArtistDetailPage() {
     );
   }
 
-  if (!artist) {
+  if (!artist || !displayArtist) {
     return (
       <SiteLayout>
         <div className="min-h-screen flex items-center justify-center">
@@ -293,14 +307,15 @@ export default function ArtistDetailPage() {
       router.push("/auth/signin");
       return;
     }
-    if (artist.whatsappNumber) {
+    const whatsappTarget = artist.whatsappNumber || artist.contactNumber;
+    if (whatsappTarget) {
       const userName = `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'a user';
       const artistName = artist.name || 'Artist';
       const message = `Hi ${artistName}, I am ${userName} found your profile on ANDACTION`;
       const encodedMessage = encodeURIComponent(message);
       
       window.open(
-        `https://wa.me/${artist.whatsappNumber.replace(/[^0-9]/g, "")}?text=${encodedMessage}`,
+        `https://wa.me/${whatsappTarget.replace(/[^0-9]/g, "")}?text=${encodedMessage}`,
         "_blank"
       );
     }
@@ -311,7 +326,7 @@ export default function ArtistDetailPage() {
       <div className="hidden max-w-7xl mx-auto lg:flex min-h-screen bg-background py-10 lg:py-14">
         <div className="w-[400px] flex-shrink-0">
           <ArtistProfileHeader
-            artist={artist}
+            artist={displayArtist}
             disabledDates={disabledDates}
             onBack={handleBack}
             onBookmark={handleBookmark}
@@ -323,13 +338,13 @@ export default function ArtistDetailPage() {
         </div>
 
         <div className="flex-1">
-          <ArtistDetailTabs artist={artist} />
+          <ArtistDetailTabs artist={displayArtist} />
         </div>
       </div>
 
       <div className="lg:hidden min-h-screen bg-background">
         <ArtistProfileHeader
-          artist={artist}
+          artist={displayArtist}
           disabledDates={disabledDates}
           onBack={handleBack}
           onBookmark={handleBookmark}
@@ -339,7 +354,7 @@ export default function ArtistDetailPage() {
           onWhatsApp={handleWhatsApp}
           isMobile={true}
         />
-        <ArtistDetailTabs artist={artist} isMobile={true} />
+        <ArtistDetailTabs artist={displayArtist} isMobile={true} />
       </div>
     </SiteLayout>
   );

@@ -10,6 +10,7 @@ import imageCompression from "browser-image-compression";
 import { ArtistProfileSetupData } from "@/types";
 import Cropper from "react-easy-crop";
 import { Area } from "react-easy-crop";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 
 interface ArtistProfileDetailsProps {
   data: ArtistProfileSetupData;
@@ -72,6 +73,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   onBack,
   onUpdateData,
 }) => {
+  const { categories: artistTypes } = useArtistCategories();
+
   const [formData, setFormData] = useState({
     profilePhoto: data.profilePhoto || null,
     avatarUrl: (data as any).avatarUrl || "",
@@ -126,6 +129,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     useState<string[]>(defaultSubTypes);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [uploadError, setUploadError] = useState("");
 
   const onCropComplete = useCallback(
     (croppedArea: Area, croppedAreaPixels: Area) => {
@@ -133,22 +138,6 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     },
     [],
   );
-
-  const artistTypes = [
-    { value: "singer", label: "Singer" },
-    { value: "dancer", label: "Dancer/Dance Group" },
-    { value: "musician", label: "Musician/Instrumentalist" },
-    { value: "comedian", label: "Comedian" },
-    { value: "magician", label: "Magician/Illusionist" },
-    { value: "actor", label: "Theatre Artist/Actor" },
-    { value: "anchor", label: "Anchor/Emcee/Host" },
-    { value: "band", label: "Live Band/Group" },
-    { value: "dj", label: "DJ" },
-    { value: "mimicry", label: "Mimicry/Impressionist" },
-    { value: "special-act", label: "Special Act Performer" },
-    { value: "spiritual", label: "Spiritual/Devotional" },
-    { value: "kids-entertainer", label: "Kids Entertainer" },
-  ];
 
   const subArtistTypes = [
     { value: "classical", label: "Classical" },
@@ -246,6 +235,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
     try {
       setUploading(true);
+      setUploadMessage("");
+      setUploadError("");
 
       // 1️⃣ Compress the file before uploading
       const options = {
@@ -275,6 +266,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
       if (!res.ok) {
         console.error(json.message);
+        setUploadError(json.message || "Failed to upload profile photo.");
         setUploading(false);
         return;
       }
@@ -288,10 +280,12 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
       setFormData((prev) => ({ ...prev, ...updatedData }));
       onUpdateData(updatedData);
+      setUploadMessage(json?.message || "Profile photo uploaded successfully.");
 
       setUploading(false);
     } catch (error) {
       console.error("Profile photo upload failed:", error);
+      setUploadError("Failed to upload profile photo. Please try again.");
       setUploading(false);
     }
   };
@@ -504,6 +498,13 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                 </Tooltip>
               </div>
             </div>
+
+            {uploadMessage && (
+              <p className="text-green-400 text-sm text-center -mt-2">{uploadMessage}</p>
+            )}
+            {uploadError && (
+              <p className="text-red-500 text-sm text-center -mt-2">{uploadError}</p>
+            )}
 
             {/* Stage Name */}
             <div>

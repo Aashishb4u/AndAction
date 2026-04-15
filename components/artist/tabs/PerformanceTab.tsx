@@ -41,20 +41,14 @@ const eventTypeOptions = [
 
 
 const performingMembersOptions = [
-  { value: "1", label: "1 member" },
-  { value: "2", label: "2 members" },
-  { value: "3", label: "3 members" },
-  { value: "4", label: "4 members" },
-  { value: "5", label: "5+ members" },
+  { value: "1", label: "1 Member" },
+  { value: "2-5", label: "2-5 Members" },
+  { value: "6-10", label: "6-10 Members" },
+  { value: "11-20", label: "11-20 Members" },
+  { value: "20+", label: "20+ Members" },
 ];
 
-const offStageMembersOptions = [
-  { value: "0", label: "0 members" },
-  { value: "1", label: "1 member" },
-  { value: "2", label: "2 members" },
-  { value: "3", label: "3 members" },
-  { value: "4", label: "4+ members" },
-];
+const offStageMembersOptions = performingMembersOptions;
 
 // Helper function to parse comma-separated string to array
 const parseCSV = (value: string | undefined | null): string[] => {
@@ -82,6 +76,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
     maxDuration: artist.performingDurationTo || "",
     performingMembers: artist.performingMembers || "",
     offStageMembers: artist.offStageMembers || "",
+    soloChargesFrom: artist.soloChargesFrom?.toString() || "",
+    soloChargesTo: artist.soloChargesTo?.toString() || "",
+    soloChargesDescription: artist.soloChargesDescription || "",
+    chargesWithBacklineFrom: artist.chargesWithBacklineFrom?.toString() || "",
+    chargesWithBacklineTo: artist.chargesWithBacklineTo?.toString() || "",
+    chargesWithBacklineDescription: artist.chargesWithBacklineDescription || "",
   });
 
   const handleInputChange = (field: string, value: string | string[]) => {
@@ -182,6 +182,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         performingDurationTo: formData.maxDuration,
         performingMembers: formData.performingMembers,
         offStageMembers: formData.offStageMembers,
+        soloChargesFrom: formData.soloChargesFrom,
+        soloChargesTo: formData.soloChargesTo,
+        soloChargesDescription: formData.soloChargesDescription,
+        chargesWithBacklineFrom: formData.chargesWithBacklineFrom,
+        chargesWithBacklineTo: formData.chargesWithBacklineTo,
+        chargesWithBacklineDescription: formData.chargesWithBacklineDescription,
       };
 
       const res = await updateArtistProfile(payload);
@@ -213,6 +219,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       maxDuration: artist.performingDurationTo || "",
       performingMembers: artist.performingMembers || "",
       offStageMembers: artist.offStageMembers || "",
+      soloChargesFrom: artist.soloChargesFrom?.toString() || "",
+      soloChargesTo: artist.soloChargesTo?.toString() || "",
+      soloChargesDescription: artist.soloChargesDescription || "",
+      chargesWithBacklineFrom: artist.chargesWithBacklineFrom?.toString() || "",
+      chargesWithBacklineTo: artist.chargesWithBacklineTo?.toString() || "",
+      chargesWithBacklineDescription: artist.chargesWithBacklineDescription || "",
     });
   };
 
@@ -552,6 +564,92 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             </Tooltip>
           </div>
         </div>
+      </div>
+
+      {/* Solo Charges */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">
+            Solo charges <span className="text-red-500 ml-1">*</span>
+          </label>
+          <Tooltip content="Amount range you usually charge when performing solo">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+        <div className="grid grid-cols-2 gap-6">
+          <Input
+            value={formData.soloChargesFrom}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("soloChargesFrom", value);
+              }
+            }}
+            placeholder="From"
+            required
+          />
+          <Input
+            value={formData.soloChargesTo}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("soloChargesTo", value);
+              }
+            }}
+            placeholder="To"
+            required
+          />
+        </div>
+        <textarea
+          placeholder="What services do you include while charging solo"
+          value={formData.soloChargesDescription}
+          onChange={(e) => handleInputChange("soloChargesDescription", e.target.value)}
+          rows={3}
+          className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-white placeholder-text-gray focus:outline-none focus:border-primary-pink transition-colors duration-200 resize-none"
+        />
+      </div>
+
+      {/* Charges with Backing */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-white">
+            Charges with backing
+          </label>
+          <Tooltip content="Amount range including backline like sound, stage, and support setup">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+        <div className="grid grid-cols-2 gap-6">
+          <Input
+            value={formData.chargesWithBacklineFrom}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("chargesWithBacklineFrom", value);
+              }
+            }}
+            placeholder="From"
+          />
+          <Input
+            value={formData.chargesWithBacklineTo}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("chargesWithBacklineTo", value);
+              }
+            }}
+            placeholder="To"
+          />
+        </div>
+        <textarea
+          placeholder="Please include backline like sound system, stage, chorus, etc."
+          value={formData.chargesWithBacklineDescription}
+          onChange={(e) =>
+            handleInputChange("chargesWithBacklineDescription", e.target.value)
+          }
+          rows={3}
+          className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-white placeholder-text-gray focus:outline-none focus:border-primary-pink transition-colors duration-200 resize-none"
+        />
       </div>
 
       {/* Action Buttons */}

@@ -28,7 +28,7 @@ export interface BookingFormData {
   eventDate: string;
   time: string;
   note: string;
-  totalPrice: number;
+  totalPrice: number | "";
 }
 
 const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
@@ -48,10 +48,10 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
     eventDate: "",
     time: "",
     note: "",
-    totalPrice: 1000,
+    totalPrice: "",
   });
 
-  const [errors, setErrors] = useState<Partial<BookingFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof BookingFormData, string>>>({});
 
   const eventTypeOptions = [
     { value: "wedding", label: "Wedding" },
@@ -83,7 +83,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<BookingFormData> = {};
+    const newErrors: Partial<Record<keyof BookingFormData, string>> = {};
 
     if (!formData.firstName.trim())
       newErrors.firstName = "First name is required";
@@ -95,6 +95,9 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
     if (!formData.eventType) newErrors.eventType = "Event type is required";
     if (!formData.eventDate) newErrors.eventDate = "Event date is required";
     if (!formData.time) newErrors.time = "Time slot is required";
+    if (formData.totalPrice === "") {
+      newErrors.totalPrice = "Budget is required";
+    }
 
     // Validate mobile number format
     if (
@@ -124,7 +127,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
         eventDate: "",
         time: "",
         note: "",
-        totalPrice: 1000,
+        totalPrice: "",
       });
       setErrors({});
     }
@@ -141,7 +144,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
       eventDate: "",
       time: "",
       note: "",
-      totalPrice: 1000,
+      totalPrice: "",
     });
     setErrors({});
     onClose();
@@ -259,12 +262,13 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
           </div>
           <div className="relative">
             <Input
-              label="Total Price*"
-              placeholder="Total Price"
+              label="Budget*"
+              placeholder="Enter budget"
               value={formData.totalPrice}
               onChange={(e) => handleInputChange("totalPrice", e.target.value)}
               type="number"
-              min={1000}
+              min={0}
+              error={errors.totalPrice}
               required
             />
           </div>

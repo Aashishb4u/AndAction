@@ -12,8 +12,12 @@ import { Artist } from "@/types";
 import { useSession } from "next-auth/react";
 import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
 import { toast } from "react-toastify";
-import { INDIAN_STATES, INDIAN_CITIES, ARTIST_CATEGORIES } from "@/lib/constants";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 import { useQueryClient } from "@tanstack/react-query";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import {
+  normalizeArtistCategoryValue,
+} from "@/lib/artist-category-utils";
 
 // Extended artist type for profile management
 type ExtendedArtist = Artist & {
@@ -25,6 +29,8 @@ type ExtendedArtist = Artist & {
   state?: string;
   city?: string;
   shortBio?: string;
+  contactNumber?: string;
+  contactEmail?: string;
   subArtistType: string;
 };
 
@@ -39,7 +45,7 @@ const genderOptions = [
   { value: "prefer-not-to-say", label: "Prefer not to say" },
 ];
 
-// Use `ARTIST_CATEGORIES` from constants for category options
+// Category options are loaded from artist_categories table.
 
 const subArtistTypeOptions = [
   { value: "classical", label: "Classical" },
@@ -61,47 +67,17 @@ const experienceOptions = [
 const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
   const { data: session, update } = useSession();
   const queryClient = useQueryClient();
+  const { categories } = useArtistCategories();
   const [isLoading, setIsLoading] = useState(false);
 
-  const mapArtistTypeForStorage = (value: string) => {
-    const v = (value || "").trim().toLowerCase();
-    if (!v) return "";
-
-    // Keep DB naming compatible with existing data/query mappings.
-    if (v === "dj-percussionist" || v === "dj percussionist" || v === "djpercussionist") {
-      return "Dj Percussionist";
-    }
-    if (v === "dj") return "DJ / VJ";
-    if (v === "live band" || v === "band" || v === "bands") return "Live Band";
-    if (v === "spiritual") return "Spiritual / Devotional Singer";
-
-    return value.trim();
-  };
-
   const normalizeArtistTypeValue = (rawValue?: string) => {
-    const raw = (rawValue || "").trim();
-    if (!raw) return "";
+    const normalized = normalizeArtistCategoryValue(rawValue || "");
+    if (!normalized) return "";
 
-    const lower = raw.toLowerCase();
-
-    // 1) Exact match by option value
-    const byValue = ARTIST_CATEGORIES.find(
-      (item) => item.value.toLowerCase() === lower,
+    const labelMatch = categories.find(
+      (item) => item.label.toLowerCase() === normalized.toLowerCase(),
     );
-    if (byValue) return byValue.value;
-
-    // 2) Match by display label
-    const byLabel = ARTIST_CATEGORIES.find(
-      (item) => item.label.toLowerCase() === lower,
-    );
-    if (byLabel) return byLabel.value;
-
-    // 3) Common aliases
-    if (lower === "band" || lower === "bands" || lower === "live band" || lower === "liveband") return "Live Band";
-    if (lower === "spiritual" || lower === "spiritual / devotional singer" || lower === "devotional / spiritual singer") return "spiritual";
-    if (lower === "dj percussionist" || lower === "dj-percussionist" || lower === "djpercussionist") return "dj-percussionist";
-
-    return raw;
+    return labelMatch?.value || normalized;
   };
 
   const initialArtistType = normalizeArtistTypeValue(
@@ -119,6 +95,10 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
     pinCode: (artist as ExtendedArtist).pinCode || "",
     state: (artist as ExtendedArtist).state?.toLowerCase() || "",
     city: (artist as ExtendedArtist).city?.toLowerCase() || "",
+    contactNumber:
+      (artist as ExtendedArtist).contactNumber || (artist as any).phone || "",
+    email:
+      (artist as ExtendedArtist).contactEmail || (artist as any).email || "",
     subArtistType:
       (artist as ExtendedArtist).subArtistType?.toLowerCase() || "",
     achievements: Array.isArray(artist.achievements)
@@ -157,7 +137,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         userId: session.user.id,
 
         stageName: formData.stageName,
-        artistType: mapArtistTypeForStorage(formData.artistType),
+        artistType: normalizeArtistCategoryValue(formData.artistType),
         firstName: formData.firstName,
         lastName: formData.lastName,
         gender: formData.gender,
@@ -166,6 +146,9 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         pinCode: formData.pinCode,
         city: formData.city,
         state: formData.state,
+        contactNumber: formData.contactNumber,
+        whatsappNumber: formData.contactNumber,
+        contactEmail: formData.email,
         shortBio: formData.shortBio,
         achievements: formData.achievements,
         yearsOfExperience: formData.yearsOfExperience,
@@ -211,6 +194,10 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       pinCode: (artist as ExtendedArtist).pinCode || "",
       state: (artist as ExtendedArtist).state?.toLowerCase() || "",
       city: (artist as ExtendedArtist).city?.toLowerCase() || "",
+      contactNumber:
+        (artist as ExtendedArtist).contactNumber || (artist as any).phone || "",
+      email:
+        (artist as ExtendedArtist).contactEmail || (artist as any).email || "",
       subArtistType:
         (artist as ExtendedArtist).subArtistType?.toLowerCase() || "",
       achievements: Array.isArray(artist.achievements)
@@ -306,11 +293,41 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         />
       </div>
 
+      {/* Contact Number */}
+      <div className="relative text-sm">
+        <Input
+          label="Contact / Whatsapp number*"
+          value={formData.contactNumber}
+          onChange={(e) => handleInputChange("contactNumber", e.target.value)}
+          required
+        />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Primary contact number shown to users and used for calls/WhatsApp fallback">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* Email ID */}
+      <div className="relative text-sm">
+        <Input
+          label="Email ID"
+          value={formData.email}
+          onChange={(e) => handleInputChange("email", e.target.value)}
+          type="email"
+        />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="Professional email used for booking communication">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+      </div>
+
             {/* Artist Category */}
       <div className="relative text-sm">
         <Select
           label="Artist Category*"
-          options={ARTIST_CATEGORIES}
+          options={categories}
           value={formData.artistType}
           onChange={(value) => handleInputChange("artistType", value)}
           required

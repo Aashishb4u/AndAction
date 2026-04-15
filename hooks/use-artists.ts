@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { getArtishName } from "@/lib/utils";
+import { useQuery, useQueries } from "@tanstack/react-query";
 
 export interface Artist {
   id: string;
@@ -12,20 +13,22 @@ export interface Artist {
 }
 
 export type ArtistType =
+  | "live-band"
+  | "spiritual"
   | "singer"
-  | "dancer"
   | "anchor"
   | "dj"
+  | "dj-based-band"
   | "dj-percussionist"
-  | "band"
-  | "comedian"
   | "musician"
+  | "dancer"
   | "magician"
-  | "actor"
-  | "mimicry"
+  | "comedian-mimicry"
   | "special-act"
-  | "spiritual"
-  | "kids-entertainer";
+  | "motivational-speaker"
+  | "kids-entertainer"
+  | "folk-artist"
+  | "model";
 
 interface LocationParams {
   lat: number;
@@ -33,7 +36,7 @@ interface LocationParams {
 }
 
 interface FetchArtistsParams {
-  type: ArtistType;
+  type: string;
   location?: LocationParams | null;
   verified?: boolean;
   minResults?: number;
@@ -67,13 +70,24 @@ interface ArtistsApiResponse {
 const mockVideoUrl =
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
+function normalizeArtistTypeRequest(type: string): string {
+  const normalized = type.trim().toLowerCase();
+
+  const typeMap: Record<string, string> = {
+    band: "live-band",
+    spiritual: "spiritual-singer",
+  };
+
+  return typeMap[normalized] || normalized;
+}
+
 export const artistKeys = {
   all: ["artists"] as const,
   lists: () => [...artistKeys.all, "list"] as const,
   list: (filters: Partial<FetchArtistsParams>) =>
     [...artistKeys.lists(), filters] as const,
-  byType: (type: ArtistType) => [...artistKeys.all, type] as const,
-  byTypeWithLocation: (type: ArtistType, location: LocationParams | null) =>
+  byType: (type: string) => [...artistKeys.all, type] as const,
+  byTypeWithLocation: (type: string, location: LocationParams | null) =>
     [
       ...artistKeys.byType(type),
       location ? `${location.lat.toFixed(4)},${location.lng.toFixed(4)}` : null,
@@ -82,9 +96,7 @@ export const artistKeys = {
 
 const mapArtistData = (artist: any): Artist => ({
   id: artist.id,
-  name:
-    artist.stageName ||
-    `${artist.user.firstName} ${artist.user.lastName}`.trim(),
+  name: getArtishName(artist.user.name, artist.user.firstName, artist.user.lastName),
   location: artist.user.city || "Unknown",
   thumbnail: artist.user.avatar || "/avatars/default.jpg",
   videoUrl: mockVideoUrl,
@@ -101,13 +113,7 @@ async function fetchArtistsByType({
   artists: Artist[];
   metadata?: SearchMetadata;
 }> {
-  // Normalize type for request to keep category naming consistent across pages.
-  const typeParam =
-    type === 'band'
-      ? 'Live Band'
-      : type === 'spiritual'
-        ? 'Devotional / Spiritual Singer'
-        : type;
+  const typeParam = normalizeArtistTypeRequest(type);
 
   let url = `/api/artists/nearby?type=${encodeURIComponent(typeParam)}&verified=${verified}&minResults=${minResults}&maxRadius=${maxRadius}`;
 
@@ -130,7 +136,7 @@ async function fetchArtistsByType({
 }
 
 export function useArtistsByType(
-  type: ArtistType,
+  type: string,
   location: LocationParams | null = null,
   verified: boolean = false,
   enabled: boolean = true,
@@ -151,139 +157,197 @@ export function useArtistsByType(
 
 // All available artist types
 export const ALL_ARTIST_TYPES: ArtistType[] = [
+  "live-band",
+  "spiritual",
   "singer",
-  "dancer",
   "anchor",
   "dj",
+  "dj-based-band",
   "dj-percussionist",
-  "band",
-  "comedian",
   "musician",
+  "dancer",
   "magician",
-  "actor",
-  "mimicry",
+  "comedian-mimicry",
   "special-act",
-  "spiritual",
+  "motivational-speaker",
   "kids-entertainer",
+  "folk-artist",
+  "model",
 ];
+
+export function useArtistsByCategoryValues(
+  categoryValues: string[],
+  location: LocationParams | null = null,
+  verified: boolean = false,
+  enabled: boolean = true,
+) {
+  const queries = useQueries({
+    queries: categoryValues.map((type) => ({
+      queryKey: artistKeys.byTypeWithLocation(type, location),
+      queryFn: () => fetchArtistsByType({ type, location, verified }),
+      enabled,
+      staleTime: 1000 * 60 * 10,
+      gcTime: 1000 * 60 * 30,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      refetchOnMount: false,
+      refetchIntervalInBackground: false,
+      retryOnMount: false,
+    })),
+  });
+
+  const byType = categoryValues.reduce(
+    (acc, type, index) => {
+      acc[type] = queries[index]?.data?.artists || [];
+      return acc;
+    },
+    {} as Record<string, Artist[]>,
+  );
+
+  return {
+    byType,
+    isLoading: queries.some((query) => query.isLoading),
+    isFetching: queries.some((query) => query.isFetching),
+    isError: queries.some((query) => query.isError),
+    refetch: () => {
+      queries.forEach((query) => {
+        query.refetch();
+      });
+    },
+  };
+}
 
 export function useAllArtists(
   location: LocationParams | null = null,
   verified: boolean = false,
   enabled: boolean = true,
 ) {
+  const liveBandsQuery = useArtistsByType("live-band", location, verified, enabled);
+  const devotionalSpiritualSingersQuery = useArtistsByType("spiritual", location, verified, enabled);
   const singersQuery = useArtistsByType("singer", location, verified, enabled);
-  const dancersQuery = useArtistsByType("dancer", location, verified, enabled);
-  const anchorsQuery = useArtistsByType("anchor", location, verified, enabled);
-  const djsQuery = useArtistsByType("dj", location, verified, enabled);
-  const bandsQuery = useArtistsByType("band", location, verified, enabled);
-  const comediansQuery = useArtistsByType("comedian", location, verified, enabled);
-  const musiciansQuery = useArtistsByType("musician", location, verified, enabled);
-  const magiciansQuery = useArtistsByType("magician", location, verified, enabled);
-  const actorsQuery = useArtistsByType("actor", location, verified, enabled);
+  const anchorEmceeHostsQuery = useArtistsByType("anchor", location, verified, enabled);
+  const djVjsQuery = useArtistsByType("dj", location, verified, enabled);
+  const djBasedBandsQuery = useArtistsByType("dj-based-band", location, verified, enabled);
   const djPercussionistsQuery = useArtistsByType("dj-percussionist", location, verified, enabled);
-  const mimicryQuery = useArtistsByType("mimicry", location, verified, enabled);
-  const specialActQuery = useArtistsByType("special-act", location, verified, enabled);
-  const spiritualQuery = useArtistsByType("spiritual", location, verified, enabled);
+  const musiciansInstrumentalistsQuery = useArtistsByType("musician", location, verified, enabled);
+  const dancersDanceGroupsQuery = useArtistsByType("dancer", location, verified, enabled);
+  const magicialIllusionistsQuery = useArtistsByType("magician", location, verified, enabled);
+  const comedianMimicryQuery = useArtistsByType("comedian-mimicry", location, verified, enabled);
+  const specialActPerformersQuery = useArtistsByType("special-act", location, verified, enabled);
+  const motivationalSpeakersQuery = useArtistsByType("motivational-speaker", location, verified, enabled);
   const kidsEntertainerQuery = useArtistsByType(
     "kids-entertainer",
     location,
     verified,
     enabled,
   );
+  const folkArtistsQuery = useArtistsByType("folk-artist", location, verified, enabled);
+  const modelsQuery = useArtistsByType("model", location, verified, enabled);
 
   return {
+    liveBands: liveBandsQuery.data?.artists || [],
+    devotionalSpiritualSingers: devotionalSpiritualSingersQuery.data?.artists || [],
     singers: singersQuery.data?.artists || [],
-    dancers: dancersQuery.data?.artists || [],
-    anchors: anchorsQuery.data?.artists || [],
-    djs: djsQuery.data?.artists || [],
-    bands: bandsQuery.data?.artists || [],
-    comedians: comediansQuery.data?.artists || [],
-    musicians: musiciansQuery.data?.artists || [],
-    magicians: magiciansQuery.data?.artists || [],
-    actors: actorsQuery.data?.artists || [],
+    anchorEmceeHosts: anchorEmceeHostsQuery.data?.artists || [],
+    djVjs: djVjsQuery.data?.artists || [],
+    djBasedBands: djBasedBandsQuery.data?.artists || [],
     djPercussionists: djPercussionistsQuery.data?.artists || [],
-    mimicry: mimicryQuery.data?.artists || [],
-    specialAct: specialActQuery.data?.artists || [],
-    spiritual: spiritualQuery.data?.artists || [],
+    musiciansInstrumentalists: musiciansInstrumentalistsQuery.data?.artists || [],
+    dancersDanceGroups: dancersDanceGroupsQuery.data?.artists || [],
+    magicialIllusionists: magicialIllusionistsQuery.data?.artists || [],
+    comedianMimicry: comedianMimicryQuery.data?.artists || [],
+    specialActPerformers: specialActPerformersQuery.data?.artists || [],
+    motivationalSpeakers: motivationalSpeakersQuery.data?.artists || [],
     kidsEntertainers: kidsEntertainerQuery.data?.artists || [],
+    folkArtists: folkArtistsQuery.data?.artists || [],
+    models: modelsQuery.data?.artists || [],
 
     // Metadata for each type
+    liveBandsMetadata: liveBandsQuery.data?.metadata,
+    devotionalSpiritualSingersMetadata: devotionalSpiritualSingersQuery.data?.metadata,
     singersMetadata: singersQuery.data?.metadata,
-    dancersMetadata: dancersQuery.data?.metadata,
-    anchorsMetadata: anchorsQuery.data?.metadata,
-    djsMetadata: djsQuery.data?.metadata,
-    bandsMetadata: bandsQuery.data?.metadata,
-    comediansMetadata: comediansQuery.data?.metadata,
-    musiciansMetadata: musiciansQuery.data?.metadata,
-    magiciansMetadata: magiciansQuery.data?.metadata,
-    actorsMetadata: actorsQuery.data?.metadata,
+    anchorEmceeHostsMetadata: anchorEmceeHostsQuery.data?.metadata,
+    djVjsMetadata: djVjsQuery.data?.metadata,
+    djBasedBandsMetadata: djBasedBandsQuery.data?.metadata,
     djPercussionistsMetadata: djPercussionistsQuery.data?.metadata,
-    mimicryMetadata: mimicryQuery.data?.metadata,
-    specialActMetadata: specialActQuery.data?.metadata,
-    spiritualMetadata: spiritualQuery.data?.metadata,
+    musiciansInstrumentalistsMetadata: musiciansInstrumentalistsQuery.data?.metadata,
+    dancersDanceGroupsMetadata: dancersDanceGroupsQuery.data?.metadata,
+    magicialIllusionistsMetadata: magicialIllusionistsQuery.data?.metadata,
+    comedianMimicryMetadata: comedianMimicryQuery.data?.metadata,
+    specialActPerformersMetadata: specialActPerformersQuery.data?.metadata,
+    motivationalSpeakersMetadata: motivationalSpeakersQuery.data?.metadata,
     kidsEntertainersMetadata: kidsEntertainerQuery.data?.metadata,
+    folkArtistsMetadata: folkArtistsQuery.data?.metadata,
+    modelsMetadata: modelsQuery.data?.metadata,
 
     isLoading:
+      liveBandsQuery.isLoading ||
+      devotionalSpiritualSingersQuery.isLoading ||
       singersQuery.isLoading ||
-      dancersQuery.isLoading ||
-      anchorsQuery.isLoading ||
-      djsQuery.isLoading ||
-      bandsQuery.isLoading ||
-      comediansQuery.isLoading ||
-      musiciansQuery.isLoading ||
-      magiciansQuery.isLoading ||
-      actorsQuery.isLoading ||
+      anchorEmceeHostsQuery.isLoading ||
+      djVjsQuery.isLoading ||
+      djBasedBandsQuery.isLoading ||
       djPercussionistsQuery.isLoading ||
-      mimicryQuery.isLoading ||
-      specialActQuery.isLoading ||
-      spiritualQuery.isLoading ||
-      kidsEntertainerQuery.isLoading,
+      musiciansInstrumentalistsQuery.isLoading ||
+      dancersDanceGroupsQuery.isLoading ||
+      magicialIllusionistsQuery.isLoading ||
+      comedianMimicryQuery.isLoading ||
+      specialActPerformersQuery.isLoading ||
+      motivationalSpeakersQuery.isLoading ||
+      kidsEntertainerQuery.isLoading ||
+      folkArtistsQuery.isLoading ||
+      modelsQuery.isLoading,
     isError:
+      liveBandsQuery.isError ||
+      devotionalSpiritualSingersQuery.isError ||
       singersQuery.isError ||
-      dancersQuery.isError ||
-      anchorsQuery.isError ||
-      djsQuery.isError ||
-      bandsQuery.isError ||
-      comediansQuery.isError ||
-      musiciansQuery.isError ||
-      magiciansQuery.isError ||
-      actorsQuery.isError ||
+      anchorEmceeHostsQuery.isError ||
+      djVjsQuery.isError ||
+      djBasedBandsQuery.isError ||
       djPercussionistsQuery.isError ||
-      mimicryQuery.isError ||
-      specialActQuery.isError ||
-      spiritualQuery.isError ||
-      kidsEntertainerQuery.isError,
+      musiciansInstrumentalistsQuery.isError ||
+      dancersDanceGroupsQuery.isError ||
+      magicialIllusionistsQuery.isError ||
+      comedianMimicryQuery.isError ||
+      specialActPerformersQuery.isError ||
+      motivationalSpeakersQuery.isError ||
+      kidsEntertainerQuery.isError ||
+      folkArtistsQuery.isError ||
+      modelsQuery.isError,
     error:
+      liveBandsQuery.error ||
+      devotionalSpiritualSingersQuery.error ||
       singersQuery.error ||
-      dancersQuery.error ||
-      anchorsQuery.error ||
-      djsQuery.error ||
-      bandsQuery.error ||
-      comediansQuery.error ||
-      musiciansQuery.error ||
-      magiciansQuery.error ||
-      actorsQuery.error ||
+      anchorEmceeHostsQuery.error ||
+      djVjsQuery.error ||
+      djBasedBandsQuery.error ||
       djPercussionistsQuery.error ||
-      mimicryQuery.error ||
-      specialActQuery.error ||
-      spiritualQuery.error ||
-      kidsEntertainerQuery.error,
+      musiciansInstrumentalistsQuery.error ||
+      dancersDanceGroupsQuery.error ||
+      magicialIllusionistsQuery.error ||
+      comedianMimicryQuery.error ||
+      specialActPerformersQuery.error ||
+      motivationalSpeakersQuery.error ||
+      kidsEntertainerQuery.error ||
+      folkArtistsQuery.error ||
+      modelsQuery.error,
     refetch: () => {
+      liveBandsQuery.refetch();
+      devotionalSpiritualSingersQuery.refetch();
       singersQuery.refetch();
-      dancersQuery.refetch();
-      anchorsQuery.refetch();
-      djsQuery.refetch();
-      bandsQuery.refetch();
-      comediansQuery.refetch();
-      musiciansQuery.refetch();
-      magiciansQuery.refetch();
-      actorsQuery.refetch();
+      anchorEmceeHostsQuery.refetch();
+      djVjsQuery.refetch();
+      djBasedBandsQuery.refetch();
       djPercussionistsQuery.refetch();
-      mimicryQuery.refetch();
-      specialActQuery.refetch();
-      spiritualQuery.refetch();
+      musiciansInstrumentalistsQuery.refetch();
+      dancersDanceGroupsQuery.refetch();
+      magicialIllusionistsQuery.refetch();
+      comedianMimicryQuery.refetch();
+      specialActPerformersQuery.refetch();
+      motivationalSpeakersQuery.refetch();
       kidsEntertainerQuery.refetch();
+      folkArtistsQuery.refetch();
+      modelsQuery.refetch();
     },
   };
 }

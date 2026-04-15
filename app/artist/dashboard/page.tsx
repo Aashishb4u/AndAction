@@ -9,8 +9,8 @@ import Button from "@/components/ui/Button";
 import { Pencil } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { BookingStatus } from "@prisma/client";
-import { ARTIST_CATEGORIES } from "@/lib/constants";
-import { getArtistProfileProgress } from "@/lib/utils";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 /* ----------------------------------------------------
    FORMAT DATE
@@ -68,6 +68,7 @@ const defaultBookingsState: BookingStatusMap = {
 export default function ArtistDashboard() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { categories } = useArtistCategories();
 
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<BookingStatusMap>(defaultBookingsState);
@@ -158,12 +159,7 @@ export default function ArtistDashboard() {
   const displayArtistType = (() => {
     const rawType = artist?.artistType?.trim() || "";
     if (!rawType) return "";
-
-    const match = ARTIST_CATEGORIES.find(
-      (item) => item.value.toLowerCase() === rawType.toLowerCase()
-    );
-
-    return match?.label || rawType;
+    return findCategoryLabel(categories, rawType) || rawType;
   })();
 
   const totalBookings = Object.values(bookings).flat().length;
@@ -418,7 +414,7 @@ export default function ArtistDashboard() {
                         key={booking.id}
                         status={booking.status}
                         clientName={`${booking.client.firstName} ${booking.client.lastName}`}
-                        clientPhone={booking.client.phoneNumber}
+                        clientPhone={booking.client?.phoneNumber ?? null}
                         location={booking.eventLocation}
                         date={formatDate(booking.eventDate)}
                         eventType={booking.eventType}

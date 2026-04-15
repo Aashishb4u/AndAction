@@ -19,12 +19,11 @@ interface ContactPricingDetailsProps {
 const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
   data,
   onNext,
-  onSkip,
   onBack,
   onUpdateData,
 }) => {
   const [formData, setFormData] = useState({
-    contactNumber: data.contactNumber || "",
+    contactNumber: data.contactNumber || data.whatsappNumber || "",
     // merged contact/whatsapp number
     email: data.email || "",
     soloCharges: data.soloCharges || "",
@@ -39,9 +38,16 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
   const handleInputChange = (field: string, value: string | boolean) => {
     const updatedData = { ...formData, [field]: value };
+    const syncedUpdate =
+      field === "contactNumber"
+        ? {
+            ...updatedData,
+            whatsappNumber: String(value || ""),
+          }
+        : updatedData;
 
     setFormData(updatedData);
-    onUpdateData(updatedData);
+    onUpdateData(syncedUpdate);
 
     // Clear error for the field being edited
     if (errors[field]) {
@@ -84,7 +90,10 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
       return; // Don't proceed if there are errors
     }
 
-    onUpdateData(formData);
+    onUpdateData({
+      ...formData,
+      whatsappNumber: formData.contactNumber,
+    });
     onNext();
   };
 

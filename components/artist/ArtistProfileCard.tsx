@@ -73,7 +73,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [uploadError, setUploadError] = useState("");
 
   const onCropComplete = (_croppedArea: Area, croppedPixels: Area) => {
     setCroppedAreaPixels(croppedPixels);
@@ -82,9 +83,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   const handleProfilePhotoUpload = async (file: File) => {
     try {
       setUploading(true);
-
-      // Instant local preview while upload/session refresh completes.
-      setPreviewImage(URL.createObjectURL(file));
+      setUploadMessage("");
+      setUploadError("");
 
       const formData = new FormData();
       formData.append("file", file);
@@ -95,7 +95,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       });
 
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message);
+      if (!res.ok) throw new Error(json.message || "Failed to upload profile photo.");
 
       const imageUrl = json.data.imageUrl;
 
@@ -106,10 +106,16 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         },
       });
 
+      setUploadMessage(json?.message || "Profile photo uploaded successfully.");
+
       setUploading(false);
     } catch (err) {
       console.error("Upload error:", err);
-      setPreviewImage(null);
+      setUploadError(
+        err instanceof Error
+          ? err.message
+          : "Failed to upload profile photo. Please try again.",
+      );
       setUploading(false);
     }
   };
@@ -185,8 +191,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
       {/* Full Background Image */}
       <div className="absolute inset-0">
-          <Image
-          src={previewImage || buildArtishProfileUrl(artist.image || '')}
+        <Image
+          src={buildArtishProfileUrl(artist.image || '')}
           alt={artist.name}
           fill
           unoptimized
@@ -219,6 +225,10 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         {/* Artist Info (unchanged UI) */}
         <div className="p-6 space-y-4">
           <div className="flex flex-col items-start gap-3">
+            {uploadMessage && (
+              <p className="text-green-400 text-sm">{uploadMessage}</p>
+            )}
+            {uploadError && <p className="text-red-400 text-sm">{uploadError}</p>}
             <h2 className="t1-heading text-white mb-2 drop-shadow-lg">{artist.name}</h2>
 
             <div className="flex w-full flex-wrap items-center gap-3">

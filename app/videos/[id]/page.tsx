@@ -16,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
+import { getArtishName } from "@/lib/utils";
 
 export default function VideoDetailsPage() {
   const params = useParams();
@@ -68,9 +69,7 @@ export default function VideoDetailsPage() {
           bookmarkId: v.bookmarkId,
           artist: {
             id: v.user?.artist?.id,
-            name: v.user.name
-              ? v.user.name
-              : `${v.user.firstName} ${v.user.lastName}`,
+            name: getArtishName(v.user.name, v.user.firstName, v.user.lastName),
             avatar: v.user.avatar,
             verified: v.user.isArtistVerified,
           },
@@ -81,9 +80,7 @@ export default function VideoDetailsPage() {
           json.data.related.map((rv: any) => ({
             id: rv.id,
             title: rv.title,
-            creator: rv.user.name
-              ? rv.user.name
-              : `${rv.user.firstName} ${rv.user.lastName}`,
+            creator: getArtishName(rv.user.name, rv.user.firstName, rv.user.lastName),
             thumbnail: rv.thumbnailUrl,
             videoUrl: rv.url,
             isBookmarked: rv.isBookmarked,
@@ -98,9 +95,7 @@ export default function VideoDetailsPage() {
           json.data.shorts.map((sv: any) => ({
             id: sv.id,
             title: sv.title,
-            creator: sv.user.name
-              ? sv.user.name
-              : `${sv.user.firstName} ${sv.user.lastName}`,
+            creator: getArtishName(sv.user.name, sv.user.firstName, sv.user.lastName),
             thumbnail: sv.thumbnailUrl,
             videoUrl: sv.url,
             isBookmarked: sv.isBookmarked,
@@ -237,9 +232,7 @@ export default function VideoDetailsPage() {
         const newVideos = json.data.related.map((rv: any) => ({
           id: rv.id,
           title: rv.title,
-          creator: rv.user.name
-            ? rv.user.name
-            : `${rv.user.firstName} ${rv.user.lastName}`,
+          creator: getArtishName(rv.user.name, rv.user.firstName, rv.user.lastName),
           thumbnail: rv.thumbnailUrl,
           videoUrl: rv.url,
           isBookmarked: rv.isBookmarked,
@@ -271,9 +264,7 @@ export default function VideoDetailsPage() {
         const newShorts = json.data.shorts.map((sv: any) => ({
           id: sv.id,
           title: sv.title,
-          creator: sv.user.name
-            ? sv.user.name
-            : `${sv.user.firstName} ${sv.user.lastName}`,
+          creator: getArtishName(sv.user.name, sv.user.firstName, sv.user.lastName),
           thumbnail: sv.thumbnailUrl,
           videoUrl: sv.url,
           isBookmarked: sv.isBookmarked,

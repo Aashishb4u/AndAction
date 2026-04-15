@@ -4,7 +4,6 @@ import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ArtistCard from '@/components/ui/ArtistCard';
 import Modal from '@/components/ui/Modal';
-import { getValueForKey } from '@/lib/artistCategories';
 
 interface Artist {
   id: string;
@@ -18,6 +17,7 @@ interface ArtistSectionProps {
   title: string;
   artists: Artist[];
   categoryKey?: string;
+  categoryValue?: string;
   className?: string;
 }
 
@@ -27,6 +27,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   title,
   artists,
   categoryKey,
+  categoryValue,
   className = '',
 }) => {
 
@@ -56,25 +57,28 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   };
 
   const getTypeParam = () => {
+    if (categoryValue) {
+      return categoryValue;
+    }
     if (categoryKey) {
-      const value = getValueForKey(categoryKey);
-      return value;
+      return categoryKey;
     }
     let typeParam = title.toLowerCase();
     if (typeParam.includes('percussion')) typeParam = 'dj-percussionist';
     else if (typeParam.includes('dj')) typeParam = 'dj';
     else if (typeParam.includes('anchor')) typeParam = 'anchor';
+    else if (typeParam.includes('dj based band')) typeParam = 'dj-based-band';
     else if (typeParam.includes('band')) typeParam = 'Live Band';
-    else if (typeParam.includes('actor')) typeParam = 'actor';
     else if (typeParam.includes('devotional') || typeParam.includes('spiritual')) typeParam = 'spiritual';
     else if (typeParam.includes('singer')) typeParam = 'singer';
     else if (typeParam.includes('dancer')) typeParam = 'dancer';
-    else if (typeParam.includes('comedian')) typeParam = 'comedian';
+    else if (typeParam.includes('comedian') || typeParam.includes('mimicry')) typeParam = 'comedian-mimicry';
     else if (typeParam.includes('musician')) typeParam = 'musician';
     else if (typeParam.includes('magician')) typeParam = 'magician';
-    else if (typeParam.includes('mimicry')) typeParam = 'mimicry';
     else if (typeParam.includes('special act')) typeParam = 'special-act';
+    else if (typeParam.includes('motivational')) typeParam = 'motivational-speaker';
     else if (typeParam.includes('kids entertainer')) typeParam = 'kids-entertainer';
+    else if (typeParam.includes('folk')) typeParam = 'folk-artist';
     return typeParam;
   };
 

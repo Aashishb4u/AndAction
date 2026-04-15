@@ -11,7 +11,7 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:seed": "prisma db seed",
+    "db:seed": "tsx prisma/seed.ts",
     "db:seed:city": "tsx prisma/seed-city-from-backup.ts",
     "db:seed:geocode": "tsx prisma/seed-geocode.ts",
     "db:migrate:shorts": "tsx prisma/migrate-shorts-from-backup.ts",

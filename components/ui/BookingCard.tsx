@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Button from '@/components/ui/Button';
-import { MapPin, Phone, X, Check } from 'lucide-react';
+import { MapPin, Phone, X } from 'lucide-react';
 import Image from 'next/image';
 import { BookingStatus } from "@prisma/client";
 
@@ -33,7 +33,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
   clientPhone,     // <-- NEW
 
   onReject,
-  onAccept,
   className = '',
 }) => {
   
@@ -69,6 +68,12 @@ const BookingCard: React.FC<BookingCardProps> = ({
             <MapPin className="w-4 h-4 mr-1 shrink-0" />
             <span className="truncate">{location}</span>
           </div>
+          {clientPhone && (
+            <div className="flex min-w-0 items-center secondary-text text-text-gray">
+              <Phone className="w-4 h-4 mr-1 shrink-0" />
+              <span className="truncate">{clientPhone}</span>
+            </div>
+          )}
         </div>
         <div className="secondary-text text-text-gray self-start sm:text-right">{date}</div>
       </div>
@@ -110,17 +115,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
 
         {isPending && (
           <>
-            {/* ACCEPT */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onAccept}
-              className="min-w-30 flex-1 border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
-            >
-              <Check className="w-4 h-4 mr-2 shrink-0" />
-              <span className="truncate">Accept</span>
-            </Button>
-
             {/* REJECT */}
             <Button
               variant="outline"
