@@ -25,6 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const user = session?.user;
   const { isInstalled, installApp } = usePWAInstall();
   const [isInstalling, setIsInstalling] = useState(false);
+  const [isConvertingArtist, setIsConvertingArtist] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -58,6 +59,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const handleJoinArtist = () => {
     router.push(createAuthRedirectUrl("/auth/artist", pathname));
     onClose();
+  };
+
+  const handleConvertToArtist = () => {
+    if (isConvertingArtist) {
+      return;
+    }
+
+    if (!user) {
+      handleJoinArtist();
+      return;
+    }
+
+    if (user.role === "artist") {
+      onClose();
+      router.push("/artist/dashboard");
+      return;
+    }
+
+    setIsConvertingArtist(true);
+    onClose();
+    router.push("/artist/profile-setup?convert=true");
   };
 
   const handleInstallApp = async () => {
@@ -186,10 +208,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               {/* Join as artist - Only show for non-artist users */}
               {user.role !== "artist" && (
                 <button
-                  onClick={handleJoinArtist}
+                  onClick={handleConvertToArtist}
                   className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
                 >
-                  Join as an Artist
+                  {isConvertingArtist ? "Joining..." : "Join as an Artist"}
                 </button>
               )}
             </div>

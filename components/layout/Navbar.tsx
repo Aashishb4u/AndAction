@@ -23,6 +23,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [isConvertingArtist, setIsConvertingArtist] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -66,6 +67,25 @@ useEffect(() => {
 
   const handleToggleSidebar = () => {
     if (onToggleSidebar) onToggleSidebar();
+  };
+
+  const handleArtistAction = () => {
+    if (isConvertingArtist) {
+      return;
+    }
+
+    if (!user) {
+      router.push(createAuthRedirectUrl("/auth/artist", pathname));
+      return;
+    }
+
+    if (user.role === "artist") {
+      router.push("/artist/dashboard");
+      return;
+    }
+
+    setIsConvertingArtist(true);
+    router.push("/artist/profile-setup?convert=true");
   };
 
   return (
@@ -147,11 +167,11 @@ useEffect(() => {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() =>
-                      router.push(createAuthRedirectUrl("/auth/artist", pathname))
-                    }
+                    onClick={handleArtistAction}
                   >
-                    <span className="gradient-text signup">Join as an Artist</span>
+                    <span className="gradient-text signup">
+                      {isConvertingArtist ? "Joining..." : "Join as an Artist"}
+                    </span>
                   </Button>
                 )}
               </>
