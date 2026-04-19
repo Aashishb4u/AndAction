@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ProfileOverview from "@/components/artist/profile-setup/ProfileOverview";
 import ArtistProfileDetails from "@/components/artist/profile-setup/ArtistProfileDetails";
@@ -20,7 +20,7 @@ type ProfileSetupStep =
   | "review"
   | "videosSocialMedia";
 
-export default function ProfileSetupPage() {
+function ProfileSetupPageContent() {
   const [currentStep, setCurrentStep] = useState<ProfileSetupStep>("overview");
   // When a user clicks "Edit" from the Review page, we set this to the step
   // being edited so that after saving we can return to the review instead of
@@ -484,5 +484,24 @@ export default function ProfileSetupPage() {
         onConfirm={handleConfirmBack}
       />
     </div>
+  );
+}
+
+function ProfileSetupFallback() {
+  return (
+    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-pink mx-auto mb-4"></div>
+        <p className="text-text-gray">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function ProfileSetupPage() {
+  return (
+    <Suspense fallback={<ProfileSetupFallback />}>
+      <ProfileSetupPageContent />
+    </Suspense>
   );
 }
