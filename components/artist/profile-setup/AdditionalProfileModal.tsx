@@ -7,7 +7,7 @@ import ArtistProfileDetails from "@/components/artist/profile-setup/ArtistProfil
 import PerformanceDetails from "@/components/artist/profile-setup/PerformanceDetails";
 import ContactPricingDetails from "@/components/artist/profile-setup/ContactPricingDetails";
 import ProfileReview from "@/components/artist/profile-setup/ProfileReview";
-import { ArtistProfileSetupData } from "@/types";
+import { ArtistProfileSetupData, ArtistProfileSetupPreferences } from "@/types";
 
 type Step = "artistDetails" | "performanceDetails" | "contactPricing" | "review";
 
@@ -55,6 +55,31 @@ export default function AdditionalProfileModal(props: {
   const [currentStep, setCurrentStep] = useState<Step>("artistDetails");
   const [submitting, setSubmitting] = useState(false);
   const [data, setData] = useState<WizardData>(initialData);
+  const [preferences, setPreferences] =
+    useState<ArtistProfileSetupPreferences | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/preferences/artist-profile", {
+          cache: "no-store",
+        });
+        const json = await res.json();
+        const prefs = json?.data?.preferences as ArtistProfileSetupPreferences;
+        if (!isActive) return;
+        if (prefs && typeof prefs === "object") setPreferences(prefs);
+        else setPreferences(null);
+      } catch {
+        if (!isActive) return;
+        setPreferences(null);
+      }
+    };
+    load();
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -181,6 +206,7 @@ export default function AdditionalProfileModal(props: {
             onSkip={goNext}
             onBack={goBack}
             onUpdateData={onUpdateData}
+            preferences={preferences}
           />
         )}
 
@@ -191,6 +217,7 @@ export default function AdditionalProfileModal(props: {
             onSkip={goNext}
             onBack={goBack}
             onUpdateData={onUpdateData}
+            preferences={preferences}
           />
         )}
 
@@ -214,6 +241,7 @@ export default function AdditionalProfileModal(props: {
               else if (step === "performanceDetails") setCurrentStep("performanceDetails");
               else if (step === "contactPricing") setCurrentStep("contactPricing");
             }}
+            preferences={preferences}
           />
         )}
       </div>

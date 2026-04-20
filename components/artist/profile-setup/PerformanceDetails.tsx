@@ -6,8 +6,7 @@ import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import Image from "next/image";
-import { ArtistProfileSetupData } from "@/types";
-import { INDIAN_STATES } from "@/lib/constants";
+import { ArtistProfileSetupData, ArtistProfileSetupPreferences } from "@/types";
 
 interface PerformanceDetailsProps {
   data: ArtistProfileSetupData;
@@ -15,6 +14,7 @@ interface PerformanceDetailsProps {
   onSkip: () => void;
   onBack: () => void;
   onUpdateData: (data: Partial<ArtistProfileSetupData>) => void;
+  preferences: ArtistProfileSetupPreferences | null;
 }
 
 const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
@@ -23,6 +23,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
   onSkip,
   onBack,
   onUpdateData,
+  preferences,
 }) => {
   const [formData, setFormData] = useState({
     performingLanguages: data.performingLanguages || [],
@@ -40,49 +41,10 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
   const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const languages = [
-    { value: "hindi", label: "Hindi" },
-    { value: "english", label: "English" },
-    { value: "marathi", label: "Marathi" },
-    { value: "gujarati", label: "Gujarati" },
-    { value: "tamil", label: "Tamil" },
-    { value: "telugu", label: "Telugu" },
-    { value: "bengali", label: "Bengali" },
-    { value: "punjabi", label: "Punjabi" },
-    { value: "kannada", label: "Kannada" },
-    { value: "malayalam", label: "Malayalam" },
-    { value: "odia", label: "Odia" },
-    { value: "assamese", label: "Assamese" },
-    { value: "kashmiri", label: "Kashmiri" },
-    { value: "konkani", label: "Konkani" },
-    { value: "sindhi", label: "Sindhi" },
-    { value: "nepali", label: "Nepali" },
-    { value: "manipuri", label: "Manipuri" },
-    { value: "sanskrit", label: "Sanskrit" },
-    { value: "bodo", label: "Bodo" },
-    { value: "santali", label: "Santali" },
-    { value: "dogri", label: "Dogri" },
-    { value: "maithili", label: "Maithili" }
-  ];
-
-  const eventTypes = [
-    { value: "wedding", label: "Wedding" },
-    { value: "corporate", label: "Corporate Event" },
-    { value: "birthday", label: "Birthday Party" },
-    { value: "festival", label: "Festival" },
-    { value: "concert", label: "Concert" },
-    { value: "private-party", label: "Private Party" },
-    { value: "cultural", label: "Cultural Event" },
-    { value: "religious", label: "Religious Event" },
-  ];
-
-  const memberOptions = [
-    { value: "1", label: "1 Member" },
-    { value: "2-5", label: "2-5 Members" },
-    { value: "6-10", label: "6-10 Members" },
-    { value: "11-20", label: "11-20 Members" },
-    { value: "20+", label: "20+ Members" },
-  ];
+  const languages = preferences?.languages ?? [];
+  const eventTypes = preferences?.eventTypes ?? [];
+  const memberOptions = preferences?.memberOptions ?? [];
+  const states = preferences?.states ?? [];
 
   const handleInputChange = (field: string, value: string | string[]) => {
     const updatedData = { ...formData, [field]: value };
@@ -104,8 +66,8 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
 
   // Toggle PAN India (all states)
   const togglePanIndia = () => {
-    const allValues = INDIAN_STATES.map((s) => s.value);
-    if (formData.performingStates.length === INDIAN_STATES.length) {
+    const allValues = states.map((s) => s.value);
+    if (states.length && formData.performingStates.length === states.length) {
       // Deselect all
       handleInputChange("performingStates", []);
     } else {
@@ -372,7 +334,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     <input
                       type="checkbox"
                       checked={
-                        formData.performingStates.length === INDIAN_STATES.length
+                        formData.performingLanguages.length === languages.length
                       }
                       onChange={toggleAllLanguages}
                       className="w-4 h-4 accent-primary-pink rounded"
@@ -561,11 +523,13 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                 <div className="flex-1 flex flex-wrap gap-2 items-center">
                   {formData.performingStates.length === 0 ? (
                     <span className="text-text-gray">Select states</span>
-                  ) : formData.performingStates.length === INDIAN_STATES.length ? (
+                  ) : states.length &&
+                    formData.performingStates.length === states.length ? (
                     <span className="text-white">PAN India</span>
                   ) : (
                     formData.performingStates.map((val) => {
-                      const label = INDIAN_STATES.find((l) => l.value === val)?.label || val;
+                      const label =
+                        states.find((l) => l.value === val)?.label || val;
                       return (
                         <span key={val} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
                           <span className="text-white">{label}</span>
@@ -605,7 +569,8 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                     <input
                       type="checkbox"
                       checked={
-                        formData.performingStates.length === INDIAN_STATES.length
+                        states.length &&
+                        formData.performingStates.length === states.length
                       }
                       onChange={togglePanIndia}
                       className="w-4 h-4 accent-primary-pink rounded"
@@ -614,7 +579,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
                   </label>
 
                   {/* Individual state checkboxes */}
-                  {INDIAN_STATES.map((state) => (
+                  {states.map((state) => (
                     <label
                       key={state.value}
                       className="flex items-center gap-3 px-4 py-2 hover:bg-background-light cursor-pointer"

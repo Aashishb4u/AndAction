@@ -260,3 +260,12 @@ export interface ArtistProfileSetupData {
   backingCharges: string;
   backingDescription: string;
 }
+
+export interface ArtistProfileSetupPreferences {
+  languages: SelectOption[];
+  eventTypes: SelectOption[];
+  memberOptions: SelectOption[];
+  experienceYears: SelectOption[];
+  states: SelectOption[];
+  subArtistSuggestions: string[];
+}

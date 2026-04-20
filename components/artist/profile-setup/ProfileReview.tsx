@@ -3,14 +3,15 @@
 import React from "react";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
-import { ArtistProfileSetupData } from "@/types";
-import { ARTIST_CATEGORIES } from "@/lib/constants";
+import { ArtistProfileSetupData, ArtistProfileSetupPreferences } from "@/types";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
 
 interface ProfileReviewProps {
   data: ArtistProfileSetupData;
   onNext: () => void;
   onBack: () => void;
   onEdit: (step: string) => void;
+  preferences: ArtistProfileSetupPreferences | null;
 }
 
 import { useState } from "react";
@@ -20,8 +21,10 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
   onNext,
   onBack,
   onEdit,
+  preferences,
 }) => {
   const [error, setError] = useState<string | null>(null);
+  const { categories: artistCategories } = useArtistCategories();
 
   const [greetingName, setGreetingName] = useState<string>(data.stageName || "");
 
@@ -89,31 +92,27 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
 
   const artistTypeLabel = React.useMemo(() => {
     const rawArtistType = (data.artistType || "").trim();
-    if (!rawArtistType) return "Singer";
+    if (!rawArtistType) return "N/A";
 
     const normalize = (value: string) => value.toLowerCase().trim().replace(/[\s_]+/g, "-");
 
     const normalizedRaw = normalize(rawArtistType);
-    const matchedCategory = ARTIST_CATEGORIES.find((category) => {
+    const matchedCategory = artistCategories.find((category) => {
       const normalizedValue = normalize(category.value);
       const normalizedLabel = normalize(category.label);
       return normalizedRaw === normalizedValue || normalizedRaw === normalizedLabel;
     });
 
     return matchedCategory?.label || rawArtistType;
-  }, [data.artistType]);
+  }, [data.artistType, artistCategories]);
 
-  // Map experience values to labels
   const getExperienceLabel = (value: string) => {
-    const experienceMap: Record<string, string> = {
-      "1": "0-1 years",
-      "2": "1-3 years",
-      "3": "3-5 years",
-      "4": "5-10 years",
-      "5": "10+ years",
-    };
-    return experienceMap[value] || value;
+    const list = preferences?.experienceYears ?? [];
+    return list.find((o) => o.value === value)?.label || value;
   };
+
+  const mapLabels = (values: string[], list: { value: string; label: string }[]) =>
+    values.map((v) => list.find((o) => o.value === v)?.label || v);
 
   // Validate performance duration before submit
   const handleNext = () => {
@@ -348,8 +347,11 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div>
                   <p className="text-text-gray mb-1">Performing Languages</p>
                   <div className="flex gap-2 flex-wrap">
-                    {data.performingLanguages?.length
-                      ? data.performingLanguages?.map((language, index) => (
+                    {data.performingLanguages?.length ? (
+                      mapLabels(
+                        data.performingLanguages,
+                        preferences?.languages ?? [],
+                      ).map((language, index) => (
                           <Button
                             key={index}
                             variant="secondary"
@@ -359,25 +361,19 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                             {language}
                           </Button>
                         ))
-                      : ["English", "Hindi", "Gujarati"].map(
-                          (language, index) => (
-                            <Button
-                              key={index}
-                              variant="secondary"
-                              size="xs"
-                              className="px-2 py-1 !font-normal text-white text-xs"
-                            >
-                              {language}
-                            </Button>
-                          ),
-                        )}
+                    ) : (
+                      <p className="text-white text-base">N/A</p>
+                    )}
                   </div>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Performing Event types</p>
                   <div className="flex gap-2 flex-wrap">
-                    {data.performingEventTypes?.length
-                      ? data.performingEventTypes?.map((language, index) => (
+                    {data.performingEventTypes?.length ? (
+                      mapLabels(
+                        data.performingEventTypes,
+                        preferences?.eventTypes ?? [],
+                      ).map((language, index) => (
                           <Button
                             key={index}
                             variant="secondary"
@@ -387,25 +383,19 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                             {language}
                           </Button>
                         ))
-                      : ["Concert", "Party", "Events"].map(
-                          (language, index) => (
-                            <Button
-                              key={index}
-                              variant="secondary"
-                              size="xs"
-                              className="px-2 py-1 !font-normal text-white text-xs"
-                            >
-                              {language}
-                            </Button>
-                          ),
-                        )}
+                    ) : (
+                      <p className="text-white text-base">N/A</p>
+                    )}
                   </div>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Performing States</p>
                   <div className="flex gap-2 flex-wrap">
-                    {data.performingStates?.length
-                      ? data.performingStates?.map((language, index) => (
+                    {data.performingStates?.length ? (
+                      mapLabels(
+                        data.performingStates,
+                        preferences?.states ?? [],
+                      ).map((language, index) => (
                           <Button
                             key={index}
                             variant="secondary"
@@ -415,18 +405,9 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                             {language}
                           </Button>
                         ))
-                      : ["Gujarat", "Maharashtra", "Rajasthan"].map(
-                          (language, index) => (
-                            <Button
-                              key={index}
-                              variant="secondary"
-                              size="xs"
-                              className="px-2 py-1 !font-normal text-white text-xs"
-                            >
-                              {language}
-                            </Button>
-                          ),
-                        )}
+                    ) : (
+                      <p className="text-white text-base">N/A</p>
+                    )}
                   </div>
                 </div>
                 <div>

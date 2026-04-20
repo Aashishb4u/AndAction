@@ -277,6 +277,20 @@ model otps {
   @@index([phoneNumber, countryCode])
 }
 
+model ArtistProfilePreference {
+  id                  String   @id
+  languages           Json
+  eventTypes          Json
+  memberOptions       Json
+  experienceYears     Json
+  states              Json
+  subArtistSuggestions Json
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("artist_profile_preferences")
+}
+
 enum BookingStatus {
   PENDING
   APPROVED

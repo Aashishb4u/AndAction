@@ -11,6 +11,7 @@ import VideosSocialMedia from "@/components/artist/profile-setup/VideosSocialMed
 import SuccessModal from "@/components/artist/profile-setup/SuccessModal";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useSession } from "next-auth/react";
+import type { ArtistProfileSetupPreferences } from "@/types";
 
 type ProfileSetupStep =
   | "overview"
@@ -33,6 +34,8 @@ export default function ProfileSetupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status, update } = useSession();
+  const [preferences, setPreferences] =
+    useState<ArtistProfileSetupPreferences | null>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -47,6 +50,32 @@ export default function ProfileSetupPage() {
       return;
     }
   }, [status, session, router]);
+
+  useEffect(() => {
+    let isActive = true;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/preferences/artist-profile", {
+          cache: "no-store",
+        });
+        const json = await res.json();
+        const prefs = json?.data?.preferences as ArtistProfileSetupPreferences;
+        if (!isActive) return;
+        if (prefs && typeof prefs === "object") {
+          setPreferences(prefs);
+        } else {
+          setPreferences(null);
+        }
+      } catch {
+        if (!isActive) return;
+        setPreferences(null);
+      }
+    };
+    load();
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (didInitFromQuery) return;
@@ -373,6 +402,7 @@ export default function ProfileSetupPage() {
             onSkip={handleSkip}
             onBack={handleBack}
             onUpdateData={updateProfileData}
+            preferences={preferences}
           />
         );
       case "performanceDetails":
@@ -383,6 +413,7 @@ export default function ProfileSetupPage() {
             onSkip={handleSkip}
             onBack={handleBack}
             onUpdateData={updateProfileData}
+            preferences={preferences}
           />
         );
       case "contactPricing":
@@ -402,6 +433,7 @@ export default function ProfileSetupPage() {
             onNext={handleNext}
             onBack={handleBack}
             onEdit={handleEdit}
+            preferences={preferences}
           />
         );
       case "videosSocialMedia":
