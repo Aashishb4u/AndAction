@@ -27,13 +27,18 @@ interface Video {
 
 export const instagramVideoKeys = {
   all: ["instagram-videos"] as const,
-  reels: () => [...instagramVideoKeys.all, "reels"] as const,
+  reels: (artistProfileId: string | null | undefined) =>
+    [...instagramVideoKeys.all, "reels", artistProfileId ?? "primary"] as const,
 };
 
-async function fetchSyncedInstagramReels(): Promise<Video[]> {
-  const response = await fetch(
-    "/api/artists/videos?source=instagram&type=short"
-  );
+async function fetchSyncedInstagramReels(
+  artistProfileId?: string | null
+): Promise<Video[]> {
+  const url = new URL("/api/artists/videos", window.location.origin);
+  url.searchParams.set("source", "instagram");
+  url.searchParams.set("type", "short");
+  if (artistProfileId) url.searchParams.set("artistProfileId", artistProfileId);
+  const response = await fetch(url.toString());
   if (!response.ok) {
     throw new Error("Failed to fetch Instagram reels");
   }
@@ -44,26 +49,28 @@ async function fetchSyncedInstagramReels(): Promise<Video[]> {
   return data.data;
 }
 
-export function useSyncedInstagramReels() {
+export function useSyncedInstagramReels(artistProfileId?: string | null) {
   return useQuery({
-    queryKey: instagramVideoKeys.reels(),
-    queryFn: fetchSyncedInstagramReels,
+    queryKey: instagramVideoKeys.reels(artistProfileId),
+    queryFn: () => fetchSyncedInstagramReels(artistProfileId),
     staleTime: 1000 * 60 * 60 * 24 * 7, // 7 days - backend auto-sync handles updates
     gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days cache retention
   });
 }
 
-export function useSyncInstagramReels() {
+export function useSyncInstagramReels(artistProfileId?: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: syncInstagramReels,
+    mutationFn: () => syncInstagramReels(artistProfileId),
     onSuccess: (result) => {
       if (result.success) {
         toast.success(result.message);
         // Invalidate all video queries to refetch (both YouTube and Instagram)
         queryClient.invalidateQueries({ queryKey: videoKeys.all });
-        queryClient.invalidateQueries({ queryKey: instagramVideoKeys.reels() });
+        queryClient.invalidateQueries({
+          queryKey: instagramVideoKeys.reels(artistProfileId),
+        });
       } else {
         toast.error(result.message);
       }
@@ -84,9 +91,7 @@ export function useDeleteInstagramVideo() {
         toast.success(result.message);
         // Invalidate all video queries
         queryClient.invalidateQueries({ queryKey: videoKeys.all });
-        queryClient.invalidateQueries({
-          queryKey: instagramVideoKeys.reels(),
-        });
+        queryClient.invalidateQueries({ queryKey: instagramVideoKeys.all });
       } else {
         toast.error(result.message);
       }
@@ -107,7 +112,7 @@ export function useDeleteInstagramReel() {
         toast.success(result.message);
         // Invalidate all video queries
         queryClient.invalidateQueries({ queryKey: videoKeys.all });
-        queryClient.invalidateQueries({ queryKey: instagramVideoKeys.reels() });
+        queryClient.invalidateQueries({ queryKey: instagramVideoKeys.all });
       } else {
         toast.error(result.message);
       }

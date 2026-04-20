@@ -35,7 +35,9 @@ function removeEmojis(text: string) {
   return text.replace(/[\p{Extended_Pictographic}]/gu, "");
 }
 
-export async function syncInstagramReels(): Promise<SyncResult> {
+export async function syncInstagramReels(
+  artistProfileId?: string | null
+): Promise<SyncResult> {
   try {
     const session = await auth();
 
@@ -43,15 +45,16 @@ export async function syncInstagramReels(): Promise<SyncResult> {
       return { success: false, message: "Unauthorized" };
     }
 
-    // Get artist profile
-    const artist = await prisma.artist.findUnique({
-      where: { userId: session.user.id },
-      select: {
-        id: true,
-        instagramId: true,
-        instagramAccessToken: true,
-      },
-    });
+    const artist = artistProfileId
+      ? await prisma.artist.findFirst({
+          where: { id: artistProfileId, userId: session.user.id },
+          select: { id: true, instagramId: true, instagramAccessToken: true },
+        })
+      : await prisma.artist.findFirst({
+          where: { userId: session.user.id },
+          orderBy: { profileOrder: "asc" },
+          select: { id: true, instagramId: true, instagramAccessToken: true },
+        });
 
     if (!artist) {
       return { success: false, message: "Artist profile not found" };
@@ -104,11 +107,7 @@ export async function syncInstagramReels(): Promise<SyncResult> {
 
     // Get existing reel URLs to avoid duplicates
     const existingReels = await prisma.video.findMany({
-      where: {
-        userId: session.user.id,
-        source: "instagram",
-        isShort: true,
-      },
+      where: { artistId: artist.id, source: "instagram", isShort: true },
       select: { instagramReelId: true },
     });
 
@@ -148,6 +147,7 @@ export async function syncInstagramReels(): Promise<SyncResult> {
     await prisma.video.createMany({
       data: newReels.map((reel) => ({
         userId: session.user.id,
+        artistId: artist.id,
         title: removeEmojis(reel.description), // removeEmojis(reel.title),
         description: removeEmojis(reel.description),
         url: reel.videoUrl,

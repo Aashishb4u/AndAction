@@ -11,8 +11,18 @@ export async function POST(req: Request) {
 
   const { youtubeChannelId, instagramId } = await req.json();
 
-  const updated = await prisma.artist.update({
+  const primaryArtist = await prisma.artist.findFirst({
     where: { userId: session.user.id },
+    orderBy: { profileOrder: "asc" },
+    select: { id: true },
+  });
+
+  if (!primaryArtist) {
+    return NextResponse.json({ error: "Artist profile not found" }, { status: 404 });
+  }
+
+  const updated = await prisma.artist.update({
+    where: { id: primaryArtist.id },
     data: {
       youtubeChannelId: youtubeChannelId ?? undefined,
       instagramId: instagramId ?? undefined,

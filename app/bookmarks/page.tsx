@@ -70,7 +70,7 @@ export default function BookmarksPage() {
               thumbnail: v.thumbnailUrl,
               videoUrl: v.url,
               isBookmarked: true,
-              artistId: (v.user as any).artist?.id || "",
+              artistId: (v.user as any).artists?.[0]?.id || "",
             };
           });
 

@@ -67,6 +67,7 @@ export default function ProfileSetupPage() {
 
   // Form data states
   const [profileData, setProfileData] = useState({
+    artistProfileId: "" as string,
     profilePhoto: null as File | null,
     avatarUrl: "",
     stageName: "",
@@ -104,6 +105,7 @@ export default function ProfileSetupPage() {
       
       setProfileData((prev) => ({
         ...prev,
+        artistProfileId: profile.id,
         avatarUrl: user.avatar || "",
         stageName: profile.stageName || "",
         artistType: profile.artistType || "",
@@ -360,7 +362,13 @@ export default function ProfileSetupPage() {
       case "artistDetails":
         return (
           <ArtistProfileDetails
-            data={profileData}
+            data={{
+              ...(profileData as any),
+              artistProfileId:
+                (profileData as any).artistProfileId ||
+                session?.user?.artistProfile?.id ||
+                "",
+            }}
             onNext={handleNext}
             onSkip={handleSkip}
             onBack={handleBack}

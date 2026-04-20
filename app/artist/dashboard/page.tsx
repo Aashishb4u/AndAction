@@ -11,6 +11,7 @@ import { useSession } from "next-auth/react";
 import { BookingStatus } from "@prisma/client";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
+import AdditionalProfileModal from "@/components/artist/profile-setup/AdditionalProfileModal";
 
 /* ----------------------------------------------------
    FORMAT DATE
@@ -55,6 +56,15 @@ type Booking = {
 
 type BookingStatusMap = {
   [key in BookingStatus]: Booking[];
+};
+
+type ArtistProfileSummary = {
+  id: string;
+  profileImage?: string | null;
+  stageName: string | null;
+  artistType: string | null;
+  subArtistType: string | null;
+  profileOrder: number;
 };
 
 function getArtistProfileProgress(input: {
@@ -129,13 +139,37 @@ export default function ArtistDashboard() {
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<BookingStatusMap>(defaultBookingsState);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // 'desc' = Newest first
+  const [profiles, setProfiles] = useState<ArtistProfileSummary[]>([]);
+  const [isAddProfileOpen, setIsAddProfileOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [profileDetailsById, setProfileDetailsById] = useState<Record<string, any>>({});
+  const profilesForUi: ArtistProfileSummary[] =
+    profiles.length > 0
+      ? profiles
+      : session?.user?.artistProfile
+      ? [
+          {
+            id: session.user.artistProfile.id,
+            profileImage: (session.user.artistProfile as any).profileImage ?? null,
+            stageName: session.user.artistProfile.stageName ?? null,
+            artistType: session.user.artistProfile.artistType ?? null,
+            subArtistType: session.user.artistProfile.subArtistType ?? null,
+            profileOrder: 0,
+          },
+        ]
+      : [];
   const mobileCarouselRef = useRef<HTMLDivElement | null>(null);
   const desktopCarouselRef = useRef<HTMLDivElement | null>(null);
   const mobileRafRef = useRef<number | null>(null);
   const desktopRafRef = useRef<number | null>(null);
   const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
   const [desktopActiveIndex, setDesktopActiveIndex] = useState(0);
-  const totalProfileCards = 2;
+  const totalProfileCards = Math.max(1, profilesForUi.length + 1);
+  const activeIndexForProgress = isDesktop ? desktopActiveIndex : mobileActiveIndex;
+  const activeProfileId =
+    activeIndexForProgress >= 0 && activeIndexForProgress < profilesForUi.length
+      ? profilesForUi[activeIndexForProgress]?.id
+      : null;
 
   const clampIndex = (index: number) =>
     Math.max(0, Math.min(totalProfileCards - 1, index));
@@ -195,6 +229,31 @@ export default function ArtistDashboard() {
     }
   };
 
+  const getProfiles = async () => {
+    try {
+      const response = await fetch("/api/artists/profiles");
+      const json = await response.json();
+      if (json?.success) {
+        setProfiles((json?.data?.profiles ?? []) as ArtistProfileSummary[]);
+      }
+    } catch (err) {
+      console.error("Unable to fetch profiles", err);
+    }
+  };
+
+  const getProfileDetails = async (profileId: string) => {
+    try {
+      const response = await fetch(`/api/artists/profiles/${profileId}`);
+      const json = await response.json();
+      if (!response.ok || !json?.success) return;
+      const profile = json?.data?.profile;
+      if (!profile?.id) return;
+      setProfileDetailsById((prev) => ({ ...prev, [profile.id]: profile }));
+    } catch (err) {
+      console.error("Unable to fetch profile details", err);
+    }
+  };
+
 
   /* ----------------------------------------------------
      UPDATE BOOKING STATUS (LOCAL)
@@ -234,7 +293,24 @@ export default function ArtistDashboard() {
   ---------------------------------------------------- */
   useEffect(() => {
     getBookings();
+    getProfiles();
   }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+    const update = () => setIsDesktop(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!activeProfileId) return;
+    const sessionArtistId = session?.user?.artistProfile?.id ?? null;
+    if (activeProfileId === sessionArtistId) return;
+    if (profileDetailsById[activeProfileId]) return;
+    getProfileDetails(activeProfileId);
+  }, [activeProfileId, profileDetailsById, session?.user?.artistProfile?.id]);
 
   if (status === "loading" || loading) {
     return (
@@ -256,10 +332,20 @@ export default function ArtistDashboard() {
   })();
 
   const totalBookings = Object.values(bookings).flat().length;
-  const profileProgress = getArtistProfileProgress({
-    user: session?.user ?? null,
-    artistProfile: session?.user?.artistProfile ?? null,
-  }).percentage;
+  const selectedArtistProfileForProgress = (() => {
+    if (!activeProfileId) return null;
+    const sessionArtist = session?.user?.artistProfile ?? null;
+    if (sessionArtist?.id === activeProfileId) return sessionArtist;
+    return profileDetailsById[activeProfileId] ?? null;
+  })();
+
+  const profileProgress =
+    activeIndexForProgress >= profilesForUi.length
+      ? 0
+      : getArtistProfileProgress({
+          user: session?.user ?? null,
+          artistProfile: selectedArtistProfileForProgress,
+        }).percentage;
 
   /* ----------------------------------------------------
      PAGE JSX
@@ -279,43 +365,53 @@ export default function ArtistDashboard() {
               }
               className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              <div className="w-full shrink-0 snap-start">
-                <div className="rounded-xl border border-border-color bg-card p-3.5 sm:p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="relative h-31 w-22 shrink-0 overflow-hidden rounded-xl border border-[#e6d7c8] sm:h-35 sm:w-25">
-                      <Image
-                        src={session?.user?.avatar || "/icons/images.jpeg"}
-                        alt={artist?.stageName || fullName || "Artist"}
-                        fill
-                        unoptimized
-                        className="object-cover"
-                      />
-                    </div>
+              {profilesForUi.map((profile) => {
+                const profileArtistType = (() => {
+                  const rawType = profile?.artistType?.trim() || "";
+                  if (!rawType) return "";
+                  return findCategoryLabel(categories, rawType) || rawType;
+                })();
 
-                    <div className="min-w-0 flex-1">
-                      <h2 className="truncate text-lg font-semibold leading-tight text-white sm:text-xl">
-                        {artist?.stageName || fullName}
-                      </h2>
-                      <p className="truncate text-sm text-text-gray sm:text-base">
-                        {session?.user?.email}
-                      </p>
-                      <p className="mt-1 truncate text-sm sm:text-base">{displayArtistType}</p>
+                return (
+                  <div key={profile.id} className="w-full shrink-0 snap-start">
+                    <div className="rounded-xl border border-border-color bg-card p-3.5 sm:p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="relative h-31 w-22 shrink-0 overflow-hidden rounded-xl border border-[#e6d7c8] sm:h-35 sm:w-25">
+                          <Image
+                            src={profile?.profileImage || session?.user?.avatar || "/icons/images.jpeg"}
+                            alt={profile?.stageName || fullName || "Artist"}
+                            fill
+                            unoptimized
+                            className="object-cover"
+                          />
+                        </div>
 
-                      <div className="mt-2 w-full sm:mt-3">
-                        <Button
-                          onClick={() => router.push("/artist/profile")}
-                          variant="secondary"
-                          size="sm"
-                          className="w-full min-w-0 rounded-full border-[1.5px] border-border-color px-3 py-2 text-sm"
-                        >
-                          <Pencil className="mr-2 h-4 w-4 shrink-0 text-primary-orange" />
-                          <span className="truncate gradient-text">Edit Profile</span>
-                        </Button>
+                        <div className="min-w-0 flex-1">
+                          <h2 className="truncate text-lg font-semibold leading-tight text-white sm:text-xl">
+                            {profile?.stageName || fullName}
+                          </h2>
+                          <p className="truncate text-sm text-text-gray sm:text-base">
+                            {session?.user?.email}
+                          </p>
+                          <p className="mt-1 truncate text-sm sm:text-base">{profileArtistType}</p>
+
+                          <div className="mt-2 w-full sm:mt-3">
+                            <Button
+                              onClick={() => router.push(`/artist/profile?profileId=${profile.id}`)}
+                              variant="secondary"
+                              size="sm"
+                              className="w-full min-w-0 rounded-full border-[1.5px] border-border-color px-3 py-2 text-sm"
+                            >
+                              <Pencil className="mr-2 h-4 w-4 shrink-0 text-primary-orange" />
+                              <span className="truncate gradient-text">Edit Profile</span>
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                );
+              })}
 
               <div className="w-full shrink-0 snap-start">
                 <div className="rounded-xl border border-border-color bg-gradient-to-b from-[#1A1A1A] to-[#101010] p-4 text-center sm:p-5">
@@ -326,7 +422,7 @@ export default function ArtistDashboard() {
 
                   <div className="mt-4">
                     <Button
-                      onClick={() => router.push("/artist/profile-setup?step=performanceDetails")}
+                      onClick={() => setIsAddProfileOpen(true)}
                       variant="secondary"
                       size="md"
                       className="w-full rounded-full border-[1.5px] border-border-color bg-card"
@@ -407,48 +503,56 @@ export default function ArtistDashboard() {
               }
               className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth rounded-2xl border border-border-color bg-card [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              <div className="w-full shrink-0 snap-start">
-                <div className="relative aspect-[4/5]">
-                  <Image
-                    src={session?.user?.avatar || "/icons/images.jpeg"}
-                    alt={artist?.stageName || fullName || "Artist"}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                  />
+              {profilesForUi.map((profile) => {
+                const profileArtistType = (() => {
+                  const rawType = profile?.artistType?.trim() || "";
+                  if (!rawType) return "";
+                  return findCategoryLabel(categories, rawType) || rawType;
+                })();
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                return (
+                  <div key={profile.id} className="w-full shrink-0 snap-start">
+                    <div className="relative aspect-[4/5]">
+                      <Image
+                        src={profile?.profileImage || session?.user?.avatar || "/icons/images.jpeg"}
+                        alt={profile?.stageName || fullName || "Artist"}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
 
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                    <h2 className="text-xl font-bold mb-1">
-                      {artist?.stageName || fullName}
-                      <span className="text-sm font-medium ml-1">
-                        ({displayArtistType || "Performer"})
-                      </span>
-                    </h2>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
 
-                    <div className="flex items-center gap-2 mb-3">
-                      <Image src="/icons/phone.svg" width={16} height={16} alt="" />
-                      <p className="text-xs">
-                        +91
-                        {artist?.contactNumber ||
-                          session?.user?.phoneNumber ||
-                          "-"}
-                      </p>
+                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                        <h2 className="text-xl font-bold mb-1">
+                          {profile?.stageName || fullName}
+                          <span className="text-sm font-medium ml-1">
+                            ({profileArtistType || "Performer"})
+                          </span>
+                        </h2>
+
+                        <div className="flex items-center gap-2 mb-3">
+                          <Image src="/icons/phone.svg" width={16} height={16} alt="" />
+                          <p className="text-xs">
+                            +91
+                            {session?.user?.phoneNumber || "-"}
+                          </p>
+                        </div>
+
+                        <Button
+                          onClick={() => router.push(`/artist/profile?profileId=${profile.id}`)}
+                          variant="secondary"
+                          size="sm"
+                          className="w-full flex items-center justify-center border-[1.5px] border-border-color"
+                        >
+                          <Pencil className="w-4 h-4 mr-2 text-primary-orange" />
+                          <span className="gradient-text">Edit Profile</span>
+                        </Button>
+                      </div>
                     </div>
-
-                    <Button
-                      onClick={() => router.push("/artist/profile")}
-                      variant="secondary"
-                      size="sm"
-                      className="w-full flex items-center justify-center border-[1.5px] border-border-color"
-                    >
-                      <Pencil className="w-4 h-4 mr-2 text-primary-orange" />
-                      <span className="gradient-text">Edit Profile</span>
-                    </Button>
                   </div>
-                </div>
-              </div>
+                );
+              })}
 
               <div className="w-full shrink-0 snap-start">
                 <div className="relative aspect-[4/5] bg-gradient-to-b from-[#1A1A1A] to-[#101010]">
@@ -459,7 +563,7 @@ export default function ArtistDashboard() {
 
                     <div className="mt-6 w-full">
                       <Button
-                        onClick={() => router.push("/artist/profile-setup?step=performanceDetails")}
+                        onClick={() => setIsAddProfileOpen(true)}
                         variant="secondary"
                         size="md"
                         className="w-full rounded-full border-[1.5px] border-border-color bg-card"
@@ -628,6 +732,14 @@ export default function ArtistDashboard() {
           </div>
         </div>
       </div>
+
+      <AdditionalProfileModal
+        isOpen={isAddProfileOpen}
+        onClose={() => setIsAddProfileOpen(false)}
+        onCreated={() => {
+          getProfiles();
+        }}
+      />
     </ArtistDashboardLayout>
   );
 }

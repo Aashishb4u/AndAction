@@ -91,6 +91,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       },
       select: {
         id: true,
+        profileImage: true,
         stageName: true,
         artistType: true,
         user: {
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         a.stageName ||
         `${a.user?.firstName || ""} ${a.user?.lastName || ""}`.trim(),
       category: a.artistType,
-      image: a.user?.avatar || a.user?.image || null,
+      image: a.profileImage || a.user?.avatar || a.user?.image || null,
     }));
 
     console.log(

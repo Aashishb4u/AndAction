@@ -36,6 +36,7 @@ type ExtendedArtist = Artist & {
 
 interface AboutTabProps {
   artist: Artist;
+  onProfileUpdated?: () => void;
 }
 
 const genderOptions = [
@@ -64,7 +65,7 @@ const experienceOptions = [
   { value: "5", label: "10+ years" },
 ];
 
-const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
+const AboutTab: React.FC<AboutTabProps> = ({ artist, onProfileUpdated }) => {
   const { data: session, update } = useSession();
   const queryClient = useQueryClient();
   const { categories } = useArtistCategories();
@@ -135,6 +136,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
 
       const payload = {
         userId: session.user.id,
+        artistProfileId: (artist as any)?.id,
 
         stageName: formData.stageName,
         artistType: normalizeArtistCategoryValue(formData.artistType),
@@ -161,13 +163,14 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       const refreshedUser = res.data.user;
       const refreshedArtist = res.data.artistProfile;
 
-      // 🔥 Build correct NextAuth shape:
-      const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
+      onProfileUpdated?.();
 
-      // Update session (JWT + session.user)
-      await update({
-        update: sessionPayload,
-      });
+      if (session?.user?.artistProfile?.id === refreshedArtist?.id) {
+        const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
+        await update({
+          update: sessionPayload,
+        });
+      }
 
       // Ensure home/category listings fetch fresh data after profile category change.
       await queryClient.cancelQueries({ queryKey: ["artists"] });
