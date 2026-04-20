@@ -12,6 +12,7 @@ interface ArtistProfileTabsProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   artist: Artist;
+  onProfileUpdated?: () => void;
 }
 
 const tabs = [
@@ -26,13 +27,14 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
   activeTab,
   onTabChange,
   artist,
+  onProfileUpdated,
 }) => {
   const renderTabContent = () => {
     switch (activeTab) {
       case "about":
-        return <AboutTab artist={artist} />;
+        return <AboutTab artist={artist} onProfileUpdated={onProfileUpdated} />;
       case "performance":
-        return <PerformanceTab artist={artist} />;
+        return <PerformanceTab artist={artist} onProfileUpdated={onProfileUpdated} />;
       case "videos":
         return <VideosTab artist={artist} />;
       case "shorts":
@@ -40,7 +42,7 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
       case "integrations":
         return <IntegrationsTab artist={artist} />;
       default:
-        return <AboutTab artist={artist} />;
+        return <AboutTab artist={artist} onProfileUpdated={onProfileUpdated} />;
     }
   };
 

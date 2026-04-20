@@ -14,6 +14,7 @@ import { INDIAN_STATES } from "@/lib/constants";
 
 interface PerformanceTabProps {
   artist: Artist;
+  onProfileUpdated?: () => void;
 }
 
 const performingLanguageOptions = [
@@ -59,7 +60,7 @@ const parseCSV = (value: string | undefined | null): string[] => {
     .filter(Boolean);
 };
 
-const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
+const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist, onProfileUpdated }) => {
   const { data: session, update } = useSession();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -175,6 +176,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
       const payload = {
         userId: session.user.id,
+        artistProfileId: (artist as any)?.id,
         performingLanguage: formData.performingLanguages.join(","),
         performingEventType: formData.eventTypes.join(","),
         performingStates: formData.performingStates.join(","),
@@ -195,11 +197,14 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       const refreshedUser = res.data.user;
       const refreshedArtist = res.data.artistProfile;
 
-      const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
+      onProfileUpdated?.();
 
-      await update({
-        update: sessionPayload,
-      });
+      if (session?.user?.artistProfile?.id === refreshedArtist?.id) {
+        const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
+        await update({
+          update: sessionPayload,
+        });
+      }
 
       toast.success("Performance details updated!");
     } catch (error) {

@@ -39,10 +39,10 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
     isLoading,
     error,
     refetch,
-  } = useSyncedVideos("shorts");
+  } = useSyncedVideos("shorts", (artist as any)?.id);
 
-  const syncYouTubeMutation = useSyncYouTubeShorts();
-  const syncInstagramMutation = useSyncInstagramReels();
+  const syncYouTubeMutation = useSyncYouTubeShorts((artist as any)?.id);
+  const syncInstagramMutation = useSyncInstagramReels((artist as any)?.id);
   const deleteMutation = useDeleteVideo();
   const deleteInstagramMutation = useDeleteInstagramReel();
 
@@ -146,7 +146,7 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
   };
 
   const handleConnectYouTube = () => {
-    router.push("/artist/profile?tab=integrations");
+    router.push(`/artist/profile?tab=integrations&profileId=${(artist as any)?.id}`);
   };
 
   // Loading state
@@ -210,16 +210,11 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
             disabled={isSyncing}
           >
             {isSyncing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Syncing...
-              </>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
-              <>
-                <Download className="w-4 h-4 mr-2" />
-                Sync Shorts
-              </>
+              <Download className="w-4 h-4 mr-2" />
             )}
+            <span>{isSyncing ? "Syncing..." : "Sync Shorts"}</span>
           </Button>
         </div>
         <SyncSelectionModal
@@ -229,6 +224,7 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
           title="Sync Shorts"
           description="Select which platforms you want to sync shorts from."
           contentType="shorts"
+          artistProfileId={(artist as any)?.id}
         />
       </>
     );
@@ -249,16 +245,11 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
             disabled={isSyncing}
           >
             {isSyncing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Syncing...
-              </>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
-              <>
-                <Download className="w-4 h-4 mr-2" />
-                Sync Shorts
-              </>
+              <Download className="w-4 h-4 mr-2" />
             )}
+            <span>{isSyncing ? "Syncing..." : "Sync Shorts"}</span>
           </Button>
           <Button variant="ghost" size="sm" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -309,6 +300,7 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
         title="Sync Shorts"
         description="Select which platforms you want to sync shorts from."
         contentType="shorts"
+        artistProfileId={(artist as any)?.id}
       />
     </div>
   );

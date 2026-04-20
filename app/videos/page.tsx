@@ -80,8 +80,8 @@ export default function VideosPage() {
         isBookmarked: v.isBookmarked || false,
         bookmarkId: v.bookmarkId || null,
         creatorImage: v.user.avatar || v.user.image || undefined,
-        artistType: v.user.artist?.artistType || "",
-        artistId: v.user.artist?.id || "",
+        artistType: v.user.artists?.[0]?.artistType || "",
+        artistId: v.user.artists?.[0]?.id || "",
       })),
     ) || [];
 

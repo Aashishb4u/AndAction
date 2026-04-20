@@ -52,10 +52,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     if (artistCategory && artistCategory !== "all") {
       const matchValues = getArtistTypeMatches(artistCategory);
       where.user = {
-        artist: {
-          OR: matchValues.map((val) => ({
-            artistType: { contains: val, mode: "insensitive" as const },
-          })),
+        artists: {
+          some: {
+            OR: matchValues.map((val) => ({
+              artistType: { contains: val, mode: "insensitive" as const },
+            })),
+          },
         },
       };
     }
@@ -90,11 +92,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
           avatar: true,
           image: true,
           isArtistVerified: true,
-          artist: {
-            select: {
-              id: true,
-              artistType: true,
-            },
+          artists: {
+            take: 1,
+            orderBy: { profileOrder: "asc" },
+            select: { id: true, artistType: true },
           },
         },
       },

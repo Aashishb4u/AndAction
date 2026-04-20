@@ -111,6 +111,7 @@ async function fetchArtistsInRadius(
   const artists = await prisma.$queryRaw<Array<any>>`
     SELECT 
       a.id,
+      a."profileImage",
       a."stageName",
       a."artistType",
       a."subArtistType",
@@ -156,6 +157,7 @@ async function fetchArtistsInRadius(
 
   return artists.map((artist) => ({
     id: artist.id,
+    profileImage: artist.profileImage,
     stageName: artist.stageName,
     artistType: artist.artistType,
     subArtistType: artist.subArtistType,
@@ -199,6 +201,7 @@ async function fetchTopRatedNationwide(
     },
     select: {
       id: true,
+      profileImage: true,
       stageName: true,
       artistType: true,
       subArtistType: true,

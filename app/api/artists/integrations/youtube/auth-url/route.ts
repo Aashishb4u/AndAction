@@ -23,10 +23,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if user is an artist
-    const artist = await prisma.artist.findUnique({
-      where: { userId: session.user.id },
-    });
+    const artistProfileId = request.nextUrl.searchParams.get("artistProfileId");
+    const artist = artistProfileId
+      ? await prisma.artist.findFirst({
+          where: { id: artistProfileId, userId: session.user.id },
+        })
+      : await prisma.artist.findFirst({
+          where: { userId: session.user.id },
+          orderBy: { profileOrder: "asc" },
+        });
 
     if (!artist) {
       return NextResponse.json(
@@ -45,6 +50,7 @@ export async function GET(request: NextRequest) {
     const state = Buffer.from(
       JSON.stringify({
         artistId: artist.id,
+        profileId: artist.id,
         userId: session.user.id,
         timestamp: Date.now(),
       })

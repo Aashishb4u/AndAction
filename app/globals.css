@@ -132,6 +132,18 @@ body {
   font-size: 16px;
   line-height: 24px;
   font-weight: normal;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+@supports (height: 100svh) {
+  .min-h-screen {
+    min-height: 100svh;
+  }
+
+  .h-screen {
+    height: 100svh;
+  }
 }
 
 /* Hide scrollbars for horizontal scrolling */

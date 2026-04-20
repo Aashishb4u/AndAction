@@ -237,6 +237,11 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       setUploading(true);
       setUploadMessage("");
       setUploadError("");
+      const artistProfileId =
+        typeof (data as any)?.artistProfileId === "string" &&
+        (data as any).artistProfileId.trim()
+          ? (data as any).artistProfileId.trim()
+          : null;
 
       // 1️⃣ Compress the file before uploading
       const options = {
@@ -250,13 +255,26 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       console.log("📦 Compressed file:", compressedFile);
 
       // 2️⃣ Show preview using compressed file
-      setPreview(URL.createObjectURL(compressedFile));
+      const localPreviewUrl = URL.createObjectURL(compressedFile);
+      setPreview(localPreviewUrl);
 
-      // 3️⃣ Build form data
+      if (!artistProfileId) {
+        const updatedData = {
+          profilePhoto: compressedFile,
+          avatarUrl: localPreviewUrl,
+        };
+
+        setFormData((prev) => ({ ...prev, ...updatedData }));
+        onUpdateData(updatedData);
+        setUploadMessage("Profile photo selected.");
+        setUploading(false);
+        return;
+      }
+
       const formDataUpload = new FormData();
       formDataUpload.append("file", compressedFile);
+      formDataUpload.append("artistProfileId", artistProfileId);
 
-      // 4️⃣ Upload compressed image
       const res = await fetch("/api/media/upload", {
         method: "POST",
         body: formDataUpload,

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ProfileOverview from "@/components/artist/profile-setup/ProfileOverview";
 import ArtistProfileDetails from "@/components/artist/profile-setup/ArtistProfileDetails";
 import PerformanceDetails from "@/components/artist/profile-setup/PerformanceDetails";
@@ -29,7 +29,9 @@ export default function ProfileSetupPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showBackWarning, setShowBackWarning] = useState(false);
   const [pendingBackStep, setPendingBackStep] = useState<ProfileSetupStep | "dashboard" | null>(null);
+  const [didInitFromQuery, setDidInitFromQuery] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status, update } = useSession();
 
   useEffect(() => {
@@ -46,8 +48,26 @@ export default function ProfileSetupPage() {
     }
   }, [status, session, router]);
 
+  useEffect(() => {
+    if (didInitFromQuery) return;
+    const stepParam = searchParams.get("step");
+    const allowedSteps: ProfileSetupStep[] = [
+      "overview",
+      "artistDetails",
+      "performanceDetails",
+      "contactPricing",
+      "review",
+      "videosSocialMedia",
+    ];
+    if (stepParam && allowedSteps.includes(stepParam as ProfileSetupStep)) {
+      setCurrentStep(stepParam as ProfileSetupStep);
+    }
+    setDidInitFromQuery(true);
+  }, [searchParams, didInitFromQuery]);
+
   // Form data states
   const [profileData, setProfileData] = useState({
+    artistProfileId: "" as string,
     profilePhoto: null as File | null,
     avatarUrl: "",
     stageName: "",
@@ -85,6 +105,7 @@ export default function ProfileSetupPage() {
       
       setProfileData((prev) => ({
         ...prev,
+        artistProfileId: profile.id,
         avatarUrl: user.avatar || "",
         stageName: profile.stageName || "",
         artistType: profile.artistType || "",
@@ -341,7 +362,13 @@ export default function ProfileSetupPage() {
       case "artistDetails":
         return (
           <ArtistProfileDetails
-            data={profileData}
+            data={{
+              ...(profileData as any),
+              artistProfileId:
+                (profileData as any).artistProfileId ||
+                session?.user?.artistProfile?.id ||
+                "",
+            }}
             onNext={handleNext}
             onSkip={handleSkip}
             onBack={handleBack}

@@ -25,6 +25,7 @@ interface IntegrationsTabProps {
 }
 
 const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
+  const artistProfileId = (artist as any)?.id as string | undefined;
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
   const [disconnectType, setDisconnectType] = useState<"youtube" | "instagram">(
     "youtube",
@@ -32,12 +33,15 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
   const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
 
   const { data: integrationStatus, isLoading: isLoadingStatus } =
-    useIntegrationStatus();
+    useIntegrationStatus(artistProfileId);
 
-  const youtubeConnectByChannelMutation = useYouTubeConnectByChannel();
-  const youtubeDisconnectMutation = useYouTubeDisconnect();
-  const instagramConnectMutation = useInstagramConnect();
-  const instagramDisconnectMutation = useInstagramDisconnect();
+  const youtubeConnectByChannelMutation = useYouTubeConnectByChannel(artistProfileId);
+  const youtubeDisconnectMutation = useYouTubeDisconnect(artistProfileId);
+  const instagramConnectMutation = useInstagramConnect({
+    returnUrl: `/artist/profile?tab=integrations&profileId=${artistProfileId}`,
+    artistProfileId,
+  });
+  const instagramDisconnectMutation = useInstagramDisconnect(artistProfileId);
 
   const handleYouTubeConnect = () => {
     setYoutubeModalOpen(true);
@@ -196,7 +200,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                     ) : (
                       <Youtube className="w-4 h-4 mr-2" />
                     )}
-                    Connect YouTube
+                    <span>Connect YouTube</span>
                   </Button>
                 )}
               </td>
@@ -280,7 +284,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                     ) : (
                       <Instagram className="w-4 h-4 mr-2" />
                     )}
-                    Connect Instagram
+                    <span>Connect Instagram</span>
                   </Button>
                 )}
               </td>
@@ -364,7 +368,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                   ) : (
                     <Youtube className="w-4 h-4 mr-2" />
                   )}
-                  Connect YouTube
+                  <span>Connect YouTube</span>
                 </Button>
               )}
             </div>
@@ -444,7 +448,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                   ) : (
                     <Instagram className="w-4 h-4 mr-2" />
                   )}
-                  Connect Instagram
+                  <span>Connect Instagram</span>
                 </Button>
               )}
             </div>

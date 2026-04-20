@@ -94,8 +94,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Use returnUrl from state or default to integrations tab
-    const baseReturnUrl =
-      stateData.returnUrl || "/artist/profile?tab=integrations";
+    const baseReturnUrl = stateData.returnUrl || "/artist/profile?tab=integrations";
 
     // Check if state is not too old (15 minutes max)
     if (Date.now() - stateData.timestamp > 15 * 60 * 1000) {

@@ -246,6 +246,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
+        profileImage: true,
         stageName: true,
         artistType: true,
         subArtistType: true,

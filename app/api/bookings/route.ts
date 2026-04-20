@@ -95,12 +95,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
         }
         
         // Optionally, ensure the user is not booking themselves (if the User is also an Artist)
-        const clientArtistCheck = await prisma.artist.findUnique({
-            where: { userId: clientId },
+        const clientArtistCheck = await prisma.artist.findFirst({
+            where: { userId: clientId, id: artistId },
             select: { id: true }
         });
 
-        if (clientArtistCheck?.id === artistId) {
+        if (clientArtistCheck?.id) {
             return ApiErrors.forbidden();
         }
 
@@ -173,14 +173,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         const url = new URL(request.url);
         const searchParams = url.searchParams;
         
-        // 2. Determine User Role and Artist ID (if applicable)
-        const artistProfile = await prisma.artist.findUnique({
+        const artistProfiles = await prisma.artist.findMany({
             where: { userId: userId },
             select: { id: true }
         });
 
-        const isArtist = !!artistProfile;
-        const artistId = artistProfile?.id;
+        const isArtist = artistProfiles.length > 0;
+        const artistIds = artistProfiles.map((a) => a.id);
 
         // 3. Dynamic Filtering Setup
         const where: Prisma.BookingWhereInput = {};
@@ -189,7 +188,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             // If the user is an artist, list bookings they made (clientId) OR bookings they received (artistId)
             where.OR = [
                 { clientId: userId },
-                { artistId: artistId }
+                { artistId: { in: artistIds } }
             ];
         } else {
             // If the user is only a client, only list bookings they made
