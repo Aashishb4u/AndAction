@@ -131,13 +131,25 @@ export async function GET(request: NextRequest) {
       where: { id: stateData.artistId },
       data: {
         youtubeAccessToken: tokens.access_token,
-        youtubeRefreshToken: tokens.refresh_token || null,
+        ...(tokens.refresh_token ? { youtubeRefreshToken: tokens.refresh_token } : {}),
         youtubeTokenExpiry: tokenExpiry,
         youtubeChannelId: channel.id,
         youtubeChannelName: channel.snippet.title,
         youtubeConnectedAt: new Date(),
       },
     });
+
+    try {
+      await prisma.video.deleteMany({
+        where: {
+          artistId: stateData.artistId,
+          source: "youtube",
+        },
+      });
+      await syncYouTubeVideos(stateData.artistId);
+    } catch (syncError) {
+      console.error("YouTube auto-sync failed after OAuth connect:", syncError);
+    }
 
     const redirectUrl = new URL("/artist/profile", request.url);
     redirectUrl.searchParams.set("tab", "integrations");

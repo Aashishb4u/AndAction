@@ -12,6 +12,7 @@ import { findCategoryLabel } from "@/lib/artist-category-utils";
 import AdditionalProfileModal from "@/components/artist/profile-setup/AdditionalProfileModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { integrationKeys } from "@/hooks/use-integrations";
+import { videoKeys } from "@/hooks/use-youtube-videos";
 
 function ArtistProfileContent() {
   const searchParams = useSearchParams();
@@ -47,6 +48,11 @@ function ArtistProfileContent() {
       queryClient.invalidateQueries({
         queryKey: integrationKeys.status(profileIdParam),
       });
+      queryClient.setQueryData(videoKeys.list("videos", profileIdParam), []);
+      queryClient.setQueryData(videoKeys.list("shorts", profileIdParam), []);
+      queryClient.invalidateQueries({ queryKey: videoKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["instagram-videos"] });
+      queryClient.refetchQueries({ queryKey: videoKeys.all });
       // Clear the URL params after showing notification
       router.replace(
         profileIdParam
@@ -59,6 +65,8 @@ function ArtistProfileContent() {
       queryClient.invalidateQueries({
         queryKey: integrationKeys.status(profileIdParam),
       });
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+      queryClient.invalidateQueries({ queryKey: ["instagram-videos"] });
       router.replace(
         profileIdParam
           ? `/artist/profile?tab=integrations&profileId=${profileIdParam}`

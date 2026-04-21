@@ -1,7 +1,13 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { videoKeys } from "@/hooks/use-youtube-videos";
 
 interface IntegrationStatus {
   youtube: {
@@ -22,6 +28,14 @@ export const integrationKeys = {
   status: (artistProfileId: string | null | undefined) =>
     [...integrationKeys.all, "status", artistProfileId ?? "primary"] as const,
 };
+
+function clearYouTubeVideoCache(
+  queryClient: QueryClient,
+  artistProfileId: string | null | undefined,
+) {
+  queryClient.setQueryData(videoKeys.list("videos", artistProfileId), []);
+  queryClient.setQueryData(videoKeys.list("shorts", artistProfileId), []);
+}
 
 async function fetchIntegrationStatus(
   artistProfileId?: string | null,
@@ -148,7 +162,7 @@ export function useYouTubeConnectByChannel(artistProfileId?: string | null) {
   return useMutation({
     mutationFn: (channelInput: string) =>
       connectYouTubeByChannel({ channelInput, artistProfileId }),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Update the integration status in cache
       queryClient.setQueryData(
         integrationKeys.status(artistProfileId),
@@ -174,6 +188,10 @@ export function useYouTubeConnectByChannel(artistProfileId?: string | null) {
         }
       );
       toast.success(`YouTube channel "${data.channelName}" connected successfully`);
+
+      clearYouTubeVideoCache(queryClient, artistProfileId);
+      queryClient.invalidateQueries({ queryKey: videoKeys.all });
+      await queryClient.refetchQueries({ queryKey: videoKeys.all });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to connect YouTube channel");
@@ -200,8 +218,8 @@ export function useYouTubeDisconnect(artistProfileId?: string | null) {
       );
       toast.success("YouTube account disconnected successfully");
 
-      // Also invalidate video queries since they depend on YouTube connection
-      queryClient.invalidateQueries({ queryKey: ["videos"] });
+      clearYouTubeVideoCache(queryClient, artistProfileId);
+      queryClient.invalidateQueries({ queryKey: videoKeys.all });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to disconnect YouTube");

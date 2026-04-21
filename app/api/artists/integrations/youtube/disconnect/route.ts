@@ -31,17 +31,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await prisma.artist.update({
-      where: { id: artist.id },
-      data: {
-        youtubeAccessToken: null,
-        youtubeRefreshToken: null,
-        youtubeTokenExpiry: null,
-        youtubeChannelId: null,
-        youtubeChannelName: null,
-        youtubeConnectedAt: null,
-      },
-    });
+    await prisma.$transaction([
+      prisma.video.deleteMany({
+        where: {
+          artistId: artist.id,
+          source: "youtube",
+        },
+      }),
+      prisma.video.deleteMany({
+        where: {
+          artistId: artist.id,
+          isShort: true,
+          OR: [
+            { youtubeVideoId: { not: null } },
+            { url: { contains: "youtube.com", mode: "insensitive" } },
+            { url: { contains: "youtu.be", mode: "insensitive" } },
+          ],
+        },
+      }),
+      prisma.artist.update({
+        where: { id: artist.id },
+        data: {
+          youtubeAccessToken: null,
+          youtubeRefreshToken: null,
+          youtubeTokenExpiry: null,
+          youtubeChannelId: null,
+          youtubeChannelName: null,
+          youtubeConnectedAt: null,
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,

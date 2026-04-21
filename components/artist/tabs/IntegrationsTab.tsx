@@ -465,7 +465,11 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
         }`}
         description={`Are you sure you want to disconnect your ${
           disconnectType === "youtube" ? "YouTube" : "Instagram"
-        } account? Your synced content will remain on your profile.`}
+        } account?${
+          disconnectType === "youtube"
+            ? " Your synced YouTube videos and shorts will be removed from your profile."
+            : " Your synced content will remain on your profile."
+        }`}
         confirmText="Disconnect"
         cancelText="Cancel"
         variant="danger"
