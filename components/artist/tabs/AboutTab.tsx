@@ -8,34 +8,16 @@ import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import DateInput from "@/components/ui/DateInput";
 import { Info } from "lucide-react";
-import { Artist } from "@/types";
-import { useSession } from "next-auth/react";
-import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
-import { toast } from "react-toastify";
 import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
-import { useQueryClient } from "@tanstack/react-query";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
-import {
-  normalizeArtistCategoryValue,
-} from "@/lib/artist-category-utils";
-
-// Extended artist type for profile management
-type ExtendedArtist = Artist & {
-  firstName?: string;
-  lastName?: string;
-  dateOfBirth?: string;
-  address?: string;
-  pinCode?: string;
-  state?: string;
-  city?: string;
-  shortBio?: string;
-  contactNumber?: string;
-  contactEmail?: string;
-  subArtistType: string;
-};
+import type { AboutDraft } from "./profileDraftTypes";
 
 interface AboutTabProps {
-  artist: Artist;
+  draft: AboutDraft;
+  setDraft: React.Dispatch<React.SetStateAction<AboutDraft>>;
+  isSaving: boolean;
+  onSave: () => Promise<void>;
+  onReset: () => void;
 }
 
 const genderOptions = [
@@ -64,150 +46,24 @@ const experienceOptions = [
   { value: "5", label: "10+ years" },
 ];
 
-const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
-  const { data: session, update } = useSession();
-  const queryClient = useQueryClient();
+const AboutTab: React.FC<AboutTabProps> = ({ draft, setDraft, isSaving, onSave, onReset }) => {
   const { categories } = useArtistCategories();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const normalizeArtistTypeValue = (rawValue?: string) => {
-    const normalized = normalizeArtistCategoryValue(rawValue || "");
-    if (!normalized) return "";
+  const selectedSubTypes = draft.subArtistTypes;
+  const setSelectedSubTypes = (next: string[]) =>
+    setDraft((prev) => ({ ...prev, subArtistTypes: next }));
 
-    const labelMatch = categories.find(
-      (item) => item.label.toLowerCase() === normalized.toLowerCase(),
-    );
-    return labelMatch?.value || normalized;
-  };
-
-  const initialArtistType = normalizeArtistTypeValue(
-    (artist as any)?.tags?.[0] || artist.category,
-  );
-
-  const [formData, setFormData] = useState({
-    stageName: artist.name,
-    artistType: initialArtistType,
-    firstName: (artist as ExtendedArtist).firstName || "",
-    lastName: (artist as ExtendedArtist).lastName || "",
-    dateOfBirth: (artist as ExtendedArtist).dateOfBirth || "",
-    gender: artist.gender?.toLowerCase() || "",
-    address: (artist as ExtendedArtist).address || "",
-    pinCode: (artist as ExtendedArtist).pinCode || "",
-    state: (artist as ExtendedArtist).state?.toLowerCase() || "",
-    city: (artist as ExtendedArtist).city?.toLowerCase() || "",
-    contactNumber:
-      (artist as ExtendedArtist).contactNumber || (artist as any).phone || "",
-    email:
-      (artist as ExtendedArtist).contactEmail || (artist as any).email || "",
-    subArtistType:
-      (artist as ExtendedArtist).subArtistType?.toLowerCase() || "",
-    achievements: Array.isArray(artist.achievements)
-      ? artist.achievements.join(", ")
-      : artist.achievements || "",
-    yearsOfExperience: artist.yearsOfExperience?.toString() || "4",
-    shortBio: artist.bio || "",
-  });
-
-  // Multi-select UI for sub-artist types (stores as CSV for backend)
-  const initialSelectedSubTypes = (artist as ExtendedArtist).subArtistType
-    ? (artist as ExtendedArtist).subArtistType.split(',').map(s => s.trim()).filter(Boolean)
-    : [];
-  const [selectedSubTypes, setSelectedSubTypes] = useState<string[]>(initialSelectedSubTypes);
   const [subTypeInput, setSubTypeInput] = useState<string>('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleInputChange = (field: string, value: string | string[]) => {
     const normalizedValue = Array.isArray(value) ? value.join(",") : value;
-    setFormData((prev) => ({
+    setDraft((prev) => ({
       ...prev,
       [field]: normalizedValue,
-    }));
+    } as AboutDraft));
   };
 
-  const handleSave = async () => {
-    try {
-      if (!session?.user?.id) {
-        toast.error("Not authenticated");
-        return;
-      }
-
-      setIsLoading(true);
-
-      const payload = {
-        userId: session.user.id,
-
-        stageName: formData.stageName,
-        artistType: normalizeArtistCategoryValue(formData.artistType),
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        gender: formData.gender,
-        dob: formData.dateOfBirth,
-        address: formData.address,
-        pinCode: formData.pinCode,
-        city: formData.city,
-        state: formData.state,
-        contactNumber: formData.contactNumber,
-        whatsappNumber: formData.contactNumber,
-        contactEmail: formData.email,
-        shortBio: formData.shortBio,
-        achievements: formData.achievements,
-        yearsOfExperience: formData.yearsOfExperience,
-        subArtistType: selectedSubTypes.join(','),
-      };
-
-      // Update DB
-      const res = await updateArtistProfile(payload);
-
-      const refreshedUser = res.data.user;
-      const refreshedArtist = res.data.artistProfile;
-
-      // 🔥 Build correct NextAuth shape:
-      const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
-
-      // Update session (JWT + session.user)
-      await update({
-        update: sessionPayload,
-      });
-
-      // Ensure home/category listings fetch fresh data after profile category change.
-      await queryClient.cancelQueries({ queryKey: ["artists"] });
-      queryClient.removeQueries({ queryKey: ["artists"] });
-
-      toast.success("Profile updated!");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleReset = () => {
-    setFormData({
-      stageName: artist.name,
-      artistType: normalizeArtistTypeValue((artist as any)?.tags?.[0] || artist.category),
-      firstName: (artist as ExtendedArtist).firstName || "",
-      lastName: (artist as ExtendedArtist).lastName || "",
-      dateOfBirth: (artist as ExtendedArtist).dateOfBirth || "",
-      gender: artist.gender?.toLowerCase() || "",
-      address: (artist as ExtendedArtist).address || "",
-      pinCode: (artist as ExtendedArtist).pinCode || "",
-      state: (artist as ExtendedArtist).state?.toLowerCase() || "",
-      city: (artist as ExtendedArtist).city?.toLowerCase() || "",
-      contactNumber:
-        (artist as ExtendedArtist).contactNumber || (artist as any).phone || "",
-      email:
-        (artist as ExtendedArtist).contactEmail || (artist as any).email || "",
-      subArtistType:
-        (artist as ExtendedArtist).subArtistType?.toLowerCase() || "",
-      achievements: Array.isArray(artist.achievements)
-        ? artist.achievements.join(", ")
-        : artist.achievements || "",
-      yearsOfExperience: artist.yearsOfExperience?.toString() || "4",
-      shortBio: artist.bio || "",
-    });
-    setSelectedSubTypes((artist as ExtendedArtist).subArtistType ? (artist as ExtendedArtist).subArtistType.split(',').map(s => s.trim()).filter(Boolean) : []);
-  };
 
   return (
     <div className="md:space-y-5 space-y-4 pb-24 md:pb-0">
@@ -215,7 +71,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       <div className="relative text-sm">
         <Input
           label="Stage name*"
-          value={formData.stageName}
+          value={draft.stageName}
           onChange={(e) => handleInputChange("stageName", e.target.value)}
           required
         />
@@ -230,13 +86,13 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       {/* First Name and Last Name */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">       <Input
           label="First name*"
-          value={formData.firstName}
+          value={draft.firstName}
           onChange={(e) => handleInputChange("firstName", e.target.value)}
           required
         />
         <Input
           label="Last name*"
-          value={formData.lastName}
+          value={draft.lastName}
           onChange={(e) => handleInputChange("lastName", e.target.value)}
           required
         />
@@ -246,7 +102,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <DateInput
           label="Date of birth*"
-          value={formData.dateOfBirth}
+          value={draft.dateOfBirth}
           onChange={(value) => handleInputChange("dateOfBirth", value)}
           placeholder="DD / MM / YYYY"
           maxDate={new Date()}
@@ -255,7 +111,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         <Select
           label="Gender*"
           options={genderOptions}
-          value={formData.gender}
+          value={draft.gender}
           onChange={(value) => handleInputChange("gender", value)}
           required
         />
@@ -264,7 +120,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       {/* Address */}
       <Input
         label="Office/Home full address*"
-        value={formData.address}
+        value={draft.address}
         onChange={(e) => handleInputChange("address", e.target.value)}
         required
       />
@@ -273,21 +129,21 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
           label="PIN code*"
-          value={formData.pinCode}
+          value={draft.pinCode}
           onChange={(e) => handleInputChange("pinCode", e.target.value)}
           required
         />
         <Select
           label="State*"
           options={INDIAN_STATES}
-          value={formData.state}
+          value={draft.state}
           onChange={(value) => handleInputChange("state", value)}
           required
         />
         <Select
           label="City*"
           options={INDIAN_CITIES}
-          value={formData.city}
+          value={draft.city}
           onChange={(value) => handleInputChange("city", value)}
           required
         />
@@ -297,7 +153,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       <div className="relative text-sm">
         <Input
           label="Contact / Whatsapp number*"
-          value={formData.contactNumber}
+          value={draft.contactNumber}
           onChange={(e) => handleInputChange("contactNumber", e.target.value)}
           required
         />
@@ -312,7 +168,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       <div className="relative text-sm">
         <Input
           label="Email ID"
-          value={formData.email}
+          value={draft.email}
           onChange={(e) => handleInputChange("email", e.target.value)}
           type="email"
         />
@@ -328,7 +184,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         <Select
           label="Artist Category*"
           options={categories}
-          value={formData.artistType}
+          value={draft.artistType}
           onChange={(value) => handleInputChange("artistType", value)}
           required
         />
@@ -421,7 +277,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
         <div className="relative">
           <Input
             label="Achievements / Awards"
-            value={formData.achievements}
+            value={draft.achievements}
             onChange={(e) => handleInputChange("achievements", e.target.value)}
           />
           <div className="absolute top-0 right-0">
@@ -434,7 +290,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
           <Select
             label="Years of experience*"
             options={experienceOptions}
-            value={formData.yearsOfExperience}
+            value={draft.yearsOfExperience}
             onChange={(value) => handleInputChange("yearsOfExperience", value)}
             required
           />
@@ -450,7 +306,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       <div className="relative">
         <Textarea
           label="Short bio"
-          value={formData.shortBio}
+          value={draft.shortBio}
           onChange={(e) => handleInputChange("shortBio", e.target.value)}
           placeholder="Tell us about yourself..."
           required
@@ -466,19 +322,19 @@ const AboutTab: React.FC<AboutTabProps> = ({ artist }) => {
       <div className="flex md:justify-end gap-4 items-center md:pt-5 py-2 px-3 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent z-50">
         <Button
           variant="secondary"
-          onClick={handleReset}
-          disabled={isLoading}
+          onClick={onReset}
+          disabled={isSaving}
           className="w-full md:w-auto text-sm! md:text-base!"
         >
           <span className="gradient-text">Reset</span>
         </Button>
         <Button
           variant="primary"
-          onClick={handleSave}
-          disabled={isLoading}
+          onClick={onSave}
+          disabled={isSaving}
           className="w-full md:w-auto text-xs! md:text-base!"
         >
-          {isLoading ? "Saving..." : "Save Changes"}
+          {isSaving ? "Saving..." : "Save Changes"}
         </Button>
       </div>
     </div>
