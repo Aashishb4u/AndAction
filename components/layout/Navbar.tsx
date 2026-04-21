@@ -8,6 +8,7 @@ import Button from "@/components/ui/Button";
 import { NavbarProps, NavItem } from "@/types";
 import { createAuthRedirectUrl } from "@/lib/auth";
 import Search from "../icons/search";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useSession, signOut } from "next-auth/react";
 import { buildArtishProfileUrl } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   const [lastScrollY, setLastScrollY] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [isConvertingArtist, setIsConvertingArtist] = useState(false);
+  const [showJoinArtistConfirm, setShowJoinArtistConfirm] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -84,8 +86,24 @@ useEffect(() => {
       return;
     }
 
+    setShowJoinArtistConfirm(true);
+  };
+
+  const handleConfirmJoinAsArtist = () => {
+    setShowJoinArtistConfirm(false);
+
+    if (!user) {
+      router.push(createAuthRedirectUrl("/auth/artist", pathname));
+      return;
+    }
+
+    if (user.role === "artist") {
+      router.push("/artist/dashboard");
+      return;
+    }
+
     setIsConvertingArtist(true);
-    router.push("/artist/profile-setup?convert=true");
+    router.push("/auth/artist?step=userInfo&convert=true");
   };
 
   return (
@@ -237,6 +255,17 @@ useEffect(() => {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showJoinArtistConfirm}
+        onOpenChange={setShowJoinArtistConfirm}
+        title="Join as an Artist?"
+        description="We will open artist onboarding details first, then continue to profile setup."
+        confirmText="Continue"
+        cancelText="Not now"
+        variant="default"
+        onConfirm={handleConfirmJoinAsArtist}
+      />
     </nav>
   );
 };

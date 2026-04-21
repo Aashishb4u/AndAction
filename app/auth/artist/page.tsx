@@ -14,7 +14,7 @@ import DateInput from "@/components/ui/DateInput";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { signInWithGoogleAsArtist } from "@/lib/auth";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 
 type ArtistSignUpStep = "join" | "otp" | "password" | "userInfo" | "terms";
@@ -61,12 +61,19 @@ function ArtistAuthContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { update: updateSession } = useSession();
+  const isOAuthSignupFlow = searchParams.get("oauth") === "true";
+  const isConvertFlow = searchParams.get("convert") === "true";
 
   useEffect(() => {
     const stepParam = searchParams.get("step");
     const oauthParam = searchParams.get("oauth");
+    const convertParam = searchParams.get("convert");
 
-    if (stepParam === "userInfo" && oauthParam === "true") {
+    if (
+      stepParam === "userInfo" &&
+      (oauthParam === "true" || convertParam === "true")
+    ) {
       setStep("userInfo");
     }
   }, [searchParams]);
@@ -420,7 +427,7 @@ function ArtistAuthContent() {
     setIsLoading(true);
 
     try {
-      const isOAuthSignup = searchParams.get("oauth") === "true";
+      const usesExistingAccountFlow = isOAuthSignupFlow || isConvertFlow;
 
       const artistData = {
         email: contactType === "email" ? email : undefined,
@@ -438,10 +445,31 @@ function ArtistAuthContent() {
         city,
         noMarketing,
         shareData,
-        isOAuthSignup, // Flag to indicate OAuth user
+        isOAuthSignup: usesExistingAccountFlow,
       };
 
-      const apiEndpoint = isOAuthSignup
+      if (isConvertFlow) {
+        const convertResponse = await fetch("/api/auth/artist/convert", {
+          method: "POST",
+        });
+        const convertData = await convertResponse.json();
+
+        if (!convertResponse.ok || !convertData.success) {
+          throw new Error(
+            convertData.error ||
+              convertData.message ||
+              "Failed to convert account to artist.",
+          );
+        }
+
+        try {
+          await updateSession({ role: "artist" });
+        } catch (sessionError) {
+          console.warn("Session role update failed after conversion:", sessionError);
+        }
+      }
+
+      const apiEndpoint = usesExistingAccountFlow
         ? "/api/auth/artist/update-profile"
         : "/api/auth/artist/signup";
 
@@ -461,8 +489,10 @@ function ArtistAuthContent() {
 
       await clearSignupDraft();
 
-      if (isOAuthSignup) {
-        router.push("/artist/profile-setup");
+      if (usesExistingAccountFlow) {
+        router.push(
+          isConvertFlow ? "/artist/profile-setup?convert=true" : "/artist/profile-setup",
+        );
         return;
       }
 
@@ -1184,7 +1214,13 @@ function ArtistAuthContent() {
                 className="w-full mt-4"
                 disabled={isLoading}
               >
-                {isLoading ? "Creating Account..." : "Sign up"}
+                {isLoading
+                  ? isConvertFlow
+                    ? "Updating..."
+                    : "Creating Account..."
+                  : isConvertFlow
+                    ? "Continue"
+                    : "Sign up"}
               </Button>
             </form>
           </div>

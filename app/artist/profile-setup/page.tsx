@@ -66,7 +66,8 @@ function ProfileSetupPageContent() {
             throw new Error(data.error || data.message || "Failed to convert account.");
           }
 
-          window.location.replace("/artist/profile-setup");
+          await update({ role: "artist" });
+          router.replace("/artist/profile-setup");
         } catch (error) {
           console.error("Failed to convert account:", error);
           router.push("/");
@@ -79,10 +80,10 @@ function ProfileSetupPageContent() {
       return;
     }
 
-    if (!isConvertingAccount) {
+    if (!isConvertingAccount && !shouldConvert && !hasTriggeredConversionRef.current) {
       router.push("/");
     }
-  }, [status, session?.user?.role, router, shouldConvert, isConvertingAccount]);
+  }, [status, session?.user?.role, router, shouldConvert, isConvertingAccount, update]);
 
   // Form data states
   const [profileData, setProfileData] = useState({
@@ -445,7 +446,9 @@ function ProfileSetupPageContent() {
   if (
     status === "loading" ||
     isConvertingAccount ||
-    (status === "authenticated" && session?.user?.role === "user" && shouldConvert)
+    (status === "authenticated" &&
+      session?.user?.role === "user" &&
+      (shouldConvert || hasTriggeredConversionRef.current))
   ) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
