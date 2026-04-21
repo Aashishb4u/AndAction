@@ -14,7 +14,7 @@ import DateInput from "@/components/ui/DateInput";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { signInWithGoogleAsArtist } from "@/lib/auth";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 
 type ArtistSignUpStep = "join" | "otp" | "password" | "userInfo" | "terms";
@@ -61,6 +61,7 @@ function ArtistAuthContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { update: updateSession } = useSession();
   const isOAuthSignupFlow = searchParams.get("oauth") === "true";
   const isConvertFlow = searchParams.get("convert") === "true";
 
@@ -459,6 +460,12 @@ function ArtistAuthContent() {
               convertData.message ||
               "Failed to convert account to artist.",
           );
+        }
+
+        try {
+          await updateSession({ role: "artist" });
+        } catch (sessionError) {
+          console.warn("Session role update failed after conversion:", sessionError);
         }
       }
 

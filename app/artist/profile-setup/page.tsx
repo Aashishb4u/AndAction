@@ -80,7 +80,7 @@ function ProfileSetupPageContent() {
       return;
     }
 
-    if (!isConvertingAccount) {
+    if (!isConvertingAccount && !shouldConvert && !hasTriggeredConversionRef.current) {
       router.push("/");
     }
   }, [status, session?.user?.role, router, shouldConvert, isConvertingAccount, update]);
@@ -446,7 +446,9 @@ function ProfileSetupPageContent() {
   if (
     status === "loading" ||
     isConvertingAccount ||
-    (status === "authenticated" && session?.user?.role === "user" && shouldConvert)
+    (status === "authenticated" &&
+      session?.user?.role === "user" &&
+      (shouldConvert || hasTriggeredConversionRef.current))
   ) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
