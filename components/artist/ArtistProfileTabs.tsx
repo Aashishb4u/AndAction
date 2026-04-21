@@ -1,12 +1,23 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import AboutTab from "./tabs/AboutTab";
 import PerformanceTab from "./tabs/PerformanceTab";
 import VideosTab from "./tabs/VideosTab";
 import ShortsTab from "./tabs/ShortsTab";
 import IntegrationsTab from "./tabs/IntegrationsTab";
 import { Artist } from "@/types";
+import { useSession } from "next-auth/react";
+import { toast } from "react-toastify";
+import { useQueryClient } from "@tanstack/react-query";
+import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
+import { normalizeArtistCategoryValue } from "@/lib/artist-category-utils";
+import {
+  createAboutDraft,
+  createPerformanceDraft,
+  type AboutDraft,
+  type PerformanceDraft,
+} from "./tabs/profileDraftTypes";
 
 interface ArtistProfileTabsProps {
   activeTab: string;
@@ -27,12 +38,110 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
   onTabChange,
   artist,
 }) => {
+  const { data: session, update } = useSession();
+  const queryClient = useQueryClient();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [aboutDraft, setAboutDraft] = useState<AboutDraft>(() =>
+    createAboutDraft(artist),
+  );
+  const [performanceDraft, setPerformanceDraft] = useState<PerformanceDraft>(() =>
+    createPerformanceDraft(artist),
+  );
+
+  const resetAboutDraft = () => setAboutDraft(createAboutDraft(artist));
+  const resetPerformanceDraft = () =>
+    setPerformanceDraft(createPerformanceDraft(artist));
+
+  const handleSaveAll = async () => {
+    try {
+      if (!session?.user?.id) {
+        toast.error("Not authenticated");
+        return;
+      }
+
+      setIsSaving(true);
+
+      const payload = {
+        userId: session.user.id,
+
+        // About
+        stageName: aboutDraft.stageName,
+        artistType: normalizeArtistCategoryValue(aboutDraft.artistType),
+        firstName: aboutDraft.firstName,
+        lastName: aboutDraft.lastName,
+        gender: aboutDraft.gender,
+        dob: aboutDraft.dateOfBirth,
+        address: aboutDraft.address,
+        pinCode: aboutDraft.pinCode,
+        city: aboutDraft.city,
+        state: aboutDraft.state,
+        contactNumber: aboutDraft.contactNumber,
+        whatsappNumber: aboutDraft.contactNumber,
+        contactEmail: aboutDraft.email,
+        shortBio: aboutDraft.shortBio,
+        achievements: aboutDraft.achievements,
+        yearsOfExperience: aboutDraft.yearsOfExperience,
+        subArtistType: aboutDraft.subArtistTypes.join(","),
+
+        // Performance
+        performingLanguage: performanceDraft.performingLanguages.join(","),
+        performingEventType: performanceDraft.eventTypes.join(","),
+        performingStates: performanceDraft.performingStates.join(","),
+        performingDurationFrom: performanceDraft.minDuration,
+        performingDurationTo: performanceDraft.maxDuration,
+        performingMembers: performanceDraft.performingMembers,
+        offStageMembers: performanceDraft.offStageMembers,
+        soloChargesFrom: performanceDraft.soloChargesFrom,
+        soloChargesDescription: performanceDraft.soloChargesDescription,
+        chargesWithBacklineFrom: performanceDraft.chargesWithBacklineFrom,
+        chargesWithBacklineDescription: performanceDraft.chargesWithBacklineDescription,
+      };
+
+      const res = await updateArtistProfile(payload);
+      const refreshedUser = res.data.user;
+      const refreshedArtist = res.data.artistProfile;
+      const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
+
+      await update({
+        update: sessionPayload,
+      });
+
+      // Ensure home/category listings fetch fresh data after profile updates.
+      await queryClient.cancelQueries({ queryKey: ["artists"] });
+      queryClient.removeQueries({ queryKey: ["artists"] });
+
+      toast.success("Profile updated!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "about":
-        return <AboutTab artist={artist} />;
+        return (
+          <AboutTab
+            draft={aboutDraft}
+            setDraft={setAboutDraft}
+            isSaving={isSaving}
+            onSave={handleSaveAll}
+            onReset={resetAboutDraft}
+          />
+        );
       case "performance":
-        return <PerformanceTab artist={artist} />;
+        return (
+          <PerformanceTab
+            draft={performanceDraft}
+            setDraft={setPerformanceDraft}
+            isSaving={isSaving}
+            onSave={handleSaveAll}
+            onReset={resetPerformanceDraft}
+          />
+        );
       case "videos":
         return <VideosTab artist={artist} />;
       case "shorts":
@@ -40,7 +149,15 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
       case "integrations":
         return <IntegrationsTab artist={artist} />;
       default:
-        return <AboutTab artist={artist} />;
+        return (
+          <AboutTab
+            draft={aboutDraft}
+            setDraft={setAboutDraft}
+            isSaving={isSaving}
+            onSave={handleSaveAll}
+            onReset={resetAboutDraft}
+          />
+        );
     }
   };
 
@@ -66,7 +183,7 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
       </div>
 
       {/* Tab Content */}
-      <div className="min-h-[500px] md:p-5 p-4 pt-0">{renderTabContent()}</div>
+      <div className="min-h-125 md:p-5 p-4 pt-0">{renderTabContent()}</div>
     </div>
   );
 };

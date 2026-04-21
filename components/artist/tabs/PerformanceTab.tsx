@@ -6,14 +6,15 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import { Info } from "lucide-react";
-import { Artist } from "@/types";
-import { useSession } from "next-auth/react";
-import { mapUserForSession, updateArtistProfile } from "@/lib/helper";
-import { toast } from "react-toastify";
 import { INDIAN_STATES } from "@/lib/constants";
+import type { PerformanceDraft } from "./profileDraftTypes";
 
 interface PerformanceTabProps {
-  artist: Artist;
+  draft: PerformanceDraft;
+  setDraft: React.Dispatch<React.SetStateAction<PerformanceDraft>>;
+  isSaving: boolean;
+  onSave: () => Promise<void>;
+  onReset: () => void;
 }
 
 const performingLanguageOptions = [
@@ -50,48 +51,29 @@ const performingMembersOptions = [
 
 const offStageMembersOptions = performingMembersOptions;
 
-// Helper function to parse comma-separated string to array
-const parseCSV = (value: string | undefined | null): string[] => {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((v) => v.trim().toLowerCase())
-    .filter(Boolean);
-};
-
-const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
-  const { data: session, update } = useSession();
-  const [isLoading, setIsLoading] = useState(false);
+const PerformanceTab: React.FC<PerformanceTabProps> = ({
+  draft,
+  setDraft,
+  isSaving,
+  onSave,
+  onReset,
+}) => {
 
   // Dropdown visibility states
   const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
   const [showEventTypesDropdown, setShowEventTypesDropdown] = useState(false);
   const [showStatesDropdown, setShowStatesDropdown] = useState(false);
 
-  const [formData, setFormData] = useState({
-    performingLanguages: parseCSV(artist.performingLanguage),
-    eventTypes: parseCSV(artist.performingEventType),
-    performingStates: parseCSV(artist.performingStates),
-    minDuration: artist.performingDurationFrom || "",
-    maxDuration: artist.performingDurationTo || "",
-    performingMembers: artist.performingMembers || "",
-    offStageMembers: artist.offStageMembers || "",
-    soloChargesFrom: artist.soloChargesFrom?.toString() || "",
-    soloChargesDescription: artist.soloChargesDescription || "",
-    chargesWithBacklineFrom: artist.chargesWithBacklineFrom?.toString() || "",
-    chargesWithBacklineDescription: artist.chargesWithBacklineDescription || "",
-  });
-
   const handleInputChange = (field: string, value: string | string[]) => {
-    setFormData((prev) => ({
+    setDraft((prev) => ({
       ...prev,
       [field]: value,
-    }));
+    } as PerformanceDraft));
   };
 
   // Toggle language selection
   const toggleLanguageSelection = (langValue: string) => {
-    const current = formData.performingLanguages;
+    const current = draft.performingLanguages;
     let updated: string[];
     if (current.includes(langValue)) {
       updated = current.filter((l) => l !== langValue);
@@ -105,7 +87,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
   const toggleAllLanguages = () => {
     const allValues = performingLanguageOptions.map((l) => l.value);
     if (
-      formData.performingLanguages.length === performingLanguageOptions.length
+      draft.performingLanguages.length === performingLanguageOptions.length
     ) {
       handleInputChange("performingLanguages", []);
     } else {
@@ -115,7 +97,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
   // Toggle event type selection
   const toggleEventTypeSelection = (eventValue: string) => {
-    const current = formData.eventTypes;
+    const current = draft.eventTypes;
     let updated: string[];
     if (current.includes(eventValue)) {
       updated = current.filter((e) => e !== eventValue);
@@ -128,7 +110,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
   // Toggle all event types
   const toggleAllEventTypes = () => {
     const allValues = eventTypeOptions.map((e) => e.value);
-    if (formData.eventTypes.length === eventTypeOptions.length) {
+    if (draft.eventTypes.length === eventTypeOptions.length) {
       handleInputChange("eventTypes", []);
     } else {
       handleInputChange("eventTypes", allValues);
@@ -137,7 +119,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
   // Toggle state selection
   const toggleStateSelection = (stateValue: string) => {
-    const current = formData.performingStates;
+    const current = draft.performingStates;
     let updated: string[];
     if (current.includes(stateValue)) {
       updated = current.filter((s) => s !== stateValue);
@@ -150,76 +132,19 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
   // Toggle PAN India (all states)
   const togglePanIndia = () => {
     const allValues = INDIAN_STATES.map((s) => s.value);
-    if (formData.performingStates.length === INDIAN_STATES.length) {
+    if (draft.performingStates.length === INDIAN_STATES.length) {
       handleInputChange("performingStates", []);
     } else {
       handleInputChange("performingStates", allValues);
     }
   };
 
-  const handleSave = async () => {
-    try {
-      if (!session?.user?.id) {
-        toast.error("Not authenticated");
-        return;
-      }
-
-      // close all dropdowns before saving
-      setShowLanguagesDropdown(false);
-      setShowEventTypesDropdown(false);
-      setShowStatesDropdown(false);
-
-      setIsLoading(true);
-
-      const payload = {
-        userId: session.user.id,
-        performingLanguage: formData.performingLanguages.join(","),
-        performingEventType: formData.eventTypes.join(","),
-        performingStates: formData.performingStates.join(","),
-        performingDurationFrom: formData.minDuration,
-        performingDurationTo: formData.maxDuration,
-        performingMembers: formData.performingMembers,
-        offStageMembers: formData.offStageMembers,
-        soloChargesFrom: formData.soloChargesFrom,
-        soloChargesDescription: formData.soloChargesDescription,
-        chargesWithBacklineFrom: formData.chargesWithBacklineFrom,
-        chargesWithBacklineDescription: formData.chargesWithBacklineDescription,
-      };
-
-      const res = await updateArtistProfile(payload);
-
-      const refreshedUser = res.data.user;
-      const refreshedArtist = res.data.artistProfile;
-
-      const sessionPayload = mapUserForSession(refreshedUser, refreshedArtist);
-
-      await update({
-        update: sessionPayload,
-      });
-
-      toast.success("Performance details updated!");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to update performance details");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleReset = () => {
-    setFormData({
-      performingLanguages: parseCSV(artist.performingLanguage),
-      eventTypes: parseCSV(artist.performingEventType),
-      performingStates: parseCSV(artist.performingStates),
-      minDuration: artist.performingDurationFrom || "",
-      maxDuration: artist.performingDurationTo || "",
-      performingMembers: artist.performingMembers || "",
-      offStageMembers: artist.offStageMembers || "",
-      soloChargesFrom: artist.soloChargesFrom?.toString() || "",
-      soloChargesDescription: artist.soloChargesDescription || "",
-      chargesWithBacklineFrom: artist.chargesWithBacklineFrom?.toString() || "",
-      chargesWithBacklineDescription: artist.chargesWithBacklineDescription || "",
-    });
+  const handleSaveClick = async () => {
+    // close all dropdowns before saving
+    setShowLanguagesDropdown(false);
+    setShowEventTypesDropdown(false);
+    setShowStatesDropdown(false);
+    await onSave();
   };
 
   return (
@@ -236,16 +161,16 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         </div>
 
         {/* Selected values display */}
-        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-12">
           <span
             className={
-              formData.performingLanguages.length > 0
+              draft.performingLanguages.length > 0
                 ? "text-white"
                 : "text-text-gray"
             }
           >
-            {formData.performingLanguages.length > 0
-              ? formData.performingLanguages
+            {draft.performingLanguages.length > 0
+              ? draft.performingLanguages
                   .map(
                     (val) =>
                       performingLanguageOptions.find((opt) => opt.value === val)
@@ -286,7 +211,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               <input
                 type="checkbox"
                 checked={
-                  formData.performingLanguages.length ===
+                  draft.performingLanguages.length ===
                   performingLanguageOptions.length
                 }
                 onChange={toggleAllLanguages}
@@ -303,7 +228,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               >
                 <input
                   type="checkbox"
-                  checked={formData.performingLanguages.includes(
+                  checked={draft.performingLanguages.includes(
                     language.value,
                   )}
                   onChange={() => toggleLanguageSelection(language.value)}
@@ -328,14 +253,14 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         </div>
 
         {/* Selected values display */}
-        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-12">
           <span
             className={
-              formData.eventTypes.length > 0 ? "text-white" : "text-text-gray"
+              draft.eventTypes.length > 0 ? "text-white" : "text-text-gray"
             }
           >
-            {formData.eventTypes.length > 0
-              ? formData.eventTypes
+            {draft.eventTypes.length > 0
+              ? draft.eventTypes
                   .map(
                     (val) =>
                       eventTypeOptions.find((opt) => opt.value === val)
@@ -375,7 +300,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
             <label className="flex items-center gap-3 px-4 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
               <input
                 type="checkbox"
-                checked={formData.eventTypes.length === eventTypeOptions.length}
+                checked={draft.eventTypes.length === eventTypeOptions.length}
                 onChange={toggleAllEventTypes}
                 className="w-4 h-4 accent-primary-pink rounded"
               />
@@ -390,7 +315,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               >
                 <input
                   type="checkbox"
-                  checked={formData.eventTypes.includes(eventType.value)}
+                  checked={draft.eventTypes.includes(eventType.value)}
                   onChange={() => toggleEventTypeSelection(eventType.value)}
                   className="w-4 h-4 accent-primary-pink rounded"
                 />
@@ -413,19 +338,19 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         </div>
 
         {/* Selected values display */}
-        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-[48px]">
+        <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-12">
           <span
             className={
-              formData.performingStates.length > 0
+              draft.performingStates.length > 0
                 ? "text-white"
                 : "text-text-gray"
             }
           >
-            {formData.performingStates.length > 0
-              ? formData.performingStates.length ===
+            {draft.performingStates.length > 0
+              ? draft.performingStates.length ===
                 INDIAN_STATES.length
                 ? "PAN India (All States)"
-                : formData.performingStates
+                : draft.performingStates
                     .map(
                       (val) =>
                         INDIAN_STATES.find((opt) => opt.value === val)
@@ -466,7 +391,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               <input
                 type="checkbox"
                 checked={
-                  formData.performingStates.length ===
+                  draft.performingStates.length ===
                   INDIAN_STATES.length
                 }
                 onChange={togglePanIndia}
@@ -483,7 +408,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
               >
                 <input
                   type="checkbox"
-                  checked={formData.performingStates.includes(state.value)}
+                  checked={draft.performingStates.includes(state.value)}
                   onChange={() => toggleStateSelection(state.value)}
                   className="w-4 h-4 accent-primary-pink rounded"
                 />
@@ -510,13 +435,13 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         <div className="relative">
           <div className="grid grid-cols-2 gap-6">
             <Input
-              value={formData.minDuration}
+              value={draft.minDuration}
               onChange={(e) => handleInputChange("minDuration", e.target.value)}
               placeholder="120 mins"
               required
             />
             <Input
-              value={formData.maxDuration}
+              value={draft.maxDuration}
               onChange={(e) => handleInputChange("maxDuration", e.target.value)}
               placeholder="160 mins"
               required
@@ -532,7 +457,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           <Select
             label="Performing members*"
             options={performingMembersOptions}
-            value={formData.performingMembers}
+            value={draft.performingMembers}
             onChange={(value) => handleInputChange("performingMembers", value)}
             required
           />
@@ -548,7 +473,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           <Select
             label="Off stage members*"
             options={offStageMembersOptions}
-            value={formData.offStageMembers}
+            value={draft.offStageMembers}
             onChange={(value) => handleInputChange("offStageMembers", value)}
             required
           />
@@ -571,7 +496,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           </Tooltip>
         </div>
         <Input
-          value={formData.soloChargesFrom}
+          value={draft.soloChargesFrom}
           onChange={(e) => {
             const value = e.target.value;
             if (value === "" || /^[0-9]*$/.test(value)) {
@@ -583,7 +508,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         />
         <textarea
           placeholder="What services do you include while charging solo"
-          value={formData.soloChargesDescription}
+          value={draft.soloChargesDescription}
           onChange={(e) => handleInputChange("soloChargesDescription", e.target.value)}
           rows={3}
           className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-white placeholder-text-gray focus:outline-none focus:border-primary-pink transition-colors duration-200 resize-none"
@@ -601,7 +526,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
           </Tooltip>
         </div>
         <Input
-          value={formData.chargesWithBacklineFrom}
+          value={draft.chargesWithBacklineFrom}
           onChange={(e) => {
             const value = e.target.value;
             if (value === "" || /^[0-9]*$/.test(value)) {
@@ -612,7 +537,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         />
         <textarea
           placeholder="Please include backline like sound system, stage, chorus, etc."
-          value={formData.chargesWithBacklineDescription}
+          value={draft.chargesWithBacklineDescription}
           onChange={(e) =>
             handleInputChange("chargesWithBacklineDescription", e.target.value)
           }
@@ -625,8 +550,8 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       <div className="flex md:justify-end gap-4 items-center md:pt-5 py-2 px-3 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent z-50">
         <Button
           variant="secondary"
-          onClick={handleReset}
-          disabled={isLoading}
+          onClick={onReset}
+          disabled={isSaving}
           className="w-full md:w-auto text-xs! md:text-base"
         >
           <span className="gradient-text">Reset</span>
@@ -634,11 +559,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
 
         <Button
           variant="primary"
-          onClick={handleSave}
-          disabled={isLoading}
+          onClick={handleSaveClick}
+          disabled={isSaving}
           className="w-full md:w-auto text-xs! md:text-base"
         >
-          {isLoading ? "Saving..." : "Save Changes"}
+          {isSaving ? "Saving..." : "Save Changes"}
         </Button>
       </div>
     </div>
