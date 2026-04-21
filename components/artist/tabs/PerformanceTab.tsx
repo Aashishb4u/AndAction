@@ -77,10 +77,8 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
     performingMembers: artist.performingMembers || "",
     offStageMembers: artist.offStageMembers || "",
     soloChargesFrom: artist.soloChargesFrom?.toString() || "",
-    soloChargesTo: artist.soloChargesTo?.toString() || "",
     soloChargesDescription: artist.soloChargesDescription || "",
     chargesWithBacklineFrom: artist.chargesWithBacklineFrom?.toString() || "",
-    chargesWithBacklineTo: artist.chargesWithBacklineTo?.toString() || "",
     chargesWithBacklineDescription: artist.chargesWithBacklineDescription || "",
   });
 
@@ -183,10 +181,8 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
         performingMembers: formData.performingMembers,
         offStageMembers: formData.offStageMembers,
         soloChargesFrom: formData.soloChargesFrom,
-        soloChargesTo: formData.soloChargesTo,
         soloChargesDescription: formData.soloChargesDescription,
         chargesWithBacklineFrom: formData.chargesWithBacklineFrom,
-        chargesWithBacklineTo: formData.chargesWithBacklineTo,
         chargesWithBacklineDescription: formData.chargesWithBacklineDescription,
       };
 
@@ -220,10 +216,8 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       performingMembers: artist.performingMembers || "",
       offStageMembers: artist.offStageMembers || "",
       soloChargesFrom: artist.soloChargesFrom?.toString() || "",
-      soloChargesTo: artist.soloChargesTo?.toString() || "",
       soloChargesDescription: artist.soloChargesDescription || "",
       chargesWithBacklineFrom: artist.chargesWithBacklineFrom?.toString() || "",
-      chargesWithBacklineTo: artist.chargesWithBacklineTo?.toString() || "",
       chargesWithBacklineDescription: artist.chargesWithBacklineDescription || "",
     });
   };
@@ -570,36 +564,23 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-1">
           <label className="block text-sm font-medium text-white">
-            Solo charges <span className="text-red-500 ml-1">*</span>
+            Solo charges starting from <span className="text-red-500 ml-1">*</span>
           </label>
-          <Tooltip content="Amount range you usually charge when performing solo">
+          <Tooltip content="Starting amount you usually charge when performing solo">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        <div className="grid grid-cols-2 gap-6">
-          <Input
-            value={formData.soloChargesFrom}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "" || /^[0-9]*$/.test(value)) {
-                handleInputChange("soloChargesFrom", value);
-              }
-            }}
-            placeholder="From"
-            required
-          />
-          <Input
-            value={formData.soloChargesTo}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "" || /^[0-9]*$/.test(value)) {
-                handleInputChange("soloChargesTo", value);
-              }
-            }}
-            placeholder="To"
-            required
-          />
-        </div>
+        <Input
+          value={formData.soloChargesFrom}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === "" || /^[0-9]*$/.test(value)) {
+              handleInputChange("soloChargesFrom", value);
+            }
+          }}
+          placeholder="Starting from"
+          required
+        />
         <textarea
           placeholder="What services do you include while charging solo"
           value={formData.soloChargesDescription}
@@ -613,34 +594,22 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ artist }) => {
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-1">
           <label className="block text-sm font-medium text-white">
-            Charges with backing
+            Charges with backing starting from
           </label>
-          <Tooltip content="Amount range including backline like sound, stage, and support setup">
+          <Tooltip content="Starting amount including backline like sound, stage, and support setup">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        <div className="grid grid-cols-2 gap-6">
-          <Input
-            value={formData.chargesWithBacklineFrom}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "" || /^[0-9]*$/.test(value)) {
-                handleInputChange("chargesWithBacklineFrom", value);
-              }
-            }}
-            placeholder="From"
-          />
-          <Input
-            value={formData.chargesWithBacklineTo}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "" || /^[0-9]*$/.test(value)) {
-                handleInputChange("chargesWithBacklineTo", value);
-              }
-            }}
-            placeholder="To"
-          />
-        </div>
+        <Input
+          value={formData.chargesWithBacklineFrom}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === "" || /^[0-9]*$/.test(value)) {
+              handleInputChange("chargesWithBacklineFrom", value);
+            }
+          }}
+          placeholder="Starting from"
+        />
         <textarea
           placeholder="Please include backline like sound system, stage, chorus, etc."
           value={formData.chargesWithBacklineDescription}

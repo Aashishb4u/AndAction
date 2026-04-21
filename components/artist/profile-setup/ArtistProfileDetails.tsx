@@ -108,6 +108,43 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     useState<string[]>(initialSubTypes);
   const [subTypeInput, setSubTypeInput] = useState<string>("");
 
+  const addSubTypeTag = (rawValue: string) => {
+    const v = rawValue.trim();
+    if (!v) return;
+
+    setSelectedSubTypes((prev) => {
+      if (prev.includes(v)) return prev;
+      const next = [v, ...prev];
+      const csv = next.join(",");
+      setFormData((current) => ({
+        ...current,
+        subArtistType: csv,
+      }));
+      onUpdateData({ subArtistType: csv });
+      addSuggestionIfNew(v);
+      return next;
+    });
+  };
+
+  const handleSubTypeInputChange = (value: string) => {
+    // Mobile keyboards often don't reliably fire keydown events for comma/enter.
+    // So we parse commas from onChange and convert completed tokens into pills.
+    if (value.includes(",")) {
+      const parts = value.split(",");
+      const completed = parts
+        .slice(0, -1)
+        .map((p) => p.trim())
+        .filter(Boolean);
+      completed.forEach(addSubTypeTag);
+
+      // Keep the last (possibly partial) token in the input.
+      setSubTypeInput(parts[parts.length - 1] ?? "");
+      return;
+    }
+
+    setSubTypeInput(value);
+  };
+
   // Cropping states
   const [showCropModal, setShowCropModal] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -626,7 +663,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                   type="text"
                   placeholder="e.g. Classical, Bollywood, Fusion"
                   value={subTypeInput}
-                  onChange={(e) => setSubTypeInput(e.target.value)}
+                  onChange={(e) => handleSubTypeInputChange(e.target.value)}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() =>
                     setTimeout(() => setShowSuggestions(false), 150)
@@ -636,18 +673,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                       e.preventDefault();
                       const v = subTypeInput.trim().replace(/,$/, "");
                       if (v) {
-                        if (!selectedSubTypes.includes(v)) {
-                          const next = [v, ...selectedSubTypes];
-                          setSelectedSubTypes(next);
-                          const csv = next.join(",");
-                          // update local formData and parent
-                          setFormData((prev) => ({
-                            ...prev,
-                            subArtistType: csv,
-                          }));
-                          onUpdateData({ subArtistType: csv });
-                          addSuggestionIfNew(v);
-                        }
+                        addSubTypeTag(v);
                         setSubTypeInput("");
                       }
                     } else if (e.key === "Backspace" && !subTypeInput) {
