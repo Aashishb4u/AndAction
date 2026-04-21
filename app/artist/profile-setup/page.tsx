@@ -66,7 +66,8 @@ function ProfileSetupPageContent() {
             throw new Error(data.error || data.message || "Failed to convert account.");
           }
 
-          window.location.replace("/artist/profile-setup");
+          await update({ role: "artist" });
+          router.replace("/artist/profile-setup");
         } catch (error) {
           console.error("Failed to convert account:", error);
           router.push("/");
@@ -82,7 +83,7 @@ function ProfileSetupPageContent() {
     if (!isConvertingAccount) {
       router.push("/");
     }
-  }, [status, session?.user?.role, router, shouldConvert, isConvertingAccount]);
+  }, [status, session?.user?.role, router, shouldConvert, isConvertingAccount, update]);
 
   // Form data states
   const [profileData, setProfileData] = useState({
