@@ -22,6 +22,7 @@ interface SyncSelectionModalProps {
   title?: string;
   description?: string;
   contentType?: "videos" | "shorts"; // To show relevant messaging
+  artistProfileId?: string;
 }
 
 const SyncSelectionModal: React.FC<SyncSelectionModalProps> = ({
@@ -31,13 +32,14 @@ const SyncSelectionModal: React.FC<SyncSelectionModalProps> = ({
   title = "Sync Content",
   description = "Select which platforms you want to sync content from.",
   contentType = "videos",
+  artistProfileId,
 }) => {
   const [selectedPlatforms, setSelectedPlatforms] = useState<Set<SyncPlatform>>(
     new Set()
   );
   const [isSyncing, setIsSyncing] = useState(false);
   const { data: integrations, isLoading: isLoadingIntegrations } =
-    useIntegrationStatus();
+    useIntegrationStatus(artistProfileId);
 
   const togglePlatform = (platform: SyncPlatform) => {
     setSelectedPlatforms((prev) => {
@@ -151,7 +153,9 @@ const SyncSelectionModal: React.FC<SyncSelectionModalProps> = ({
                 variant="outline"
                 onClick={() => {
                   onOpenChange(false);
-                  window.location.href = "/artist/profile?tab=integrations";
+                  window.location.href = artistProfileId
+                    ? `/artist/profile?tab=integrations&profileId=${artistProfileId}`
+                    : "/artist/profile?tab=integrations";
                 }}
               >
                 Go to Integrations

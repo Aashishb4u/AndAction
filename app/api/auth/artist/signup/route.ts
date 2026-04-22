@@ -130,6 +130,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const artistProfile = await prisma.artist.create({
       data: {
         userId: newUser.id,
+        profileOrder: 0,
         stageName: `${firstName} ${lastName}`,
         contactEmail: lowerCaseEmail,
         contactNumber: normalizedPhone,

@@ -52,9 +52,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
         <meta name="apple-mobile-web-app-title" content="ANDACTION" />
         <meta name="theme-color" content="#000000" />
-        <link rel="apple-touch-icon" href="/icons/logo.jpeg" />
-        <link rel="icon" type="image/jpeg" href="/icons/logo.jpeg" />
-        <link rel="shortcut icon" type="image/jpeg" href="/icons/logo.jpeg" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/svg+xml" href="/icons/app-mark.svg" />
       </head>
       <body
         className={`${raleway.variable} ${poppins.variable} antialiased bg-background min-h-screen`}

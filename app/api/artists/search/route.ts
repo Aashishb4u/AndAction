@@ -52,14 +52,17 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       // Search across stageName, artistType (with mapping), and user fields
       where.OR = [
         { stageName: { contains: queryTerm, mode: "insensitive" } },
+        { subArtistType: { contains: queryTerm, mode: "insensitive" } },
         { artistType: { in: typeMatches } },
         { artistType: { contains: queryTerm, mode: "insensitive" } },
         {
           user: {
-            OR: [
-              { firstName: { contains: queryTerm, mode: "insensitive" } },
-              { lastName: { contains: queryTerm, mode: "insensitive" } },
-            ],
+            is: {
+              OR: [
+                { firstName: { contains: queryTerm, mode: "insensitive" } },
+                { lastName: { contains: queryTerm, mode: "insensitive" } },
+              ],
+            },
           },
         },
       ];
@@ -91,8 +94,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       },
       select: {
         id: true,
+        profileImage: true,
         stageName: true,
         artistType: true,
+        subArtistType: true,
         user: {
           select: {
             avatar: true,
@@ -111,7 +116,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         a.stageName ||
         `${a.user?.firstName || ""} ${a.user?.lastName || ""}`.trim(),
       category: a.artistType,
-      image: a.user?.avatar || a.user?.image || null,
+      subArtistTypes: (a.subArtistType || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      image: a.profileImage || a.user?.avatar || a.user?.image || null,
     }));
 
     console.log(

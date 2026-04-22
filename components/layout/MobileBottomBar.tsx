@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Home from '../icons/home';
@@ -19,14 +20,23 @@ interface BottomBarItem {
 const MobileBottomBar = () => {
   const pathname = usePathname();
   // const [activeItem, setActiveItem] = useState<string>('');
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [mounted, setMounted] = useState(false);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
+  useLayoutEffect(() => {
+    setPortalTarget(document.body);
   }, []);
 
+  useEffect(() => {
+    if (!portalTarget) return;
+
+    // Wait one frame so browser settles viewport/toolbars, then animate once.
+    const rafId = window.requestAnimationFrame(() => {
+      setIsVisible(true);
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, [portalTarget]);
 
   const isActive = (href: string) => {
     if (href === '/') {
@@ -79,35 +89,6 @@ const MobileBottomBar = () => {
     },
   ];
 
-  // Handle scroll to hide/show bottom bar with debounce
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    const handleScroll = () => {
-      clearTimeout(timeoutId);
-
-      timeoutId = setTimeout(() => {
-        const currentScrollY = window.scrollY;
-
-        if (currentScrollY > lastScrollY && currentScrollY > 100) {
-          // Scrolling down & past threshold
-          setIsVisible(false);
-        } else {
-          // Scrolling up or at top
-          setIsVisible(true);
-        }
-
-        setLastScrollY(currentScrollY);
-      }, 10); // Small debounce for smoother performance
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      clearTimeout(timeoutId);
-    };
-  }, [lastScrollY]);
-
   // Set active item based on pathname
   // useEffect(() => {
   //   const currentItem = bottomBarItems.find(item => isActive(item.href));
@@ -116,17 +97,22 @@ const MobileBottomBar = () => {
   //   }
   // }, [pathname]);
 
-  return (
-    <div className={`
-      fixed bottom-0 left-0 right-0 z-50 md:hidden ${mounted ? 'transition-transform duration-300 ease-out' : ''}
-      ${isVisible ? 'translate-y-0' : 'translate-y-full'}
-    `}>
-      {/* Blurred glass background with custom semi-transparent color (#0F0F0F CC = 80% opacity) */}
+  if (!portalTarget) return null;
+
+  return createPortal(
+    <div
+      className={`fixed bottom-0 left-0 right-0 z-50 md:hidden transform-gpu transition-[opacity,transform] duration-200 ease-out will-change-transform ${
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
+      }`}
+    >
       <div
-        className="backdrop-blur-xl border-t border-white/10"
-        style={{ backgroundColor: '#0F0F0FCC', WebkitBackdropFilter: 'blur(12px)', backdropFilter: 'blur(12px)' }}
+        className="backdrop-blur-xl border-t border-white/10 safe-area-pb"
+        style={{
+          backgroundColor: '#0F0F0FCC',
+          WebkitBackdropFilter: 'blur(12px)',
+          backdropFilter: 'blur(12px)',
+        }}
       >
-        {/* Navigation items */}
         <nav className="flex items-center justify-around px-3 py-2">
           {bottomBarItems.map((item) => {
             const active = isActive(item.href);
@@ -136,15 +122,17 @@ const MobileBottomBar = () => {
                 href={item.href}
                 className="flex flex-col items-center justify-center min-w-0 flex-1 py-3 px-1 transition-all duration-200 ease-out"
               >
-                {/* Icon */}
                 <div className="mb-1.5">
-                  <div className={`transition-colors duration-200 ${active ? 'text-white' : 'text-[#7F7F7F]'}`}>
+                  <div
+                    className={`transition-colors duration-200 ${active ? 'text-white' : 'text-[#7F7F7F]'}`}
+                  >
                     {item.icon}
                   </div>
                 </div>
 
-                {/* Label */}
-                <span className={`text-sm leading-none transition-colors duration-200 ${active ? 'text-white' : 'text-[#7F7F7F]'}`}>
+                <span
+                  className={`text-sm leading-none transition-colors duration-200 ${active ? 'text-white' : 'text-[#7F7F7F]'}`}
+                >
                   {item.label}
                 </span>
               </Link>
@@ -152,7 +140,8 @@ const MobileBottomBar = () => {
           })}
         </nav>
       </div>
-    </div>
+    </div>,
+    portalTarget,
   );
 };
 

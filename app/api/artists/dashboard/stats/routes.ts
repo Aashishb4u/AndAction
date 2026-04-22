@@ -31,15 +31,17 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             where: { id: userId },
             select: { 
                 role: true,
-                artist: { select: { id: true, stageName: true } }
+                artists: { take: 1, orderBy: { profileOrder: "asc" }, select: { id: true, stageName: true } }
             }
         });
 
-        if (userWithArtist?.role !== 'artist' || !userWithArtist.artist?.id) {
+        const primaryArtist = userWithArtist?.artists?.[0] ?? null;
+
+        if (userWithArtist?.role !== 'artist' || !primaryArtist?.id) {
             return ApiErrors.forbidden();
         }
 
-        const artistId = userWithArtist.artist.id;
+        const artistId = primaryArtist.id;
 
         // --- 2. Data Aggregation (Booking Model assumed to exist) ---
         // NOTE: This section assumes the existence of a 'Booking' model with 'artistId', 'status', and 'totalPrice' fields.
@@ -72,7 +74,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         // --- 3. Format Response and Return ---
         
         const dashboardStats = {
-            stageName: userWithArtist.artist.stageName,
+            stageName: primaryArtist.stageName,
             bookings: {
                 total: totalBookings,
                 pending: pendingBookings,
@@ -89,7 +91,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
         return successResponse(
             { stats: dashboardStats },
-            `Dashboard statistics for artist ${userWithArtist.artist.stageName} retrieved successfully.`,
+            `Dashboard statistics for artist ${primaryArtist.stageName} retrieved successfully.`,
             200
         );
 

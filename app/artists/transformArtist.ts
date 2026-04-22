@@ -2,6 +2,7 @@ import type { Artist } from "@/types";
 
 type RawArtistFromAPI = {
   id: string;
+  profileImage?: string | null;
   stageName: string | null;
   artistType: string | null;
   subArtistType: string | null;
@@ -84,7 +85,7 @@ export function transformArtist(raw: RawArtistFromAPI): Artist {
     startingPrice: raw.soloChargesFrom || 0,
     languages:
       raw.performingLanguage?.split(",").map((s) => capitalize(s.trim())) || [],
-    image: raw.user.avatar || "/avatars/default.jpg",
+    image: raw.profileImage || raw.user.avatar || "/avatars/default.jpg",
     // TODO: Implement bookmark logic
     isBookmarked: false,
     yearsOfExperience: raw.yearsOfExperience || undefined,

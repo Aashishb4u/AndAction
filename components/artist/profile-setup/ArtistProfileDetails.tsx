@@ -7,7 +7,7 @@ import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import Image from "next/image";
 import imageCompression from "browser-image-compression";
-import { ArtistProfileSetupData } from "@/types";
+import { ArtistProfileSetupData, ArtistProfileSetupPreferences } from "@/types";
 import Cropper from "react-easy-crop";
 import { Area } from "react-easy-crop";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
@@ -18,6 +18,7 @@ interface ArtistProfileDetailsProps {
   onSkip: () => void;
   onBack: () => void;
   onUpdateData: (data: Partial<ArtistProfileSetupData>) => void;
+  preferences: ArtistProfileSetupPreferences | null;
 }
 
 // Helper function to create cropped image
@@ -72,6 +73,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   onSkip,
   onBack,
   onUpdateData,
+  preferences,
 }) => {
   const { categories: artistTypes } = useArtistCategories();
 
@@ -153,17 +155,9 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sub-artist suggestions (persisted in localStorage)
-  const defaultSubTypes = [
-    "Classical",
-    "Contemporary",
-    "Folk",
-    "Bollywood",
-    "Western",
-    "Fusion",
-  ];
-  const [subArtistSuggestions, setSubArtistSuggestions] =
-    useState<string[]>(defaultSubTypes);
+  const [subArtistSuggestions, setSubArtistSuggestions] = useState<string[]>(
+    [],
+  );
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [uploadMessage, setUploadMessage] = useState("");
@@ -176,22 +170,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     [],
   );
 
-  const subArtistTypes = [
-    { value: "classical", label: "Classical" },
-    { value: "contemporary", label: "Contemporary" },
-    { value: "folk", label: "Folk" },
-    { value: "bollywood", label: "Bollywood" },
-    { value: "western", label: "Western" },
-    { value: "fusion", label: "Fusion" },
-  ];
-
-  const experienceYears = [
-    { value: "1", label: "0-1 years" },
-    { value: "2", label: "1-3 years" },
-    { value: "3", label: "3-5 years" },
-    { value: "4", label: "5-10 years" },
-    { value: "5", label: "10+ years" },
-  ];
+  const experienceYears = preferences?.experienceYears ?? [];
 
   const handleInputChange = (field: string, value: string | string[]) => {
     const stringValue = Array.isArray(value) ? value.join(',') : value;
@@ -220,21 +199,22 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     }
   };
 
-  // Load suggestions on mount (ensure merged with defaults)
   useEffect(() => {
+    const defaults = preferences?.subArtistSuggestions ?? [];
+    if (!defaults.length) return;
     try {
       const raw = localStorage.getItem("subArtistTypes");
       if (raw) {
         const items: string[] = JSON.parse(raw);
-        // merge saved and defaults
-        const merged = Array.from(new Set([...items, ...defaultSubTypes]));
+        const merged = Array.from(new Set([...items, ...defaults]));
         setSubArtistSuggestions(merged);
+        return;
       }
-    } catch (e) {
-      // On error, keep defaults
-      setSubArtistSuggestions(defaultSubTypes);
+      setSubArtistSuggestions(defaults);
+    } catch {
+      setSubArtistSuggestions(defaults);
     }
-  }, []);
+  }, [preferences?.subArtistSuggestions]);
 
   // Sync formData when data prop changes (for editing existing profiles)
   useEffect(() => {
@@ -274,6 +254,11 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       setUploading(true);
       setUploadMessage("");
       setUploadError("");
+      const artistProfileId =
+        typeof (data as any)?.artistProfileId === "string" &&
+        (data as any).artistProfileId.trim()
+          ? (data as any).artistProfileId.trim()
+          : null;
 
       // 1️⃣ Compress the file before uploading
       const options = {
@@ -287,13 +272,26 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       console.log("📦 Compressed file:", compressedFile);
 
       // 2️⃣ Show preview using compressed file
-      setPreview(URL.createObjectURL(compressedFile));
+      const localPreviewUrl = URL.createObjectURL(compressedFile);
+      setPreview(localPreviewUrl);
 
-      // 3️⃣ Build form data
+      if (!artistProfileId) {
+        const updatedData = {
+          profilePhoto: compressedFile,
+          avatarUrl: localPreviewUrl,
+        };
+
+        setFormData((prev) => ({ ...prev, ...updatedData }));
+        onUpdateData(updatedData);
+        setUploadMessage("Profile photo selected.");
+        setUploading(false);
+        return;
+      }
+
       const formDataUpload = new FormData();
       formDataUpload.append("file", compressedFile);
+      formDataUpload.append("artistProfileId", artistProfileId);
 
-      // 4️⃣ Upload compressed image
       const res = await fetch("/api/media/upload", {
         method: "POST",
         body: formDataUpload,

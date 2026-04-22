@@ -27,7 +27,7 @@ export default function Home() {
   };
 
   return (
-    <SiteLayout>
+    <SiteLayout showPreloader={true}>
       <Hero />
 
       {/* PASS LOCATION DOWN TO CHILD */}

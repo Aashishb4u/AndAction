@@ -11,6 +11,7 @@ import VideosSocialMedia from "@/components/artist/profile-setup/VideosSocialMed
 import SuccessModal from "@/components/artist/profile-setup/SuccessModal";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useSession } from "next-auth/react";
+import type { ArtistProfileSetupPreferences } from "@/types";
 
 type ProfileSetupStep =
   | "overview"
@@ -29,12 +30,15 @@ function ProfileSetupPageContent() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showBackWarning, setShowBackWarning] = useState(false);
   const [pendingBackStep, setPendingBackStep] = useState<ProfileSetupStep | "dashboard" | null>(null);
+  const [didInitFromQuery, setDidInitFromQuery] = useState(false);
   const [isConvertingAccount, setIsConvertingAccount] = useState(false);
   const hasTriggeredConversionRef = useRef(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status, update } = useSession();
   const shouldConvert = searchParams.get("convert") === "true";
+  const [preferences, setPreferences] =
+    useState<ArtistProfileSetupPreferences | null>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -85,8 +89,52 @@ function ProfileSetupPageContent() {
     }
   }, [status, session?.user?.role, router, shouldConvert, isConvertingAccount, update]);
 
+  useEffect(() => {
+    let isActive = true;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/preferences/artist-profile", {
+          cache: "no-store",
+        });
+        const json = await res.json();
+        const prefs = json?.data?.preferences as ArtistProfileSetupPreferences;
+        if (!isActive) return;
+        if (prefs && typeof prefs === "object") {
+          setPreferences(prefs);
+        } else {
+          setPreferences(null);
+        }
+      } catch {
+        if (!isActive) return;
+        setPreferences(null);
+      }
+    };
+    load();
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (didInitFromQuery) return;
+    const stepParam = searchParams.get("step");
+    const allowedSteps: ProfileSetupStep[] = [
+      "overview",
+      "artistDetails",
+      "performanceDetails",
+      "contactPricing",
+      "review",
+      "videosSocialMedia",
+    ];
+    if (stepParam && allowedSteps.includes(stepParam as ProfileSetupStep)) {
+      setCurrentStep(stepParam as ProfileSetupStep);
+    }
+    setDidInitFromQuery(true);
+  }, [searchParams, didInitFromQuery]);
+
   // Form data states
   const [profileData, setProfileData] = useState({
+    artistProfileId: "" as string,
     profilePhoto: null as File | null,
     avatarUrl: "",
     stageName: "",
@@ -124,6 +172,7 @@ function ProfileSetupPageContent() {
       
       setProfileData((prev) => ({
         ...prev,
+        artistProfileId: profile.id,
         avatarUrl: user.avatar || "",
         stageName: profile.stageName || "",
         artistType: profile.artistType || "",
@@ -380,11 +429,18 @@ function ProfileSetupPageContent() {
       case "artistDetails":
         return (
           <ArtistProfileDetails
-            data={profileData}
+            data={{
+              ...(profileData as any),
+              artistProfileId:
+                (profileData as any).artistProfileId ||
+                session?.user?.artistProfile?.id ||
+                "",
+            }}
             onNext={handleNext}
             onSkip={handleSkip}
             onBack={handleBack}
             onUpdateData={updateProfileData}
+            preferences={preferences}
           />
         );
       case "performanceDetails":
@@ -395,6 +451,7 @@ function ProfileSetupPageContent() {
             onSkip={handleSkip}
             onBack={handleBack}
             onUpdateData={updateProfileData}
+            preferences={preferences}
           />
         );
       case "contactPricing":
@@ -414,6 +471,7 @@ function ProfileSetupPageContent() {
             onNext={handleNext}
             onBack={handleBack}
             onEdit={handleEdit}
+            preferences={preferences}
           />
         );
       case "videosSocialMedia":

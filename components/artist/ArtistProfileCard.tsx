@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ArrowLeft, Edit, Pencil, Plus } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { Artist } from "@/types";
-import { useSession } from "next-auth/react";
 import { buildArtishProfileUrl } from '@/lib/utils';
 import Cropper, { Area } from "react-easy-crop";
 
@@ -66,8 +65,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   onEdit,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { update } = useSession();
   const [uploading, setUploading] = useState(false);
+  const [localImage, setLocalImage] = useState<string>(artist.image || "");
   const [showCropModal, setShowCropModal] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -75,6 +74,10 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [uploadMessage, setUploadMessage] = useState("");
   const [uploadError, setUploadError] = useState("");
+
+  useEffect(() => {
+    setLocalImage(artist.image || "");
+  }, [artist.image]);
 
   const onCropComplete = (_croppedArea: Area, croppedPixels: Area) => {
     setCroppedAreaPixels(croppedPixels);
@@ -88,6 +91,9 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
       const formData = new FormData();
       formData.append("file", file);
+      if (artist?.id) {
+        formData.append("artistProfileId", String(artist.id));
+      }
 
       const res = await fetch("/api/media/upload", {
         method: "POST",
@@ -98,13 +104,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       if (!res.ok) throw new Error(json.message || "Failed to upload profile photo.");
 
       const imageUrl = json.data.imageUrl;
-
-      // update session with new avatar
-      await update({
-        update: {
-          avatar: imageUrl,
-        },
-      });
+      setLocalImage(imageUrl);
 
       setUploadMessage(json?.message || "Profile photo uploaded successfully.");
 
@@ -192,7 +192,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       {/* Full Background Image */}
       <div className="absolute inset-0">
         <Image
-          src={buildArtishProfileUrl(artist.image || '')}
+          src={buildArtishProfileUrl(localImage || artist.image || '')}
           alt={artist.name}
           fill
           unoptimized

@@ -50,7 +50,6 @@ const performingMembersOptions = [
 ];
 
 const offStageMembersOptions = performingMembersOptions;
-
 const PerformanceTab: React.FC<PerformanceTabProps> = ({
   draft,
   setDraft,
@@ -140,7 +139,6 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   };
 
   const handleSaveClick = async () => {
-    // close all dropdowns before saving
     setShowLanguagesDropdown(false);
     setShowEventTypesDropdown(false);
     setShowStatesDropdown(false);

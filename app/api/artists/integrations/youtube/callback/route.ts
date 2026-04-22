@@ -42,32 +42,23 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error("YouTube OAuth error:", error);
       return NextResponse.redirect(
-        new URL(
-          "/artist/profile?tab=integrations&error=youtube_denied",
-          request.url
-        )
+        new URL("/artist/profile?tab=integrations&error=youtube_denied", request.url)
       );
     }
 
     if (!code || !state) {
       return NextResponse.redirect(
-        new URL(
-          "/artist/profile?tab=integrations&error=missing_params",
-          request.url
-        )
+        new URL("/artist/profile?tab=integrations&error=missing_params", request.url)
       );
     }
 
     // Verify the state parameter
-    let stateData: { artistId: string; userId: string; timestamp: number };
+    let stateData: { artistId: string; profileId?: string; userId: string; timestamp: number };
     try {
       stateData = JSON.parse(Buffer.from(state, "base64").toString());
     } catch {
       return NextResponse.redirect(
-        new URL(
-          "/artist/profile?tab=integrations&error=invalid_state",
-          request.url
-        )
+        new URL("/artist/profile?tab=integrations&error=invalid_state", request.url)
       );
     }
 
@@ -81,10 +72,7 @@ export async function GET(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.id || session.user.id !== stateData.userId) {
       return NextResponse.redirect(
-        new URL(
-          "/artist/profile?tab=integrations&error=session_mismatch",
-          request.url
-        )
+        new URL("/artist/profile?tab=integrations&error=session_mismatch", request.url)
       );
     }
 
@@ -104,10 +92,7 @@ export async function GET(request: NextRequest) {
       const errorData = await tokenResponse.text();
       console.error("Token exchange failed:", errorData);
       return NextResponse.redirect(
-        new URL(
-          "/artist/profile?tab=integrations&error=token_exchange_failed",
-          request.url
-        )
+        new URL("/artist/profile?tab=integrations&error=token_exchange_failed", request.url)
       );
     }
 
@@ -126,10 +111,7 @@ export async function GET(request: NextRequest) {
     if (!channelResponse.ok) {
       console.error("Failed to fetch channel info");
       return NextResponse.redirect(
-        new URL(
-          "/artist/profile?tab=integrations&error=channel_fetch_failed",
-          request.url
-        )
+        new URL("/artist/profile?tab=integrations&error=channel_fetch_failed", request.url)
       );
     }
 
@@ -137,10 +119,7 @@ export async function GET(request: NextRequest) {
 
     if (!channel) {
       return NextResponse.redirect(
-        new URL(
-          "/artist/profile?tab=integrations&error=no_channel",
-          request.url
-        )
+        new URL("/artist/profile?tab=integrations&error=no_channel", request.url)
       );
     }
 
@@ -152,7 +131,7 @@ export async function GET(request: NextRequest) {
       where: { id: stateData.artistId },
       data: {
         youtubeAccessToken: tokens.access_token,
-        youtubeRefreshToken: tokens.refresh_token || null,
+        ...(tokens.refresh_token ? { youtubeRefreshToken: tokens.refresh_token } : {}),
         youtubeTokenExpiry: tokenExpiry,
         youtubeChannelId: channel.id,
         youtubeChannelName: channel.snippet.title,
@@ -160,13 +139,23 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Redirect back to integrations tab with success
-    return NextResponse.redirect(
-      new URL(
-        "/artist/profile?tab=integrations&success=youtube_connected",
-        request.url
-      )
-    );
+    try {
+      await prisma.video.deleteMany({
+        where: {
+          artistId: stateData.artistId,
+          source: "youtube",
+        },
+      });
+      await syncYouTubeVideos(stateData.artistId);
+    } catch (syncError) {
+      console.error("YouTube auto-sync failed after OAuth connect:", syncError);
+    }
+
+    const redirectUrl = new URL("/artist/profile", request.url);
+    redirectUrl.searchParams.set("tab", "integrations");
+    redirectUrl.searchParams.set("success", "youtube_connected");
+    if (stateData.profileId) redirectUrl.searchParams.set("profileId", stateData.profileId);
+    return NextResponse.redirect(redirectUrl);
   } catch (error) {
     console.error("YouTube callback error:", error);
     return NextResponse.redirect(

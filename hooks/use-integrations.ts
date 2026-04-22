@@ -1,7 +1,13 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { videoKeys } from "@/hooks/use-youtube-videos";
 
 interface IntegrationStatus {
   youtube: {
@@ -19,11 +25,24 @@ interface IntegrationStatus {
 
 export const integrationKeys = {
   all: ["integrations"] as const,
-  status: () => [...integrationKeys.all, "status"] as const,
+  status: (artistProfileId: string | null | undefined) =>
+    [...integrationKeys.all, "status", artistProfileId ?? "primary"] as const,
 };
 
-async function fetchIntegrationStatus(): Promise<IntegrationStatus> {
-  const response = await fetch("/api/artists/integrations/status");
+function clearYouTubeVideoCache(
+  queryClient: QueryClient,
+  artistProfileId: string | null | undefined,
+) {
+  queryClient.setQueryData(videoKeys.list("videos", artistProfileId), []);
+  queryClient.setQueryData(videoKeys.list("shorts", artistProfileId), []);
+}
+
+async function fetchIntegrationStatus(
+  artistProfileId?: string | null,
+): Promise<IntegrationStatus> {
+  const url = new URL("/api/artists/integrations/status", window.location.origin);
+  if (artistProfileId) url.searchParams.set("artistProfileId", artistProfileId);
+  const response = await fetch(url.toString());
   if (!response.ok) {
     throw new Error("Failed to fetch integration status");
   }
@@ -34,8 +53,13 @@ async function fetchIntegrationStatus(): Promise<IntegrationStatus> {
   return data.data;
 }
 
-async function getYouTubeAuthUrl(): Promise<string> {
-  const response = await fetch("/api/artists/integrations/youtube/auth-url");
+async function getYouTubeAuthUrl(artistProfileId?: string | null): Promise<string> {
+  const url = new URL(
+    "/api/artists/integrations/youtube/auth-url",
+    window.location.origin,
+  );
+  if (artistProfileId) url.searchParams.set("artistProfileId", artistProfileId);
+  const response = await fetch(url.toString());
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.message || "Failed to get authorization URL");
@@ -43,9 +67,11 @@ async function getYouTubeAuthUrl(): Promise<string> {
   return data.authUrl;
 }
 
-async function disconnectYouTube(): Promise<void> {
+async function disconnectYouTube(artistProfileId?: string | null): Promise<void> {
   const response = await fetch("/api/artists/integrations/youtube/disconnect", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ artistProfileId: artistProfileId ?? null }),
   });
   const data = await response.json();
   if (!response.ok) {
@@ -54,14 +80,14 @@ async function disconnectYouTube(): Promise<void> {
 }
 
 async function connectYouTubeByChannel(
-  channelInput: string
+  input: { channelInput: string; artistProfileId?: string | null },
 ): Promise<{ channelId: string; channelName: string }> {
   const response = await fetch(
     "/api/artists/integrations/youtube/connect-channel",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ channelInput }),
+      body: JSON.stringify(input),
     }
   );
   const data = await response.json();
@@ -71,13 +97,19 @@ async function connectYouTubeByChannel(
   return data.data;
 }
 
-async function getInstagramAuthUrl(returnUrl?: string): Promise<string> {
+async function getInstagramAuthUrl(input: {
+  returnUrl?: string;
+  artistProfileId?: string | null;
+}): Promise<string> {
   const url = new URL(
     "/api/artists/integrations/instagram/auth-url",
     window.location.origin
   );
-  if (returnUrl) {
-    url.searchParams.set("returnUrl", returnUrl);
+  if (input.returnUrl) {
+    url.searchParams.set("returnUrl", input.returnUrl);
+  }
+  if (input.artistProfileId) {
+    url.searchParams.set("artistProfileId", input.artistProfileId);
   }
   const response = await fetch(url.toString());
   const data = await response.json();
@@ -87,11 +119,13 @@ async function getInstagramAuthUrl(returnUrl?: string): Promise<string> {
   return data.authUrl;
 }
 
-async function disconnectInstagram(): Promise<void> {
+async function disconnectInstagram(artistProfileId?: string | null): Promise<void> {
   const response = await fetch(
     "/api/artists/integrations/instagram/disconnect",
     {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ artistProfileId: artistProfileId ?? null }),
     }
   );
   const data = await response.json();
@@ -100,18 +134,18 @@ async function disconnectInstagram(): Promise<void> {
   }
 }
 
-export function useIntegrationStatus() {
+export function useIntegrationStatus(artistProfileId?: string | null) {
   return useQuery({
-    queryKey: integrationKeys.status(),
-    queryFn: fetchIntegrationStatus,
+    queryKey: integrationKeys.status(artistProfileId),
+    queryFn: () => fetchIntegrationStatus(artistProfileId),
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 30, // 30 minutes
   });
 }
 
-export function useYouTubeConnect() {
+export function useYouTubeConnect(artistProfileId?: string | null) {
   return useMutation({
-    mutationFn: getYouTubeAuthUrl,
+    mutationFn: () => getYouTubeAuthUrl(artistProfileId),
     onSuccess: (authUrl) => {
       // Redirect to YouTube OAuth
       window.location.href = authUrl;
@@ -122,15 +156,16 @@ export function useYouTubeConnect() {
   });
 }
 
-export function useYouTubeConnectByChannel() {
+export function useYouTubeConnectByChannel(artistProfileId?: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: connectYouTubeByChannel,
-    onSuccess: (data) => {
+    mutationFn: (channelInput: string) =>
+      connectYouTubeByChannel({ channelInput, artistProfileId }),
+    onSuccess: async (data) => {
       // Update the integration status in cache
       queryClient.setQueryData(
-        integrationKeys.status(),
+        integrationKeys.status(artistProfileId),
         (oldData: IntegrationStatus | undefined) => {
           if (!oldData) {
             return {
@@ -153,6 +188,10 @@ export function useYouTubeConnectByChannel() {
         }
       );
       toast.success(`YouTube channel "${data.channelName}" connected successfully`);
+
+      clearYouTubeVideoCache(queryClient, artistProfileId);
+      queryClient.invalidateQueries({ queryKey: videoKeys.all });
+      await queryClient.refetchQueries({ queryKey: videoKeys.all });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to connect YouTube channel");
@@ -160,15 +199,15 @@ export function useYouTubeConnectByChannel() {
   });
 }
 
-export function useYouTubeDisconnect() {
+export function useYouTubeDisconnect(artistProfileId?: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: disconnectYouTube,
+    mutationFn: () => disconnectYouTube(artistProfileId),
     onSuccess: () => {
       // Update the integration status in cache
       queryClient.setQueryData(
-        integrationKeys.status(),
+        integrationKeys.status(artistProfileId),
         (oldData: IntegrationStatus | undefined) => {
           if (!oldData) return oldData;
           return {
@@ -179,8 +218,8 @@ export function useYouTubeDisconnect() {
       );
       toast.success("YouTube account disconnected successfully");
 
-      // Also invalidate video queries since they depend on YouTube connection
-      queryClient.invalidateQueries({ queryKey: ["videos"] });
+      clearYouTubeVideoCache(queryClient, artistProfileId);
+      queryClient.invalidateQueries({ queryKey: videoKeys.all });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to disconnect YouTube");
@@ -188,9 +227,11 @@ export function useYouTubeDisconnect() {
   });
 }
 
-export function useInstagramConnect(returnUrl?: string) {
+export function useInstagramConnect(
+  input?: { returnUrl?: string; artistProfileId?: string | null },
+) {
   return useMutation({
-    mutationFn: () => getInstagramAuthUrl(returnUrl),
+    mutationFn: () => getInstagramAuthUrl(input ?? {}),
     onSuccess: (authUrl) => {
       // Redirect to Instagram OAuth
       window.location.href = authUrl;
@@ -201,15 +242,15 @@ export function useInstagramConnect(returnUrl?: string) {
   });
 }
 
-export function useInstagramDisconnect() {
+export function useInstagramDisconnect(artistProfileId?: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: disconnectInstagram,
+    mutationFn: () => disconnectInstagram(artistProfileId),
     onSuccess: () => {
       // Update the integration status in cache
       queryClient.setQueryData(
-        integrationKeys.status(),
+        integrationKeys.status(artistProfileId),
         (oldData: IntegrationStatus | undefined) => {
           if (!oldData) return oldData;
           return {

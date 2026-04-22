@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
         select: {
           createdAt: true,
           role: true,
-          artist: true,
+          artists: { take: 1, orderBy: { profileOrder: "asc" } },
         },
       });
 
