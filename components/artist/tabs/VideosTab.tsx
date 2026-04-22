@@ -29,9 +29,9 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
     isLoading,
     error,
     refetch,
-  } = useSyncedVideos("videos", (artist as any)?.id);
+  } = useSyncedVideos("videos");
 
-  const syncMutation = useSyncYouTubeVideos((artist as any)?.id);
+  const syncMutation = useSyncYouTubeVideos();
   const deleteMutation = useDeleteVideo();
 
   const handleSync = () => {
@@ -159,11 +159,16 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
           disabled={syncMutation.isPending}
         >
           {syncMutation.isPending ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Syncing...
+            </>
           ) : (
-            <Download className="w-4 h-4 mr-2" />
+            <>
+              <Download className="w-4 h-4 mr-2" />
+              Sync from YouTube
+            </>
           )}
-          <span>{syncMutation.isPending ? "Syncing..." : "Sync from YouTube"}</span>
         </Button>
       </div>
     );
@@ -184,11 +189,16 @@ const VideosTab: React.FC<VideosTabProps> = ({ artist }) => {
             disabled={syncMutation.isPending}
           >
             {syncMutation.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Syncing...
+              </>
             ) : (
-              <Download className="w-4 h-4 mr-2" />
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Sync Videos
+              </>
             )}
-            <span>{syncMutation.isPending ? "Syncing..." : "Sync Videos"}</span>
           </Button>
           <Button variant="ghost" size="sm" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4 mr-2" />

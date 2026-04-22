@@ -38,15 +38,17 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         const url = new URL(request.url);
         const searchParams = url.searchParams;
         
-        const artistProfiles = await prisma.artist.findMany({
+        // Fetch the associated Artist ID and verify role
+        const artistProfile = await prisma.artist.findUnique({
             where: { userId: userId },
             select: { id: true, user: { select: { role: true } } }
         });
 
-        if (artistProfiles.length === 0 || artistProfiles[0]?.user.role !== 'artist') {
+        if (artistProfile?.user.role !== 'artist' || !artistProfile.id) {
             return ApiErrors.forbidden();
         }
-        const artistIds = artistProfiles.map((a) => a.id);
+
+        const artistId = artistProfile.id;
 
         // --- 2. Pagination Setup ---
         const page = parseInt(searchParams.get('page') || '1', 10);
@@ -60,7 +62,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
         // --- 3. Filtering Setup ---
         const where: Prisma.BookingWhereInput = {
-            artistId: { in: artistIds }
+            artistId: artistId // CRITICAL: Filter only bookings for this artist
         };
 
         // Filter by status (PENDING, APPROVED, COMPLETED, etc.)

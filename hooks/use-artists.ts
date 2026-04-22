@@ -98,7 +98,7 @@ const mapArtistData = (artist: any): Artist => ({
   id: artist.id,
   name: getArtishName(artist.user.name, artist.user.firstName, artist.user.lastName),
   location: artist.user.city || "Unknown",
-  thumbnail: artist.profileImage || artist.user.avatar || "/avatars/default.jpg",
+  thumbnail: artist.user.avatar || "/avatars/default.jpg",
   videoUrl: mockVideoUrl,
   distance: artist.distance !== undefined ? artist.distance : null,
 });

@@ -13,9 +13,9 @@ const ArtistSectionSkeleton: React.FC<ArtistSectionSkeletonProps> = ({ title }) 
         {title ? (
           <h2 className="h2 text-white">{title}</h2>
         ) : (
-          <div className="h-7 w-36 rounded animate-pulse bg-text-light-gray/25" />
+          <div className="h-7 w-36 rounded animate-pulse" style={{ backgroundColor: '#7F7F7F' }} />
         )}
-        <div className="h-6 w-20 rounded animate-pulse bg-text-light-gray/25" />
+        <div className="h-6 w-20 rounded animate-pulse" style={{ backgroundColor: '#7F7F7F' }}/>
       </div>
 
       {/* Cards Container */}

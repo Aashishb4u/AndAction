@@ -40,7 +40,6 @@ export async function GET(
             },
             select: {
                 id: true,
-                profileImage: true,
                 stageName: true,
                 artistType: true,
                 subArtistType: true,

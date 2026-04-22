@@ -13,35 +13,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const artistProfileId = request.nextUrl.searchParams.get("artistProfileId");
-    const artist = artistProfileId
-      ? await prisma.artist.findFirst({
-          where: { id: artistProfileId, userId: session.user.id },
-          select: {
-            youtubeChannelId: true,
-            youtubeChannelName: true,
-            youtubeConnectedAt: true,
-            youtubeAccessToken: true,
-            instagramId: true,
-            instagramUsername: true,
-            instagramConnectedAt: true,
-            instagramAccessToken: true,
-          },
-        })
-      : await prisma.artist.findFirst({
-          where: { userId: session.user.id },
-          orderBy: { profileOrder: "asc" },
-          select: {
-            youtubeChannelId: true,
-            youtubeChannelName: true,
-            youtubeConnectedAt: true,
-            youtubeAccessToken: true,
-            instagramId: true,
-            instagramUsername: true,
-            instagramConnectedAt: true,
-            instagramAccessToken: true,
-          },
-        });
+    // Get the artist profile for this user
+    const artist = await prisma.artist.findUnique({
+      where: { userId: session.user.id },
+      select: {
+        youtubeChannelId: true,
+        youtubeChannelName: true,
+        youtubeConnectedAt: true,
+        youtubeAccessToken: true,
+        instagramId: true,
+        instagramUsername: true,
+        instagramConnectedAt: true,
+        instagramAccessToken: true,
+      },
+    });
 
     if (!artist) {
       return NextResponse.json(

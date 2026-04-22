@@ -45,10 +45,10 @@ export async function GET(
               avatar: true,
               image: true,
               isArtistVerified: true,
-              artists: {
-                take: 1,
-                orderBy: { profileOrder: "asc" },
-                select: { id: true },
+              artist: {
+                select: {
+                  id: true,
+                },
               },
             },
           },

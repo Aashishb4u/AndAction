@@ -46,31 +46,24 @@ const experienceOptions = [
   { value: "5", label: "10+ years" },
 ];
 
-const AboutTab: React.FC<AboutTabProps> = ({
-  draft,
-  setDraft,
-  isSaving,
-  onSave,
-  onReset,
-}) => {
+const AboutTab: React.FC<AboutTabProps> = ({ draft, setDraft, isSaving, onSave, onReset }) => {
   const { categories } = useArtistCategories();
 
   const selectedSubTypes = draft.subArtistTypes;
   const setSelectedSubTypes = (next: string[]) =>
     setDraft((prev) => ({ ...prev, subArtistTypes: next }));
 
-  const [subTypeInput, setSubTypeInput] = useState<string>("");
+  const [subTypeInput, setSubTypeInput] = useState<string>('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const handleInputChange = <K extends keyof AboutDraft>(
-    field: K,
-    value: AboutDraft[K],
-  ) => {
+  const handleInputChange = (field: string, value: string | string[]) => {
+    const normalizedValue = Array.isArray(value) ? value.join(",") : value;
     setDraft((prev) => ({
       ...prev,
-      [field]: value,
-    }));
+      [field]: normalizedValue,
+    } as AboutDraft));
   };
+
 
   return (
     <div className="md:space-y-5 space-y-4 pb-24 md:pb-0">

@@ -16,32 +16,14 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const source = searchParams.get("source"); // "youtube" | "instagram" | null (all)
     const type = searchParams.get("type"); // "video" | "short" | null (all)
-    const artistProfileId = searchParams.get("artistProfileId");
-
-    const artist = artistProfileId
-      ? await prisma.artist.findFirst({
-          where: { id: artistProfileId, userId: session.user.id },
-          select: { id: true },
-        })
-      : await prisma.artist.findFirst({
-          where: { userId: session.user.id, profileOrder: 0 },
-          select: { id: true },
-        });
-
-    if (!artist) {
-      return NextResponse.json(
-        { success: false, message: "Artist profile not found" },
-        { status: 404 }
-      );
-    }
 
     // Build where clause
     const where: {
-      artistId: string;
+      userId: string;
       source?: string;
       isShort?: boolean;
     } = {
-      artistId: artist.id,
+      userId: session.user.id,
     };
 
     if (source) {

@@ -65,12 +65,15 @@ export async function GET(
             return ApiErrors.notFound(`Booking with ID ${bookingId} not found.`);
         }
         
+        // Determine the Artist ID associated with the current user's profile
+        const artistProfile = await prisma.artist.findUnique({
+            where: { userId: userId },
+            select: { id: true }
+        });
+
         // Check if the user is authorized: they must be either the client OR the artist who owns the booking
         const isClient = booking.clientId === userId;
-        const isAuthorizedArtist = !!(await prisma.artist.findFirst({
-            where: { userId: userId, id: booking.artistId },
-            select: { id: true }
-        }));
+        const isAuthorizedArtist = artistProfile?.id === booking.artistId;
 
         if (!isClient && !isAuthorizedArtist) {
             return ApiErrors.forbidden();
@@ -112,12 +115,13 @@ export async function PUT(
         const body: UpdateBookingRequestBody = await request.json();
         const { newStatus } = body;
 
-        const artistProfile = await prisma.artist.findFirst({
+        // Check if the user is an artist
+        const artistProfile = await prisma.artist.findUnique({
             where: { userId: userId },
             select: { id: true, user: { select: { role: true } } }
         });
 
-        if (artistProfile?.user.role !== 'artist') {
+        if (artistProfile?.user.role !== 'artist' || !artistProfile.id) {
             return ApiErrors.forbidden();
         }
 
@@ -143,12 +147,8 @@ export async function PUT(
             return ApiErrors.notFound(`Booking with ID ${bookingId} not found.`);
         }
 
-        const ownsBooking = !!(await prisma.artist.findFirst({
-            where: { userId: userId, id: existingBooking.artistId },
-            select: { id: true }
-        }));
-
-        if (!ownsBooking) {
+        // CRITICAL: Ensure the authenticated artist owns this booking
+        if (existingBooking.artistId !== artistProfile.id) {
             return ApiErrors.forbidden();
         }
 

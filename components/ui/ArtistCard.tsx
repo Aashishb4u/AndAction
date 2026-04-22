@@ -32,7 +32,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   return (
     <div
       key={id}
-      className={`relative flex-shrink-0 w-[150px] h-[225px] md:w-[200px] md:h-[300px] rounded-lg overflow-hidden cursor-pointer bg-text-light-gray/10 transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 ${className}`}
+      className={`relative flex-shrink-0 w-[150px] h-[225px] md:w-[200px] md:h-[300px] rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 ${className}`}
       onClick={handleClick}
     >
       {/* Background Image */}

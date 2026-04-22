@@ -23,7 +23,6 @@ interface ArtistProfileTabsProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   artist: Artist;
-  onProfileUpdated?: () => void;
 }
 
 const tabs = [
@@ -38,7 +37,6 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
   activeTab,
   onTabChange,
   artist,
-  onProfileUpdated,
 }) => {
   const { data: session, update } = useSession();
   const queryClient = useQueryClient();
@@ -113,7 +111,6 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
       await queryClient.cancelQueries({ queryKey: ["artists"] });
       queryClient.removeQueries({ queryKey: ["artists"] });
 
-      onProfileUpdated?.();
       toast.success("Profile updated!");
     } catch (err) {
       console.error(err);

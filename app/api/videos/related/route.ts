@@ -45,10 +45,10 @@ export async function GET(req: NextRequest) {
             avatar: true,
             image: true,
             isArtistVerified: true,
-            artists: {
-              take: 1,
-              orderBy: { profileOrder: "asc" },
-              select: { id: true },
+            artist: {
+              select: {
+                id: true,
+              },
             },
           },
         },
@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
       lastName: true,
       avatar: true,
       isArtistVerified: true,
-      artists: { take: 1, orderBy: { profileOrder: "asc" }, select: { id: true } },
+      artist: { select: { id: true } },
     };
 
     // 2️⃣ Fetch videos and shorts separately with pagination

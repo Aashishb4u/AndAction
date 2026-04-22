@@ -38,7 +38,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
     const existingUser = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: { artists: { orderBy: { profileOrder: "asc" }, take: 1 } },
+      include: { artist: true },
     });
 
     if (!existingUser) {
@@ -90,13 +90,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
     });
 
-    let artistProfile = existingUser.artists?.[0] ?? null;
+    let artistProfile = existingUser.artist;
 
     if (!artistProfile) {
       artistProfile = await prisma.artist.create({
         data: {
           userId: session.user.id,
-          profileOrder: 0,
         },
       });
     }

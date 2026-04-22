@@ -25,7 +25,6 @@ interface IntegrationsTabProps {
 }
 
 const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
-  const artistProfileId = (artist as any)?.id as string | undefined;
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
   const [disconnectType, setDisconnectType] = useState<"youtube" | "instagram">(
     "youtube",
@@ -33,15 +32,12 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
   const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
 
   const { data: integrationStatus, isLoading: isLoadingStatus } =
-    useIntegrationStatus(artistProfileId);
+    useIntegrationStatus();
 
-  const youtubeConnectByChannelMutation = useYouTubeConnectByChannel(artistProfileId);
-  const youtubeDisconnectMutation = useYouTubeDisconnect(artistProfileId);
-  const instagramConnectMutation = useInstagramConnect({
-    returnUrl: `/artist/profile?tab=integrations&profileId=${artistProfileId}`,
-    artistProfileId,
-  });
-  const instagramDisconnectMutation = useInstagramDisconnect(artistProfileId);
+  const youtubeConnectByChannelMutation = useYouTubeConnectByChannel();
+  const youtubeDisconnectMutation = useYouTubeDisconnect();
+  const instagramConnectMutation = useInstagramConnect();
+  const instagramDisconnectMutation = useInstagramDisconnect();
 
   const handleYouTubeConnect = () => {
     setYoutubeModalOpen(true);
@@ -200,7 +196,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                     ) : (
                       <Youtube className="w-4 h-4 mr-2" />
                     )}
-                    <span>Connect YouTube</span>
+                    Connect YouTube
                   </Button>
                 )}
               </td>
@@ -284,7 +280,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                     ) : (
                       <Instagram className="w-4 h-4 mr-2" />
                     )}
-                    <span>Connect Instagram</span>
+                    Connect Instagram
                   </Button>
                 )}
               </td>
@@ -368,7 +364,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                   ) : (
                     <Youtube className="w-4 h-4 mr-2" />
                   )}
-                  <span>Connect YouTube</span>
+                  Connect YouTube
                 </Button>
               )}
             </div>
@@ -448,7 +444,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
                   ) : (
                     <Instagram className="w-4 h-4 mr-2" />
                   )}
-                  <span>Connect Instagram</span>
+                  Connect Instagram
                 </Button>
               )}
             </div>
@@ -465,11 +461,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
         }`}
         description={`Are you sure you want to disconnect your ${
           disconnectType === "youtube" ? "YouTube" : "Instagram"
-        } account?${
-          disconnectType === "youtube"
-            ? " Your synced YouTube videos and shorts will be removed from your profile."
-            : " Your synced content will remain on your profile."
-        }`}
+        } account? Your synced content will remain on your profile.`}
         confirmText="Disconnect"
         cancelText="Cancel"
         variant="danger"

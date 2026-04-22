@@ -3,29 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { uploadToVPS, deleteFromVPS } from "@/lib/vps-upload";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
-
-function normalizeExtension(mimeType: string) {
-  const raw = mimeType.split("/")[1] || "bin";
-  return raw.split("+")[0].toLowerCase();
-}
-
-async function saveImageLocally(
-  userId: string,
-  buffer: Buffer,
-  extension: string
-) {
-  const safeExt = ["jpg", "jpeg", "png", "webp", "gif", "svg"].includes(extension)
-    ? extension
-    : "jpg";
-  const fileName = `${userId}-${Date.now()}.${safeExt}`;
-  const relativeDir = path.join("uploads", "images");
-  const absoluteDir = path.join(process.cwd(), "public", relativeDir);
-  await mkdir(absoluteDir, { recursive: true });
-  await writeFile(path.join(absoluteDir, fileName), buffer);
-  return `/${relativeDir.replace(/\\/g, "/")}/${fileName}`;
-}
 
 export async function POST(request: NextRequest): Promise<NextResponse<any>> {
   const session = await auth();
@@ -36,63 +13,35 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
-    const artistProfileIdRaw = formData.get("artistProfileId");
-    const artistProfileId =
-      typeof artistProfileIdRaw === "string" && artistProfileIdRaw.trim()
-        ? artistProfileIdRaw.trim()
-        : null;
 
     if (!file || !(file instanceof Blob)) {
       return ApiErrors.badRequest("No file uploaded or invalid file.");
     }
 
     const mimeType = file.type;
-    const fileExtension = normalizeExtension(mimeType);
+    const fileExtension = mimeType.split("/")[1] || "bin";
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-
+    const key = `${userId}/${Date.now()}.${fileExtension}`;
+    const fileUrl = await uploadToVPS({buffer, key, mimeType});
     if (mimeType.startsWith("image/")) {
-      let fileUrl = "";
-      try {
-        const key = `${userId}/${Date.now()}.${fileExtension}`;
-        fileUrl = await uploadToVPS({ buffer, key, mimeType });
-      } catch (uploadErr) {
-        console.error("VPS image upload failed, using local fallback:", uploadErr);
-        fileUrl = await saveImageLocally(userId, buffer, fileExtension);
-      }
-
       // Delete old profile photo from VPS to avoid orphaned files
-      if (artistProfileId) {
-        const existingArtist = await prisma.artist.findFirst({
-          where: { id: artistProfileId, userId },
-          select: { id: true, profileImage: true },
-        });
-        if (!existingArtist) return ApiErrors.notFound("Artist profile not found.");
-        if (existingArtist.profileImage) {
-          await deleteFromVPS(existingArtist.profileImage).catch(() => {});
-        }
-        await prisma.artist.update({
-          where: { id: existingArtist.id },
-          data: { profileImage: fileUrl },
-        });
-      } else {
-        const currentUser = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { avatar: true, image: true },
-        });
-        if (currentUser?.avatar) {
-          await deleteFromVPS(currentUser.avatar).catch(() => {});
-        }
-        if (currentUser?.image && currentUser.image !== currentUser.avatar) {
-          await deleteFromVPS(currentUser.image).catch(() => {});
-        }
-
-        await prisma.user.update({
-          where: { id: userId },
-          data: { avatar: fileUrl, image: fileUrl },
-        });
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatar: true, image: true },
+      });
+      if (currentUser?.avatar) {
+        await deleteFromVPS(currentUser.avatar).catch(() => {});
       }
+      if (currentUser?.image && currentUser.image !== currentUser.avatar) {
+        await deleteFromVPS(currentUser.image).catch(() => {});
+      }
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { avatar: fileUrl, image: fileUrl },
+      });
 
       return successResponse(
         { imageUrl: fileUrl },
@@ -110,12 +59,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
       return ApiErrors.badRequest("Title and duration are required.");
     }
 
-    const key = `${userId}/${Date.now()}.${fileExtension}`;
-    const fileUrl = await uploadToVPS({ buffer, key, mimeType });
-
-    const artistCheck = await prisma.artist.findFirst({
+    const artistCheck = await prisma.artist.findUnique({
       where: { userId },
-      select: { id: true },
     });
 
     if (!artistCheck) return ApiErrors.forbidden();

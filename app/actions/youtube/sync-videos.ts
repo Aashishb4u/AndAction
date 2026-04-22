@@ -24,8 +24,6 @@ interface SyncResult {
   synced?: number;
   skipped?: number;
   total?: number;
-  importedVideos?: number;
-  importedShorts?: number;
 }
 
 interface YouTubePlaylistItemResponse {
@@ -59,12 +57,6 @@ interface YouTubeVideoDetailsResponse {
   }>;
 }
 
-const YT_MAX_VIDEOS = 25;
-const YT_MAX_SHORTS = 25;
-const YT_SHORT_MAX_SECONDS = 180;
-const YT_PLAYLIST_PAGE_SIZE = 50;
-const YT_MAX_PLAYLIST_PAGES = 6;
-
 function parseDurationToSeconds(isoDuration: string): number {
   const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!match) return 0;
@@ -92,9 +84,7 @@ function formatDuration(isoDuration: string): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export async function syncYouTubeVideos(
-  artistProfileId?: string | null
-): Promise<SyncResult> {
+export async function syncYouTubeVideos(): Promise<SyncResult> {
   try {
     const session = await auth();
 
@@ -102,16 +92,15 @@ export async function syncYouTubeVideos(
       return { success: false, message: "Unauthorized" };
     }
 
-    const artist = artistProfileId
-      ? await prisma.artist.findFirst({
-          where: { id: artistProfileId, userId: session.user.id },
-          select: { id: true, youtubeChannelId: true, youtubeAccessToken: true },
-        })
-      : await prisma.artist.findFirst({
-          where: { userId: session.user.id },
-          orderBy: { profileOrder: "asc" },
-          select: { id: true, youtubeChannelId: true, youtubeAccessToken: true },
-        });
+    // Get artist profile
+    const artist = await prisma.artist.findUnique({
+      where: { userId: session.user.id },
+      select: {
+        id: true,
+        youtubeChannelId: true,
+        youtubeAccessToken: true,
+      },
+    });
 
     if (!artist) {
       return { success: false, message: "Artist profile not found" };
@@ -122,12 +111,7 @@ export async function syncYouTubeVideos(
     }
 
     // Call internal sync function
-    return await syncYouTubeVideosInternal(
-      artist.id,
-      session.user.id,
-      artist.youtubeChannelId,
-      artist.youtubeAccessToken
-    );
+    return await syncYouTubeVideosInternal(artist.id, session.user.id, artist.youtubeChannelId, artist.youtubeAccessToken);
   } catch (error) {
     console.error("Error syncing YouTube videos:", error);
     return { success: false, message: "Failed to sync videos" };
@@ -186,6 +170,7 @@ export async function syncYouTubeVideosInternal(
     }
 
     const channelData = await channelResponse.json();
+    console.log(`shorts data : ${JSON.stringify(channelData)}`);
     const uploadsPlaylistId =
       channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
 
@@ -193,29 +178,20 @@ export async function syncYouTubeVideosInternal(
       return { success: false, message: "No uploads playlist found" };
     }
 
-    const playlistItems: YouTubePlaylistItemResponse["items"] = [];
-    let nextPageToken: string | undefined = undefined;
-    for (let page = 0; page < YT_MAX_PLAYLIST_PAGES; page++) {
-      const pageTokenParam = nextPageToken ? `&pageToken=${nextPageToken}` : "";
-      const playlistUrl = useOAuth
-        ? `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=${YT_PLAYLIST_PAGE_SIZE}${pageTokenParam}`
-        : `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=${YT_PLAYLIST_PAGE_SIZE}${pageTokenParam}${apiKeyParam}`;
+    // Fetch videos from playlist
+    const playlistUrl = useOAuth
+      ? `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=30`
+      : `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=30${apiKeyParam}`;
 
-      const playlistResponse = await fetch(playlistUrl, { headers: authHeader });
+    const playlistResponse = await fetch(playlistUrl, { headers: authHeader });
 
-      if (!playlistResponse.ok) {
-        return { success: false, message: "Failed to fetch videos" };
-      }
-
-      const playlistData: YouTubePlaylistItemResponse = await playlistResponse.json();
-      if (playlistData.items?.length) {
-        playlistItems.push(...playlistData.items);
-      }
-      nextPageToken = playlistData.nextPageToken;
-      if (!nextPageToken) break;
+    if (!playlistResponse.ok) {
+      return { success: false, message: "Failed to fetch videos" };
     }
 
-    const videoItems = playlistItems || [];
+    const playlistData: YouTubePlaylistItemResponse =
+      await playlistResponse.json();
+    const videoItems = playlistData.items || [];
 
     if (videoItems.length === 0) {
       return {
@@ -227,42 +203,35 @@ export async function syncYouTubeVideosInternal(
       };
     }
 
-    const uniqueVideoIds = Array.from(
-      new Set(videoItems.map((item) => item.snippet.resourceId.videoId))
-    );
+    // Get video details (duration, views)
+    const videoIds = videoItems
+      .map((item) => item.snippet.resourceId.videoId)
+      .join(",");
+    
+    const videoDetailsUrl = useOAuth
+      ? `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${videoIds}`
+      : `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${videoIds}${apiKeyParam}`;
 
-    const videoDetailsMap = new Map<string, YouTubeVideoDetailsResponse["items"][number]>();
-    for (let i = 0; i < uniqueVideoIds.length; i += 50) {
-      const batchIds = uniqueVideoIds.slice(i, i + 50).join(",");
-      const videoDetailsUrl = useOAuth
-        ? `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${batchIds}`
-        : `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${batchIds}${apiKeyParam}`;
-      const videoDetailsResponse = await fetch(videoDetailsUrl, { headers: authHeader });
-      const videoDetailsData: YouTubeVideoDetailsResponse = await videoDetailsResponse.json();
-      for (const detail of videoDetailsData.items || []) {
-        videoDetailsMap.set(detail.id, detail);
-      }
-    }
+    const videoDetailsResponse = await fetch(videoDetailsUrl, {
+      headers: authHeader,
+    });
+
+    const videoDetailsData: YouTubeVideoDetailsResponse =
+      await videoDetailsResponse.json();
+    const videoDetailsMap = new Map(
+      videoDetailsData.items?.map((item) => [item.id, item]) || []
+    );
 
     // Process and sync videos
     let synced = 0;
     let skipped = 0;
-    let importedVideos = 0;
-    let importedShorts = 0;
 
     for (const item of videoItems) {
-      if (importedVideos >= YT_MAX_VIDEOS && importedShorts >= YT_MAX_SHORTS) break;
       const videoId = item.snippet.resourceId.videoId;
       const details = videoDetailsMap.get(videoId);
       const duration = details?.contentDetails?.duration || "PT0S";
       const durationSeconds = parseDurationToSeconds(duration);
-      const isShort =
-        durationSeconds <= YT_SHORT_MAX_SECONDS ||
-        /(^|\s)#shorts(\s|$)/i.test(
-          `${item.snippet.title || ""} ${item.snippet.description || ""}`
-        );
-      if (isShort && importedShorts >= YT_MAX_SHORTS) continue;
-      if (!isShort && importedVideos >= YT_MAX_VIDEOS) continue;
+      const isShort = durationSeconds <= 60;
 
       // Check if video already exists
       const existingVideo = await prisma.video.findUnique({
@@ -284,7 +253,6 @@ export async function syncYouTubeVideosInternal(
             }
           },
           data: {
-            artistId,
             title: item.snippet.title,
             description: item.snippet.description,
             thumbnailUrl:
@@ -302,7 +270,6 @@ export async function syncYouTubeVideosInternal(
           data: {
             youtubeVideoId: videoId,
             userId: userId,
-            artistId,
             title: item.snippet.title,
             description: item.snippet.description,
             url: `https://www.youtube.com/watch?v=${videoId}`,
@@ -321,45 +288,16 @@ export async function syncYouTubeVideosInternal(
         });
         synced++;
       }
-
-      if (isShort) importedShorts++;
-      else importedVideos++;
-    }
-
-    const extraVideoIds = await prisma.video.findMany({
-      where: { artistId, source: "youtube", isShort: false },
-      orderBy: { publishedAt: "desc" },
-      skip: YT_MAX_VIDEOS,
-      select: { id: true },
-    });
-    if (extraVideoIds.length > 0) {
-      await prisma.video.deleteMany({
-        where: { id: { in: extraVideoIds.map((v) => v.id) } },
-      });
-    }
-
-    const extraShortIds = await prisma.video.findMany({
-      where: { artistId, source: "youtube", isShort: true },
-      orderBy: { publishedAt: "desc" },
-      skip: YT_MAX_SHORTS,
-      select: { id: true },
-    });
-    if (extraShortIds.length > 0) {
-      await prisma.video.deleteMany({
-        where: { id: { in: extraShortIds.map((v) => v.id) } },
-      });
     }
 
     revalidatePath("/artist/profile");
 
     return {
       success: true,
-      message: `Sync complete! ${synced} new items added, ${skipped} updated.`,
+      message: `Sync complete! ${synced} new videos added, ${skipped} updated.`,
       synced,
       skipped,
-      total: importedVideos + importedShorts,
-      importedVideos,
-      importedShorts,
+      total: videoItems.length,
     };
   } catch (error) {
     console.error("Error syncing YouTube videos (internal):", error);
@@ -367,10 +305,7 @@ export async function syncYouTubeVideosInternal(
   }
 }
 
-export async function getSyncedVideos(
-  type: "all" | "shorts" | "videos",
-  artistProfileId?: string | null
-) {
+export async function getSyncedVideos(type: "all" | "shorts" | "videos") {
   try {
     const session = await auth();
 
@@ -378,29 +313,14 @@ export async function getSyncedVideos(
       return { success: false, message: "Unauthorized", data: null };
     }
 
-    const artist = artistProfileId
-      ? await prisma.artist.findFirst({
-          where: { id: artistProfileId, userId: session.user.id },
-          select: { id: true },
-        })
-      : await prisma.artist.findFirst({
-          where: { userId: session.user.id, profileOrder: 0 },
-          select: { id: true },
-        });
-
-    if (!artist) {
-      return { success: false, message: "Artist profile not found", data: null };
-    }
-
     const isShort =
       type === "shorts" ? true : type === "videos" ? false : undefined;
 
     const videos = await prisma.video.findMany({
       where: {
-        artistId: artist.id,
+        userId: session.user.id,
         isShort,
       },
-      take: type === "videos" || type === "shorts" ? 25 : 50,
       orderBy: { publishedAt: "desc" },
       select: {
         id: true,
@@ -428,7 +348,7 @@ export async function getSyncedVideos(
 /**
  * Check if YouTube is connected and has synced videos
  */
-export async function getYouTubeSyncStatus(artistProfileId?: string | null) {
+export async function getYouTubeSyncStatus() {
   try {
     const session = await auth();
 
@@ -436,15 +356,14 @@ export async function getYouTubeSyncStatus(artistProfileId?: string | null) {
       return { success: false, connected: false, videoCount: 0, shortCount: 0 };
     }
 
-    const artist = artistProfileId
-      ? await prisma.artist.findFirst({
-          where: { id: artistProfileId, userId: session.user.id },
-          select: { id: true, youtubeChannelId: true, youtubeChannelName: true },
-        })
-      : await prisma.artist.findFirst({
-          where: { userId: session.user.id, profileOrder: 0 },
-          select: { id: true, youtubeChannelId: true, youtubeChannelName: true },
-        });
+    const artist = await prisma.artist.findUnique({
+      where: { userId: session.user.id },
+      select: {
+        youtubeChannelId: true,
+        youtubeAccessToken: true,
+        youtubeChannelName: true,
+      },
+    });
 
     // Connected if channel ID exists (either via OAuth or manual connection)
     const isConnected = !!artist?.youtubeChannelId;
@@ -452,10 +371,10 @@ export async function getYouTubeSyncStatus(artistProfileId?: string | null) {
     // Get video counts
     const [videoCount, shortCount] = await Promise.all([
       prisma.video.count({
-        where: { artistId: artist?.id ?? undefined, isShort: false },
+        where: { userId: session.user.id, isShort: false },
       }),
       prisma.video.count({
-        where: { artistId: artist?.id ?? undefined, isShort: true },
+        where: { userId: session.user.id, isShort: true },
       }),
     ]);
 

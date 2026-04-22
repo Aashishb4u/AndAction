@@ -115,7 +115,7 @@ const PrivacyPage = () => {
         {/* Last Updated */}
         <div className="text-center py-4 bg-card/30 rounded-lg border border-background-light">
           <p className="text-text-gray text-sm">
-            <strong>Last Updated:</strong> April 20, 2026
+            <strong>Last Updated:</strong> September 12, 2025
           </p>
         </div>
 
@@ -219,7 +219,7 @@ const PrivacyPage = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
-              href="mailto:official@andaction.in"
+              href="mailto:privacy@andaction.com"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
             >
               <Mail className="w-4 h-4" />
@@ -227,7 +227,7 @@ const PrivacyPage = () => {
             </a>
             <a
               href="tel:+918860014889"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
+              className="inline-flex items-center gap-2 px-6 py-3 border-2 border-primary-pink text-primary-pink font-semibold rounded-full hover:bg-primary-pink hover:text-white transition-all duration-300"
             >
               <Phone className="w-4 h-4" />
               <span>+91 8860014889</span>

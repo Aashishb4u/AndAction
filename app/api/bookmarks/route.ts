@@ -141,9 +141,7 @@ export async function GET(): Promise<NextResponse<any>> {
               firstName: true,
               lastName: true,
               avatar: true,
-              artists: {
-                take: 1,
-                orderBy: { profileOrder: "asc" },
+              artist: {
                 select: { id: true },
               },
             },

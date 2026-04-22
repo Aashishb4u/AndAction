@@ -21,15 +21,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const artistProfileId = request.nextUrl.searchParams.get("artistProfileId");
-    const artist = artistProfileId
-      ? await prisma.artist.findFirst({
-          where: { id: artistProfileId, userId: session.user.id },
-        })
-      : await prisma.artist.findFirst({
-          where: { userId: session.user.id },
-          orderBy: { profileOrder: "asc" },
-        });
+    const artist = await prisma.artist.findUnique({
+      where: { userId: session.user.id },
+    });
 
     if (!artist) {
       return NextResponse.json(
@@ -47,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     const returnUrl =
       request.nextUrl.searchParams.get("returnUrl") ||
-      `/artist/profile?tab=integrations&profileId=${artist.id}`;
+      "/artist/profile?tab=integrations";
 
     const state = Buffer.from(
       JSON.stringify({

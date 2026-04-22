@@ -13,7 +13,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const {
       userId,
-      createNewProfile,
       stageName,
       artistType,
       subArtistType,
@@ -75,9 +74,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Check if artist profile exists, create if not (for OAuth users)
-    const existingPrimaryArtist = await prisma.artist.findFirst({
-      where: { userId, profileOrder: 0 },
-      select: { id: true, profileOrder: true },
+    const existingArtist = await prisma.artist.findUnique({
+      where: { userId },
     });
 
     const artistData = {
@@ -107,31 +105,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       instagramId,
     };
 
-    const updatedArtist = createNewProfile
-      ? await (async () => {
-          const last = await prisma.artist.findFirst({
-            where: { userId },
-            orderBy: { profileOrder: "desc" },
-            select: { profileOrder: true },
-          });
-          const nextOrder = (last?.profileOrder ?? -1) + 1;
-          return prisma.artist.create({
-            data: {
-              userId,
-              profileOrder: nextOrder,
-              ...artistData,
-            },
-          });
-        })()
-      : existingPrimaryArtist
+    const updatedArtist = existingArtist
       ? await prisma.artist.update({
-          where: { id: existingPrimaryArtist.id },
+          where: { userId },
           data: artistData,
         })
       : await prisma.artist.create({
           data: {
             userId,
-            profileOrder: 0,
             ...artistData,
           },
         });
@@ -179,7 +160,6 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     const body = await request.json();
     const {
       userId,
-      artistProfileId,
       stageName,
       artistType,
       subArtistType,
@@ -268,22 +248,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         ...geocodeData, // Add geocoded coordinates if available
       },
     });
-    const targetArtist = artistProfileId
-      ? await prisma.artist.findFirst({
-          where: { id: artistProfileId, userId },
-          select: { id: true },
-        })
-      : await prisma.artist.findFirst({
-          where: { userId, profileOrder: 0 },
-          select: { id: true },
-        });
-
-    if (!targetArtist) {
-      return ApiErrors.notFound("Artist profile not found.");
-    }
-
     const updatedArtistProfile = await prisma.artist.update({
-      where: { id: targetArtist.id },
+      where: { userId },
       data: {
         ...(stageName !== undefined && { stageName }),
         ...(artistType !== undefined && { artistType }),
@@ -314,7 +280,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
 
     const refreshedUser = await prisma.user.findUnique({
       where: { id: userId },
-      include: { artists: { orderBy: { profileOrder: "asc" }, take: 1 } },
+      include: { artist: true },
     });
 
     return successResponse(

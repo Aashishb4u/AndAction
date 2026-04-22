@@ -85,7 +85,7 @@ export default function VideoDetailsPage() {
             videoUrl: rv.url,
             isBookmarked: rv.isBookmarked,
             bookmarkId: rv.bookmarkId,
-            artistId: rv.user.artists?.[0]?.id || "",
+            artistId: rv.user.artist?.id || "",
           })),
         );
         setHasMoreVideos(json.data.videosPagination?.hasNextPage || false);
@@ -237,7 +237,7 @@ export default function VideoDetailsPage() {
           videoUrl: rv.url,
           isBookmarked: rv.isBookmarked,
           bookmarkId: rv.bookmarkId,
-          artistId: rv.user.artists?.[0]?.id || "",
+          artistId: rv.user.artist?.id || "",
         }));
         setRelatedVideos((prev) => [...prev, ...newVideos]);
         setVideosPage(nextPage);

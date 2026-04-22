@@ -139,13 +139,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
     // 🔍 SEARCH (name, bio, or user firstName/lastName)
     if (search) {
-      const typeMatches = getArtistTypeMatches(search);
       where.OR = [
         { stageName: { contains: search, mode: "insensitive" } },
         { shortBio: { contains: search, mode: "insensitive" } },
-        { subArtistType: { contains: search, mode: "insensitive" } },
-        { artistType: { in: typeMatches } },
-        { artistType: { contains: search, mode: "insensitive" } },
         {
           user: {
             is: { firstName: { contains: search, mode: "insensitive" } },
@@ -325,7 +321,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
     const baseSelect = {
       id: true,
-      profileImage: true,
       stageName: true,
       artistType: true,
       subArtistType: true,
@@ -336,14 +331,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       yearsOfExperience: true,
       soloChargesFrom: true,
       soloChargesTo: true,
-      soloChargesDescription: true,
       chargesWithBacklineFrom: true,
       chargesWithBacklineTo: true,
-      chargesWithBacklineDescription: true,
       performingDurationFrom: true,
       performingDurationTo: true,
-      performingMembers: true,
-      offStageMembers: true,
       user: {
         select: {
           id: true,

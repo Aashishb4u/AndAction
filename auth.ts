@@ -8,7 +8,6 @@ import { verifyPassword } from "@/lib/password";
 
 interface ArtistProfile {
   id: string;
-  profileImage?: string | null;
   stageName?: string | null;
   artistType?: string | null;
   subArtistType?: string | null;
@@ -136,7 +135,7 @@ export const {
                 phoneNumber: digits,
                 countryCode: countryCodeRaw,
               },
-              include: { artists: { orderBy: { profileOrder: "asc" }, take: 1 } },
+              include: { artist: true },
             });
 
             if (!user) throw new Error("User not found");
@@ -150,13 +149,13 @@ export const {
             if (isEmail) {
               user = await prisma.user.findUnique({
                 where: { email: contactRaw.toLowerCase() },
-                include: { artists: { orderBy: { profileOrder: "asc" }, take: 1 } },
+                include: { artist: true },
               });
             } else {
               const digits = contactRaw.replace(/\D/g, "");
               user = await prisma.user.findFirst({
                 where: { phoneNumber: digits },
-                include: { artists: { orderBy: { profileOrder: "asc" }, take: 1 } },
+                include: { artist: true },
               });
             }
 
@@ -188,24 +187,23 @@ export const {
             isDataSharingOptIn: !!user.isDataSharingOptIn,
           };
 
-          const primaryArtist = user?.artists?.[0] ?? null;
-          if (user.role === "artist" && primaryArtist) {
+          if (user.role === "artist" && user.artist) {
             safeUser.artistProfile = {
-              id: primaryArtist.id,
-              stageName: primaryArtist.stageName ?? null,
-              artistType: primaryArtist.artistType ?? null,
-              subArtistType: primaryArtist.subArtistType ?? null,
-              achievements: primaryArtist.achievements ?? null,
-              yearsOfExperience: primaryArtist.yearsOfExperience ?? null,
-              shortBio: primaryArtist.shortBio ?? null,
-              performingLanguage: primaryArtist.performingLanguage ?? null,
-              performingEventType: primaryArtist.performingEventType ?? null,
-              performingStates: primaryArtist.performingStates ?? null,
-              contactNumber: primaryArtist.contactNumber ?? null,
-              whatsappNumber: primaryArtist.whatsappNumber ?? null,
-              contactEmail: primaryArtist.contactEmail ?? null,
-              instagramId: primaryArtist.instagramId ?? null,
-              youtubeChannelId: primaryArtist.youtubeChannelId ?? null,
+              id: user.artist.id,
+              stageName: user.artist.stageName ?? null,
+              artistType: user.artist.artistType ?? null,
+              subArtistType: user.artist.subArtistType ?? null,
+              achievements: user.artist.achievements ?? null,
+              yearsOfExperience: user.artist.yearsOfExperience ?? null,
+              shortBio: user.artist.shortBio ?? null,
+              performingLanguage: user.artist.performingLanguage ?? null,
+              performingEventType: user.artist.performingEventType ?? null,
+              performingStates: user.artist.performingStates ?? null,
+              contactNumber: user.artist.contactNumber ?? null,
+              whatsappNumber: user.artist.whatsappNumber ?? null,
+              contactEmail: user.artist.contactEmail ?? null,
+              instagramId: user.artist.instagramId ?? null,
+              youtubeChannelId: user.artist.youtubeChannelId ?? null,
             };
           }
 
@@ -342,7 +340,7 @@ export const {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: String(token.sub) },
-            include: { artists: { orderBy: { profileOrder: "asc" }, take: 1 } },
+            include: { artist: true },
           });
 
           if (dbUser) {
@@ -364,38 +362,38 @@ export const {
             token.isMarketingOptIn = dbUser.isMarketingOptIn;
             token.isDataSharingOptIn = dbUser.isDataSharingOptIn;
 
-            const primaryArtist = dbUser?.artists?.[0] ?? null;
-            if (dbUser.role === "artist" && primaryArtist) {
+            if (dbUser.role === "artist" && dbUser.artist) {
               token.artistProfile = toPlain({
-                id: primaryArtist.id,
-                profileImage: primaryArtist.profileImage ?? null,
-                stageName: primaryArtist.stageName ?? null,
-                artistType: primaryArtist.artistType ?? null,
-                subArtistType: primaryArtist.subArtistType ?? null,
-                achievements: primaryArtist.achievements ?? null,
-                yearsOfExperience: primaryArtist.yearsOfExperience ?? null,
-                shortBio: primaryArtist.shortBio ?? null,
-                performingLanguage: primaryArtist.performingLanguage ?? null,
-                performingEventType: primaryArtist.performingEventType ?? null,
-                performingStates: primaryArtist.performingStates ?? null,
-                performingDurationFrom: primaryArtist.performingDurationFrom ?? null,
-                performingDurationTo: primaryArtist.performingDurationTo ?? null,
-                performingMembers: primaryArtist.performingMembers ?? null,
-                offStageMembers: primaryArtist.offStageMembers ?? null,
-                contactNumber: primaryArtist.contactNumber ?? null,
-                whatsappNumber: primaryArtist.whatsappNumber ?? null,
-                contactEmail: primaryArtist.contactEmail ?? null,
-                soloChargesFrom: primaryArtist.soloChargesFrom?.toString() ?? null,
-                soloChargesTo: primaryArtist.soloChargesTo?.toString() ?? null,
+                id: dbUser.artist.id,
+                stageName: dbUser.artist.stageName ?? null,
+                artistType: dbUser.artist.artistType ?? null,
+                subArtistType: dbUser.artist.subArtistType ?? null,
+                achievements: dbUser.artist.achievements ?? null,
+                yearsOfExperience: dbUser.artist.yearsOfExperience ?? null,
+                shortBio: dbUser.artist.shortBio ?? null,
+                performingLanguage: dbUser.artist.performingLanguage ?? null,
+                performingEventType: dbUser.artist.performingEventType ?? null,
+                performingStates: dbUser.artist.performingStates ?? null,
+                performingDurationFrom: dbUser.artist.performingDurationFrom ?? null,
+                performingDurationTo: dbUser.artist.performingDurationTo ?? null,
+                performingMembers: dbUser.artist.performingMembers ?? null,
+                offStageMembers: dbUser.artist.offStageMembers ?? null,
+                contactNumber: dbUser.artist.contactNumber ?? null,
+                whatsappNumber: dbUser.artist.whatsappNumber ?? null,
+                contactEmail: dbUser.artist.contactEmail ?? null,
+                soloChargesFrom:
+                  dbUser.artist.soloChargesFrom?.toString() ?? null,
+                soloChargesTo: dbUser.artist.soloChargesTo?.toString() ?? null,
                 chargesWithBacklineFrom:
-                  primaryArtist.chargesWithBacklineFrom?.toString() ?? null,
+                  dbUser.artist.chargesWithBacklineFrom?.toString() ?? null,
                 chargesWithBacklineTo:
-                  primaryArtist.chargesWithBacklineTo?.toString() ?? null,
-                soloChargesDescription: primaryArtist.soloChargesDescription ?? null,
+                  dbUser.artist.chargesWithBacklineTo?.toString() ?? null,
+                soloChargesDescription:
+                  dbUser.artist.soloChargesDescription ?? null,
                 chargesWithBacklineDescription:
-                  primaryArtist.chargesWithBacklineDescription ?? null,
-                instagramId: primaryArtist.instagramId ?? null,
-                youtubeChannelId: primaryArtist.youtubeChannelId ?? null,
+                  dbUser.artist.chargesWithBacklineDescription ?? null,
+                instagramId: dbUser.artist.instagramId ?? null,
+                youtubeChannelId: dbUser.artist.youtubeChannelId ?? null,
               } satisfies ArtistProfile);
             } else {
               token.artistProfile = null;
@@ -407,7 +405,8 @@ export const {
       }
 
       return token;
-    },
+    }
+    ,
   },
 
   session: { strategy: "jwt" },

@@ -64,10 +64,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             lastName: true,
             avatar: true,
             isArtistVerified: true,
-            artists: {
-              take: 1,
-              orderBy: { profileOrder: "asc" },
-              select: { id: true },
+            artist: {
+              select: {
+                id: true,
+              },
             },
           },
         },

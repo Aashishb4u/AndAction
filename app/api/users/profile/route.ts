@@ -74,13 +74,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
                 resetToken: true,
                 verificationToken: true,
                 // Include the full Artist relation if the role is 'artist'
-                artists: userRole === 'artist' ? {
-                    take: 1,
-                    orderBy: { profileOrder: 'asc' },
+                artist: userRole === 'artist' ? {
                     select: {
                         stageName: true,
                         artistType: true,
                         shortBio: true,
+                        // Add more artist fields as needed, e.g.,
+                        // performingLanguage: true,
+                        // soloChargesFrom: true,
                     }
                 } : false,
             }

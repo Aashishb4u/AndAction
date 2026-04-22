@@ -42,7 +42,6 @@ export function mapUserForSession(apiUser: any, apiArtist: any) {
     // nested artistProfile – FULL object
     artistProfile: {
       id: apiArtist.id,
-      profileImage: apiArtist.profileImage,
       stageName: apiArtist.stageName,
       artistType: apiArtist.artistType,
       subArtistType: apiArtist.subArtistType,

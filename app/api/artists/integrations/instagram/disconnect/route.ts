@@ -13,16 +13,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json().catch(() => ({}));
-    const artistProfileId = body?.artistProfileId as string | null | undefined;
-    const artist = artistProfileId
-      ? await prisma.artist.findFirst({
-          where: { id: artistProfileId, userId: session.user.id },
-        })
-      : await prisma.artist.findFirst({
-          where: { userId: session.user.id },
-          orderBy: { profileOrder: "asc" },
-        });
+    const artist = await prisma.artist.findUnique({
+      where: { userId: session.user.id },
+    });
 
     if (!artist) {
       return NextResponse.json(

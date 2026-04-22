@@ -1,9 +1,7 @@
 import React from 'react';
 import { Metadata } from 'next';
 import PageLayout from '@/components/layout/PageLayout';
-import { FileText, Users, CreditCard, Shield, AlertTriangle, Scale, Mail, Phone } from 'lucide-react';
-
-
+import { FileText, Users, CreditCard, Shield, AlertTriangle, Scale } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Terms & Conditions - ANDACTION | User Agreement & Service Terms',
@@ -114,7 +112,7 @@ const TermsPage = () => {
         {/* Last Updated */}
         <div className="text-center py-4 bg-card/30 rounded-lg border border-background-light">
           <p className="text-text-gray text-sm">
-            <strong>Last Updated:</strong> April 20, 2026
+            <strong>Last Updated:</strong> September 12, 2025
           </p>
         </div>
 
@@ -122,11 +120,11 @@ const TermsPage = () => {
         <section>
           <p className="text-text-light-gray leading-relaxed mb-6">
             These Terms and Conditions (&quot;Terms&quot;) govern your use of the ANDACTION platform and services.
-            By accessing or using our service, you agree to be bound by these Terms. If you disagree with
+            By accessing or using our service, you agree to be bound by these Terms. If you disagree with 
             any part of these terms, then you may not access the service.
           </p>
           <p className="text-text-light-gray leading-relaxed">
-            ANDACTION operates as a platform connecting artists with event organizers. We facilitate these
+            ANDACTION operates as a platform connecting artists with event organizers. We facilitate these 
             connections but are not party to the actual service agreements between users.
           </p>
         </section>
@@ -178,23 +176,23 @@ const TermsPage = () => {
             <div className="bg-card/20 rounded-lg p-6 border border-background-light">
               <h3 className="text-lg font-semibold text-white mb-3">Platform Disclaimer</h3>
               <p className="text-text-light-gray leading-relaxed">
-                ANDACTION provides a platform for connecting artists and event organizers. We do not guarantee
-                the quality, safety, or legality of any services provided by users. All interactions and
+                ANDACTION provides a platform for connecting artists and event organizers. We do not guarantee 
+                the quality, safety, or legality of any services provided by users. All interactions and 
                 transactions are between users at their own risk.
               </p>
             </div>
             <div className="bg-card/20 rounded-lg p-6 border border-background-light">
               <h3 className="text-lg font-semibold text-white mb-3">Limitation of Liability</h3>
               <p className="text-text-light-gray leading-relaxed">
-                ANDACTION shall not be liable for any indirect, incidental, special, consequential, or punitive
-                damages resulting from your use of the service. Our total liability shall not exceed the amount
+                ANDACTION shall not be liable for any indirect, incidental, special, consequential, or punitive 
+                damages resulting from your use of the service. Our total liability shall not exceed the amount 
                 paid by you to ANDACTION in the 12 months preceding the claim.
               </p>
             </div>
             <div className="bg-card/20 rounded-lg p-6 border border-background-light">
               <h3 className="text-lg font-semibold text-white mb-3">Indemnification</h3>
               <p className="text-text-light-gray leading-relaxed">
-                You agree to indemnify and hold ANDACTION harmless from any claims, damages, or expenses
+                You agree to indemnify and hold ANDACTION harmless from any claims, damages, or expenses 
                 arising from your use of the service or violation of these terms.
               </p>
             </div>
@@ -205,12 +203,12 @@ const TermsPage = () => {
         <section id="governing-law" className="bg-card/30 rounded-xl p-8 border border-background-light">
           <h2 className="text-2xl font-bold text-white mb-4">Governing Law</h2>
           <p className="text-text-light-gray leading-relaxed mb-4">
-            These Terms shall be interpreted and governed by the laws of India. Any disputes arising from
-            these terms or your use of the service shall be subject to the exclusive jurisdiction of the
+            These Terms shall be interpreted and governed by the laws of India. Any disputes arising from 
+            these terms or your use of the service shall be subject to the exclusive jurisdiction of the 
             courts in New Delhi, India.
           </p>
           <p className="text-text-light-gray leading-relaxed">
-            If any provision of these Terms is found to be unenforceable, the remaining provisions will
+            If any provision of these Terms is found to be unenforceable, the remaining provisions will 
             remain in full force and effect.
           </p>
         </section>
@@ -223,17 +221,15 @@ const TermsPage = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
-              href="mailto:official@andaction.in"
+              href="mailto:legal@andaction.com"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
             >
-              <Mail className="w-4 h-4" />
-              <span>official@andaction.in</span>
+              <span>legal@andaction.com</span>
             </a>
             <a
               href="tel:+918860014889"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
+              className="inline-flex items-center gap-2 px-6 py-3 border-2 border-primary-pink text-primary-pink font-semibold rounded-full hover:bg-primary-pink hover:text-white transition-all duration-300"
             >
-              <Phone className="w-4 h-4" />
               <span>+91 8860014889</span>
             </a>
           </div>

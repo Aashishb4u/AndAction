@@ -11,15 +11,14 @@ import { deleteVideo } from "@/app/actions/youtube/delete-video";
 export const videoKeys = {
   all: ["videos"] as const,
   lists: () => [...videoKeys.all, "list"] as const,
-  list: (type: "videos" | "shorts", artistProfileId: string | null | undefined) =>
-    [...videoKeys.lists(), type, artistProfileId ?? "primary"] as const,
+  list: (type: "videos" | "shorts") => [...videoKeys.lists(), type] as const,
 };
 
-export function useSyncedVideos(type: "videos" | "shorts", artistProfileId?: string | null) {
+export function useSyncedVideos(type: "videos" | "shorts") {
   return useQuery({
-    queryKey: videoKeys.list(type, artistProfileId),
+    queryKey: videoKeys.list(type),
     queryFn: async () => {
-      const result = await getSyncedVideos(type, artistProfileId);
+      const result = await getSyncedVideos(type);
       if (!result.success) {
         throw new Error(result.message || "Failed to fetch videos");
       }
@@ -30,11 +29,11 @@ export function useSyncedVideos(type: "videos" | "shorts", artistProfileId?: str
   });
 }
 
-export function useSyncYouTubeVideos(artistProfileId?: string | null) {
+export function useSyncYouTubeVideos() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => syncYouTubeVideos(artistProfileId),
+    mutationFn: syncYouTubeVideos,
     onSuccess: (result) => {
       if (result.success) {
         toast.success(
@@ -54,11 +53,11 @@ export function useSyncYouTubeVideos(artistProfileId?: string | null) {
 }
 
 // Alias for shorts - same sync action, different toast message
-export function useSyncYouTubeShorts(artistProfileId?: string | null) {
+export function useSyncYouTubeShorts() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => syncYouTubeVideos(artistProfileId),
+    mutationFn: syncYouTubeVideos,
     onSuccess: (result) => {
       if (result.success) {
         toast.success(

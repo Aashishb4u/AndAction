@@ -20,6 +20,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const artist = await prisma.artist.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    if (!artist) {
+      return NextResponse.json(
+        { success: false, message: "Artist profile not found" },
+        { status: 404 },
+      );
+    }
+
     if (!YOUTUBE_API_KEY) {
       return NextResponse.json(
         { success: false, message: "YouTube API key is not configured" },
@@ -28,28 +39,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { channelInput, artistProfileId } = body;
+    const { channelInput } = body;
 
     if (!channelInput || !channelInput.trim()) {
       return NextResponse.json(
         { success: false, message: "Channel name or ID is required" },
         { status: 400 },
-      );
-    }
-
-    const artist = artistProfileId
-      ? await prisma.artist.findFirst({
-          where: { id: artistProfileId, userId: session.user.id },
-        })
-      : await prisma.artist.findFirst({
-          where: { userId: session.user.id },
-          orderBy: { profileOrder: "asc" },
-        });
-
-    if (!artist) {
-      return NextResponse.json(
-        { success: false, message: "Artist profile not found" },
-        { status: 404 },
       );
     }
 
