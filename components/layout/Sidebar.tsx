@@ -8,6 +8,7 @@ import { ChevronRight, LogOut } from "lucide-react";
 import { createAuthRedirectUrl } from "@/lib/auth";
 import Download from "../icons/download";
 import Support from "../icons/support";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useSession, signOut } from "next-auth/react";
 import { usePWAInstall } from "@/hooks/use-pwa-install";
 import { buildArtishProfileUrl } from "@/lib/utils";
@@ -25,6 +26,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const user = session?.user;
   const { isInstalled, installApp } = usePWAInstall();
   const [isInstalling, setIsInstalling] = useState(false);
+  const [isConvertingArtist, setIsConvertingArtist] = useState(false);
+  const [showJoinArtistConfirm, setShowJoinArtistConfirm] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -57,7 +60,44 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const handleJoinArtist = () => {
     router.push(createAuthRedirectUrl("/auth/artist", pathname));
+  };
+
+  const handleJoinArtistClick = () => {
+    if (isConvertingArtist) {
+      return;
+    }
+
+    if (!user) {
+      onClose();
+      handleJoinArtist();
+      return;
+    }
+
+    if (user.role === "artist") {
+      onClose();
+      router.push("/artist/dashboard");
+      return;
+    }
+
     onClose();
+    setShowJoinArtistConfirm(true);
+  };
+
+  const handleConfirmJoinAsArtist = () => {
+    setShowJoinArtistConfirm(false);
+
+    if (!user) {
+      handleJoinArtist();
+      return;
+    }
+
+    if (user.role === "artist") {
+      router.push("/artist/dashboard");
+      return;
+    }
+
+    setIsConvertingArtist(true);
+    router.push("/auth/artist?step=userInfo&convert=true");
   };
 
   const handleInstallApp = async () => {
@@ -186,10 +226,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               {/* Join as artist - Only show for non-artist users */}
               {user.role !== "artist" && (
                 <button
-                  onClick={handleJoinArtist}
+                  onClick={handleJoinArtistClick}
                   className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
                 >
-                  Join as an Artist
+                  {isConvertingArtist ? "Joining..." : "Join as an Artist"}
                 </button>
               )}
             </div>
@@ -207,7 +247,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </button>
               <br />
               <button
-                onClick={handleJoinArtist}
+                onClick={handleJoinArtistClick}
                 className="block gradient-text hover:opacity-80 transition-opacity duration-200 h1"
               >
                 Join as an artist
@@ -270,6 +310,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showJoinArtistConfirm}
+        onOpenChange={setShowJoinArtistConfirm}
+        title="Join as an Artist?"
+        description="We will open artist onboarding details first, then continue to profile setup."
+        confirmText="Continue"
+        cancelText="Not now"
+        variant="default"
+        onConfirm={handleConfirmJoinAsArtist}
+      />
     </>
   );
 };

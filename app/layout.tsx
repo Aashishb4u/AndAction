@@ -23,6 +23,13 @@ export const metadata: Metadata = {
   description: 'Connecting talent with unforgettable experiences, all in one place! Find and book the perfect artists for your events with ANDACTION.',
   keywords: 'artists, events, booking, entertainment, performers, talent, shows',
   authors: [{ name: 'ANDACTION Team' }],
+  icons: {
+    icon: [
+      { url: '/icons/logo.jpeg', type: 'image/jpeg' },
+    ],
+    shortcut: '/icons/logo.jpeg',
+    apple: '/icons/logo.jpeg',
+  },
 };
 
 export const viewport = {

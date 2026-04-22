@@ -5,7 +5,7 @@ import SearchIcon from "@/components/icons/search";
 import Image from "next/image";
 import MobileBottomBar from "@/components/layout/MobileBottomBar";
 import LoadingSpinner from "@/components/ui/Loading";
-import { buildArtishProfileUrl } from "@/lib/utils";
+import { buildArtishProfileUrl, getArtishName } from "@/lib/utils";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import {
@@ -21,6 +21,11 @@ type RawArtistFromAPI = {
   image: string | null;
 };
 
+type LocationParams = {
+  lat: number;
+  lng: number;
+};
+
 type SearchArtist = {
   id: string;
   name: string;
@@ -33,9 +38,11 @@ type SearchArtist = {
 const fetchArtists = async ({
   pageParam = 1,
   query,
+  location,
 }: {
   pageParam?: number;
   query: string;
+  location: LocationParams | null;
 }) => {
   if (!query.trim()) return [] as RawArtistFromAPI[];
   const params = new URLSearchParams({
@@ -43,6 +50,11 @@ const fetchArtists = async ({
     page: String(pageParam),
     limit: "10",
   });
+
+  if (location) {
+    params.set("lat", String(location.lat));
+    params.set("lng", String(location.lng));
+  }
 
   const res = await fetch(`/api/artists/search?${params.toString()}`);
   if (!res.ok) {
@@ -58,8 +70,40 @@ export default function MobileSearchPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [pageLocation, setPageLocation] = useState<LocationParams | null>(null);
   const { categories, categoriesWithAll } = useArtistCategories();
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const latFromUrl = parseFloat(urlParams.get("lat") || "");
+    const lngFromUrl = parseFloat(urlParams.get("lng") || "");
+
+    if (Number.isFinite(latFromUrl) && Number.isFinite(lngFromUrl)) {
+      setPageLocation({ lat: latFromUrl, lng: lngFromUrl });
+      return;
+    }
+
+    const cachedLocation = sessionStorage.getItem("userLocationCoords");
+    if (!cachedLocation) return;
+
+    try {
+      const parsed = JSON.parse(cachedLocation) as { lat?: number; lng?: number };
+
+      if (
+        typeof parsed.lat === "number" &&
+        Number.isFinite(parsed.lat) &&
+        typeof parsed.lng === "number" &&
+        Number.isFinite(parsed.lng)
+      ) {
+        setPageLocation({ lat: parsed.lat, lng: parsed.lng });
+      }
+    } catch {
+      setPageLocation(null);
+    }
+  }, []);
 
   const {
     data,
@@ -69,9 +113,9 @@ export default function MobileSearchPage() {
     isFetchingNextPage,
     isError,
   } = useInfiniteQuery({
-      queryKey: ["artists", debouncedSearch],
+      queryKey: ["artists", debouncedSearch, pageLocation?.lat ?? null, pageLocation?.lng ?? null],
       queryFn: ({ pageParam }) =>
-        fetchArtists({ pageParam, query: debouncedSearch }),
+        fetchArtists({ pageParam, query: debouncedSearch, location: pageLocation }),
       initialPageParam: 1,
       getNextPageParam: (lastPage, allPages) => {
         return lastPage.length === 10 ? allPages.length + 1 : undefined;
@@ -291,9 +335,18 @@ export default function MobileSearchPage() {
             {filterCategories.slice(1).map((cat) => (
               <button
                 key={cat.value}
-                onClick={() =>
-                  router.push(`/artists?type=${encodeURIComponent(cat.value)}`)
-                }
+                onClick={() => {
+                  const params = new URLSearchParams({
+                    type: cat.value,
+                  });
+
+                  if (pageLocation) {
+                    params.set("lat", String(pageLocation.lat));
+                    params.set("lng", String(pageLocation.lng));
+                  }
+
+                  router.push(`/artists?${params.toString()}`);
+                }}
                 className="w-full flex justify-between items-center rounded-full category-btn-gradient px-4 py-3 text-left text-base font-medium text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus:outline-none"
               >
                 <span className="text-[#F2F2F2]">{cat.label}</span>

@@ -1,5 +1,12 @@
 "use client";
-import React, { useState, useEffect, useRef, Suspense, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  Suspense,
+  useCallback,
+  useMemo,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SiteLayout from "@/components/layout/SiteLayout";
@@ -16,10 +23,16 @@ import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 const DEFAULT_LIMIT = 12;
 
+interface LocationParams {
+  lat: number;
+  lng: number;
+}
+
 // Fetch artist count only (lightweight)
 const getArtistCount = async (
   query: string,
-  filters: Filters
+  filters: Filters,
+  location: LocationParams | null = null,
 ): Promise<number> => {
   try {
     const params = new URLSearchParams();
@@ -41,6 +54,10 @@ const getArtistCount = async (
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
     if (filters.location) params.set("location", filters.location);
+    if (location) {
+      params.set("lat", String(location.lat));
+      params.set("lng", String(location.lng));
+    }
 
     const url = `/api/artists?${params.toString()}`;
     const res = await fetch(url, { cache: "no-store" });
@@ -62,6 +79,7 @@ const getArtists = async (
   query: string,
   filters: Filters,
   page: number = 1,
+  location: LocationParams | null = null,
 ): Promise<{ artists: Artist[]; total: number }> => {
   try {
     const params = new URLSearchParams();
@@ -80,6 +98,10 @@ const getArtists = async (
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
     if (filters.location) params.set("location", filters.location);
+    if (location) {
+      params.set("lat", String(location.lat));
+      params.set("lng", String(location.lng));
+    }
 
     // Pagination
     params.set("page", page.toString());
@@ -140,6 +162,40 @@ function ArtistsPageContent() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
 
+  const pageLocation = useMemo(() => {
+    const latFromUrl = parseFloat(searchParams.get("lat") || "");
+    const lngFromUrl = parseFloat(searchParams.get("lng") || "");
+
+    if (Number.isFinite(latFromUrl) && Number.isFinite(lngFromUrl)) {
+      return { lat: latFromUrl, lng: lngFromUrl };
+    }
+
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const cachedLocation = sessionStorage.getItem("userLocationCoords");
+    if (!cachedLocation) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(cachedLocation) as { lat?: number; lng?: number };
+      if (
+        typeof parsed.lat === "number" &&
+        Number.isFinite(parsed.lat) &&
+        typeof parsed.lng === "number" &&
+        Number.isFinite(parsed.lng)
+      ) {
+        return { lat: parsed.lat, lng: parsed.lng };
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }, [searchParams]);
+
   // Initialize filters from URL params on first render
   const getInitialFilters = () => {
     const params = searchParams;
@@ -162,22 +218,40 @@ function ArtistsPageContent() {
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isMobileFiltersFixed, setIsMobileFiltersFixed] = useState(false);
+  const [mobileFiltersHeight, setMobileFiltersHeight] = useState(0);
   const [totalResults, setTotalResults] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const observerRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const mobileFiltersRef = useRef<HTMLDivElement | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pageRef = useRef(1);
+  const inFlightPageRef = useRef<number | null>(null);
+
+  const artistsWithCategoryLabels = useMemo(
+    () =>
+      artists.map((artist) => ({
+        ...artist,
+        category: findCategoryLabel(categories, artist.category) || artist.category,
+      })),
+    [artists, categories],
+  );
 
   // Initial load and when filters/query change
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setPage(1);
+      pageRef.current = 1;
+      inFlightPageRef.current = null;
       const { artists: newArtists, total } = await getArtists(
         query,
         filters,
         1,
+        pageLocation,
       );
       setArtists(newArtists);
       setTotalResults(total);
@@ -187,7 +261,7 @@ function ArtistsPageContent() {
     fetchData();
     updateURL();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, JSON.stringify(filters)]);
+  }, [query, JSON.stringify(filters), pageLocation?.lat, pageLocation?.lng]);
 
   // Detect mobile viewport to control spinner presentation
   useEffect(() => {
@@ -198,6 +272,45 @@ function ArtistsPageContent() {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Keep mobile filters at top only after user scrolls beyond the page header.
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileFiltersFixed(false);
+      return;
+    }
+
+    const handleMobileFilterPin = () => {
+      const headerHeight = headerRef.current?.offsetHeight ?? 72;
+      setIsMobileFiltersFixed(window.scrollY > headerHeight);
+    };
+
+    handleMobileFilterPin();
+    window.addEventListener("scroll", handleMobileFilterPin, {
+      passive: true,
+    });
+
+    return () => window.removeEventListener("scroll", handleMobileFilterPin);
+  }, [isMobile]);
+
+  // Track filter bar height so layout doesn't jump when it switches to fixed positioning.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!mobileFiltersRef.current) return;
+
+    const updateHeight = () => {
+      if (mobileFiltersRef.current) {
+        setMobileFiltersHeight(mobileFiltersRef.current.offsetHeight);
+      }
+    };
+
+    updateHeight();
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(mobileFiltersRef.current);
+
+    return () => observer.disconnect();
   }, []);
 
   // Debounce search input - wait 2 seconds after user stops typing
@@ -229,6 +342,10 @@ function ArtistsPageContent() {
     if (filters.eventState) params.set("state", filters.eventState);
     if (filters.budget) params.set("budget", filters.budget);
     if (filters.location) params.set("location", filters.location);
+    if (pageLocation) {
+      params.set("lat", String(pageLocation.lat));
+      params.set("lng", String(pageLocation.lng));
+    }
 
     const newURL = params.toString() ? `?${params.toString()}` : window.location.pathname;
     window.history.replaceState({}, "", newURL);
@@ -237,43 +354,87 @@ function ArtistsPageContent() {
   // Infinite scroll: fetch more artists when bottom is reached
   const fetchMoreArtists = useCallback(async () => {
     if (isFetchingMore || loading || !hasMore) return;
+
+    const nextPage = pageRef.current + 1;
+    if (inFlightPageRef.current === nextPage) return;
+
+    inFlightPageRef.current = nextPage;
     setIsFetchingMore(true);
-    const nextPage = page + 1;
-    const { artists: moreArtists } = await getArtists(
-      query,
-      filters,
-      nextPage,
-    );
-    setArtists((prev) => [...prev, ...moreArtists]);
-    setPage(nextPage);
-    setHasMore(artists.length + moreArtists.length < totalResults);
-    setIsFetchingMore(false);
+
+    try {
+      const { artists: moreArtists } = await getArtists(
+        query,
+        filters,
+        nextPage,
+        pageLocation,
+      );
+
+      setArtists((prev) => {
+        const existingIds = new Set(prev.map((artist) => artist.id));
+        const dedupedMoreArtists = moreArtists.filter(
+          (artist) => !existingIds.has(artist.id),
+        );
+
+        return [...prev, ...dedupedMoreArtists];
+      });
+
+      pageRef.current = nextPage;
+      setPage(nextPage);
+
+      const reachedEnd =
+        moreArtists.length < DEFAULT_LIMIT ||
+        nextPage * DEFAULT_LIMIT >= totalResults;
+      setHasMore(!reachedEnd);
+    } finally {
+      inFlightPageRef.current = null;
+      setIsFetchingMore(false);
+    }
   }, [
     isFetchingMore,
     loading,
     hasMore,
-    page,
     query,
     filters,
     totalResults,
-    artists.length,
+    pageLocation,
   ]);
 
   useEffect(() => {
     if (!observerRef.current) return;
+
+    const target = observerRef.current;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading && !isFetchingMore) {
           fetchMoreArtists();
         }
       },
-      { threshold: 1 }
+      { threshold: 0, rootMargin: "250px 0px" }
     );
-    observer.observe(observerRef.current);
+
+    observer.observe(target);
+
     return () => {
-      if (observerRef.current) observer.unobserve(observerRef.current);
+      observer.unobserve(target);
     };
   }, [fetchMoreArtists, hasMore, loading, isFetchingMore]);
+
+  // Fallback for mobile where IntersectionObserver can miss bottom triggers.
+  useEffect(() => {
+    if (!isMobile || loading || isFetchingMore || !hasMore) return;
+
+    const handleScroll = () => {
+      const scrolled = window.scrollY + window.innerHeight;
+      const threshold = document.documentElement.scrollHeight - 300;
+
+      if (scrolled >= threshold) {
+        fetchMoreArtists();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isMobile, loading, isFetchingMore, hasMore, fetchMoreArtists]);
 
   const handleFilterChange = (filterType: keyof Filters, value: string) => {
     setFilters((prev) => ({ ...prev, [filterType]: value }));
@@ -293,6 +454,8 @@ function ArtistsPageContent() {
     setQuery("");
     setSearchInput("");
     setPage(1);
+    pageRef.current = 1;
+    inFlightPageRef.current = null;
 
     // Reload all artists
     setLoading(true);
@@ -309,6 +472,7 @@ function ArtistsPageContent() {
         location: "",
       },
       1,
+      pageLocation,
     ).then(({ artists, total }) => {
       setArtists(artists);
       setTotalResults(total);
@@ -320,7 +484,9 @@ function ArtistsPageContent() {
   const handleViewResult = () => {
     setLoading(true);
     setPage(1);
-    getArtists(query, filters, 1)
+    pageRef.current = 1;
+    inFlightPageRef.current = null;
+    getArtists(query, filters, 1, pageLocation)
       .then(({ artists, total }) => {
         setArtists(artists);
         setTotalResults(total);
@@ -400,7 +566,7 @@ function ArtistsPageContent() {
       <SiteLayout showPreloader={false} hideNavbar={false} hideBottomBar={true} className="lg:pt-20">
         <div className="min-h-screen lg:pt-4 overflow-x-hidden">
           {/* Header */}
-          <div className="w-full px-4 lg:px-8 py-4 border-b border-[var(--border-color)]">
+          <div ref={headerRef} className="w-full px-4 lg:px-8 py-4 border-b border-[var(--border-color)]">
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 md:gap-4 overflow-hidden">
               <div className="flex items-center gap-3">
                 <button
@@ -464,7 +630,14 @@ function ArtistsPageContent() {
           </div>
 
           {/* Mobile Filters */}
-          <div className="lg:hidden">
+          <div
+            ref={mobileFiltersRef}
+            className={`lg:hidden bg-background ${
+              isMobileFiltersFixed
+                ? "fixed top-0 left-0 right-0 z-40"
+                : "relative z-20"
+            }`}
+          >
             <MobileFilters
               filters={filters}
               onFilterChange={handleFilterChange}
@@ -473,6 +646,14 @@ function ArtistsPageContent() {
               resultCount={totalResults}
             />
           </div>
+
+          {isMobileFiltersFixed && mobileFiltersHeight > 0 && (
+            <div
+              className="lg:hidden"
+              style={{ height: `${mobileFiltersHeight}px` }}
+              aria-hidden="true"
+            />
+          )}
 
           {/* Main Layout */}
           <div className="max-w-7xl mx-auto px-4 lg:px-8 md:py-6 flex gap-8 overflow-x-hidden">
@@ -497,7 +678,7 @@ function ArtistsPageContent() {
                 )
               ) : (
                 <>
-                  <ArtistGrid artists={artists} onBookmark={handleBookmark} />
+                  <ArtistGrid artists={artistsWithCategoryLabels} onBookmark={handleBookmark} />
                   {/* Infinite scroll trigger */}
                   {hasMore && (
                     <div ref={observerRef} style={{ height: 1 }} />

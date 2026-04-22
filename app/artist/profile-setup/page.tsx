@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ProfileOverview from "@/components/artist/profile-setup/ProfileOverview";
 import ArtistProfileDetails from "@/components/artist/profile-setup/ArtistProfileDetails";
@@ -21,7 +21,7 @@ type ProfileSetupStep =
   | "review"
   | "videosSocialMedia";
 
-export default function ProfileSetupPage() {
+function ProfileSetupPageContent() {
   const [currentStep, setCurrentStep] = useState<ProfileSetupStep>("overview");
   // When a user clicks "Edit" from the Review page, we set this to the step
   // being edited so that after saving we can return to the review instead of
@@ -31,9 +31,12 @@ export default function ProfileSetupPage() {
   const [showBackWarning, setShowBackWarning] = useState(false);
   const [pendingBackStep, setPendingBackStep] = useState<ProfileSetupStep | "dashboard" | null>(null);
   const [didInitFromQuery, setDidInitFromQuery] = useState(false);
+  const [isConvertingAccount, setIsConvertingAccount] = useState(false);
+  const hasTriggeredConversionRef = useRef(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status, update } = useSession();
+  const shouldConvert = searchParams.get("convert") === "true";
   const [preferences, setPreferences] =
     useState<ArtistProfileSetupPreferences | null>(null);
 
@@ -41,15 +44,50 @@ export default function ProfileSetupPage() {
     if (status === "loading") return;
 
     if (status === "unauthenticated") {
-      router.push("/auth/signin?redirect=/artist/profile-setup");
+      const redirectPath = shouldConvert
+        ? "/artist/profile-setup?convert=true"
+        : "/artist/profile-setup";
+      router.push(`/auth/signin?redirect=${encodeURIComponent(redirectPath)}`);
       return;
     }
 
-    if (session?.user?.role !== "artist") {
-      router.push("/");
+    if (session?.user?.role === "artist") {
       return;
     }
-  }, [status, session, router]);
+
+    if (shouldConvert && !hasTriggeredConversionRef.current) {
+      hasTriggeredConversionRef.current = true;
+
+      const convertToArtist = async () => {
+        setIsConvertingAccount(true);
+        try {
+          const response = await fetch("/api/auth/artist/convert", {
+            method: "POST",
+          });
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.error || data.message || "Failed to convert account.");
+          }
+
+          await update({ role: "artist" });
+          router.replace("/artist/profile-setup");
+        } catch (error) {
+          console.error("Failed to convert account:", error);
+          router.push("/");
+        } finally {
+          setIsConvertingAccount(false);
+        }
+      };
+
+      convertToArtist();
+      return;
+    }
+
+    if (!isConvertingAccount && !shouldConvert && !hasTriggeredConversionRef.current) {
+      router.push("/");
+    }
+  }, [status, session?.user?.role, router, shouldConvert, isConvertingAccount, update]);
 
   useEffect(() => {
     let isActive = true;
@@ -463,12 +501,20 @@ export default function ProfileSetupPage() {
   };
 
   // Show loading state while checking authentication
-  if (status === "loading") {
+  if (
+    status === "loading" ||
+    isConvertingAccount ||
+    (status === "authenticated" &&
+      session?.user?.role === "user" &&
+      (shouldConvert || hasTriggeredConversionRef.current))
+  ) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-pink mx-auto mb-4"></div>
-          <p className="text-text-gray">Loading...</p>
+          <p className="text-text-gray">
+            {isConvertingAccount ? "Converting your account..." : "Loading..."}
+          </p>
         </div>
       </div>
     );
@@ -499,5 +545,24 @@ export default function ProfileSetupPage() {
         onConfirm={handleConfirmBack}
       />
     </div>
+  );
+}
+
+function ProfileSetupFallback() {
+  return (
+    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-pink mx-auto mb-4"></div>
+        <p className="text-text-gray">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function ProfileSetupPage() {
+  return (
+    <Suspense fallback={<ProfileSetupFallback />}>
+      <ProfileSetupPageContent />
+    </Suspense>
   );
 }

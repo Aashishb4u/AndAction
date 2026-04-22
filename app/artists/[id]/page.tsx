@@ -309,13 +309,39 @@ export default function ArtistDetailPage() {
     }
     const whatsappTarget = artist.whatsappNumber || artist.contactNumber;
     if (whatsappTarget) {
+      const normalizeWhatsappNumber = (raw: string) => {
+        const digitsOnly = raw.replace(/[^0-9]/g, "");
+        if (!digitsOnly) return null;
+
+        // If number is provided without country code (common 10-digit Indian mobile), default to +91.
+        if (digitsOnly.length === 10) return `91${digitsOnly}`;
+        if (digitsOnly.length === 11 && digitsOnly.startsWith("0")) {
+          return `91${digitsOnly.slice(1)}`;
+        }
+
+        // Handle international prefix like 00
+        if (digitsOnly.startsWith("00")) {
+          const withoutInternationalPrefix = digitsOnly.slice(2);
+          if (withoutInternationalPrefix.length === 10) {
+            return `91${withoutInternationalPrefix}`;
+          }
+          return withoutInternationalPrefix;
+        }
+
+        // Otherwise assume it already contains country code
+        return digitsOnly;
+      };
+
       const userName = `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'a user';
       const artistName = artist.name || 'Artist';
       const message = `Hi ${artistName}, I am ${userName} found your profile on ANDACTION`;
       const encodedMessage = encodeURIComponent(message);
+
+      const normalizedNumber = normalizeWhatsappNumber(whatsappTarget);
+      if (!normalizedNumber) return;
       
       window.open(
-        `https://wa.me/${whatsappTarget.replace(/[^0-9]/g, "")}?text=${encodedMessage}`,
+        `https://wa.me/${normalizedNumber}?text=${encodedMessage}`,
         "_blank"
       );
     }

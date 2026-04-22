@@ -13,19 +13,56 @@ import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
-async function getStateFromLatLng(lat: number, lng: number) {
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": "Artist-App" },
-      cache: "no-store",
-    });
+function parseBudgetFilter(rawBudget: string):
+  | { mode: "range"; min: number; max: number }
+  | { mode: "min"; min: number }
+  | null {
+  const budget = rawBudget.trim();
+  if (!budget) return null;
 
-    const data = await res.json();
-    return data?.address?.state || null;
-  } catch {
+  if (budget.endsWith("+")) {
+    const min = Number(budget.slice(0, -1));
+    if (Number.isFinite(min)) {
+      return { mode: "min", min };
+    }
     return null;
   }
+
+  if (budget.includes("-")) {
+    const [minStr, maxStr] = budget.split("-");
+    const minBudget = Number(minStr);
+    const maxBudget = Number(maxStr);
+
+    if (Number.isFinite(minBudget) && Number.isFinite(maxBudget)) {
+      return {
+        mode: "range",
+        min: Math.min(minBudget, maxBudget),
+        max: Math.max(minBudget, maxBudget),
+      };
+    }
+  }
+
+  return null;
+}
+
+function calculateDistanceKm(
+  userLat: number,
+  userLng: number,
+  targetLat: number,
+  targetLng: number,
+): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(targetLat - userLat);
+  const dLng = toRad(targetLng - userLng);
+  const lat1 = toRad(userLat);
+  const lat2 = toRad(targetLat);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return 6371 * c;
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse<any>> {
@@ -42,6 +79,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // ---------------------------
     const lat = parseFloat(searchParams.get("lat") || "");
     const lng = parseFloat(searchParams.get("lng") || "");
+    const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
 
     // ---------------------------
     // COUNT ONLY MODE (for filter preview)
@@ -73,8 +111,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const budget = searchParams.get("budget");
     const location = searchParams.get("location");
 
-    let state = searchParams.get("state");
-    if (!state && lat && lng) state = await getStateFromLatLng(lat, lng);
+    const requestedState = searchParams.get("state")?.trim() || "";
 
     console.log("Filter Params:", {
       search,
@@ -85,6 +122,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // WHERE CLAUSE
     // ---------------------------
     const where: Prisma.ArtistWhereInput = {};
+
+    const appendAndFilter = (filter: Prisma.ArtistWhereInput) => {
+      if (!where.AND) {
+        where.AND = [filter];
+        return;
+      }
+
+      if (Array.isArray(where.AND)) {
+        where.AND = [...where.AND, filter];
+        return;
+      }
+
+      where.AND = [where.AND, filter];
+    };
 
     // 🔍 SEARCH (name, bio, or user firstName/lastName)
     if (search) {
@@ -147,10 +198,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       });
     }
 
-    // Only apply state filter if location is provided
-    if (state && lat && lng) {
+    // Explicit state filter from user selection.
+    if (requestedState) {
       dynamicOrFilters.push({
-        performingStates: { contains: state, mode: "insensitive" },
+        performingStates: { contains: requestedState, mode: "insensitive" },
       });
     }
 
@@ -159,40 +210,53 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     }
 
     // ---------------------------
-    // BUDGET FILTER (supports null ranges)
+    // BUDGET FILTER (solo charges only)
     // ---------------------------
-    if (budget?.includes("-")) {
-      const [minStr, maxStr] = budget.split("-");
-      const min = Number(minStr);
-      const max = Number(maxStr);
+    if (budget) {
+      const parsedBudget = parseBudgetFilter(budget);
 
-      if (!isNaN(min) && !isNaN(max)) {
-        where.OR = [
-          ...(where.OR ?? []),
+      if (parsedBudget?.mode === "range") {
+        appendAndFilter({
+          OR: [
+            {
+              // Fixed/open-ended solo fee falls inside selected range.
+              AND: [
+                { soloChargesTo: null },
+                { soloChargesFrom: { gte: parsedBudget.min } },
+                { soloChargesFrom: { lte: parsedBudget.max } },
+              ],
+            },
+            {
+              // Explicit solo fee range overlaps selected range.
+              AND: [
+                { soloChargesTo: { not: null } },
+                { soloChargesFrom: { lte: parsedBudget.max } },
+                { soloChargesTo: { gte: parsedBudget.min } },
+              ],
+            },
+          ],
+        });
+      }
 
-          // SOLO charges
-          {
-            AND: [
-              { soloChargesFrom: { gte: min } },
-              {
-                OR: [{ soloChargesTo: null }, { soloChargesTo: { lte: max } }],
-              },
-            ],
-          },
-
-          // BACKLINE charges
-          {
-            AND: [
-              { chargesWithBacklineFrom: { gte: min } },
-              {
-                OR: [
-                  { chargesWithBacklineTo: null },
-                  { chargesWithBacklineTo: { lte: max } },
-                ],
-              },
-            ],
-          },
-        ];
+      if (parsedBudget?.mode === "min") {
+        appendAndFilter({
+          OR: [
+            {
+              // Fixed/open-ended solo fee at or above the selected floor.
+              AND: [
+                { soloChargesTo: null },
+                { soloChargesFrom: { gte: parsedBudget.min } },
+              ],
+            },
+            {
+              // Explicit solo fee range reaches or exceeds the selected floor.
+              AND: [
+                { soloChargesTo: { not: null } },
+                { soloChargesTo: { gte: parsedBudget.min } },
+              ],
+            },
+          ],
+        });
       }
     }
 
@@ -216,7 +280,23 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     }
 
     if (location) {
-      userFilter.city = { contains: location, mode: "insensitive" };
+      const trimmedLocation = location.trim();
+      const normalizedState = trimmedLocation.replace(/-/g, " ");
+      const stateTerms = Array.from(
+        new Set([trimmedLocation, normalizedState]),
+      ).filter(Boolean);
+
+      const locationClauses: Prisma.UserWhereInput[] = stateTerms.flatMap(
+        (term) => [
+          { state: { contains: term, mode: "insensitive" } },
+          // Fallback for legacy data where state was saved in city.
+          { city: { contains: term, mode: "insensitive" } },
+        ],
+      );
+
+      if (locationClauses.length > 0) {
+        userFilter.OR = [...(userFilter.OR ?? []), ...locationClauses];
+      }
     }
 
     where.user = { is: userFilter };
@@ -243,40 +323,90 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       );
     }
 
-    const artists = await prisma.artist.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        profileImage: true,
-        stageName: true,
-        artistType: true,
-        subArtistType: true,
-        shortBio: true,
-        performingLanguage: true,
-        performingEventType: true,
-        performingStates: true,
-        yearsOfExperience: true,
-        soloChargesFrom: true,
-        soloChargesTo: true,
-        chargesWithBacklineFrom: true,
-        chargesWithBacklineTo: true,
-        performingDurationFrom: true,
-        performingDurationTo: true,
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-            city: true,
-            state: true,
-          },
+    const baseSelect = {
+      id: true,
+      profileImage: true,
+      stageName: true,
+      artistType: true,
+      subArtistType: true,
+      shortBio: true,
+      performingLanguage: true,
+      performingEventType: true,
+      performingStates: true,
+      yearsOfExperience: true,
+      soloChargesFrom: true,
+      soloChargesTo: true,
+      soloChargesDescription: true,
+      chargesWithBacklineFrom: true,
+      chargesWithBacklineTo: true,
+      chargesWithBacklineDescription: true,
+      performingDurationFrom: true,
+      performingDurationTo: true,
+      performingMembers: true,
+      offStageMembers: true,
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          avatar: true,
+          city: true,
+          state: true,
+          latitude: true,
+          longitude: true,
         },
       },
-    });
+    } as const;
+
+    let artists: any[] = [];
+
+    if (hasCoords && !requestedState) {
+      const allArtists = await prisma.artist.findMany({
+        where,
+        select: baseSelect,
+      });
+
+      const withDistance = allArtists.map((artist) => {
+        const artistLat = artist.user.latitude;
+        const artistLng = artist.user.longitude;
+
+        if (
+          typeof artistLat === "number" &&
+          Number.isFinite(artistLat) &&
+          typeof artistLng === "number" &&
+          Number.isFinite(artistLng)
+        ) {
+          return {
+            ...artist,
+            distance: calculateDistanceKm(lat, lng, artistLat, artistLng),
+          };
+        }
+
+        return {
+          ...artist,
+          distance: null,
+        };
+      });
+
+      withDistance.sort((a, b) => {
+        if (a.distance === null && b.distance === null) return 0;
+        if (a.distance === null) return 1;
+        if (b.distance === null) return -1;
+        const distanceDelta = a.distance - b.distance;
+        if (distanceDelta !== 0) return distanceDelta;
+        return String(a.id).localeCompare(String(b.id));
+      });
+
+      artists = withDistance.slice(skip, skip + limit);
+    } else {
+      artists = await prisma.artist.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        select: baseSelect,
+      });
+    }
 
     console.log(
       `Fetched ${artists.length} artists (Page: ${page}, Limit: ${limit})`,

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
-import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES } from "@/lib/constants";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 
@@ -31,11 +31,11 @@ const genderOptions: FilterOption[] = [
 
 const budgetOptions: FilterOption[] = [
   { value: "", label: "Select budget" },
-  { value: "0-50000", label: "₹0 - ₹50,000" },
+  { value: "0-10000", label: "₹0 - ₹10,000" },
+  { value: "10000-25000", label: "₹10,000 - ₹25,000" },
+  { value: "25000-50000", label: "₹25,000 - ₹50,000" },
   { value: "50000-100000", label: "₹50,000 - ₹1,00,000" },
-  { value: "100000-200000", label: "₹1,00,000 - ₹2,00,000" },
-  { value: "200000-500000", label: "₹2,00,000 - ₹5,00,000" },
-  { value: "500000+", label: "₹5,00,000+" },
+  { value: "100000+", label: "₹1,00,000+" },
 ];
 
 const eventStateOptions: FilterOption[] = [
@@ -62,8 +62,8 @@ const languageOptions: FilterOption[] = [
 ];
 
 const locationOptions: FilterOption[] = [
-  { value: "", label: "Select location" },
-  ...INDIAN_CITIES,
+  { value: "", label: "Select state" },
+  ...INDIAN_STATES,
 ];
 
 const MobileFilters: React.FC<MobileFiltersProps> = ({
@@ -474,14 +474,14 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                   />
                 </div>
 
-                {/* Artist Location */}
+                {/* Artist State */}
                 <div>
                   <Select
-                    label="Artist Location"
+                    label="Artist State"
                     value={filters.location}
                     options={locationOptions}
                     onChange={(value) => onFilterChange("location", value as string)}
-                    placeholder="Select location"
+                    placeholder="Select state"
                   />
                 </div>
               </div>
