@@ -88,9 +88,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
     // 🔍 SEARCH (name, bio, or user firstName/lastName)
     if (search) {
+      const typeMatches = getArtistTypeMatches(search);
       where.OR = [
         { stageName: { contains: search, mode: "insensitive" } },
         { shortBio: { contains: search, mode: "insensitive" } },
+        { subArtistType: { contains: search, mode: "insensitive" } },
+        { artistType: { in: typeMatches } },
+        { artistType: { contains: search, mode: "insensitive" } },
         {
           user: {
             is: { firstName: { contains: search, mode: "insensitive" } },

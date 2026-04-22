@@ -3,12 +3,32 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import SearchIcon from "@/components/icons/search";
 import Image from "next/image";
-import { Artist } from "@/types";
 import MobileBottomBar from "@/components/layout/MobileBottomBar";
 import LoadingSpinner from "@/components/ui/Loading";
 import { buildArtishProfileUrl } from "@/lib/utils";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
+import {
+  findCategoryLabel,
+  normalizeArtistCategoryValue,
+} from "@/lib/artist-category-utils";
+
+type RawArtistFromAPI = {
+  id: string;
+  name: string;
+  category: string | null;
+  subArtistTypes: string[];
+  image: string | null;
+};
+
+type SearchArtist = {
+  id: string;
+  name: string;
+  categoryLabel: string;
+  categoryValue: string;
+  subArtistTypes: string[];
+  image: string;
+};
 
 const fetchArtists = async ({
   pageParam = 1,
@@ -17,16 +37,20 @@ const fetchArtists = async ({
   pageParam?: number;
   query: string;
 }) => {
-  if (!query.trim()) return [];
+  if (!query.trim()) return [] as RawArtistFromAPI[];
   const params = new URLSearchParams({
-    search: query,
+    q: query,
     page: String(pageParam),
     limit: "10",
   });
 
-  const res = await fetch(`/api/artists?${params.toString()}`);
+  const res = await fetch(`/api/artists/search?${params.toString()}`);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Search request failed");
+  }
   const json = await res.json();
-  return json.data?.artists || [];
+  return (json.data?.artists || []) as RawArtistFromAPI[];
 };
 
 export default function MobileSearchPage() {
@@ -34,11 +58,17 @@ export default function MobileSearchPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const { categoriesWithAll } = useArtistCategories();
+  const { categories, categoriesWithAll } = useArtistCategories();
   const router = useRouter();
 
-  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
-    useInfiniteQuery({
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    isError,
+  } = useInfiniteQuery({
       queryKey: ["artists", debouncedSearch],
       queryFn: ({ pageParam }) =>
         fetchArtists({ pageParam, query: debouncedSearch }),
@@ -50,9 +80,52 @@ export default function MobileSearchPage() {
       placeholderData: (previousData) => previousData,
     });
 
-  const artists = useMemo(() => {
-    return (data?.pages.flat() as Artist[]) || [];
-  }, [data]);
+  const artists = useMemo((): SearchArtist[] => {
+    const rawArtists = (data?.pages.flat() as RawArtistFromAPI[]) || [];
+
+    const findCategoryValue = (rawArtistType: string | null): string => {
+      const raw = (rawArtistType || "").trim();
+      if (!raw) return "";
+
+      const normalized = normalizeArtistCategoryValue(raw);
+
+      const byValue = categories.find(
+        (item) =>
+          item.value.toLowerCase() === raw.toLowerCase() ||
+          item.value.toLowerCase() === normalized.toLowerCase(),
+      );
+      if (byValue) return byValue.value;
+
+      const byLabel = categories.find(
+        (item) =>
+          item.label.toLowerCase() === raw.toLowerCase() ||
+          item.label.toLowerCase() === normalized.toLowerCase(),
+      );
+      return byLabel?.value || "";
+    };
+
+    return rawArtists.map((raw) => {
+      const name = (raw.name || "").trim() || "Unknown Artist";
+
+      const categoryLabel =
+        findCategoryLabel(categories, raw.category || "") ||
+        raw.category ||
+        "Performer";
+
+      const categoryValue = findCategoryValue(raw.category);
+
+      const image = raw.image || "/avatars/default.jpg";
+
+      return {
+        id: raw.id,
+        name,
+        categoryLabel,
+        categoryValue,
+        subArtistTypes: raw.subArtistTypes || [],
+        image,
+      };
+    });
+  }, [data, categories]);
 
   const loading = isFetching || isFetchingNextPage;
   const hasSearched = !!debouncedSearch.trim();
@@ -81,7 +154,7 @@ export default function MobileSearchPage() {
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     debounceTimeout.current = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 1000);
+    }, 300);
     return () => {
       if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     };
@@ -92,8 +165,8 @@ export default function MobileSearchPage() {
     return artists.filter((artist) => {
       const matchesCategory =
         selectedCategory === "all" ||
-        (artist.category &&
-          artist.category.toLowerCase() === selectedCategory.toLowerCase());
+        (artist.categoryValue &&
+          artist.categoryValue.toLowerCase() === selectedCategory.toLowerCase());
       return matchesCategory;
     });
   }, [artists, selectedCategory]);
@@ -162,7 +235,11 @@ export default function MobileSearchPage() {
       {/* Artist Suggestions */}
       {search.trim() && (
         <div className="px-4 pt-2 pb-24">
-          {filteredArtists.length === 0 && !loading && hasSearched ? (
+          {isError && hasSearched && !loading ? (
+            <div className="text-center text-gray-400 py-6">
+              Search failed. Please try again.
+            </div>
+          ) : filteredArtists.length === 0 && !loading && hasSearched ? (
             <div className="text-center text-gray-400 py-6">
               No artists found.
             </div>
@@ -187,7 +264,10 @@ export default function MobileSearchPage() {
                         {artist.name}
                       </span>
                       <span className="text-sm text-gray-400">
-                        {artist.category}
+                        {artist.categoryLabel}
+                        {artist.subArtistTypes.length > 0
+                          ? ` • ${artist.subArtistTypes.slice(0, 2).join(", ")}`
+                          : ""}
                       </span>
                     </div>
                   </button>
