@@ -20,7 +20,12 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
   const { data: session } = useSession();
   const { isInstalled, installApp } = usePWAInstall();
+  const [mounted, setMounted] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -99,7 +104,9 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-full w-full md:w-80 bg-background md:border-l border-background-light z-[99999] transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-full md:w-80 bg-background md:border-l border-background-light z-[99999] transform ${
+          mounted ? 'transition-transform duration-300 ease-in-out' : ''
+        } ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         } overflow-y-auto`}
       >

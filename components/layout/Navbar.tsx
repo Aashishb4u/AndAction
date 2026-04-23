@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -22,10 +22,11 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [isConvertingArtist, setIsConvertingArtist] = useState(false);
   const [showJoinArtistConfirm, setShowJoinArtistConfirm] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const lastScrollYRef = useRef(0);
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -35,25 +36,56 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
     setMounted(true);
   }, []);
 
-useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+
+    const handleChange = () => {
+      setIsDesktop(mediaQuery.matches);
+    };
+
+    handleChange();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop) {
+      setIsVisible(true);
+      setIsScrolled(false);
+      lastScrollYRef.current = 0;
+      return;
+    }
+
+    let timeoutId: NodeJS.Timeout | null = null;
 
     const handleScroll = () => {
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         const currentScrollY = window.scrollY;
+        const lastScrollY = lastScrollYRef.current;
+
         setIsScrolled(currentScrollY > 10);
         setIsVisible(!(currentScrollY > lastScrollY && currentScrollY > 100));
-        setLastScrollY(currentScrollY);
+
+        lastScrollYRef.current = currentScrollY;
       }, 10);
     };
+
+    lastScrollYRef.current = window.scrollY;
+    handleScroll();
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [lastScrollY]);
+  }, [isDesktop]);
 
 
   const navItems: NavItem[] = [
@@ -109,11 +141,17 @@ useEffect(() => {
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-[9999] ${
-        mounted ? 'transition-all duration-300 ease-in-out' : ''
+        mounted && isDesktop ? "transition-all duration-300 ease-in-out" : ""
       } ${
         // glass blur only when the page is scrolled AND the navbar is visible
         isScrolled && isVisible ? "backdrop-blur-xl" : ""
-      } ${isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"} ${className}`}
+      } ${
+        !isDesktop
+          ? "translate-y-0 opacity-100"
+          : isVisible
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-full opacity-0"
+      } ${className}`}
       style={
         isScrolled && isVisible
           ? { backgroundColor: '#0F0F0F1A', WebkitBackdropFilter: 'blur(2px)', backdropFilter: 'blur(2px)' }
