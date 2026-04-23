@@ -32,10 +32,10 @@ export const metadata: Metadata = {
   authors: [{ name: 'ANDACTION Team' }],
   icons: {
     icon: [
+      { url: '/favicon.ico', type: 'image/png' },
       { url: '/icons/app-mark.svg', type: 'image/svg+xml' },
-      { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' },
     ],
-    shortcut: '/icons/icon-192.png',
+    shortcut: '/favicon.ico',
     apple: '/icons/apple-touch-icon.png',
   },
   openGraph: {
@@ -86,7 +86,6 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
         <link rel="icon" type="image/svg+xml" href="/icons/app-mark.svg" />
       </head>
       <body

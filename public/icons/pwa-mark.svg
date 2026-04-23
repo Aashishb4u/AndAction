@@ -1,12 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <clipPath id="pwa-circle">
-      <circle cx="256" cy="256" r="256"/>
-    </clipPath>
-  </defs>
-  <circle cx="256" cy="256" r="256" fill="#0A0A0A"/>
-  <g clip-path="url(#pwa-circle)" transform="translate(256 256) scale(1.65) translate(-256 -256)">
-    <polygon points="144,144 288,256 144,368 144,312 224,256 144,200" fill="#F04B23"/>
-    <polygon points="232,144 376,256 232,368 232,312 312,256 232,200" fill="#E10098"/>
-  </g>
+  <rect width="512" height="512" fill="#0A0A0A"/>
+  <polygon points="144,144 288,256 144,368 144,312 224,256 144,200" fill="#F04B23"/>
+  <polygon points="232,144 376,256 232,368 232,312 312,256 232,200" fill="#E10098"/>
 </svg>
