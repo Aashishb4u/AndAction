@@ -104,16 +104,14 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           />
         </div>
         
-        {/* Pink spotlight — originates from curve center, extends into Artists section */}
         <div
-          className="absolute left-1/2 top-0 pointer-events-none"
+          className="absolute left-1/2 md:top-[-20vh] overflow-hidden top-[-50px] pointer-events-none bg-top bg-no-repeat bg-contain"
           style={{
             width: '85%',
             height: '1800px',
             transform: 'translate(-50%, 0)',
-            background: 'radial-gradient(ellipse 55% 65% at 50% 0%, rgba(255,45,122,0.32) 0%, rgba(255,45,122,0.16) 20%, rgba(255,45,122,0.08) 45%, rgba(255,45,122,0.03) 70%, transparent 95%)',
+            backgroundImage: "url('/icons/focus_spotlight.svg')",
             zIndex: 1,
-            mixBlendMode: 'screen',
           }}
         />
       </div>

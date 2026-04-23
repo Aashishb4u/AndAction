@@ -134,7 +134,7 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
   return (
     <section className="relative w-full pt-2 pb-20 md:pb-8 overflow-hidden">
       {/* Responsive Background Images */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
+      {/* <div className="absolute inset-0 z-0 pointer-events-none">
         <div
           className="absolute inset-0 bg-top bg-no-repeat bg-cover md:hidden"
           style={{ backgroundImage: "url('/icons/focus_spotlight.svg')" }}
@@ -143,7 +143,7 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
           className="absolute inset-0 hidden bg-top bg-no-repeat bg-cover md:block"
           style={{ backgroundImage: "url('/icons/web_focus.svg')" }}
         />
-      </div>
+      </div> */}
 
       {/* Content */}
       <div className="relative z-20 max-w-7xl mx-auto space-y-6">
