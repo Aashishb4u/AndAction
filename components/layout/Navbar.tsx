@@ -141,7 +141,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-[9999] ${
-        mounted && isDesktop ? "transition-all duration-300 ease-in-out" : ""
+        mounted && isDesktop ? "transition-[transform,opacity] duration-300 ease-in-out" : ""
       } ${
         // glass blur only when the page is scrolled AND the navbar is visible
         isScrolled && isVisible ? "backdrop-blur-xl" : ""
@@ -151,7 +151,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
           : isVisible
             ? "translate-y-0 opacity-100"
             : "-translate-y-full opacity-0"
-      } ${className}`}
+      } transform-gpu ${className}`}
       style={
         isScrolled && isVisible
           ? { backgroundColor: '#0F0F0F1A', WebkitBackdropFilter: 'blur(2px)', backdropFilter: 'blur(2px)' }

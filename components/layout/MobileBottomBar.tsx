@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Home from '../icons/home';
@@ -18,6 +18,10 @@ interface BottomBarItem {
 
 const MobileBottomBar = () => {
   const pathname = usePathname();
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollYRef = useRef(0);
+  const tickingRef = useRef(false);
+  const isVisibleRef = useRef(true);
 
   const isActive = (href: string) => {
     if (href === '/') {
@@ -26,6 +30,47 @@ const MobileBottomBar = () => {
     return pathname.startsWith(href);
   };
 
+  useEffect(() => {
+    const updateVisibility = () => {
+      const currentScrollY = window.scrollY;
+      const lastScrollY = lastScrollYRef.current;
+      const delta = currentScrollY - lastScrollY;
+
+      if (currentScrollY < 40) {
+        if (!isVisibleRef.current) {
+          isVisibleRef.current = true;
+          setIsVisible(true);
+        }
+        lastScrollYRef.current = currentScrollY;
+        tickingRef.current = false;
+        return;
+      }
+
+      if (Math.abs(delta) >= 10) {
+        const nextVisible = delta < 0;
+        if (nextVisible !== isVisibleRef.current) {
+          isVisibleRef.current = nextVisible;
+          setIsVisible(nextVisible);
+        }
+        lastScrollYRef.current = currentScrollY;
+      }
+
+      tickingRef.current = false;
+    };
+
+    const handleScroll = () => {
+      if (tickingRef.current) return;
+      tickingRef.current = true;
+      requestAnimationFrame(updateVisibility);
+    };
+
+    lastScrollYRef.current = window.scrollY;
+    isVisibleRef.current = true;
+    setIsVisible(true);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const bottomBarItems: BottomBarItem[] = [
     {
@@ -80,10 +125,12 @@ const MobileBottomBar = () => {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+      className={`fixed bottom-0 left-0 right-0 z-50 md:hidden transform-gpu transition-transform duration-300 ease-out ${
+        isVisible ? 'translate-y-0' : 'translate-y-full pointer-events-none'
+      }`}
     >
       <div
-        className="backdrop-blur-xl border-t border-white/10"
+        className="backdrop-blur-xl border-t border-white/10 safe-area-pb mobile-bottom-bar-enhanced"
         style={{
           backgroundColor: '#0F0F0FCC',
           WebkitBackdropFilter: 'blur(12px)',
@@ -97,7 +144,7 @@ const MobileBottomBar = () => {
               <Link
                 key={item.id}
                 href={item.href}
-                className="flex flex-col items-center justify-center min-w-0 flex-1 py-3 px-1 transition-all duration-200 ease-out"
+                className="flex flex-col items-center justify-center min-w-0 flex-1 py-3 px-1"
               >
                 <div className="mb-1.5">
                   <div
