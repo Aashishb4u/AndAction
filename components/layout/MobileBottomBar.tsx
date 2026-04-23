@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useEffect, useLayoutEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Home from '../icons/home';
@@ -19,24 +18,6 @@ interface BottomBarItem {
 
 const MobileBottomBar = () => {
   const pathname = usePathname();
-  // const [activeItem, setActiveItem] = useState<string>('');
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useLayoutEffect(() => {
-    setPortalTarget(document.body);
-  }, []);
-
-  useEffect(() => {
-    if (!portalTarget) return;
-
-    // Wait one frame so browser settles viewport/toolbars, then animate once.
-    const rafId = window.requestAnimationFrame(() => {
-      setIsVisible(true);
-    });
-
-    return () => window.cancelAnimationFrame(rafId);
-  }, [portalTarget]);
 
   const isActive = (href: string) => {
     if (href === '/') {
@@ -97,16 +78,12 @@ const MobileBottomBar = () => {
   //   }
   // }, [pathname]);
 
-  if (!portalTarget) return null;
-
-  return createPortal(
+  return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-50 md:hidden transform-gpu transition-[opacity,transform] duration-200 ease-out will-change-transform ${
-        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
-      }`}
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
     >
       <div
-        className="backdrop-blur-xl border-t border-white/10 safe-area-pb"
+        className="backdrop-blur-xl border-t border-white/10"
         style={{
           backgroundColor: '#0F0F0FCC',
           WebkitBackdropFilter: 'blur(12px)',
@@ -140,8 +117,7 @@ const MobileBottomBar = () => {
           })}
         </nav>
       </div>
-    </div>,
-    portalTarget,
+    </div>
   );
 };
 

@@ -25,9 +25,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { data: session } = useSession();
   const user = session?.user;
   const { isInstalled, installApp } = usePWAInstall();
+  const [mounted, setMounted] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
   const [isConvertingArtist, setIsConvertingArtist] = useState(false);
   const [showJoinArtistConfirm, setShowJoinArtistConfirm] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -143,7 +148,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-screen max-h-screen w-80 max-w-full sm:w-96 bg-background border-l border-background-light z-99999 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-screen max-h-screen w-80 max-w-full sm:w-96 bg-background border-l border-background-light z-99999 transform ${
+          mounted ? "transition-transform duration-300 ease-in-out" : ""
+        } ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } sidebar-responsive`}
         style={{
