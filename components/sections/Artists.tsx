@@ -132,7 +132,7 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
   }, [locationQueryKey]);
 
   return (
-    <section className="relative w-full pt-2 pb-20 md:pb-8 overflow-hidden">
+    <section className="relative w-full pt-6 pb-20 md:pb-8 overflow-hidden">
       {/* Responsive Background Images */}
       {/* <div className="absolute inset-0 z-0 pointer-events-none">
         <div
