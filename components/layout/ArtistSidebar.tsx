@@ -90,7 +90,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   const displayRole = artist?.artistType || user?.role || 'Artist';
   const avatar = user?.avatar && /^\d+$/.test(String(user.avatar))
     ? `/avatars/${user.avatar}.png`
-    : user?.avatar || '/icons/images.jpeg';
+    : user?.avatar || '/avatars/default.jpg';
 
   return (
     <>

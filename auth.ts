@@ -345,6 +345,10 @@ export const {
             include: { artists: { orderBy: { profileOrder: "asc" }, take: 1 } },
           });
 
+          if (!dbUser) {
+            return null;
+          }
+
           if (dbUser) {
             token.role = dbUser.role;
             token.firstName = dbUser.firstName;

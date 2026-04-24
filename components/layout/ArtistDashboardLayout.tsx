@@ -51,7 +51,7 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
               src={
                 session?.user?.avatar && /^\d+$/.test(String(session.user.avatar))
                   ? `/avatars/${session.user.avatar}.png`
-                  : session?.user?.avatar || '/icons/images.jpeg'
+                  : session?.user?.avatar || '/avatars/default.jpg'
               }
               alt="Profile"
               width={40}

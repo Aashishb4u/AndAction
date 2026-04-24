@@ -1,7 +1,7 @@
 import React from 'react';
 import { Metadata } from 'next';
 import PageLayout from '@/components/layout/PageLayout';
-import { Users, Target, Heart, Zap, Music, Calendar, Shield, Award } from 'lucide-react';
+import { Users, Target, Heart, Zap, Music, Calendar, Shield, Award, Mail, Phone } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'About Us - ANDACTION | Connecting Talent with Unforgettable Experiences',
@@ -131,18 +131,20 @@ const AboutPage = () => {
             <p className="text-text-light-gray leading-relaxed font-medium">
               Let’s make magic happen—directly, affordably, and effortlessly.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-6">
+              <a
+                href="mailto:official@andaction.in"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
+              >
+                <Mail className="w-4 h-4" />
+                <span>official@andaction.in</span>
+              </a>
               <a
                 href="tel:+918860014889"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
               >
-                <span>Call Us: +91 8860014889</span>
-              </a>
-              <a
-                href="mailto:official@andaction.in"
-                className="inline-flex items-center gap-2 px-6 py-3 border-2 border-primary-pink text-primary-pink font-semibold rounded-full hover:bg-primary-pink hover:text-white transition-all duration-300"
-              >
-                <span>Email Support</span>
+                <Phone className="w-4 h-4" />
+                <span>+91 8860014889</span>
               </a>
             </div>
           </div>
