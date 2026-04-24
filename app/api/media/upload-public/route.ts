@@ -5,10 +5,14 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 
 function requireUploadSecret(request: NextRequest) {
-  const expected = process.env.PUBLIC_UPLOAD_SECRET;
-  if (!expected) return false;
+  const expectedPublic = process.env.PUBLIC_UPLOAD_SECRET;
+  const expectedVps = process.env.VPS_UPLOAD_SECRET;
+  if (!expectedPublic && !expectedVps) return false;
   const provided = request.headers.get("x-upload-secret");
-  return typeof provided === "string" && provided === expected;
+  if (typeof provided !== "string" || !provided) return false;
+  if (expectedPublic && provided === expectedPublic) return true;
+  if (expectedVps && provided === expectedVps) return true;
+  return false;
 }
 
 function normalizeExtension(extension: string) {

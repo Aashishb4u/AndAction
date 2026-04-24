@@ -220,7 +220,7 @@ export default function MobileSearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen bg-[#1B1B1B] text-white flex flex-col">
       {/* Top Bar */}
       <div className="p-4 pb-2 mt-2 flex flex-col">
         <div className="relative w-full ">
