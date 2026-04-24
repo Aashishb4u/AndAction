@@ -23,13 +23,6 @@ export const metadata: Metadata = {
   description: 'Connecting talent with unforgettable experiences, all in one place! Find and book the perfect artists for your events with ANDACTION.',
   keywords: 'artists, events, booking, entertainment, performers, talent, shows',
   authors: [{ name: 'ANDACTION Team' }],
-  icons: {
-    icon: [
-      { url: '/icons/logo.jpeg', type: 'image/jpeg' },
-    ],
-    shortcut: '/icons/logo.jpeg',
-    apple: '/icons/logo.jpeg',
-  },
 };
 
 export const viewport = {
@@ -53,8 +46,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="ANDACTION" />
         <meta name="theme-color" content="#000000" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" type="image/svg+xml" href="/icons/app-mark.svg" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96.png" />
       </head>
       <body
         className={`${raleway.variable} ${poppins.variable} antialiased bg-background min-h-screen`}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { ArtistProfileSetupPreferences } from "@/types";
 
 export interface FindArtistModalProps {
   isOpen: boolean;
@@ -45,8 +46,37 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
   });
 
   // Fetch sub-artist types from database
-  const { subTypes: subArtistSuggestions } = useSubArtistTypes();
+  const { subTypes: fetchedSubArtistTypes } = useSubArtistTypes();
   const { categories } = useArtistCategories();
+
+  const [preferences, setPreferences] =
+    useState<ArtistProfileSetupPreferences | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || preferences) return;
+    let isActive = true;
+
+    const load = async () => {
+      try {
+        const res = await fetch("/api/preferences/artist-profile", {
+          cache: "no-store",
+        });
+        const json = await res.json();
+        const prefs = json?.data?.preferences as ArtistProfileSetupPreferences;
+        if (!isActive) return;
+        if (prefs && typeof prefs === "object") setPreferences(prefs);
+        else setPreferences(null);
+      } catch {
+        if (!isActive) return;
+        setPreferences(null);
+      }
+    };
+
+    load();
+    return () => {
+      isActive = false;
+    };
+  }, [isOpen, preferences]);
 
   // Sub-category multi-tag UI state
   const [subInput, setSubInput] = useState<string>("");
@@ -70,7 +100,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
 
   const locationOptions = INDIAN_CITIES;
 
-  const eventTypes = [
+  const fallbackEventTypes = [
     { value: "wedding", label: "Wedding" },
     { value: "corporate", label: "Corporate Event" },
     { value: "birthday", label: "Birthday Party" },
@@ -79,7 +109,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     { value: "other", label: "Other" },
   ];
 
-  const languages = [
+  const fallbackLanguages = [
     { value: "hindi", label: "Hindi" },
     { value: "english", label: "English" },
     { value: "marathi", label: "Marathi" },
@@ -104,6 +134,40 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     { value: "maithili", label: "Maithili" }
   ];
 
+  const languageOptions = useMemo(() => {
+    const list = preferences?.languages;
+    return Array.isArray(list) && list.length > 0 ? list : fallbackLanguages;
+  }, [preferences]);
+
+  const eventTypeOptions = useMemo(() => {
+    const list = preferences?.eventTypes;
+    return Array.isArray(list) && list.length > 0 ? list : fallbackEventTypes;
+  }, [preferences]);
+
+  const stateOptions = useMemo(() => {
+    const list = preferences?.states;
+    return Array.isArray(list) && list.length > 0 ? list : INDIAN_STATES;
+  }, [preferences]);
+
+  const subArtistSuggestions = useMemo(() => {
+    const prefList = Array.isArray(preferences?.subArtistSuggestions)
+      ? preferences?.subArtistSuggestions
+      : [];
+    const merged = [...fetchedSubArtistTypes, ...prefList];
+    const seen = new Set<string>();
+    const deduped: string[] = [];
+    for (const item of merged) {
+      const v = String(item || "").trim();
+      if (!v) continue;
+      const key = v.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(v);
+    }
+    deduped.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    return deduped;
+  }, [fetchedSubArtistTypes, preferences]);
+
   // Language dropdown state
   const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
 
@@ -121,8 +185,8 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
 
   // Toggle all languages
   const toggleAllLanguages = () => {
-    const allValues = languages.map((l) => l.value);
-    if ((formData.performingLanguage || []).length === languages.length) {
+    const allValues = languageOptions.map((l) => l.value);
+    if ((formData.performingLanguage || []).length === languageOptions.length) {
       handleInputChange('performingLanguage', []);
     } else {
       handleInputChange('performingLanguage', allValues);
@@ -207,7 +271,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       size="full"
       variant="bottom-sheet"
       className="md:max-w-2xl border-none bg-background h-[90vh] md:!h-auto md:!max-h-[90vh]"
-      headerClassName="md:px-8 md:py-4 px-4 py-3"
+      headerClassName="md:px-8 md:py-4 px-4 py-3 text-left"
     >
       <div className="md:px-8 px-4 md:pb-8 pb-4 md:pt-4 pt-4 md:space-y-6 space-y-4">
         {/* Artist Category */}
@@ -329,7 +393,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             <label className="secondary-text  block mb-1">Event State</label>
             <Select
               placeholder="Select state"
-              options={INDIAN_STATES}
+              options={stateOptions}
               value={formData.eventState}
               onChange={(value) => handleInputChange("eventState", value)}
             />
@@ -351,7 +415,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             <label className="secondary-text  block mb-1">Event type</label>
             <Select
               placeholder="Select event type"
-              options={eventTypes}
+              options={eventTypeOptions}
               value={formData.eventType}
               onChange={(value) => handleInputChange("eventType", value)}
             />
@@ -379,11 +443,11 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             <div className="flex-1 flex flex-wrap gap-2 items-center">
               {(formData.performingLanguage || []).length === 0 ? (
                 <span className="text-text-gray">Select languages</span>
-              ) : (formData.performingLanguage || []).length === languages.length ? (
+              ) : (formData.performingLanguage || []).length === languageOptions.length ? (
                 <span className="text-white">All Languages</span>
               ) : (
                 (formData.performingLanguage || []).map((val) => {
-                  const label = languages.find((l) => l.value === val)?.label || val;
+                  const label = languageOptions.find((l) => l.value === val)?.label || val;
                   return (
                     <span key={val} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
                       <span className="text-white">{label}</span>
@@ -439,14 +503,14 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
                   <label className="flex items-center gap-3 px-5 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
                     <input
                       type="checkbox"
-                      checked={(formData.performingLanguage || []).length === languages.length}
+                      checked={(formData.performingLanguage || []).length === languageOptions.length}
                       onChange={toggleAllLanguages}
                       className="w-5 h-5 accent-primary-pink rounded"
                     />
                     <span className="text-white font-medium">All Languages</span>
                   </label>
 
-                  {languages.map((language) => (
+                  {languageOptions.map((language) => (
                     <label
                       key={language.value}
                       className="flex items-center gap-3 px-5 py-3 hover:bg-background-light cursor-pointer"
