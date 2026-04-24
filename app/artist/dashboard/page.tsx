@@ -378,7 +378,7 @@ export default function ArtistDashboard() {
                       <div className="flex items-start gap-3">
                         <div className="relative h-31 w-22 shrink-0 overflow-hidden rounded-xl border border-[#e6d7c8] sm:h-35 sm:w-25">
                           <Image
-                            src={profile?.profileImage || session?.user?.avatar || "/icons/images.jpeg"}
+                            src={profile?.profileImage || session?.user?.avatar || "/avatars/default.jpg"}
                             alt={profile?.stageName || fullName || "Artist"}
                             fill
                             unoptimized
@@ -514,7 +514,7 @@ export default function ArtistDashboard() {
                   <div key={profile.id} className="w-full shrink-0 snap-start">
                     <div className="relative aspect-[4/5]">
                       <Image
-                        src={profile?.profileImage || session?.user?.avatar || "/icons/images.jpeg"}
+                        src={profile?.profileImage || session?.user?.avatar || "/avatars/default.jpg"}
                         alt={profile?.stageName || fullName || "Artist"}
                         fill
                         unoptimized

@@ -169,7 +169,7 @@ function ArtistProfileContent() {
     languages: artistProfile.performingLanguage
       ? artistProfile.performingLanguage.split(",").map((lang) => lang.trim())
       : [],
-    image: artistProfile.profileImage || user.avatar || "/icons/images.jpeg",
+    image: artistProfile.profileImage || user.avatar || "/avatars/default.jpg",
     isBookmarked: false,
     gender: user.gender || "",
     subCategory: artistProfile.subArtistType || "",

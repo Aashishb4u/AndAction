@@ -1,13 +1,7 @@
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export function GET() {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="31" fill="#0A0A0A"/>
-  <g transform="translate(0 0)">
-    <path d="M19 20 L36 32 L19 44 L19 38 L29 32 L19 26 Z" fill="#F04B23"/>
-    <path d="M28 20 L45 32 L28 44 L28 38 L38 32 L28 26 Z" fill="#E10098"/>
-  </g>
-</svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect x="56" y="56" width="400" height="400" rx="120" fill="#0A0A0A"/><polygon points="144,144 288,256 144,368 144,312 224,256 144,200" fill="#F04B23"/><polygon points="232,144 376,256 232,368 232,312 312,256 232,200" fill="#E10098"/></svg>`;
 
   return new Response(svg, {
     headers: {
@@ -16,3 +10,4 @@ export function GET() {
     },
   });
 }
+

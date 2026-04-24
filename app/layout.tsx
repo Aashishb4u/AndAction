@@ -18,37 +18,17 @@ const poppins = Poppins({
   display: 'swap',
 });
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  process.env.NEXT_PUBLIC_NEXTAUTH_URL ||
-  process.env.NEXTAUTH_URL ||
-  'http://localhost:3000';
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
   title: 'ANDACTION - Discover and Book Perfect Artists for your Events',
   description: 'Connecting talent with unforgettable experiences, all in one place! Find and book the perfect artists for your events with ANDACTION.',
   keywords: 'artists, events, booking, entertainment, performers, talent, shows',
   authors: [{ name: 'ANDACTION Team' }],
   icons: {
     icon: [
-      { url: '/favicon.ico', type: 'image/png' },
-      { url: '/icons/app-mark.svg', type: 'image/svg+xml' },
+      { url: '/icons/logo.jpeg', type: 'image/jpeg' },
     ],
-    shortcut: '/favicon.ico',
-    apple: '/icons/apple-touch-icon.png',
-  },
-  openGraph: {
-    title: 'ANDACTION - Discover and Book Perfect Artists for your Events',
-    description: 'Connecting talent with unforgettable experiences, all in one place! Find and book the perfect artists for your events with ANDACTION.',
-    type: 'website',
-    images: [{ url: '/icons/icon-512.png', width: 512, height: 512, alt: 'ANDACTION' }],
-  },
-  twitter: {
-    card: 'summary',
-    title: 'ANDACTION',
-    description: 'Discover and book perfect artists for your events.',
-    images: ['/icons/icon-512.png'],
+    shortcut: '/icons/logo.jpeg',
+    apple: '/icons/logo.jpeg',
   },
 };
 
@@ -66,18 +46,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'Organization',
-              name: 'ANDACTION',
-              url: siteUrl,
-              logo: `${siteUrl.replace(/\/$/, '')}/icons/icon-512.png`,
-            }),
-          }}
-        />
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

@@ -27,6 +27,8 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   const [showJoinArtistConfirm, setShowJoinArtistConfirm] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const lastScrollYRef = useRef(0);
+  const tickingRef = useRef(false);
+  const isVisibleRef = useRef(true);
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -55,37 +57,64 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!isDesktop) {
-      setIsVisible(true);
-      setIsScrolled(false);
-      lastScrollYRef.current = 0;
-      return;
-    }
+    const updateVisibility = () => {
+      const currentScrollY = window.scrollY;
+      const lastScrollY = lastScrollYRef.current;
+      const delta = currentScrollY - lastScrollY;
 
-    let timeoutId: NodeJS.Timeout | null = null;
+      setIsScrolled(currentScrollY > 10);
+
+      if (currentScrollY < 40) {
+        if (!isVisibleRef.current) {
+          isVisibleRef.current = true;
+          setIsVisible(true);
+        }
+        lastScrollYRef.current = currentScrollY;
+        tickingRef.current = false;
+        return;
+      }
+
+      if (isDesktop) {
+        const nextVisible = !(delta > 0 && currentScrollY > 100);
+        if (nextVisible !== isVisibleRef.current) {
+          isVisibleRef.current = nextVisible;
+          setIsVisible(nextVisible);
+        }
+        lastScrollYRef.current = currentScrollY;
+        tickingRef.current = false;
+        return;
+      }
+
+      if (Math.abs(delta) >= 10) {
+        const nextVisible = delta < 0;
+        if (nextVisible !== isVisibleRef.current) {
+          isVisibleRef.current = nextVisible;
+          setIsVisible(nextVisible);
+        }
+        lastScrollYRef.current = currentScrollY;
+      }
+
+      tickingRef.current = false;
+    };
 
     const handleScroll = () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        const currentScrollY = window.scrollY;
-        const lastScrollY = lastScrollYRef.current;
-
-        setIsScrolled(currentScrollY > 10);
-        setIsVisible(!(currentScrollY > lastScrollY && currentScrollY > 100));
-
-        lastScrollYRef.current = currentScrollY;
-      }, 10);
+      if (tickingRef.current) return;
+      tickingRef.current = true;
+      requestAnimationFrame(updateVisibility);
     };
 
     lastScrollYRef.current = window.scrollY;
-    handleScroll();
+    isVisibleRef.current = true;
+    setIsVisible(true);
+    setIsScrolled(window.scrollY > 10);
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [isDesktop]);
+
+  const visibilityClasses = isVisible
+    ? "translate-y-0 opacity-100"
+    : "-translate-y-full opacity-0 pointer-events-none";
 
 
   const navItems: NavItem[] = [
@@ -141,17 +170,11 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-[9999] ${
-        mounted && isDesktop ? "transition-[transform,opacity] duration-300 ease-in-out" : ""
+        mounted ? "transition-[transform,opacity] duration-300 ease-in-out" : ""
       } ${
         // glass blur only when the page is scrolled AND the navbar is visible
         isScrolled && isVisible ? "backdrop-blur-xl" : ""
-      } ${
-        !isDesktop
-          ? "translate-y-0 opacity-100"
-          : isVisible
-            ? "translate-y-0 opacity-100"
-            : "-translate-y-full opacity-0"
-      } transform-gpu ${className}`}
+      } ${visibilityClasses} transform-gpu ${className}`}
       style={
         isScrolled && isVisible
           ? { backgroundColor: '#0F0F0F1A', WebkitBackdropFilter: 'blur(2px)', backdropFilter: 'blur(2px)' }
