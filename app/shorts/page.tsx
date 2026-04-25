@@ -58,6 +58,23 @@ import { getArtishName } from "@/lib/utils";
 export default function ShortsPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { categoriesWithAll } = useArtistCategories();
+  const categoryLabelMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const category of categoriesWithAll) {
+      map.set(category.value.toLowerCase(), category.label);
+      map.set(category.label.toLowerCase(), category.label);
+    }
+    return map;
+  }, [categoriesWithAll]);
+
+  const resolveCategoryLabel = useCallback(
+    (rawValue?: string) => {
+      const raw = (rawValue || "").trim();
+      if (!raw) return "";
+      return categoryLabelMap.get(raw.toLowerCase()) || raw;
+    },
+    [categoryLabelMap],
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -338,9 +355,10 @@ export default function ShortsPage() {
 
     return groupedShorts.slice(startIndex, endIndex + 1).map((short, idx) => ({
       ...short,
+      category: resolveCategoryLabel(short.category),
       absoluteIndex: startIndex + idx,
     }));
-  }, [currentIndex, groupedShorts]);
+  }, [currentIndex, groupedShorts, resolveCategoryLabel]);
 
   // Bookmark handler: persist to backend and update state
   const handleBookmark = async (id: string) => {

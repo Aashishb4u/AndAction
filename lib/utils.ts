@@ -105,16 +105,31 @@ export function isTokenExpired(expiryDate: Date | null): boolean {
 }
 
 export function buildArtishProfileUrl(avatar: string) {
-  if (!avatar) return "/avatars/default.jpg";
+  const value = typeof avatar === "string" ? avatar.trim() : "";
+  if (!value) return "/avatars/default.jpg";
 
-  if (!isNaN(Number(avatar))) {
-    return `/avatars/${avatar}.png`;
+  if (!isNaN(Number(value))) {
+    return `/avatars/${value}.png`;
   }
 
-  if (avatar.startsWith("http")) {
-    return avatar;
+  if (/^https?:\/\//i.test(value)) {
+    return value;
   }
-  return avatar;
+  if (value.startsWith("/")) return value;
+
+  const adminBase =
+    (process.env.NEXT_PUBLIC_ADMIN_BASE_URL || "https://admin.andaction.in")
+      .trim()
+      .replace(/\/+$/, "");
+
+  if (value.includes("/")) {
+    if (value.startsWith("avatars/")) return `${adminBase}/storage/${value}`;
+    if (value.startsWith("storage/")) return `${adminBase}/${value}`;
+    if (value.startsWith("uploads/")) return `/${value}`;
+    return `/${value}`;
+  }
+
+  return `${adminBase}/storage/avatars/${encodeURIComponent(value)}`;
 }
 
 export function getArtishName(

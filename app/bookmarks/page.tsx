@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import SiteLayout from '@/components/layout/SiteLayout';
@@ -8,6 +8,8 @@ import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import ArtistGrid from '@/components/sections/ArtistGrid';
 import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 type TabType = 'Artist' | 'Videos' | 'Shorts';
 
@@ -15,6 +17,10 @@ export default function BookmarksPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('Artist');
+  const { categories } = useArtistCategories();
+  const resolveArtistTypeLabel = useMemo(() => {
+    return (rawValue?: string) => findCategoryLabel(categories, rawValue);
+  }, [categories]);
 
   const [artistBookmarks, setArtistBookmarks] = useState<any[]>([]);
   const [videoBookmarks, setVideoBookmarks] = useState<any[]>([]);
@@ -71,6 +77,7 @@ export default function BookmarksPage() {
               videoUrl: v.url,
               isBookmarked: true,
               artistId: (v.user as any).artists?.[0]?.id || "",
+              artistType: (v.user as any).artists?.[0]?.artistType || "",
             };
           });
 
@@ -213,6 +220,7 @@ export default function BookmarksPage() {
                     id={v.id}
                     title={v.title}
                     creator={v.creator}
+                    artistType={resolveArtistTypeLabel(v.artistType)}
                     thumbnail={v.thumbnail}
                     videoUrl={v.videoUrl}
                     isBookmarked={true}

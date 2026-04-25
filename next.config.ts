@@ -45,6 +45,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "admin.andaction.in",
+        port: "",
+        pathname: "/storage/**",
+      },
     ],
   },
 };

@@ -262,8 +262,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
       // 1️⃣ Compress the file before uploading
       const options = {
-        maxSizeMB: 1, // compress to ~1MB
-        maxWidthOrHeight: 800, // resize if larger
+        maxSizeMB: 0.35,
+        maxWidthOrHeight: 700,
         useWebWorker: true,
       };
 
@@ -297,16 +297,28 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
         body: formDataUpload,
       });
 
-      const json = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      const json = contentType.includes("application/json")
+        ? await res.json().catch(() => null)
+        : null;
+      const messageFromJson =
+        json && typeof json === "object"
+          ? ((json as any).message as string | undefined)
+          : undefined;
 
       if (!res.ok) {
-        console.error(json.message);
-        setUploadError(json.message || "Failed to upload profile photo.");
+        if (res.status === 413) {
+          setUploadError(
+            "Image file is too large. Please upload a smaller image.",
+          );
+        } else {
+          setUploadError(messageFromJson || "Failed to upload profile photo.");
+        }
         setUploading(false);
         return;
       }
 
-      const imageUrl = json?.data?.imageUrl;
+      const imageUrl = (json as any)?.data?.imageUrl;
 
       const updatedData = {
         profilePhoto: compressedFile,
@@ -315,12 +327,18 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
       setFormData((prev) => ({ ...prev, ...updatedData }));
       onUpdateData(updatedData);
-      setUploadMessage(json?.message || "Profile photo uploaded successfully.");
+      setUploadMessage(
+        messageFromJson || "Profile photo uploaded successfully.",
+      );
 
       setUploading(false);
     } catch (error) {
       console.error("Profile photo upload failed:", error);
-      setUploadError("Failed to upload profile photo. Please try again.");
+      setUploadError(
+        error instanceof Error
+          ? error.message
+          : "Failed to upload profile photo. Please try again.",
+      );
       setUploading(false);
     }
   };
