@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import { Artist } from "@/types";
 import { buildArtishProfileUrl } from '@/lib/utils';
 import Cropper, { Area } from "react-easy-crop";
+import imageCompression from "browser-image-compression";
 
 interface ArtistProfileCardProps {
   artist: any;
@@ -89,8 +90,14 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       setUploadMessage("");
       setUploadError("");
 
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 0.35,
+        maxWidthOrHeight: 700,
+        useWebWorker: true,
+      });
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", compressedFile);
       if (artist?.id) {
         formData.append("artistProfileId", String(artist.id));
       }
@@ -100,13 +107,26 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         body: formData,
       });
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Failed to upload profile photo.");
+      const contentType = res.headers.get("content-type") || "";
+      const json = contentType.includes("application/json")
+        ? await res.json().catch(() => null)
+        : null;
+      const messageFromJson =
+        json && typeof json === "object"
+          ? ((json as any).message as string | undefined)
+          : undefined;
 
-      const imageUrl = json.data.imageUrl;
+      if (!res.ok) {
+        if (res.status === 413) {
+          throw new Error("Image file is too large. Please upload a smaller image.");
+        }
+        throw new Error(messageFromJson || "Failed to upload profile photo.");
+      }
+
+      const imageUrl = (json as any)?.data?.imageUrl;
       setLocalImage(imageUrl);
 
-      setUploadMessage(json?.message || "Profile photo uploaded successfully.");
+      setUploadMessage(messageFromJson || "Profile photo uploaded successfully.");
 
       setUploading(false);
     } catch (err) {

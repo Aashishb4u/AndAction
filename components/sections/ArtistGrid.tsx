@@ -35,26 +35,13 @@ const ArtistGrid: React.FC<ArtistGridProps> = ({
 
   return (
     <div className={`md:px-6 ${className}`}>
-      {/* Desktop Grid Layout */}
-      <div className="hidden lg:grid lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[20px]">
         {artists.map((artist) => (
           <ArtistProfileCard
             key={artist.id}
             artist={artist}
             onBookmark={onBookmark}
             layout="grid"
-          />
-        ))}
-      </div>
-
-      {/* Mobile List Layout */}
-      <div className="lg:hidden">
-        {artists.map((artist) => (
-          <ArtistProfileCard
-            key={artist.id}
-            artist={artist}
-            onBookmark={onBookmark}
-            layout="list"
           />
         ))}
       </div>

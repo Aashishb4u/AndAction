@@ -10,6 +10,7 @@ import { Trash2 } from "lucide-react";
 import { useMobileVideoAutoplay } from "@/hooks/use-mobile-video-autoplay";
 import Volume2 from "@/components/icons/volume-2";
 import VolumeX from "@/components/icons/volume-x";
+import { buildArtishProfileUrl } from "@/lib/utils";
 
 interface VideoCardProps {
   id: string;
@@ -43,6 +44,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   id,
   title,
   creator,
+  creatorImage,
   artistType,
   thumbnail,
   videoUrl,
@@ -83,6 +85,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
 
   const isYouTube = isYouTubeUrl(videoUrl);
   const youtubeVideoId = isYouTube ? getYouTubeVideoId(videoUrl) : null;
+  const creatorAvatarSrc = buildArtishProfileUrl(creatorImage ?? "");
 
   // Mobile scroll-based autoplay
   const mobileAutoplayContainerRef = useMobileVideoAutoplay({
@@ -337,7 +340,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
       <div className="mt-3 px-1 flex justify-between items-start gap-3">
         <Link href={artistId ? `/artists/${artistId}?tab=about` : `/videos/${id}`} className="flex gap-3 flex-1 min-w-0 items-center group/link">
             <Image
-              src={"/avatars/default.jpg"}
+              src={creatorAvatarSrc}
               alt={creator}
               width={32}
               height={32}

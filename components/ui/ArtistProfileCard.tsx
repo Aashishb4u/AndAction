@@ -126,11 +126,11 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   // Desktop grid layout
   return (
     <div
-      className={`relative rounded-2xl overflow-hidden artist-card-hover artist-card-animate group cursor-pointer ${className}`}
+      className={`relative flex-shrink-0 w-[150px] h-[225px] md:w-[200px] md:h-[300px] rounded-lg overflow-hidden artist-card-hover artist-card-animate group cursor-pointer ${className}`}
       onClick={handleClick}
     >
       {/* Artist Image - Full Background */}
-      <div className="relative aspect-[6/8] overflow-hidden">
+      <div className="relative w-full h-full overflow-hidden">
         <Image
           src={
             artist.image && artist.image.trim() !== ""

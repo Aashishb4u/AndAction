@@ -547,7 +547,27 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             variant="secondary"
             size="md"
             onClick={handleReset}
-            className="md:flex-1 text-primary-pink bg-[#1B1B1B]! "
+            className="md:flex-1 text-primary-pink bg-[#1B1B1B]! px-8 py-3"
+          >
+            <span className="gradient-text secondary-grey-text">Reset</span>
+          </Button>
+
+          <Button
+            variant="primary"
+            // size="md"
+            onClick={handleViewResults}
+            disabled={!isFormValid}
+            className="md:flex-1 px-8 py-3"
+          >
+            <span className="secondary-grey-text">View result</span>
+          </Button>
+        </div>
+        <div className="flex whitespace-nowrap md:hidden gap-4 pt-4 sticky bottom-4 bg-background py-4 secondary-grey-text">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={handleReset}
+            className="flex-1 text-primary-pink bg-[#1B1B1B]! px-8 py-3"
           >
             <span className="gradient-text secondary-grey-text">Reset</span>
           </Button>
@@ -557,27 +577,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             size="md"
             onClick={handleViewResults}
             disabled={!isFormValid}
-            className="md:flex-1"
-          >
-            <span className="secondary-grey-text">View result</span>
-          </Button>
-        </div>
-        <div className="flex whitespace-nowrap md:hidden gap-4 pt-4 sticky bottom-4 bg-background py-4 secondary-grey-text">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleReset}
-            className="flex-1 text-primary-pink bg-[#1B1B1B]! "
-          >
-            <span className="gradient-text secondary-grey-text">Reset</span>
-          </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleViewResults}
-            disabled={!isFormValid}
-            className="flex-1"
+            className="flex-1 px-8 py-3"
           >
             <span className="secondary-grey-text">View result</span>
           </Button>

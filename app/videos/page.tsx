@@ -24,6 +24,23 @@ import { getArtishName } from "@/lib/utils";
 export default function VideosPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { categoriesWithAll } = useArtistCategories();
+  const categoryLabelMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const category of categoriesWithAll) {
+      map.set(category.value.toLowerCase(), category.label);
+      map.set(category.label.toLowerCase(), category.label);
+    }
+    return map;
+  }, [categoriesWithAll]);
+
+  const resolveArtistTypeLabel = useCallback(
+    (rawValue?: string) => {
+      const raw = (rawValue || "").trim();
+      if (!raw) return "";
+      return categoryLabelMap.get(raw.toLowerCase()) || raw;
+    },
+    [categoryLabelMap],
+  );
   const [shareModal, setShareModal] = useState<{
     isOpen: boolean;
     videoId: string;
@@ -76,11 +93,11 @@ export default function VideosPage() {
         userId: v.user.id, // Add userId for grouping
         thumbnail: v.thumbnailUrl,
         videoUrl: v.url,
-        category: "other",
+        category: v.user.artists?.[0]?.artistType || "",
         isBookmarked: v.isBookmarked || false,
         bookmarkId: v.bookmarkId || null,
         creatorImage: v.user.avatar || v.user.image || undefined,
-        artistType: v.user.artists?.[0]?.artistType || "",
+        artistType: resolveArtistTypeLabel(v.user.artists?.[0]?.artistType),
         artistId: v.user.artists?.[0]?.id || "",
       })),
     ) || [];

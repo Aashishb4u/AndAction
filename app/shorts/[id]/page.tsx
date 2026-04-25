@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
 import { Share2, Bookmark, BookmarkCheck } from "lucide-react";
 import Image from "next/image";
-import { getArtishName } from "@/lib/utils";
+import { buildArtishProfileUrl, getArtishName } from "@/lib/utils";
 
 export default function ShortDetailsPage() {
   const params = useParams();
@@ -51,7 +51,7 @@ export default function ShortDetailsPage() {
           artist: {
             id: v.user?.artist?.id,
             name: getArtishName(v.user.name, v.user.firstName, v.user.lastName),
-            avatar: v.user.avatar,
+            avatar: v.user.avatar || v.user.image,
             verified: v.user.isArtistVerified,
           },
         });
@@ -226,18 +226,12 @@ export default function ShortDetailsPage() {
                   {/* Artist Info */}
                   <div className="flex items-center gap-3">
                     <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-800">
-                      {shortData.artist.avatar ? (
-                        <Image
-                          src={shortData.artist.avatar}
-                          alt={shortData.artist.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">
-                          {shortData.artist.name.charAt(0)}
-                        </div>
-                      )}
+                      <Image
+                        src={buildArtishProfileUrl(shortData.artist.avatar ?? "")}
+                        alt={shortData.artist.name}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">

@@ -7,6 +7,7 @@ import Share from "@/components/icons/share";
 import Play from "@/components/icons/play";
 import Pause from "@/components/icons/pause";
 import Link from "next/link";
+import { buildArtishProfileUrl } from "@/lib/utils";
 
 const SoundOnIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -77,10 +78,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   const youtubeId = extractYouTubeId(short.videoUrl);
   const isYouTube = Boolean(youtubeId);
 
-  const avatarSrc =
-    short.avatar && /^\d+$/.test(String(short.avatar))
-      ? `/avatars/${short.avatar}.png`
-      : short.avatar || "/default.jpg";
+  const avatarSrc = buildArtishProfileUrl(short.avatar ?? "");
 
   /* ---------------- NATIVE VIDEO CONTROL ---------------- */
 
@@ -303,21 +301,14 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
 
         <div className="flex-1 flex flex-col justify-end p-4 pb-8">
           <Link href={`/artists/${short.creatorId}`} className="pointer-events-auto">
-            <div className="flex items-center space-x-2 mb-4 cursor-pointer">
+            <div className="flex items-center mb-4 cursor-pointer">
               <Image
                 src={avatarSrc}
                 alt={short.creator}
                 width={40}
                 height={40}
-                className="rounded-full"
+                className="rounded-full object-cover"
               />
-
-              <div>
-                <h3 className="text-white">{short.creator}</h3>
-                {short.category && (
-                  <p className="text-gray-300 text-sm capitalize">{short.category}</p>
-                )}
-              </div>
             </div>
           </Link>
         </div>

@@ -8,6 +8,8 @@ import ShortsCard from "@/components/ui/ShortsCard";
 import { Loader2 } from "lucide-react";
 import { get } from "node:http";
 import { getArtishName } from "@/lib/utils";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 interface ArtistDetailTabsProps {
   artist: Artist;
@@ -20,6 +22,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   artist,
   isMobile = false,
 }) => {
+  const { categories } = useArtistCategories();
+  const resolveArtistTypeLabel = useCallback(
+    (rawValue?: string) => findCategoryLabel(categories, rawValue),
+    [categories],
+  );
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -615,6 +622,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               onBookmark={(data) => toggleBookmark(data)}
               onShare={() => {}}
               artistId={(video.user as any)?.artist?.id}
+              artistType={resolveArtistTypeLabel(
+                (video.user as any)?.artists?.[0]?.artistType ||
+                  (video.user as any)?.artist?.artistType,
+              )}
               enableMobileAutoplay={true}
             />
           ))}

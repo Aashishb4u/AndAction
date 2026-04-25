@@ -11,6 +11,47 @@ function normalizeExtension(mimeType: string) {
   return raw.split("+")[0].toLowerCase();
 }
 
+async function syncAvatarToAdminPanel(params: {
+  email?: string | null;
+  phoneNumber?: string | null;
+  avatarUrl: string;
+}) {
+  const adminBase =
+    (process.env.ADMIN_API_BASE_URL ||
+      process.env.NEXT_PUBLIC_ADMIN_BASE_URL ||
+      "https://admin.andaction.in")
+      .trim()
+      .replace(/\/+$/, "");
+
+  const secret = (
+    process.env.VPS_UPLOAD_SECRET ||
+    process.env.PUBLIC_UPLOAD_SECRET ||
+    ""
+  ).trim();
+
+  if (!secret) return;
+
+  const email = typeof params.email === "string" ? params.email.trim() : "";
+  const phoneNumber =
+    typeof params.phoneNumber === "string" ? params.phoneNumber.trim() : "";
+  const avatarUrl = params.avatarUrl?.trim();
+  if (!avatarUrl) return;
+  if (!email && !phoneNumber) return;
+
+  await fetch(`${adminBase}/api/media/sync-avatar`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-upload-secret": secret,
+    },
+    body: JSON.stringify({
+      email: email || null,
+      phoneNumber: phoneNumber || null,
+      avatarUrl,
+    }),
+  }).catch(() => {});
+}
+
 async function saveImageLocally(
   userId: string,
   buffer: Buffer,
@@ -76,10 +117,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
           where: { id: existingArtist.id },
           data: { profileImage: fileUrl },
         });
+
+        const currentUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { email: true, phoneNumber: true },
+        });
+        await syncAvatarToAdminPanel({
+          email: currentUser?.email,
+          phoneNumber: currentUser?.phoneNumber,
+          avatarUrl: fileUrl,
+        });
       } else {
         const currentUser = await prisma.user.findUnique({
           where: { id: userId },
-          select: { avatar: true, image: true },
+          select: { avatar: true, image: true, email: true, phoneNumber: true },
         });
         if (currentUser?.avatar) {
           await deleteFromVPS(currentUser.avatar).catch(() => {});
@@ -91,6 +142,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
         await prisma.user.update({
           where: { id: userId },
           data: { avatar: fileUrl, image: fileUrl },
+        });
+
+        await syncAvatarToAdminPanel({
+          email: currentUser?.email,
+          phoneNumber: currentUser?.phoneNumber,
+          avatarUrl: fileUrl,
         });
       }
 

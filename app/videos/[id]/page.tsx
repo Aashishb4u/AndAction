@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SiteLayout from "@/components/layout/SiteLayout";
 import OptimizedVideoPlayer from "@/components/ui/OptimizedVideoPlayer";
@@ -12,6 +12,8 @@ import ShortsCardSkeleton from "@/components/ui/ShortsCardSkeleton";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
+import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { findCategoryLabel } from "@/lib/artist-category-utils";
 import {
   Loader2,
 } from "lucide-react";
@@ -21,6 +23,10 @@ import { getArtishName } from "@/lib/utils";
 export default function VideoDetailsPage() {
   const params = useParams();
   const videoId = params.id as string;
+  const { categories } = useArtistCategories();
+  const resolveArtistTypeLabel = useMemo(() => {
+    return (rawValue?: string) => findCategoryLabel(categories, rawValue);
+  }, [categories]);
 
   const [videoData, setVideoData] = useState<any>(null);
   const [relatedVideos, setRelatedVideos] = useState<any[]>([]);
@@ -86,6 +92,7 @@ export default function VideoDetailsPage() {
             isBookmarked: rv.isBookmarked,
             bookmarkId: rv.bookmarkId,
             artistId: rv.user.artists?.[0]?.id || "",
+            artistType: rv.user.artists?.[0]?.artistType || "",
           })),
         );
         setHasMoreVideos(json.data.videosPagination?.hasNextPage || false);
@@ -238,6 +245,7 @@ export default function VideoDetailsPage() {
           isBookmarked: rv.isBookmarked,
           bookmarkId: rv.bookmarkId,
           artistId: rv.user.artists?.[0]?.id || "",
+          artistType: rv.user.artists?.[0]?.artistType || "",
         }));
         setRelatedVideos((prev) => [...prev, ...newVideos]);
         setVideosPage(nextPage);
@@ -366,6 +374,7 @@ export default function VideoDetailsPage() {
                         id={video.id}
                         title={video.title}
                         creator={video.creator}
+                        artistType={resolveArtistTypeLabel(video.artistType)}
                         thumbnail={video.thumbnail}
                         videoUrl={video.videoUrl}
                         isBookmarked={video.isBookmarked}
