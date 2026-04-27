@@ -126,7 +126,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   // Desktop grid layout
   return (
     <div
-      className={`relative flex-shrink-0 w-[150px] h-[225px] md:w-[200px] md:h-[300px] rounded-lg overflow-hidden artist-card-hover artist-card-animate group cursor-pointer ${className}`}
+      className={`relative flex-shrink-0 w-[200px] h-[300px] rounded-lg overflow-hidden artist-card-hover artist-card-animate group cursor-pointer ${className}`}
       onClick={handleClick}
     >
       {/* Artist Image - Full Background */}
