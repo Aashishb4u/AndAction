@@ -339,13 +339,16 @@ const VideoCard: React.FC<VideoCardProps> = ({
       {/* BOTTOM INFO - Only this area is clickable for navigation */}
       <div className="mt-3 px-1 flex justify-between items-start gap-3">
         <Link href={artistId ? `/artists/${artistId}?tab=about` : `/videos/${id}`} className="flex gap-3 flex-1 min-w-0 items-center group/link">
-            <Image
-              src={creatorAvatarSrc}
-              alt={creator}
-              width={32}
-              height={32}
-              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-            />
+            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+              <Image
+                src={creatorAvatarSrc}
+                alt={creator}
+                width={32}
+                height={32}
+                unoptimized
+                className="w-full h-full object-cover"
+              />
+            </div>
             <div className="flex-1 min-w-0">
               <h3
                 className="btn2 text-white line-clamp-2 transition-colors duration-300 group-hover/link:text-primary-pink"
@@ -358,16 +361,21 @@ const VideoCard: React.FC<VideoCardProps> = ({
                 style={{ fontSize: "14px" }}
               >
                 <span className="align-middle">{creator}</span>
-                {artistType ? (
-                  <span className="inline-flex items-center ml-2 text-text-gray">
+              </p>
+              {artistType ? (
+                <p
+                  className="text-text-gray footnote line-clamp-1"
+                  style={{ fontSize: "14px" }}
+                >
+                  <span className="inline-flex items-center text-text-gray">
                     <span
                       className="w-2 h-2 bg-text-gray rounded-full inline-block mr-2"
                       aria-hidden="true"
                     />
                     <span className="align-middle">{artistType}</span>
                   </span>
-                ) : null}
-              </p>
+                </p>
+              ) : null}
             </div>
           </Link>
 

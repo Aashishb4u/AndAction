@@ -6,7 +6,6 @@ import { Artist } from "@/types";
 import VideoCard from "@/components/ui/VideoCard";
 import ShortsPlayer from "@/components/ui/ShortsPlayer";
 import { Loader2 } from "lucide-react";
-import { get } from "node:http";
 import { getArtishName } from "@/lib/utils";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
@@ -47,6 +46,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const [isLoadingVideos, setIsLoadingVideos] = useState(false);
   const [isInitialLoadingVideos, setIsInitialLoadingVideos] = useState(true);
   const videosObserverRef = useRef<HTMLDivElement>(null);
+  const isFetchingVideosRef = useRef(false);
 
   // Paginated shorts state
   const [artistShorts, setArtistShorts] = useState<any[]>([]);
@@ -55,9 +55,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const [isLoadingShorts, setIsLoadingShorts] = useState(false);
   const [isInitialLoadingShorts, setIsInitialLoadingShorts] = useState(true);
   const shortsObserverRef = useRef<HTMLDivElement>(null);
+  const isFetchingShortsRef = useRef(false);
 
-  const VIDEOS_PER_PAGE = 6;
-  const SHORTS_PER_PAGE = 9;
+  const VIDEOS_PER_PAGE = 5;
+  const SHORTS_PER_PAGE = 5;
 
   const [shortsCurrentIndex, setShortsCurrentIndex] = useState(0);
   const [shortsSoundEnabled, setShortsSoundEnabled] = useState<boolean>(true);
@@ -171,6 +172,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     async (page: number) => {
       if (!artist?.userId) return;
       try {
+        isFetchingVideosRef.current = true;
         if (page === 1) setIsInitialLoadingVideos(true);
         setIsLoadingVideos(true);
         const res = await fetch(
@@ -189,6 +191,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       } finally {
         setIsLoadingVideos(false);
         setIsInitialLoadingVideos(false);
+        isFetchingVideosRef.current = false;
       }
     },
     [artist?.userId],
@@ -199,6 +202,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     async (page: number) => {
       if (!artist?.userId) return;
       try {
+        isFetchingShortsRef.current = true;
         if (page === 1) setIsInitialLoadingShorts(true);
         setIsLoadingShorts(true);
         const res = await fetch(
@@ -217,6 +221,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       } finally {
         setIsLoadingShorts(false);
         setIsInitialLoadingShorts(false);
+        isFetchingShortsRef.current = false;
       }
     },
     [artist?.userId],
@@ -252,6 +257,8 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
+          if (isFetchingVideosRef.current) return;
+          isFetchingVideosRef.current = true;
           setVideosPage((prev) => prev + 1);
         }
       },
@@ -296,7 +303,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         creatorId: artistProfile?.id || artist.id,
         category: resolveArtistTypeLabel(artistProfile?.artistType || ""),
         userId: s.user?.id || "",
-        avatar: s.user?.avatar || s.user?.image || "",
+        avatar: artistProfile?.profileImage || s.user?.avatar || s.user?.image || "",
         videoUrl: s.url,
         thumbnail: s.thumbnailUrl,
         description: s.description || "",
@@ -326,6 +333,8 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       hasMoreShorts &&
       !isLoadingShorts
     ) {
+      if (isFetchingShortsRef.current) return;
+      isFetchingShortsRef.current = true;
       setShortsPage((prev) => prev + 1);
     }
   }, [shortsCurrentIndex, profileShorts.length, hasMoreShorts, isLoadingShorts]);
@@ -789,6 +798,13 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 `${video.user.firstName || ""} ${video.user.lastName || ""}`.trim() ||
                 "Unknown Artist"
               }
+              creatorImage={
+                (video.user as any)?.artists?.[0]?.profileImage ||
+                (video.user as any)?.artist?.profileImage ||
+                video.user?.avatar ||
+                video.user?.image ||
+                ""
+              }
               thumbnail={video.thumbnailUrl}
               videoUrl={video.url}
               isBookmarked={video.isBookmarked}
@@ -861,7 +877,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               <ShortsPlayer
                 short={short}
                 isActive={short.absoluteIndex === shortsCurrentIndex}
-                shouldLoad={true}
+                shouldLoad={short.absoluteIndex === shortsCurrentIndex}
                 onBookmark={handleProfileShortBookmark}
                 onShare={() => {}}
                 soundEnabled={shortsSoundEnabled}
