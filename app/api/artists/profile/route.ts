@@ -7,6 +7,29 @@ import { prisma } from '@/lib/prisma';
 import { ApiErrors, successResponse } from '@/lib/api-response';
 import { geocodeAddress } from '@/lib/geocoding';
 
+const parseYearsOfExperienceBucket = (input: unknown): number | null => {
+  if (input === null || input === undefined) return null;
+
+  if (typeof input === "number") {
+    if (!Number.isFinite(input)) return null;
+    return Math.trunc(input);
+  }
+
+  const raw = String(input).trim();
+  if (!raw) return null;
+
+  if (/^\d+$/.test(raw)) return parseInt(raw, 10);
+
+  const normalized = raw.toLowerCase();
+  if (normalized.includes("10+")) return 5;
+  if (normalized.includes("5-10")) return 4;
+  if (normalized.includes("3-5")) return 3;
+  if (normalized.includes("1-3")) return 2;
+  if (normalized.includes("0-1")) return 1;
+
+  return null;
+};
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json();
@@ -74,6 +97,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
+    const parsedYearsOfExperience = parseYearsOfExperienceBucket(yearsOfExperience);
+    if (yearsOfExperience !== undefined && yearsOfExperience !== null && String(yearsOfExperience).trim() !== "" && parsedYearsOfExperience === null) {
+      return ApiErrors.badRequest("Invalid yearsOfExperience value.");
+    }
+
     // Check if artist profile exists, create if not (for OAuth users)
     const existingPrimaryArtist = await prisma.artist.findFirst({
       where: { userId, profileOrder: 0 },
@@ -85,7 +113,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       artistType,
       subArtistType,
       achievements,
-      yearsOfExperience: yearsOfExperience ? parseInt(yearsOfExperience) : null,
+      yearsOfExperience: parsedYearsOfExperience,
       shortBio,
       performingLanguage: performingLanguages?.join(','),
       performingEventType: performingEventTypes?.join(','),
@@ -282,6 +310,11 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       return ApiErrors.notFound("Artist profile not found.");
     }
 
+    const parsedYearsOfExperience = parseYearsOfExperienceBucket(yearsOfExperience);
+    if (yearsOfExperience !== undefined && yearsOfExperience !== null && String(yearsOfExperience).trim() !== "" && parsedYearsOfExperience === null) {
+      return ApiErrors.badRequest("Invalid yearsOfExperience value.");
+    }
+
     const updatedArtistProfile = await prisma.artist.update({
       where: { id: targetArtist.id },
       data: {
@@ -290,7 +323,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         ...(subArtistType !== undefined && { subArtistType }),
         ...(shortBio !== undefined && { shortBio }),
         ...(achievements !== undefined && { achievements }),
-        ...(yearsOfExperience !== undefined && { yearsOfExperience: Number(yearsOfExperience) }),
+        ...(yearsOfExperience !== undefined && { yearsOfExperience: parsedYearsOfExperience }),
         ...(performingLanguage !== undefined && { performingLanguage }),
         ...(performingEventType !== undefined && { performingEventType }),
         ...(performingStates !== undefined && { performingStates }),

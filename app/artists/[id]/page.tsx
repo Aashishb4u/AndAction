@@ -9,6 +9,7 @@ import ArtistDetailTabs from "@/components/sections/ArtistDetailTabs";
 import { BookingStatus } from "@prisma/client";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
+import { createAuthRedirectUrl } from "@/lib/auth";
 
 export const createBooking = async (artistId: string, formData: any) => {
   try {
@@ -288,14 +289,14 @@ export default function ArtistDetailPage() {
 
   const handleRequestBooking = () => {
     if (!session?.user) {
-      router.push("/auth/signin");
+      router.push(createAuthRedirectUrl("/auth/signin", window.location.pathname + window.location.search));
       return;
     }
     console.log("Request booking");
   };
   const handleCall = () => {
     if (!session?.user) {
-      router.push("/auth/signin");
+      router.push(createAuthRedirectUrl("/auth/signin", window.location.pathname + window.location.search));
       return;
     }
     if (artist.contactNumber) {
@@ -304,7 +305,7 @@ export default function ArtistDetailPage() {
   };
   const handleWhatsApp = () => {
     if (!session?.user) {
-      router.push("/auth/signin");
+      router.push(createAuthRedirectUrl("/auth/signin", window.location.pathname + window.location.search));
       return;
     }
     const whatsappTarget = artist.whatsappNumber || artist.contactNumber;

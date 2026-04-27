@@ -145,11 +145,11 @@ export function useArtistsByType(
     queryKey: artistKeys.byTypeWithLocation(type, location),
     queryFn: () => fetchArtistsByType({ type, location, verified }),
     enabled,
-    staleTime: 1000 * 60 * 10, // 10 minutes - data stays fresh longer
+    staleTime: 0,
     gcTime: 1000 * 60 * 30, // 30 minutes - keep in cache longer
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false, // Critical: don't refetch when component remounts
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: true,
     refetchIntervalInBackground: false,
     retryOnMount: false,
   });
@@ -186,11 +186,11 @@ export function useArtistsByCategoryValues(
       queryKey: artistKeys.byTypeWithLocation(type, location),
       queryFn: () => fetchArtistsByType({ type, location, verified }),
       enabled,
-      staleTime: 1000 * 60 * 10,
+      staleTime: 0,
       gcTime: 1000 * 60 * 30,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      refetchOnMount: false,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      refetchOnMount: true,
       refetchIntervalInBackground: false,
       retryOnMount: false,
     })),

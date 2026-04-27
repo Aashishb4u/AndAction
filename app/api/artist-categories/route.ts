@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type ArtistCategoryRow = {
-  value: string;
-  label: string;
-};
-
 export async function GET(_request: NextRequest) {
   try {
-    const categories = await prisma.$queryRaw<ArtistCategoryRow[]>`
-      SELECT "value", "label"
-      FROM "artist_categories"
-      WHERE "isActive" = true
-      ORDER BY "sortOrder" ASC, "label" ASC
-    `;
+    const categories = await prisma.artist_categories.findMany({
+      where: { isActive: true },
+      select: { value: true, label: true },
+      orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
+    });
 
     return NextResponse.json({
       success: true,

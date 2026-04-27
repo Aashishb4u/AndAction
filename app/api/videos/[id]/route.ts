@@ -48,7 +48,7 @@ export async function GET(
               artists: {
                 take: 1,
                 orderBy: { profileOrder: "asc" },
-                select: { id: true },
+                select: { id: true, profileImage: true, artistType: true, stageName: true },
               },
             },
           },

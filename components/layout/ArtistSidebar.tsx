@@ -10,6 +10,7 @@ import Download from '../icons/download';
 import Support from '../icons/support';
 import { usePWAInstall } from '@/hooks/use-pwa-install';
 import { toast } from 'react-toastify';
+import { buildArtishProfileUrl } from '@/lib/utils';
 
 interface ArtistSidebarProps {
   isOpen: boolean;
@@ -22,10 +23,40 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   const { isInstalled, installApp } = usePWAInstall();
   const [mounted, setMounted] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
+  const [latestAvatar, setLatestAvatar] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) {
+      setLatestAvatar(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchLatest = async () => {
+      try {
+        const res = await fetch('/api/users/profile', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json().catch(() => null);
+        const avatar = json?.data?.avatar;
+        if (!cancelled && typeof avatar === 'string') {
+          setLatestAvatar(avatar);
+        }
+      } catch {}
+    };
+
+    fetchLatest();
+    window.addEventListener('focus', fetchLatest);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', fetchLatest);
+    };
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (isOpen) {
@@ -88,9 +119,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   const displayName =
     artist?.stageName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
   const displayRole = artist?.artistType || user?.role || 'Artist';
-  const avatar = user?.avatar && /^\d+$/.test(String(user.avatar))
-    ? `/avatars/${user.avatar}.png`
-    : user?.avatar || '/avatars/default.jpg';
+  const avatar = buildArtishProfileUrl(latestAvatar ?? user?.avatar ?? '');
 
   return (
     <>

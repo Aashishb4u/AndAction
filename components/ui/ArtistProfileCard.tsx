@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Artist } from "@/types";
 import Bookmark from "../icons/bookmark";
+import { buildArtishProfileUrl } from "@/lib/utils";
 
 interface ArtistProfileCardProps {
   artist: Artist;
@@ -52,13 +53,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
           {/* Artist Image */}
           <div className="relative w-28 h-36 rounded-xl overflow-hidden flex-shrink-0" style={{ backgroundColor: '#111' }}>
             <Image
-              src={
-                artist.image && artist.image.trim() !== ""
-                  ? /^\d+$/.test(String(artist.image))
-                    ? `/avatars/${artist.image}.png`
-                    : artist.image
-                  : "/avatars/default.jpg"
-              }
+              src={buildArtishProfileUrl(artist.image || "")}
               alt={artist.name}
               fill
               className="object-cover scale-[1.02]"
@@ -126,19 +121,13 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   // Desktop grid layout
   return (
     <div
-      className={`relative flex-shrink-0 w-[200px] h-[300px] rounded-lg overflow-hidden artist-card-hover artist-card-animate group cursor-pointer ${className}`}
+      className={`relative w-full aspect-[2/3] rounded-lg overflow-hidden artist-card-hover artist-card-animate group cursor-pointer ${className}`}
       onClick={handleClick}
     >
       {/* Artist Image - Full Background */}
       <div className="relative w-full h-full overflow-hidden">
         <Image
-          src={
-            artist.image && artist.image.trim() !== ""
-              ? /^\d+$/.test(String(artist.image))
-                ? `/avatars/${artist.image}.png`
-                : artist.image
-              : "/avatars/default.jpg"
-          }
+          src={buildArtishProfileUrl(artist.image || "")}
           alt={artist.name}
           fill
           className="object-cover group-hover:scale-110 transition-transform duration-500"

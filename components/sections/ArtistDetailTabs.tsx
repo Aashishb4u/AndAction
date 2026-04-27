@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Artist } from "@/types";
 import VideoCard from "@/components/ui/VideoCard";
-import ShortsCard from "@/components/ui/ShortsCard";
+import ShortsPlayer from "@/components/ui/ShortsPlayer";
 import { Loader2 } from "lucide-react";
 import { get } from "node:http";
 import { getArtishName } from "@/lib/utils";
@@ -58,6 +58,47 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
   const VIDEOS_PER_PAGE = 6;
   const SHORTS_PER_PAGE = 9;
+
+  const [shortsCurrentIndex, setShortsCurrentIndex] = useState(0);
+  const [shortsSoundEnabled, setShortsSoundEnabled] = useState<boolean>(true);
+  const shortsContainerRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number>(0);
+  const touchEndY = useRef<number>(0);
+  const lastScrollTime = useRef<number>(0);
+
+  const formatExperienceLabel = (value: unknown): string | null => {
+    if (value === null || value === undefined) return null;
+    const num = typeof value === "number" ? value : Number(String(value).trim());
+    if (!Number.isFinite(num) || num <= 0) return null;
+
+    if (num === 1) return "0-1";
+    if (num === 2) return "1-3";
+    if (num === 3) return "3-5";
+    if (num === 4) return "5-10";
+    if (num === 5) return "10+";
+
+    if (num > 10) return "10+";
+    if (num > 5) return "5-10";
+    if (num > 3) return "3-5";
+    if (num > 1) return "1-3";
+    return "0-1";
+  };
+
+  const formatMemberRange = (value: unknown): string | null => {
+    if (value === null || value === undefined) return null;
+    const raw = String(value).trim();
+    if (!raw) return null;
+    if (raw.includes("-") || raw.includes("+")) return raw;
+
+    const num = Number(raw);
+    if (!Number.isFinite(num)) return raw;
+
+    if (num <= 1) return "1";
+    if (num <= 5) return "2-5";
+    if (num <= 10) return "6-10";
+    if (num <= 20) return "11-20";
+    return "20+";
+  };
 
   // Keep tab in sync when browser back/forward changes URL
   useEffect(() => {
@@ -190,6 +231,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     setShortsPage(1);
     setHasMoreVideos(true);
     setHasMoreShorts(true);
+    setShortsCurrentIndex(0);
     fetchVideosPage(1);
     fetchShortsPage(1);
   }, [artist?.userId, fetchVideosPage, fetchShortsPage]);
@@ -239,6 +281,134 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       if (el) observer.unobserve(el);
     };
   }, [hasMoreShorts, isLoadingShorts, artistShorts.length]);
+
+  const profileShorts = useMemo(() => {
+    return artistShorts.map((s: any) => {
+      const artistProfile = s.user?.artists?.[0];
+      const creator =
+        artistProfile?.stageName ||
+        getArtishName(s.user?.name, s.user?.firstName, s.user?.lastName);
+
+      return {
+        id: s.id,
+        title: s.title || "",
+        creator,
+        creatorId: artistProfile?.id || artist.id,
+        category: resolveArtistTypeLabel(artistProfile?.artistType || ""),
+        userId: s.user?.id || "",
+        avatar: s.user?.avatar || s.user?.image || "",
+        videoUrl: s.url,
+        thumbnail: s.thumbnailUrl,
+        description: s.description || "",
+        isBookmarked: Boolean(s.isBookmarked),
+        bookmarkId: s.bookmarkId || null,
+      };
+    });
+  }, [artistShorts, resolveArtistTypeLabel, artist.id]);
+
+  const visibleProfileShorts = useMemo(() => {
+    const bufferSize = 2;
+    const startIndex = Math.max(0, shortsCurrentIndex - bufferSize);
+    const endIndex = Math.min(
+      profileShorts.length - 1,
+      shortsCurrentIndex + bufferSize,
+    );
+
+    return profileShorts.slice(startIndex, endIndex + 1).map((short, idx) => ({
+      ...short,
+      absoluteIndex: startIndex + idx,
+    }));
+  }, [profileShorts, shortsCurrentIndex]);
+
+  const loadMoreProfileShorts = useCallback(() => {
+    if (
+      shortsCurrentIndex >= profileShorts.length - 3 &&
+      hasMoreShorts &&
+      !isLoadingShorts
+    ) {
+      setShortsPage((prev) => prev + 1);
+    }
+  }, [shortsCurrentIndex, profileShorts.length, hasMoreShorts, isLoadingShorts]);
+
+  useEffect(() => {
+    loadMoreProfileShorts();
+  }, [shortsCurrentIndex, loadMoreProfileShorts]);
+
+  const handleProfileShortsScroll = useCallback(
+    (direction: "up" | "down") => {
+      const now = Date.now();
+      if (now - lastScrollTime.current < 120) return;
+      lastScrollTime.current = now;
+
+      setShortsCurrentIndex((prev) => {
+        if (direction === "down")
+          return Math.min(prev + 1, profileShorts.length - 1);
+        return Math.max(prev - 1, 0);
+      });
+    },
+    [profileShorts.length],
+  );
+
+  useEffect(() => {
+    if (activeTab !== "shorts") return;
+    const el = shortsContainerRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) < 8) return;
+      e.preventDefault();
+      handleProfileShortsScroll(e.deltaY > 0 ? "down" : "up");
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY.current = e.touches[0].clientY;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      touchEndY.current = e.touches[0].clientY;
+    };
+    const onTouchEnd = () => {
+      const delta = touchStartY.current - touchEndY.current;
+      if (Math.abs(delta) < 40) return;
+      handleProfileShortsScroll(delta > 0 ? "down" : "up");
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        handleProfileShortsScroll("down");
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        handleProfileShortsScroll("up");
+      }
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("keydown", onKeyDown, { passive: false } as any);
+
+    return () => {
+      el.removeEventListener("wheel", onWheel as any);
+      el.removeEventListener("touchstart", onTouchStart as any);
+      el.removeEventListener("touchmove", onTouchMove as any);
+      el.removeEventListener("touchend", onTouchEnd as any);
+      window.removeEventListener("keydown", onKeyDown as any);
+    };
+  }, [activeTab, handleProfileShortsScroll]);
+
+  const handleProfileShortBookmark = useCallback(
+    (id: string) => {
+      const found = profileShorts.find((s: any) => s.id === id);
+      toggleBookmark({
+        id,
+        bookmarkId: found?.bookmarkId ?? null,
+        isBookmarked: Boolean(found?.isBookmarked),
+      });
+    },
+    [profileShorts, toggleBookmark],
+  );
 
   // Check if bio text overflows (more than 2 lines)
   useEffect(() => {
@@ -302,8 +472,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           );
         })()}
       {/* Years of experience: show only when a positive number is provided */}
-      {typeof artist.yearsOfExperience === "number" &&
-        artist.yearsOfExperience > 0 && (
+      {(() => {
+        const label = formatExperienceLabel((artist as any).yearsOfExperience);
+        if (!label) return null;
+
+        return (
           <div
             className="p-4 md:bg-background bg-card border rounded-xl"
             style={{ borderColor: "#232323" }}
@@ -312,28 +485,33 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               Years of experience
             </h3>
             <p className="secondary-grey-text">
-              {artist.yearsOfExperience} Years
+              {label} Years
             </p>
           </div>
-        )}
+        );
+      })()}
 
       {/* Sub-artist types: filter out empty / N/A values */}
       {/* Resolve sub-artist types whether provided as array or CSV string */}
       {(() => {
         const a: any = artist as any;
-        const artistSubTypes = Array.isArray(a.subArtistTypes)
+        const rawSubTypes: string[] = Array.isArray(a.subArtistTypes)
           ? a.subArtistTypes
-          : a.subArtistType
-            ? (a.subArtistType as string)
-                .split(",")
-                .map((s: string) => s.trim())
-                .filter(Boolean)
+          : typeof a.subArtistType === "string" && a.subArtistType.trim()
+            ? [a.subArtistType]
             : [];
 
+        const artistSubTypes = rawSubTypes
+          .flatMap((v: string) =>
+            `${v}`
+              .split(",")
+              .map((s: string) => s.trim())
+              .filter(Boolean),
+          )
+          .filter((t: string) => t && t.trim() && t.toLowerCase() !== "n/a");
+
         if (
-          artistSubTypes.filter(
-            (t: string) => t && t.trim() && t.toLowerCase() !== "n/a",
-          ).length === 0
+          artistSubTypes.length === 0
         )
           return null;
 
@@ -346,18 +524,14 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               Sub-Artist Type
             </h3>
             <div className="flex flex-wrap gap-1.5">
-              {artistSubTypes
-                .filter(
-                  (t: string) => t && t.trim() && t.toLowerCase() !== "n/a",
-                )
-                .map((type: string, index: number) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
-                  >
-                    {type}
-                  </span>
-                ))}
+              {artistSubTypes.map((type: string, index: number) => (
+                <span
+                  key={`${type}-${index}`}
+                  className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
+                >
+                  {type}
+                </span>
+              ))}
             </div>
           </div>
         );
@@ -499,14 +673,14 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 {artist.performingMembers && (
                   <div className={artist.offStageMembers ? "mb-4" : ""}>
                     <h4 className="text-text-gray secondary-text mb-1">Performing members</h4>
-                    <p className="text-white text-sm">{artist.performingMembers} members</p>
+                    <p className="text-white text-sm">{formatMemberRange(artist.performingMembers)} members</p>
                   </div>
                 )}
 
                 {artist.offStageMembers && (
                   <div>
                     <h4 className="text-text-gray secondary-text mb-1">Off stage members</h4>
-                    <p className="text-white text-sm">{artist.offStageMembers} members</p>
+                    <p className="text-white text-sm">{formatMemberRange(artist.offStageMembers)} members</p>
                   </div>
                 )}
               </div>
@@ -650,12 +824,8 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const renderShortsContent = () => {
     if (isInitialLoadingShorts) {
       return (
-        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="animate-pulse">
-              <div className="w-full aspect-[9/16] rounded-xl bg-[#2a2a2a]" />
-            </div>
-          ))}
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-primary-pink" />
         </div>
       );
     }
@@ -669,41 +839,43 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     }
 
     return (
-      <>
-        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {artistShorts.map((short) => (
-            <ShortsCard
-              key={short.id}
-              id={short.id}
-              title={short.title}
-              creator={getArtishName(
-                short.user.name,
-                short.user.firstName,
-                short.user.lastName,
-              )}
-              thumbnail={short.thumbnailUrl}
-              videoUrl={short.url}
-              isBookmarked={short.isBookmarked}
-              bookmarkId={short.bookmarkId}
-              onBookmark={(data) => toggleBookmark(data)}
-              onShare={() => {}}
-            />
+      <div
+        ref={shortsContainerRef}
+        className="relative w-full bg-black overflow-hidden rounded-2xl"
+        style={{ height: "calc(100vh - 14rem)" }}
+      >
+        <div
+          className="relative h-full"
+          style={{
+            transform: `translateY(-${shortsCurrentIndex * 100}%)`,
+            transition: "transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)",
+            willChange: "transform",
+          }}
+        >
+          {visibleProfileShorts.map((short: any) => (
+            <div
+              key={`${short.id}-${short.absoluteIndex}`}
+              className="absolute inset-0 w-full h-full"
+              style={{ top: `${short.absoluteIndex * 100}%` }}
+            >
+              <ShortsPlayer
+                short={short}
+                isActive={short.absoluteIndex === shortsCurrentIndex}
+                shouldLoad={true}
+                onBookmark={handleProfileShortBookmark}
+                onShare={() => {}}
+                soundEnabled={shortsSoundEnabled}
+                setSoundEnabled={setShortsSoundEnabled}
+              />
+            </div>
           ))}
         </div>
-        {/* Infinite scroll sentinel */}
-        {hasMoreShorts && (
-          <div ref={shortsObserverRef} className="flex justify-center py-6">
-            {isLoadingShorts && (
-              <Loader2 className="w-6 h-6 animate-spin text-primary-pink" />
-            )}
+        {isLoadingShorts ? (
+          <div className="absolute top-4 right-4 z-50">
+            <Loader2 className="w-5 h-5 animate-spin text-white/80" />
           </div>
-        )}
-        {!hasMoreShorts && artistShorts.length > 0 && (
-          <p className="text-center text-gray-500 text-sm py-4">
-            No more shorts
-          </p>
-        )}
-      </>
+        ) : null}
+      </div>
     );
   };
 

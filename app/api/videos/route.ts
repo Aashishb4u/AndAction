@@ -95,7 +95,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
           artists: {
             take: 1,
             orderBy: { profileOrder: "asc" },
-            select: { id: true, artistType: true },
+            select: { id: true, artistType: true, stageName: true, profileImage: true },
           },
         },
       },

@@ -76,7 +76,7 @@ export default function VideoDetailsPage() {
           artist: {
             id: v.user?.artist?.id,
             name: getArtishName(v.user.name, v.user.firstName, v.user.lastName),
-            avatar: v.user.avatar,
+            avatar: v.user.artists?.[0]?.profileImage || v.user.avatar || v.user.image,
             verified: v.user.isArtistVerified,
           },
         });
@@ -91,6 +91,7 @@ export default function VideoDetailsPage() {
             videoUrl: rv.url,
             isBookmarked: rv.isBookmarked,
             bookmarkId: rv.bookmarkId,
+            creatorImage: rv.user.artists?.[0]?.profileImage || rv.user.avatar || rv.user.image || undefined,
             artistId: rv.user.artists?.[0]?.id || "",
             artistType: rv.user.artists?.[0]?.artistType || "",
           })),
@@ -374,6 +375,7 @@ export default function VideoDetailsPage() {
                         id={video.id}
                         title={video.title}
                         creator={video.creator}
+                        creatorImage={video.creatorImage}
                         artistType={resolveArtistTypeLabel(video.artistType)}
                         thumbnail={video.thumbnail}
                         videoUrl={video.videoUrl}
