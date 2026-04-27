@@ -253,7 +253,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
 <iframe
   id={`yt-${short.id}`}
   className="absolute inset-0 w-full h-full pointer-events-none"
-  src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=0&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
+  src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=${isActive && soundEnabled ? 0 : 1}&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
     typeof window !== "undefined" ? window.location.origin : ""
   }`}
   allow="autoplay; encrypted-media"
@@ -302,13 +302,16 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
         <div className="flex-1 flex flex-col justify-end p-4 pb-8">
           <Link href={`/artists/${short.creatorId}`} className="pointer-events-auto">
             <div className="flex items-center gap-3 mb-4 cursor-pointer">
-              <Image
-                src={avatarSrc}
-                alt={short.creator}
-                width={40}
-                height={40}
-                className="rounded-full object-cover"
-              />
+              <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
+                <Image
+                  src={avatarSrc}
+                  alt={short.creator}
+                  width={40}
+                  height={40}
+                  unoptimized
+                  className="w-full h-full object-cover"
+                />
+              </div>
               <div className="min-w-0">
                 <div className="text-white font-semibold leading-tight line-clamp-1">
                   {short.creator}

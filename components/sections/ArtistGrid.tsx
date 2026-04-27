@@ -35,7 +35,18 @@ const ArtistGrid: React.FC<ArtistGridProps> = ({
 
   return (
     <div className={`md:px-6 ${className}`}>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-2 lg:gap-3">
+      <div className="md:hidden flex flex-col">
+        {artists.map((artist) => (
+          <ArtistProfileCard
+            key={artist.id}
+            artist={artist}
+            onBookmark={onBookmark}
+            layout="list"
+          />
+        ))}
+      </div>
+
+      <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-2 lg:gap-3">
         {artists.map((artist) => (
           <ArtistProfileCard
             key={artist.id}
