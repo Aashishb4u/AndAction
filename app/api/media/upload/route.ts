@@ -23,13 +23,12 @@ async function syncAvatarToAdminPanel(params: {
       .trim()
       .replace(/\/+$/, "");
 
-  const secret = (
-    process.env.VPS_UPLOAD_SECRET ||
-    process.env.PUBLIC_UPLOAD_SECRET ||
-    ""
-  ).trim();
-
-  if (!secret) return;
+  const vpsSecret = (process.env.VPS_UPLOAD_SECRET || "").trim();
+  const publicSecret = (process.env.PUBLIC_UPLOAD_SECRET || "").trim();
+  const secrets = Array.from(
+    new Set([vpsSecret, publicSecret].filter((s) => typeof s === "string" && s)),
+  );
+  if (secrets.length === 0) return;
 
   const email = typeof params.email === "string" ? params.email.trim() : "";
   const phoneNumber =
@@ -38,18 +37,24 @@ async function syncAvatarToAdminPanel(params: {
   if (!avatarUrl) return;
   if (!email && !phoneNumber) return;
 
-  await fetch(`${adminBase}/api/media/sync-avatar`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-upload-secret": secret,
-    },
-    body: JSON.stringify({
-      email: email || null,
-      phoneNumber: phoneNumber || null,
-      avatarUrl,
-    }),
-  }).catch(() => {});
+  for (const secret of secrets) {
+    try {
+      const res = await fetch(`${adminBase}/api/media/sync-avatar`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-upload-secret": secret,
+        },
+        body: JSON.stringify({
+          email: email || null,
+          phoneNumber: phoneNumber || null,
+          avatarUrl,
+        }),
+      });
+      if (res.ok) return;
+    } catch {
+    }
+  }
 }
 
 async function saveImageLocally(
@@ -110,18 +115,35 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
           select: { id: true, profileImage: true },
         });
         if (!existingArtist) return ApiErrors.notFound("Artist profile not found.");
-        if (existingArtist.profileImage) {
+        if (existingArtist.profileImage && existingArtist.profileImage !== fileUrl) {
           await deleteFromVPS(existingArtist.profileImage).catch(() => {});
         }
-        await prisma.artist.update({
-          where: { id: existingArtist.id },
-          data: { profileImage: fileUrl },
-        });
-
         const currentUser = await prisma.user.findUnique({
           where: { id: userId },
-          select: { email: true, phoneNumber: true },
+          select: { avatar: true, image: true, email: true, phoneNumber: true },
         });
+        if (currentUser?.avatar && currentUser.avatar !== fileUrl) {
+          await deleteFromVPS(currentUser.avatar).catch(() => {});
+        }
+        if (
+          currentUser?.image &&
+          currentUser.image !== fileUrl &&
+          currentUser.image !== currentUser.avatar
+        ) {
+          await deleteFromVPS(currentUser.image).catch(() => {});
+        }
+
+        await prisma.$transaction([
+          prisma.artist.update({
+            where: { id: existingArtist.id },
+            data: { profileImage: fileUrl },
+          }),
+          prisma.user.update({
+            where: { id: userId },
+            data: { avatar: fileUrl, image: fileUrl },
+          }),
+        ]);
+
         await syncAvatarToAdminPanel({
           email: currentUser?.email,
           phoneNumber: currentUser?.phoneNumber,

@@ -22,13 +22,12 @@ async function syncAvatarToAdminPanel(params: {
             .trim()
             .replace(/\/+$/, "");
 
-    const secret = (
-        process.env.VPS_UPLOAD_SECRET ||
-        process.env.PUBLIC_UPLOAD_SECRET ||
-        ""
-    ).trim();
-
-    if (!secret) return;
+    const vpsSecret = (process.env.VPS_UPLOAD_SECRET || "").trim();
+    const publicSecret = (process.env.PUBLIC_UPLOAD_SECRET || "").trim();
+    const secrets = Array.from(
+        new Set([vpsSecret, publicSecret].filter((s) => typeof s === "string" && s)),
+    );
+    if (secrets.length === 0) return;
 
     const email = typeof params.email === "string" ? params.email.trim() : "";
     const phoneNumber =
@@ -37,18 +36,24 @@ async function syncAvatarToAdminPanel(params: {
     if (!avatarUrl) return;
     if (!email && !phoneNumber) return;
 
-    await fetch(`${adminBase}/api/media/sync-avatar`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "x-upload-secret": secret,
-        },
-        body: JSON.stringify({
-            email: email || null,
-            phoneNumber: phoneNumber || null,
-            avatarUrl,
-        }),
-    }).catch(() => { });
+    for (const secret of secrets) {
+        try {
+            const res = await fetch(`${adminBase}/api/media/sync-avatar`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-upload-secret": secret,
+                },
+                body: JSON.stringify({
+                    email: email || null,
+                    phoneNumber: phoneNumber || null,
+                    avatarUrl,
+                }),
+            });
+            if (res.ok) return;
+        } catch {
+        }
+    }
 }
 
 /**

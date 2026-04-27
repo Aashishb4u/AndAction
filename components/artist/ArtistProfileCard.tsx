@@ -8,6 +8,8 @@ import { Artist } from "@/types";
 import { buildArtishProfileUrl } from '@/lib/utils';
 import Cropper, { Area } from "react-easy-crop";
 import imageCompression from "browser-image-compression";
+import { useSession } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ArtistProfileCardProps {
   artist: any;
@@ -65,6 +67,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   onBack,
   onEdit,
 }) => {
+  const { update: updateSession } = useSession();
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [localImage, setLocalImage] = useState<string>(artist.image || "");
@@ -125,6 +129,12 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
       const imageUrl = (json as any)?.data?.imageUrl;
       setLocalImage(imageUrl);
+      if (typeof imageUrl === "string" && imageUrl.trim()) {
+        await updateSession?.({ avatar: imageUrl, image: imageUrl } as any).catch(
+          () => {},
+        );
+      }
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
 
       setUploadMessage(messageFromJson || "Profile photo uploaded successfully.");
 
