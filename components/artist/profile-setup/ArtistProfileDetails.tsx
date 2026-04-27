@@ -11,6 +11,8 @@ import { ArtistProfileSetupData, ArtistProfileSetupPreferences } from "@/types";
 import Cropper from "react-easy-crop";
 import { Area } from "react-easy-crop";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { useSession } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ArtistProfileDetailsProps {
   data: ArtistProfileSetupData;
@@ -76,6 +78,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   preferences,
 }) => {
   const { categories: artistTypes } = useArtistCategories();
+  const { update: updateSession } = useSession();
+  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
     profilePhoto: data.profilePhoto || null,
@@ -327,6 +331,12 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
       setFormData((prev) => ({ ...prev, ...updatedData }));
       onUpdateData(updatedData);
+      if (typeof imageUrl === "string" && imageUrl.trim()) {
+        await updateSession?.({ avatar: imageUrl, image: imageUrl } as any).catch(
+          () => {},
+        );
+        queryClient.invalidateQueries({ queryKey: ["videos"] });
+      }
       setUploadMessage(
         messageFromJson || "Profile photo uploaded successfully.",
       );
