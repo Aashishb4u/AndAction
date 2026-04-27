@@ -89,14 +89,14 @@ export default function VideosPage() {
       page.videos.map((v) => ({
         id: v.id,
         title: v.title,
-        creator: getArtishName(v.user.name, v.user.firstName, v.user.lastName),
+        creator: v.user.artists?.[0]?.stageName || getArtishName(v.user.name, v.user.firstName, v.user.lastName),
         userId: v.user.id, // Add userId for grouping
         thumbnail: v.thumbnailUrl,
         videoUrl: v.url,
         category: v.user.artists?.[0]?.artistType || "",
         isBookmarked: v.isBookmarked || false,
         bookmarkId: v.bookmarkId || null,
-        creatorImage: v.user.avatar || v.user.image || undefined,
+        creatorImage: v.user.artists?.[0]?.profileImage || v.user.avatar || v.user.image || undefined,
         artistType: resolveArtistTypeLabel(v.user.artists?.[0]?.artistType),
         artistId: v.user.artists?.[0]?.id || "",
       })),

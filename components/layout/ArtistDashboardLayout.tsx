@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ArtistSidebar from './ArtistSidebar';
 import Sidebar from './Sidebar';
 import { Menu } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { buildArtishProfileUrl } from '@/lib/utils';
 
 interface ArtistDashboardLayoutProps {
   children: React.ReactNode;
@@ -32,6 +33,36 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
   };
 
   const { data: session } = useSession();
+  const [latestAvatar, setLatestAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) {
+      setLatestAvatar(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchLatest = async () => {
+      try {
+        const res = await fetch('/api/users/profile', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json().catch(() => null);
+        const avatar = json?.data?.avatar;
+        if (!cancelled && typeof avatar === 'string') {
+          setLatestAvatar(avatar);
+        }
+      } catch {}
+    };
+
+    fetchLatest();
+    window.addEventListener('focus', fetchLatest);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', fetchLatest);
+    };
+  }, [session?.user?.id]);
 
   return (
     <div className={`min-h-screen bg-black ${className}`}>
@@ -48,11 +79,7 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
           {/* Profile Icon */}
           <div onClick={toggleSidebar} className="hidden md:block w-10 h-10 rounded-full overflow-hidden border-2 border-border-color cursor-pointer">
             <Image
-              src={
-                session?.user?.avatar && /^\d+$/.test(String(session.user.avatar))
-                  ? `/avatars/${session.user.avatar}.png`
-                  : session?.user?.avatar || '/avatars/default.jpg'
-              }
+              src={buildArtishProfileUrl(latestAvatar ?? session?.user?.avatar ?? '')}
               alt="Profile"
               width={40}
               height={40}

@@ -292,6 +292,7 @@ export async function syncYouTubeVideosInternal(
               item.snippet.thumbnails.medium?.url ||
               item.snippet.thumbnails.default?.url,
             views: parseInt(details?.statistics?.viewCount || "0"),
+            isApproved: true,
             updatedAt: new Date(),
           },
         });

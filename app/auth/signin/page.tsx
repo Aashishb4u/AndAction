@@ -9,6 +9,7 @@ import {
   signInWithGoogle,
   signInWithFacebook,
   signInWithApple,
+  getRedirectUrl,
 } from "@/lib/auth";
 import Image from "next/image";
 import { signIn, getSession } from "next-auth/react";
@@ -199,8 +200,11 @@ function SignInContent() {
       
       const session = await getSession();
       const userRole = session?.user?.role;
+      const redirectUrl = getRedirectUrl(searchParams);
       
-      if (userRole === "artist") {
+      if (redirectUrl && redirectUrl !== "/") {
+        router.push(redirectUrl);
+      } else if (userRole === "artist") {
         router.push("/artist/dashboard");
       } else {
         router.push("/");
@@ -266,8 +270,11 @@ function SignInContent() {
       if (result?.error) throw new Error(result.error);
       const session = await getSession();
       const userRole = session?.user?.role;
+      const redirectUrl = getRedirectUrl(searchParams);
       
-      if (userRole === "artist") {
+      if (redirectUrl && redirectUrl !== "/") {
+        router.push(redirectUrl);
+      } else if (userRole === "artist") {
         router.push("/artist/dashboard");
       } else {
         router.push("/");
@@ -313,8 +320,11 @@ function SignInContent() {
       if (result?.error) throw new Error(result.error);
       const session = await getSession();
       const userRole = session?.user?.role;
+      const redirectUrl = getRedirectUrl(searchParams);
       
-      if (userRole === "artist") {
+      if (redirectUrl && redirectUrl !== "/") {
+        router.push(redirectUrl);
+      } else if (userRole === "artist") {
         router.push("/artist/dashboard");
       } else {
         router.push("/");

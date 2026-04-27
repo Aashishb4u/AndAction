@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors, successResponse } from '@/lib/api-response';
+import { syncYouTubeVideosInternal } from '@/app/actions/youtube/sync-videos';
 
 // Define the structure for the URL parameters
 interface ArtistRouteContext {
@@ -85,6 +86,29 @@ export async function GET(
 
         if (!artist) {
             return ApiErrors.notFound('Artist not found.');
+        }
+
+        if (artist.youtubeChannelId && artist.user?.id) {
+            try {
+                const existingYoutubeVideos = await prisma.video.count({
+                    where: {
+                        userId: artist.user.id,
+                        source: "youtube",
+                        isApproved: true,
+                    },
+                });
+
+                if (existingYoutubeVideos === 0) {
+                    await syncYouTubeVideosInternal(
+                        artist.id,
+                        artist.user.id,
+                        artist.youtubeChannelId,
+                        null,
+                    );
+                }
+            } catch (error) {
+                console.error("Auto-sync YouTube videos failed:", error);
+            }
         }
 
         // Success Response

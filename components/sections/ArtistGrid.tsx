@@ -35,7 +35,7 @@ const ArtistGrid: React.FC<ArtistGridProps> = ({
 
   return (
     <div className={`md:px-6 ${className}`}>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[20px]">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-2 lg:gap-3">
         {artists.map((artist) => (
           <ArtistProfileCard
             key={artist.id}

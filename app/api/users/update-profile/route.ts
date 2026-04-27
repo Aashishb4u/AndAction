@@ -10,6 +10,47 @@ import { prisma } from '@/lib/prisma';
 import { ApiErrors, successResponse } from '@/lib/api-response';
 import { auth } from '@/auth'; 
 
+async function syncAvatarToAdminPanel(params: {
+    email?: string | null;
+    phoneNumber?: string | null;
+    avatarUrl: string;
+}) {
+    const adminBase =
+        (process.env.ADMIN_API_BASE_URL ||
+            process.env.NEXT_PUBLIC_ADMIN_BASE_URL ||
+            "https://admin.andaction.in")
+            .trim()
+            .replace(/\/+$/, "");
+
+    const secret = (
+        process.env.VPS_UPLOAD_SECRET ||
+        process.env.PUBLIC_UPLOAD_SECRET ||
+        ""
+    ).trim();
+
+    if (!secret) return;
+
+    const email = typeof params.email === "string" ? params.email.trim() : "";
+    const phoneNumber =
+        typeof params.phoneNumber === "string" ? params.phoneNumber.trim() : "";
+    const avatarUrl = params.avatarUrl?.trim();
+    if (!avatarUrl) return;
+    if (!email && !phoneNumber) return;
+
+    await fetch(`${adminBase}/api/media/sync-avatar`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "x-upload-secret": secret,
+        },
+        body: JSON.stringify({
+            email: email || null,
+            phoneNumber: phoneNumber || null,
+            avatarUrl,
+        }),
+    }).catch(() => { });
+}
+
 /**
  * Handles PUT requests to update the authenticated user's profile information.
  * Special handling for phoneNumber to avoid unique constraint conflicts.
@@ -131,6 +172,17 @@ export async function PUT(request: NextRequest): Promise<NextResponse<any>> {
         });
 
         // 6. Success Response
+        if (updateData.avatar !== undefined) {
+            const avatarValue =
+                typeof updateData.avatar === 'string' ? updateData.avatar.trim() : '';
+            if (avatarValue) {
+                await syncAvatarToAdminPanel({
+                    email: updatedUser.email,
+                    phoneNumber: updatedUser.phoneNumber,
+                    avatarUrl: avatarValue,
+                });
+            }
+        }
         return successResponse(
             updatedUser,
             'User profile updated successfully.',

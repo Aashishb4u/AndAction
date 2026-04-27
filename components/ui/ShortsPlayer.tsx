@@ -301,7 +301,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
 
         <div className="flex-1 flex flex-col justify-end p-4 pb-8">
           <Link href={`/artists/${short.creatorId}`} className="pointer-events-auto">
-            <div className="flex items-center mb-4 cursor-pointer">
+            <div className="flex items-center gap-3 mb-4 cursor-pointer">
               <Image
                 src={avatarSrc}
                 alt={short.creator}
@@ -309,6 +309,21 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
                 height={40}
                 className="rounded-full object-cover"
               />
+              <div className="min-w-0">
+                <div className="text-white font-semibold leading-tight line-clamp-1">
+                  {short.creator}
+                </div>
+                {short.title ? (
+                  <div className="text-white/80 text-sm leading-snug line-clamp-1">
+                    {short.title}
+                  </div>
+                ) : null}
+                {short.category ? (
+                  <div className="text-white/70 text-xs leading-snug line-clamp-1">
+                    {short.category}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </Link>
         </div>

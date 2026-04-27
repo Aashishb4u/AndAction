@@ -26,11 +26,11 @@ const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
   return json.data.videos.map((v: any) => ({
     id: v.id,
     title: v.title,
-    creator: getArtishName(v.user.name, v.user.firstName, v.user.lastName),
+    creator: v.user.artists?.[0]?.stageName || getArtishName(v.user.name, v.user.firstName, v.user.lastName),
     creatorId: v.user.artists?.[0]?.id,
     category: v.user.artists?.[0]?.artistType || "",
     userId: v.user.id,
-    avatar: v.user.avatar || v.user.image,
+    avatar: v.user.artists?.[0]?.profileImage || v.user.avatar || v.user.image,
     videoUrl: v.url,
     thumbnail: v.thumbnailUrl,
     description: "",
@@ -112,7 +112,7 @@ export default function ShortsPage() {
           ? allPages.length + 1
           : undefined;
       },
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
     });
 
   const shorts = data?.pages.flat() || [];
