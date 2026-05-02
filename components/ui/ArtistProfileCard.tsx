@@ -34,13 +34,20 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
     onBookmark(artist.id);
   };
 
-  const displayLocation =
-    artist.location &&
-    artist.location.trim() !== "" &&
-    artist.location.toLowerCase() !== "location not set" &&
-    artist.location.toLowerCase() !== "unknown"
-      ? artist.location
-      : "";
+  const normalizedLocation = (() => {
+    const raw = (artist.location || "").trim();
+    if (!raw) return "";
+    const lowered = raw.toLowerCase();
+    if (lowered === "location not set" || lowered === "unknown") return "";
+    if (raw.includes(",")) {
+      const parts = raw
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean);
+      return parts.length > 0 ? parts[parts.length - 1] : "";
+    }
+    return raw;
+  })();
 
   if (layout === "list") {
     // Mobile list layout
@@ -51,13 +58,16 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       >
         <div className="flex py-4 gap-4 items-start">
           {/* Artist Image */}
-          <div className="relative w-28 h-36 rounded-xl overflow-hidden flex-shrink-0" style={{ backgroundColor: '#111' }}>
+          <div
+            className="relative w-32 h-40 rounded-xl overflow-hidden flex-shrink-0"
+            style={{ backgroundColor: "#111" }}
+          >
             <Image
               src={buildArtishProfileUrl(artist.image || "")}
               alt={artist.name}
               fill
               className="object-cover scale-[1.02]"
-              sizes="120px"
+              sizes="(max-width: 640px) 120px, 128px"
               unoptimized
             />
           </div>
@@ -73,7 +83,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
                 <p className="secondary-text text-text-gray">
                   {artist.category}
-                  {displayLocation && ` | ${displayLocation}`}
+              {normalizedLocation && ` | ${normalizedLocation}`}
                 </p>
               </div>
 
@@ -109,7 +119,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
                 width={16}
                 height={16}
               />
-              <span>{artist.languages.join(", ")}</span>
+              <span className="line-clamp-2">{artist.languages.join(", ")}</span>
             </div>
           </div>
         </div>
@@ -154,7 +164,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
           <p className="secondary-text mb-2">
             {artist.category}
-            {displayLocation && ` | ${displayLocation}`}
+            {normalizedLocation && ` | ${normalizedLocation}`}
           </p>
 
           <div className="space-y-1">

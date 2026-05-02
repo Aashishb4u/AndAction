@@ -6,7 +6,6 @@ import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import Image from "next/image";
-import imageCompression from "browser-image-compression";
 import { ArtistProfileSetupData, ArtistProfileSetupPreferences } from "@/types";
 import Cropper from "react-easy-crop";
 import { Area } from "react-easy-crop";
@@ -63,8 +62,7 @@ const getCroppedImg = async (
       (blob) => {
         resolve(blob);
       },
-      "image/jpeg",
-      0.95,
+      "image/png",
     );
   });
 };
@@ -264,24 +262,12 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
           ? (data as any).artistProfileId.trim()
           : null;
 
-      // 1️⃣ Compress the file before uploading
-      const options = {
-        maxSizeMB: 0.35,
-        maxWidthOrHeight: 700,
-        useWebWorker: true,
-      };
-
-      const compressedFile = await imageCompression(file, options);
-
-      console.log("📦 Compressed file:", compressedFile);
-
-      // 2️⃣ Show preview using compressed file
-      const localPreviewUrl = URL.createObjectURL(compressedFile);
+      const localPreviewUrl = URL.createObjectURL(file);
       setPreview(localPreviewUrl);
 
       if (!artistProfileId) {
         const updatedData = {
-          profilePhoto: compressedFile,
+          profilePhoto: file,
           avatarUrl: localPreviewUrl,
         };
 
@@ -293,7 +279,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       }
 
       const formDataUpload = new FormData();
-      formDataUpload.append("file", compressedFile);
+      formDataUpload.append("file", file);
       formDataUpload.append("artistProfileId", artistProfileId);
 
       const res = await fetch("/api/media/upload", {
@@ -381,8 +367,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       if (!croppedBlob) return;
 
       // Convert blob to file
-      const croppedFile = new File([croppedBlob], "cropped-profile.jpg", {
-        type: "image/jpeg",
+      const croppedFile = new File([croppedBlob], "cropped-profile.png", {
+        type: "image/png",
       });
 
       setShowCropModal(false);

@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { getArtishName } from "@/lib/utils";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
+import { toast } from "react-toastify";
 
 interface ArtistDetailTabsProps {
   artist: Artist;
@@ -66,6 +67,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const touchStartY = useRef<number>(0);
   const touchEndY = useRef<number>(0);
   const lastScrollTime = useRef<number>(0);
+  const ignoreShortsSwipeRef = useRef<boolean>(false);
 
   const formatExperienceLabel = (value: unknown): string | null => {
     if (value === null || value === undefined) return null;
@@ -83,22 +85,6 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     if (num > 3) return "3-5";
     if (num > 1) return "1-3";
     return "0-1";
-  };
-
-  const formatMemberRange = (value: unknown): string | null => {
-    if (value === null || value === undefined) return null;
-    const raw = String(value).trim();
-    if (!raw) return null;
-    if (raw.includes("-") || raw.includes("+")) return raw;
-
-    const num = Number(raw);
-    if (!Number.isFinite(num)) return raw;
-
-    if (num <= 1) return "1";
-    if (num <= 5) return "2-5";
-    if (num <= 10) return "6-10";
-    if (num <= 20) return "11-20";
-    return "20+";
   };
 
   // Keep tab in sync when browser back/forward changes URL
@@ -314,11 +300,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   }, [artistShorts, resolveArtistTypeLabel, artist.id]);
 
   const visibleProfileShorts = useMemo(() => {
-    const bufferSize = 2;
-    const startIndex = Math.max(0, shortsCurrentIndex - bufferSize);
+    const visibleWindowSize = 5;
+    const startIndex = Math.max(0, shortsCurrentIndex - 1);
     const endIndex = Math.min(
       profileShorts.length - 1,
-      shortsCurrentIndex + bufferSize,
+      startIndex + (visibleWindowSize - 1),
     );
 
     return profileShorts.slice(startIndex, endIndex + 1).map((short, idx) => ({
@@ -370,12 +356,23 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     };
 
     const onTouchStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement | null;
+      ignoreShortsSwipeRef.current = Boolean(
+        target?.closest?.('[data-shorts-interactive="true"]'),
+      );
+      if (ignoreShortsSwipeRef.current) return;
       touchStartY.current = e.touches[0].clientY;
     };
     const onTouchMove = (e: TouchEvent) => {
+      if (ignoreShortsSwipeRef.current) return;
       touchEndY.current = e.touches[0].clientY;
     };
-    const onTouchEnd = () => {
+    const onTouchEnd = (e: TouchEvent) => {
+      if (ignoreShortsSwipeRef.current) {
+        ignoreShortsSwipeRef.current = false;
+        return;
+      }
+      touchEndY.current = e.changedTouches[0]?.clientY ?? touchEndY.current;
       const delta = touchStartY.current - touchEndY.current;
       if (Math.abs(delta) < 40) return;
       handleProfileShortsScroll(delta > 0 ? "down" : "up");
@@ -418,6 +415,25 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     },
     [profileShorts, toggleBookmark],
   );
+
+  const handleProfileShortShare = useCallback(async (id: string) => {
+    const url = `${window.location.origin}/shorts/${id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard");
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard");
+      } catch {
+        toast.error("Failed to share");
+      }
+    }
+  }, []);
 
   // Check if bio text overflows (more than 2 lines)
   useEffect(() => {
@@ -596,8 +612,15 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
         const hasDuration =
           !!artist.performingDurationFrom || !!artist.performingDurationTo;
-        const hasMembers = !!artist.performingMembers || !!artist.offStageMembers;
-        const hasCorePerformanceSection = hasDuration || hasMembers;
+        const hasPerformingMembers =
+          !!artist.performingMembers?.trim() &&
+          artist.performingMembers.trim().toLowerCase() !== "n/a";
+        const hasOffStageMembers =
+          !!artist.offStageMembers?.trim() &&
+          artist.offStageMembers.trim().toLowerCase() !== "n/a";
+
+        const hasCorePerformanceSection =
+          hasDuration || hasPerformingMembers || hasOffStageMembers;
 
         const languages = artist.languages?.length
           ? artist.languages
@@ -624,6 +647,16 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           (s: string) => s.toLowerCase() === "pan india",
         );
         const normalizedStates = hasPanIndia ? ["Pan India"] : states;
+        const formatMembersValue = (value?: string) => {
+          const v = (value || "").trim();
+          if (!v) return "";
+          const lower = v.toLowerCase();
+          if (lower.includes("member")) return v;
+          if (v.includes("-") || lower.includes(" to ")) return `${v} Members`;
+          const n = Number(v);
+          if (Number.isFinite(n)) return `${v} ${n === 1 ? "Member" : "Members"}`;
+          return `${v} Members`;
+        };
 
         return (
           <>
@@ -667,31 +700,47 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 className="md:bg-background bg-card border rounded-lg p-4"
                 style={{ borderColor: "#232323" }}
               >
-                {hasDuration && (
-                  <div className="mb-4">
-                    <h4 className="text-text-gray secondary-text mb-1">Performing duration</h4>
-                    <p className="text-white text-sm">
-                      {artist.performingDurationFrom || ""}
-                      {artist.performingDurationFrom && artist.performingDurationTo ? " - " : ""}
-                      {artist.performingDurationTo || ""}
-                      {(artist.performingDurationFrom || artist.performingDurationTo) ? " mins" : ""}
-                    </p>
-                  </div>
-                )}
+                <div className="space-y-4">
+                  {hasDuration && (
+                    <div>
+                      <h4 className="text-text-gray secondary-text mb-1">
+                        Performing duration
+                      </h4>
+                      <p className="text-white text-sm">
+                        {artist.performingDurationFrom || ""}
+                        {artist.performingDurationFrom && artist.performingDurationTo
+                          ? " - "
+                          : ""}
+                        {artist.performingDurationTo || ""}
+                        {artist.performingDurationFrom || artist.performingDurationTo
+                          ? " mins"
+                          : ""}
+                      </p>
+                    </div>
+                  )}
 
-                {artist.performingMembers && (
-                  <div className={artist.offStageMembers ? "mb-4" : ""}>
-                    <h4 className="text-text-gray secondary-text mb-1">Performing members</h4>
-                    <p className="text-white text-sm">{formatMemberRange(artist.performingMembers)} members</p>
-                  </div>
-                )}
+                  {hasPerformingMembers && (
+                    <div>
+                      <h4 className="text-text-gray secondary-text mb-1">
+                        Performing members
+                      </h4>
+                      <p className="text-white text-sm">
+                        {formatMembersValue(artist.performingMembers)}
+                      </p>
+                    </div>
+                  )}
 
-                {artist.offStageMembers && (
-                  <div>
-                    <h4 className="text-text-gray secondary-text mb-1">Off stage members</h4>
-                    <p className="text-white text-sm">{formatMemberRange(artist.offStageMembers)} members</p>
-                  </div>
-                )}
+                  {hasOffStageMembers && (
+                    <div>
+                      <h4 className="text-text-gray secondary-text mb-1">
+                        Off stage members
+                      </h4>
+                      <p className="text-white text-sm">
+                        {formatMembersValue(artist.offStageMembers)}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -823,8 +872,19 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         {/* Infinite scroll sentinel */}
         {hasMoreVideos && (
           <div ref={videosObserverRef} className="flex justify-center py-6">
-            {isLoadingVideos && (
+            {isLoadingVideos ? (
               <Loader2 className="w-6 h-6 animate-spin text-primary-pink" />
+            ) : (
+              <button
+                onClick={() => {
+                  if (isFetchingVideosRef.current) return;
+                  isFetchingVideosRef.current = true;
+                  setVideosPage((prev) => prev + 1);
+                }}
+                className="px-4 py-2 rounded-lg border border-[#333] text-sm text-white hover:border-[#555] transition-colors"
+              >
+                Load more videos
+              </button>
             )}
           </div>
         )}
@@ -879,7 +939,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 isActive={short.absoluteIndex === shortsCurrentIndex}
                 shouldLoad={short.absoluteIndex === shortsCurrentIndex}
                 onBookmark={handleProfileShortBookmark}
-                onShare={() => {}}
+                onShare={handleProfileShortShare}
                 soundEnabled={shortsSoundEnabled}
                 setSoundEnabled={setShortsSoundEnabled}
               />

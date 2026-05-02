@@ -300,7 +300,11 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       <div className="absolute inset-0 flex z-20 pointer-events-none">
 
         <div className="flex-1 flex flex-col justify-end p-4 pb-8">
-          <Link href={`/artists/${short.creatorId}`} className="pointer-events-auto">
+          <Link
+            href={`/artists/${short.creatorId}`}
+            className="pointer-events-auto"
+            data-shorts-interactive="true"
+          >
             <div className="flex items-center gap-3 mb-4 cursor-pointer">
               <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
                 <Image
@@ -331,7 +335,10 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
           </Link>
         </div>
 
-        <div className="absolute right-4 bottom-16 z-30 flex flex-col items-center space-y-4 pointer-events-auto">
+        <div
+          className="absolute right-4 bottom-16 z-30 flex flex-col items-center space-y-4 pointer-events-auto"
+          data-shorts-interactive="true"
+        >
 
           <button
             onClick={(e) => {

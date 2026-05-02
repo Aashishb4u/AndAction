@@ -10,6 +10,7 @@ import VideoCard from '@/components/ui/VideoCard';
 import ShortsCard from '@/components/ui/ShortsCard';
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
+import { transformArtist } from "@/app/artists/transformArtist";
 
 type TabType = 'Artist' | 'Videos' | 'Shorts';
 
@@ -46,18 +47,38 @@ export default function BookmarksPage() {
           .filter((b: any) => b.artist)
           .map((b: any) => {
             const a = b.artist;
-            return {
+            const normalized = transformArtist({
               id: a.id,
+              profileImage: a.profileImage ?? null,
+              stageName: a.stageName ?? null,
+              artistType: a.artistType ?? null,
+              subArtistType: a.subArtistType ?? null,
+              shortBio: a.shortBio ?? null,
+              performingLanguage: a.performingLanguage ?? null,
+              performingEventType: a.performingEventType ?? null,
+              performingStates: a.performingStates ?? null,
+              yearsOfExperience: a.yearsOfExperience ?? null,
+              soloChargesFrom: Number(a.soloChargesFrom) || 0,
+              soloChargesTo: a.soloChargesTo ? Number(a.soloChargesTo) : null,
+              performingDurationFrom: a.performingDurationFrom ?? null,
+              performingDurationTo: a.performingDurationTo ?? null,
+              user: {
+                id: a.user.id,
+                firstName: a.user.firstName ?? null,
+                lastName: a.user.lastName ?? null,
+                avatar: a.user.avatar ?? null,
+                city: a.user.city ?? null,
+                state: a.user.state ?? null,
+              },
+            });
+
+            return {
+              ...normalized,
               bookmarkId: b.id,
-              name: a.stageName || `${a.user.firstName} ${a.user.lastName}`,
-              category: a.artistType,
-              subCategory: a.subArtistType,
-              location: `${a.user.city || ''}${a.user.state ? ', ' + a.user.state : ''}`,
-              startingPrice: Number(a.soloChargesFrom) || 0,
-              languages: [a.performingLanguage],
-              image: a.user.avatar,
               isBookmarked: true,
-              gender: a.user.gender,
+              category: a.artistType || normalized.category,
+              location: `${a.user.state || ""}` || normalized.location,
+              gender: a.user.gender ?? normalized.gender,
             };
           });
 
