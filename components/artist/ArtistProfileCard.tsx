@@ -7,7 +7,6 @@ import Button from "@/components/ui/Button";
 import { Artist } from "@/types";
 import { buildArtishProfileUrl } from '@/lib/utils';
 import Cropper, { Area } from "react-easy-crop";
-import imageCompression from "browser-image-compression";
 import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -56,8 +55,7 @@ const getCroppedImg = async (
       (blob) => {
         resolve(blob);
       },
-      "image/jpeg",
-      0.95,
+      "image/png",
     );
   });
 };
@@ -94,14 +92,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       setUploadMessage("");
       setUploadError("");
 
-      const compressedFile = await imageCompression(file, {
-        maxSizeMB: 0.35,
-        maxWidthOrHeight: 700,
-        useWebWorker: true,
-      });
-
       const formData = new FormData();
-      formData.append("file", compressedFile);
+      formData.append("file", file);
       if (artist?.id) {
         formData.append("artistProfileId", String(artist.id));
       }
@@ -172,8 +164,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       const croppedBlob = await getCroppedImg(imageToCrop, croppedAreaPixels);
       if (!croppedBlob) return;
 
-      const croppedFile = new File([croppedBlob], "cropped-profile.jpg", {
-        type: "image/jpeg",
+      const croppedFile = new File([croppedBlob], "cropped-profile.png", {
+        type: "image/png",
       });
 
       setShowCropModal(false);

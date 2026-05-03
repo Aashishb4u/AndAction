@@ -367,13 +367,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
                   className="text-text-gray footnote line-clamp-1"
                   style={{ fontSize: "14px" }}
                 >
-                  <span className="inline-flex items-center text-text-gray">
-                    <span
-                      className="w-2 h-2 bg-text-gray rounded-full inline-block mr-2"
-                      aria-hidden="true"
-                    />
-                    <span className="align-middle">{artistType}</span>
-                  </span>
+                  <span className="align-middle">{artistType}</span>
                 </p>
               ) : null}
             </div>

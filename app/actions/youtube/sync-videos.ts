@@ -215,7 +215,11 @@ export async function syncYouTubeVideosInternal(
       if (!nextPageToken) break;
     }
 
-    const videoItems = playlistItems || [];
+    const videoItems = (playlistItems || []).sort(
+      (a, b) =>
+        new Date(b.snippet.publishedAt).getTime() -
+        new Date(a.snippet.publishedAt).getTime()
+    );
 
     if (videoItems.length === 0) {
       return {

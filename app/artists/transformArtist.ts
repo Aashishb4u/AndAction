@@ -21,6 +21,7 @@ type RawArtistFromAPI = {
     lastName: string | null;
     avatar: string | null;
     city: string | null;
+    state?: string | null;
   };
 };
 
@@ -80,7 +81,7 @@ export function transformArtist(raw: RawArtistFromAPI): Artist {
     id: raw.id,
     name: fullName,
     category: capitalize(raw.artistType || "Artist"),
-    location: capitalize(raw.user.city || "") || "Location not set",
+    location: capitalize(raw.user.state || ""),
     duration,
     startingPrice: raw.soloChargesFrom || 0,
     languages:

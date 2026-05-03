@@ -96,8 +96,14 @@ export const artistKeys = {
 
 const mapArtistData = (artist: any): Artist => ({
   id: artist.id,
-  name: getArtishName(artist.user.name, artist.user.firstName, artist.user.lastName),
-  location: artist.user.city || "Unknown",
+  name:
+    (artist.stageName || "").trim() ||
+    getArtishName(
+      artist.user?.name ?? null,
+      artist.user?.firstName ?? null,
+      artist.user?.lastName ?? null,
+    ),
+  location: (artist.user?.state || "").trim(),
   thumbnail: artist.profileImage || artist.user.avatar || "/avatars/default.jpg",
   videoUrl: mockVideoUrl,
   distance: artist.distance !== undefined ? artist.distance : null,

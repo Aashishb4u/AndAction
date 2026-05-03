@@ -163,7 +163,7 @@ function ArtistProfileContent() {
       artistProfile.stageName ||
       `${user.firstName || ""} ${user.lastName || ""}`.trim(),
     category: displayArtistType,
-    location: `${user.city || ""}${user.state ? `, ${user.state}` : ""}`,
+    location: `${user.state || ""}`,
     duration: "2-4 hours",
     startingPrice: 25000,
     languages: artistProfile.performingLanguage
