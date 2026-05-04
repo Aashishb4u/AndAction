@@ -59,7 +59,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const isFetchingShortsRef = useRef(false);
 
   const VIDEOS_PER_PAGE = 5;
-  const SHORTS_PER_PAGE = 5;
+  const SHORTS_PER_PAGE = 3;
 
   const [shortsCurrentIndex, setShortsCurrentIndex] = useState(0);
   const [shortsSoundEnabled, setShortsSoundEnabled] = useState<boolean>(true);
@@ -300,7 +300,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   }, [artistShorts, resolveArtistTypeLabel, artist.id]);
 
   const visibleProfileShorts = useMemo(() => {
-    const visibleWindowSize = 5;
+    const visibleWindowSize = 2;
     const startIndex = Math.max(0, shortsCurrentIndex - 1);
     const endIndex = Math.min(
       profileShorts.length - 1,
@@ -601,9 +601,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           artist.soloChargesFrom !== null &&
           `${artist.soloChargesFrom}`.trim() !== "";
         const hasBacklineCharges =
-          artist.chargesWithBacklineFrom !== undefined &&
-          artist.chargesWithBacklineFrom !== null &&
-          `${artist.chargesWithBacklineFrom}`.trim() !== "";
+          Number(artist.chargesWithBacklineFrom) > 0;
         const hasPricingSection =
           hasSoloCharges ||
           !!artist.soloChargesDescription?.trim() ||
@@ -624,24 +622,24 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
         const languages = artist.languages?.length
           ? artist.languages
-              .flatMap((lang: string) =>
-                lang.split(",").map((l: string) => l.trim()),
-              )
-              .filter((l: string) => l)
+            .flatMap((lang: string) =>
+              lang.split(",").map((l: string) => l.trim()),
+            )
+            .filter((l: string) => l)
           : [];
 
         const eventTypes = artist.performingEventType
           ? artist.performingEventType
-              .split(",")
-              .map((e: string) => e.trim())
-              .filter((e: string) => e)
+            .split(",")
+            .map((e: string) => e.trim())
+            .filter((e: string) => e)
           : [];
 
         const states = artist.performingStates
           ? artist.performingStates
-              .split(",")
-              .map((s: string) => s.trim())
-              .filter((s: string) => s)
+            .split(",")
+            .map((s: string) => s.trim())
+            .filter((s: string) => s)
           : [];
         const hasPanIndia = states.some(
           (s: string) => s.toLowerCase() === "pan india",
@@ -744,7 +742,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               </div>
             )}
 
-            {languages.length > 0 && ( 
+            {languages.length > 0 && (
               <div
                 className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
                 style={{ borderColor: "#232323" }}
@@ -859,11 +857,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               isBookmarked={video.isBookmarked}
               bookmarkId={video.bookmarkId}
               onBookmark={(data) => toggleBookmark(data)}
-              onShare={() => {}}
+              onShare={() => { }}
               artistId={(video.user as any)?.artist?.id}
               artistType={resolveArtistTypeLabel(
                 (video.user as any)?.artists?.[0]?.artistType ||
-                  (video.user as any)?.artist?.artistType,
+                (video.user as any)?.artist?.artistType,
               )}
               enableMobileAutoplay={true}
             />
@@ -928,23 +926,30 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             willChange: "transform",
           }}
         >
-          {visibleProfileShorts.map((short: any) => (
-            <div
-              key={`${short.id}-${short.absoluteIndex}`}
-              className="absolute inset-0 w-full h-full"
-              style={{ top: `${short.absoluteIndex * 100}%` }}
-            >
-              <ShortsPlayer
-                short={short}
-                isActive={short.absoluteIndex === shortsCurrentIndex}
-                shouldLoad={short.absoluteIndex === shortsCurrentIndex}
-                onBookmark={handleProfileShortBookmark}
-                onShare={handleProfileShortShare}
-                soundEnabled={shortsSoundEnabled}
-                setSoundEnabled={setShortsSoundEnabled}
-              />
-            </div>
-          ))}
+          {visibleProfileShorts.map((short: any) => {
+            const isActive = short.absoluteIndex === shortsCurrentIndex;
+            const isNext = short.absoluteIndex === shortsCurrentIndex + 1;
+
+            if (!isActive && !isNext) return null;
+
+            return (
+              <div
+                key={`${short.id}-${short.absoluteIndex}`}
+                className="absolute inset-0 w-full h-full"
+                style={{ top: `${short.absoluteIndex * 100}%` }}
+              >
+                <ShortsPlayer
+                  short={short}
+                  isActive={isActive}
+                  shouldLoad={isActive || isNext}
+                  onBookmark={handleProfileShortBookmark}
+                  onShare={handleProfileShortShare}
+                  soundEnabled={shortsSoundEnabled}
+                  setSoundEnabled={setShortsSoundEnabled}
+                />
+              </div>
+            );
+          })}
         </div>
         {isLoadingShorts ? (
           <div className="absolute top-4 right-4 z-50">
@@ -982,11 +987,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`flex-1 py-4 px-4 text-base font-medium transition-colors relative ${
-                  activeTab === tab.id
-                    ? "text-white"
-                    : "text-text-gray hover:text-gray-300"
-                }`}
+                className={`flex-1 py-4 px-4 text-base font-medium transition-colors relative ${activeTab === tab.id
+                  ? "text-white"
+                  : "text-text-gray hover:text-gray-300"
+                  }`}
               >
                 {tab.label}
                 {activeTab === tab.id && (
@@ -1016,11 +1020,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`py-4 px-6 text-base font-medium transition-colors relative ${
-                activeTab === tab.id
-                  ? "gradient-text"
-                  : "text-text-gray hover:text-gray-300"
-              }`}
+              className={`py-4 px-6 text-base font-medium transition-colors relative ${activeTab === tab.id
+                ? "gradient-text"
+                : "text-text-gray hover:text-gray-300"
+                }`}
             >
               {tab.label}
               {activeTab === tab.id && (

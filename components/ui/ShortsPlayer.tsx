@@ -83,6 +83,24 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   /* ---------------- NATIVE VIDEO CONTROL ---------------- */
 
   useEffect(() => {
+    if (!videoRef.current) return;
+
+    if (shouldLoad) {
+      videoRef.current.load();   // 🔥 load only when needed
+    }
+  }, [shouldLoad]);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    if (isActive) {
+      videoRef.current.play().catch(() => { });
+    } else {
+      videoRef.current.pause();
+    }
+  }, [isActive]);
+
+  useEffect(() => {
     if (isYouTube) return;
 
     const video = videoRef.current;
@@ -90,7 +108,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
 
     if (isActive && isVideoLoaded) {
       video.muted = !soundEnabled;
-      video.play().then(() => setIsPlaying(true)).catch(() => {});
+      video.play().then(() => setIsPlaying(true)).catch(() => { });
     } else {
       video.pause();
       video.currentTime = 0;
@@ -250,23 +268,20 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
 
       {shouldLoad &&
         (isYouTube ? (
-<iframe
-  id={`yt-${short.id}`}
-  className="absolute inset-0 w-full h-full pointer-events-none"
-  src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=${isActive && soundEnabled ? 0 : 1}&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
-    typeof window !== "undefined" ? window.location.origin : ""
-  }`}
-  allow="autoplay; encrypted-media"
-/>
+          <iframe
+            id={`yt-${short.id}`}
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=${isActive && soundEnabled ? 0 : 1}&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${typeof window !== "undefined" ? window.location.origin : ""
+              }`}
+            allow="autoplay; encrypted-media"
+          />
         ) : (
           <video
             ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover"
             src={short.videoUrl}
-            loop
+            preload={shouldLoad ? "auto" : "none"}   // 🔥 main fix
             playsInline
             muted={!soundEnabled}
-            onLoadedData={() => setIsVideoLoaded(true)}
           />
         ))}
 

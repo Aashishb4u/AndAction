@@ -59,7 +59,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         <div className="flex py-4 gap-4 items-start">
           {/* Artist Image */}
           <div
-            className="relative w-32 h-40 rounded-xl overflow-hidden flex-shrink-0"
+            className="relative w-32 aspect-[2/3] rounded-xl overflow-hidden flex-shrink-0"
             style={{ backgroundColor: "#111" }}
           >
             <Image
