@@ -205,7 +205,7 @@ export default function BookmarksPage() {
           ))}
         </div>
 
-        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 md:py-8">
 
           {loading && <LoadingOverlay text="Loading bookmarks..." />}
 

@@ -358,8 +358,8 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
                 s.toLowerCase().includes((subInput || "").toLowerCase()) &&
                 !formData.subCategory.includes(s)
               ).length === 0 && (
-                <div className="px-3 py-2 text-gray-400">No suggestions</div>
-              )}
+                  <div className="px-3 py-2 text-gray-400">No suggestions</div>
+                )}
             </div>
           )}
         </div>
@@ -567,7 +567,8 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             variant="secondary"
             size="md"
             onClick={handleReset}
-            className="flex-1 text-primary-pink bg-[#1B1B1B]! px-8 py-3"
+            className="flex-1 text-primary-pink bg-[#1B1B1B]! px-8 py-3 
+             focus:ring-1 focus:ring-primary-pink focus:ring-offset-0"
           >
             <span className="gradient-text secondary-grey-text">Reset</span>
           </Button>

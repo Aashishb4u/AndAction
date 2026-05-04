@@ -218,8 +218,8 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
               <Image
                 src="/logo.png"
                 alt="ANDACTION Logo"
-                width={180}
-                height={20}
+                width={173}
+                height={19}
               />
             </Link>
           </div>
@@ -326,7 +326,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
           <div className="lg:hidden">
             <button
               onClick={handleToggleSidebar}
-              className="p-2 text-text-light-gray hover:text-white transition-colors duration-200"
+              className=" text-text-light-gray hover:text-white transition-colors duration-200"
             >
               <svg
                 className="w-8 h-8"
