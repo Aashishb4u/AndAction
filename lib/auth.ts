@@ -33,18 +33,22 @@ export interface SignUpData {
   shareData: boolean;
 }
 
+const BASE_URL = process.env.NEXTAUTH_URL || window.location.origin;
+// or for Next.js:
+// process.env.NEXT_PUBLIC_APP_BASE_URL
+
 export const getRedirectUrl = (searchParams?: URLSearchParams): string => {
   const redirectTo = searchParams?.get("redirect");
 
   if (redirectTo) {
     try {
-      const url = new URL(redirectTo, window.location.origin);
+      const url = new URL(redirectTo, BASE_URL);
 
-      if (url.origin === window.location.origin) {
+      if (url.origin === BASE_URL) {
         return url.pathname + url.search + url.hash;
       }
     } catch {
-      // ignore
+      // ignore invalid URL
     }
   }
 
@@ -53,7 +57,7 @@ export const getRedirectUrl = (searchParams?: URLSearchParams): string => {
 
 export const createAuthRedirectUrl = (
   authPath: string,
-  currentPath?: string
+  currentPath?: string,
 ): string => {
   if (!currentPath || currentPath === "/" || currentPath.startsWith("/auth")) {
     return authPath;
@@ -66,7 +70,7 @@ export const createAuthRedirectUrl = (
 
 export const signIn = async (email: string): Promise<User> => {
   throw new Error(
-    "Sign In implementation is missing. Use nextAuthSignIn with credentials."
+    "Sign In implementation is missing. Use nextAuthSignIn with credentials.",
   );
 };
 
@@ -77,7 +81,7 @@ export const signIn = async (email: string): Promise<User> => {
  * @returns The newly created User object from the backend.
  */
 export const signUp = async (
-  userData: SignUpData
+  userData: SignUpData,
 ): Promise<{ user: User; contactIdentifier: string }> => {
   const response = await fetch("/api/auth/signup", {
     method: "POST",
@@ -90,7 +94,9 @@ export const signUp = async (
   if (!response.ok) {
     const errorBody = await response.json();
     throw new Error(
-      errorBody.error || errorBody.message || "Registration failed due to a server error."
+      errorBody.error ||
+        errorBody.message ||
+        "Registration failed due to a server error.",
     );
   }
 
@@ -100,7 +106,7 @@ export const signUp = async (
 
   if (!newUserFromApi) {
     throw new Error(
-      "Registration succeeded but user data was missing from the response."
+      "Registration succeeded but user data was missing from the response.",
     );
   }
 
@@ -116,7 +122,7 @@ export const signUp = async (
 
 export const signOut = async (): Promise<void> => {
   await nextAuthSignOut({
-    redirect: false
+    redirect: false,
   });
 };
 
@@ -141,39 +147,39 @@ export const getCurrentUser = async (): Promise<User | null> => {
 };
 
 export const signInWithGoogle = async (
-  role?: "user" | "artist"
+  role?: "user" | "artist",
 ): Promise<void> => {
   const baseUrl = getRedirectUrl();
   const callbackUrl =
     role === "artist"
       ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
-          baseUrl
+          baseUrl,
         )}`
       : baseUrl;
   await nextAuthSignIn("google", { callbackUrl, redirect: true });
 };
 
 export const signInWithFacebook = async (
-  role?: "user" | "artist"
+  role?: "user" | "artist",
 ): Promise<void> => {
   const baseUrl = getRedirectUrl();
   const callbackUrl =
     role === "artist"
       ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
-          baseUrl
+          baseUrl,
         )}`
       : baseUrl;
   await nextAuthSignIn("facebook", { callbackUrl, redirect: true });
 };
 
 export const signInWithApple = async (
-  role?: "user" | "artist"
+  role?: "user" | "artist",
 ): Promise<void> => {
   const baseUrl = getRedirectUrl();
   const callbackUrl =
     role === "artist"
       ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
-          baseUrl
+          baseUrl,
         )}`
       : baseUrl;
   await nextAuthSignIn("apple", { callbackUrl, redirect: true });
