@@ -35,17 +35,19 @@ export interface SignUpData {
 
 export const getRedirectUrl = (searchParams?: URLSearchParams): string => {
   const redirectTo = searchParams?.get("redirect");
+
   if (redirectTo) {
     try {
       const url = new URL(redirectTo, window.location.origin);
+
       if (url.origin === window.location.origin) {
-        return redirectTo;
+        return url.pathname + url.search + url.hash;
       }
     } catch {
-      // Invalid URL, fall back to home
-      // TODO
+      // ignore
     }
   }
+
   return "/";
 };
 
