@@ -48,11 +48,19 @@ function ArtistProfileContent() {
       queryClient.invalidateQueries({
         queryKey: integrationKeys.status(profileIdParam),
       });
-      queryClient.setQueryData(videoKeys.list("videos", profileIdParam), []);
-      queryClient.setQueryData(videoKeys.list("shorts", profileIdParam), []);
-      queryClient.invalidateQueries({ queryKey: videoKeys.all });
+      queryClient.removeQueries({
+        queryKey: videoKeys.list("videos", profileIdParam),
+        exact: true,
+      });
+      queryClient.removeQueries({
+        queryKey: videoKeys.list("shorts", profileIdParam),
+        exact: true,
+      });
+      queryClient.invalidateQueries({
+        queryKey: videoKeys.all,
+        refetchType: "active",
+      });
       queryClient.invalidateQueries({ queryKey: ["instagram-videos"] });
-      queryClient.refetchQueries({ queryKey: videoKeys.all });
       // Clear the URL params after showing notification
       router.replace(
         profileIdParam
