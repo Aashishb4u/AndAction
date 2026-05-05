@@ -9,7 +9,6 @@ import ContactPricingDetails from "@/components/artist/profile-setup/ContactPric
 import ProfileReview from "@/components/artist/profile-setup/ProfileReview";
 import VideosSocialMedia from "@/components/artist/profile-setup/VideosSocialMedia";
 import SuccessModal from "@/components/artist/profile-setup/SuccessModal";
-import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useSession } from "next-auth/react";
 import type { ArtistProfileSetupPreferences } from "@/types";
 
@@ -21,6 +20,11 @@ type ProfileSetupStep =
   | "review"
   | "videosSocialMedia";
 
+const PROFILE_SETUP_DRAFT_KEY = "artist-profile-setup-draft-v1";
+
+const getDraftStorageKey = (userId?: string | null) =>
+  userId ? `${PROFILE_SETUP_DRAFT_KEY}:${userId}` : "";
+
 function ProfileSetupPageContent() {
   const [currentStep, setCurrentStep] = useState<ProfileSetupStep>("overview");
   // When a user clicks "Edit" from the Review page, we set this to the step
@@ -28,8 +32,6 @@ function ProfileSetupPageContent() {
   // proceeding through the normal sequential flow.
   const [editingFromReview, setEditingFromReview] = useState<ProfileSetupStep | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showBackWarning, setShowBackWarning] = useState(false);
-  const [pendingBackStep, setPendingBackStep] = useState<ProfileSetupStep | "dashboard" | null>(null);
   const [didInitFromQuery, setDidInitFromQuery] = useState(false);
   const [isConvertingAccount, setIsConvertingAccount] = useState(false);
   const hasTriggeredConversionRef = useRef(false);
@@ -39,6 +41,7 @@ function ProfileSetupPageContent() {
   const shouldConvert = searchParams.get("convert") === "true";
   const [preferences, setPreferences] =
     useState<ArtistProfileSetupPreferences | null>(null);
+  const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -164,6 +167,72 @@ function ProfileSetupPageContent() {
     backingDescription: "",
   });
 
+  useEffect(() => {
+    if (!session?.user?.id || hasLoadedDraft) return;
+    const draftKey = getDraftStorageKey(session.user.id);
+    if (!draftKey) {
+      setHasLoadedDraft(true);
+      return;
+    }
+
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) {
+        setHasLoadedDraft(true);
+        return;
+      }
+      const parsed = JSON.parse(raw) as {
+        currentStep?: ProfileSetupStep;
+        profileData?: Partial<typeof profileData>;
+      };
+
+      if (
+        parsed.currentStep &&
+        [
+          "overview",
+          "artistDetails",
+          "performanceDetails",
+          "contactPricing",
+          "review",
+          "videosSocialMedia",
+        ].includes(parsed.currentStep)
+      ) {
+        setCurrentStep(parsed.currentStep);
+      }
+
+      if (parsed.profileData && typeof parsed.profileData === "object") {
+        setProfileData((prev) => ({
+          ...prev,
+          ...parsed.profileData,
+          profilePhoto: null,
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to restore profile setup draft:", error);
+    } finally {
+      setHasLoadedDraft(true);
+    }
+  }, [session?.user?.id, hasLoadedDraft]);
+
+  useEffect(() => {
+    if (!session?.user?.id || !hasLoadedDraft) return;
+    const draftKey = getDraftStorageKey(session.user.id);
+    if (!draftKey) return;
+
+    const { profilePhoto: _profilePhoto, ...serializableProfileData } = profileData;
+    const payload = {
+      currentStep,
+      profileData: serializableProfileData,
+      updatedAt: Date.now(),
+    };
+
+    try {
+      localStorage.setItem(draftKey, JSON.stringify(payload));
+    } catch (error) {
+      console.error("Failed to save profile setup draft:", error);
+    }
+  }, [session?.user?.id, currentStep, profileData, hasLoadedDraft]);
+
   // Pre-fill existing artist profile data when editing
   useEffect(() => {
     if (session?.user?.artistProfile) {
@@ -172,43 +241,98 @@ function ProfileSetupPageContent() {
       
       setProfileData((prev) => ({
         ...prev,
-        artistProfileId: profile.id,
-        avatarUrl: user.avatar || "",
-        stageName: profile.stageName || "",
-        artistType: profile.artistType || "",
-        subArtistType: profile.subArtistType || "",
-        achievements: profile.achievements || "",
-        yearsOfExperience: profile.yearsOfExperience?.toString() || "",
-        shortBio: profile.shortBio || "",
-        performingLanguages: profile.performingLanguage 
-          ? profile.performingLanguage.split(",").map((l: string) => l.trim())
-          : [],
-        performingEventTypes: profile.performingEventType
-          ? profile.performingEventType.split(",").map((t: string) => t.trim())
-          : [],
-        performingStates: profile.performingStates
-          ? profile.performingStates.split(",").map((s: string) => s.trim())
-          : [],
-        performingDurationFrom: profile.performingDurationFrom || "",
-        performingDurationTo: profile.performingDurationTo || "",
-        performingMembers: profile.performingMembers || "",
-        offStageMembers: profile.offStageMembers || "",
-        contactNumber: profile.contactNumber || profile.whatsappNumber || "",
-        whatsappNumber: profile.whatsappNumber || profile.contactNumber || "",
-        email: user.email || "",
+        // Keep restored draft values when present; use profile/session only as fallback.
+        artistProfileId: prev.artistProfileId || profile.id,
+        avatarUrl: prev.avatarUrl || user.avatar || "",
+        stageName: prev.stageName || profile.stageName || "",
+        artistType: prev.artistType || profile.artistType || "",
+        subArtistType: prev.subArtistType || profile.subArtistType || "",
+        achievements: prev.achievements || profile.achievements || "",
+        yearsOfExperience:
+          prev.yearsOfExperience || profile.yearsOfExperience?.toString() || "",
+        shortBio: prev.shortBio || profile.shortBio || "",
+        performingLanguages:
+          prev.performingLanguages.length > 0
+            ? prev.performingLanguages
+            : profile.performingLanguage
+              ? profile.performingLanguage.split(",").map((l: string) => l.trim())
+              : [],
+        performingEventTypes:
+          prev.performingEventTypes.length > 0
+            ? prev.performingEventTypes
+            : profile.performingEventType
+              ? profile.performingEventType.split(",").map((t: string) => t.trim())
+              : [],
+        performingStates:
+          prev.performingStates.length > 0
+            ? prev.performingStates
+            : profile.performingStates
+              ? profile.performingStates.split(",").map((s: string) => s.trim())
+              : [],
+        performingDurationFrom:
+          prev.performingDurationFrom || profile.performingDurationFrom || "",
+        performingDurationTo:
+          prev.performingDurationTo || profile.performingDurationTo || "",
+        performingMembers: prev.performingMembers || profile.performingMembers || "",
+        offStageMembers: prev.offStageMembers || profile.offStageMembers || "",
+        contactNumber: prev.contactNumber ||
+          profile.contactNumber ||
+          profile.whatsappNumber ||
+          (user as any)?.phoneNumber ||
+          "",
+        whatsappNumber: prev.whatsappNumber ||
+          profile.whatsappNumber ||
+          profile.contactNumber ||
+          (user as any)?.phoneNumber ||
+          "",
+        email: prev.email || user.email || "",
       }));
     }
   }, [session]);
 
   // Pre-fill email from session if available
   useEffect(() => {
-    if (session?.user?.email) {
+    if (session?.user?.email || (session?.user as any)?.phoneNumber) {
       setProfileData((prev) => ({
         ...prev,
-        email: prev.email || session.user.email || "",
+        email: prev.email || session?.user?.email || "",
+        contactNumber: prev.contactNumber || (session?.user as any)?.phoneNumber || "",
+        whatsappNumber:
+          prev.whatsappNumber || (session?.user as any)?.phoneNumber || "",
       }));
     }
-  }, [session?.user?.email]);
+  }, [session?.user?.email, (session?.user as any)?.phoneNumber]);
+
+  useEffect(() => {
+    if (!hasLoadedDraft) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasLoadedDraft]);
+
+  useEffect(() => {
+    if (!hasLoadedDraft) return;
+    window.history.pushState(null, "", window.location.href);
+
+    const handlePopState = () => {
+      const shouldLeave = window.confirm(
+        "If you go back now, your current form progress may reset. Do you want to continue?",
+      );
+
+      if (shouldLeave) {
+        window.removeEventListener("popstate", handlePopState);
+        window.history.back();
+      } else {
+        window.history.pushState(null, "", window.location.href);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [hasLoadedDraft]);
 
   const handleSubmitProfile = async () => {
     try {
@@ -270,6 +394,10 @@ function ProfileSetupPageContent() {
         artistProfile: updatedArtistProfile,
         isArtistVerified: true,
       });
+
+      if (session?.user?.id) {
+        localStorage.removeItem(getDraftStorageKey(session.user.id));
+      }
 
       // Navigate to Videos & Social Media step after successful save
       setCurrentStep("videosSocialMedia");
@@ -341,18 +469,9 @@ function ProfileSetupPageContent() {
 
   const handleBack = () => {
     const target = resolveBackTarget();
-    setPendingBackStep(target);
-    setShowBackWarning(true);
-  };
-
-  const handleConfirmBack = () => {
-    if (!pendingBackStep) {
-      setShowBackWarning(false);
-      return;
-    }
-    performBackNavigation(pendingBackStep);
-    setPendingBackStep(null);
-    setShowBackWarning(false);
+    // In-step navigation should be seamless and preserve entered values.
+    // Warning prompts are reserved for browser back/refresh only.
+    performBackNavigation(target);
   };
 
   const handleSkip = () => {
@@ -382,14 +501,21 @@ function ProfileSetupPageContent() {
 
   const handleGoToDashboard = () => {
     setShowSuccessModal(false);
+    if (session?.user?.id) {
+      localStorage.removeItem(getDraftStorageKey(session.user.id));
+    }
     // Redirect to artist dashboard
     router.push("/artist/dashboard");
   };
 
   const handleAddAnotherProfile = () => {
     setShowSuccessModal(false);
+    if (session?.user?.id) {
+      localStorage.removeItem(getDraftStorageKey(session.user.id));
+    }
     setCurrentStep("overview");
     setProfileData({
+      artistProfileId: "",
       profilePhoto: null,
       avatarUrl: "",
       stageName: "",
@@ -532,17 +658,6 @@ function ProfileSetupPageContent() {
         isOpen={showSuccessModal}
         onGoToDashboard={handleGoToDashboard}
         onAddAnotherProfile={handleAddAnotherProfile}
-      />
-      <ConfirmDialog
-        open={showBackWarning}
-        onOpenChange={setShowBackWarning}
-        title="Go Back?"
-        description="Your current step changes may not be saved yet. Are you sure you want to go back?"
-        confirmText="Go Back"
-        cancelText="Stay Here"
-        variant="warning"
-        onCancel={() => setPendingBackStep(null)}
-        onConfirm={handleConfirmBack}
       />
     </div>
   );

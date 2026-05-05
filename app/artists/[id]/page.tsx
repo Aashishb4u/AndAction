@@ -173,19 +173,27 @@ export default function ArtistDetailPage() {
       } catch (err) {
         console.error("Artist Fetch Error:", err);
         setArtist(null);
-      } finally {
-        setLoading(false);
       }
     };
 
     const fetchData = async () => {
-      const [fetchedArtist, approvedBookings] = await Promise.all([
-        fetchArtist(),
-        getBookingsByStatus(artistId as string),
-      ]);
+      try {
+        const [fetchedArtist, approvedBookings] = await Promise.all([
+          fetchArtist(),
+          getBookingsByStatus(artistId as string),
+        ]);
 
-      setArtist(fetchedArtist);
-      setDisabledDates(approvedBookings.map((b: any) => new Date(b.eventDate)));
+        setArtist(fetchedArtist ?? null);
+        setDisabledDates(
+          (approvedBookings ?? []).map((b: any) => new Date(b.eventDate)),
+        );
+      } catch (error) {
+        console.error("Artist detail page load failed:", error);
+        setArtist(null);
+        setDisabledDates([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
@@ -203,8 +211,31 @@ export default function ArtistDetailPage() {
   if (loading) {
     return (
       <SiteLayout>
-        <div className="min-h-screen flex items-center justify-center text-white">
-          Loading...
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <svg
+              className="h-10 w-10 animate-spin text-primary-pink"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeOpacity="0.35"
+              />
+              <path
+                d="M21 12a9 9 0 00-9-9"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+            <p className="text-white">Loading artist profile...</p>
+          </div>
         </div>
       </SiteLayout>
     );

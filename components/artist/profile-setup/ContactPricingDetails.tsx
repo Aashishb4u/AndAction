@@ -24,7 +24,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     contactNumber: data.contactNumber || data.whatsappNumber || "",
-    // merged contact/whatsapp number
+    whatsappNumber: data.whatsappNumber || data.contactNumber || "",
     email: data.email || "",
     soloCharges: data.soloCharges || "",
     soloDescription: data.soloDescription || "",
@@ -34,20 +34,11 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
 
   // contact editing flag removed — always allow editing in form
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedCountry, setSelectedCountry] = useState<{ dialCode?: string } | null>({ dialCode: '+91' });
 
   const handleInputChange = (field: string, value: string | boolean) => {
     const updatedData = { ...formData, [field]: value };
-    const syncedUpdate =
-      field === "contactNumber"
-        ? {
-            ...updatedData,
-            whatsappNumber: String(value || ""),
-          }
-        : updatedData;
-
     setFormData(updatedData);
-    onUpdateData(syncedUpdate);
+    onUpdateData(updatedData);
 
     // Clear error for the field being edited
     if (errors[field]) {
@@ -62,14 +53,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
   const validatePhoneNumber = (phoneNumber: string): boolean => {
     // Remove all non-digit characters
     const digitsOnly = phoneNumber.replace(/\D/g, "");
-
-    // If India (+91) require exactly 10 digits (local national number)
-    if (selectedCountry?.dialCode === '+91') {
-      return digitsOnly.length === 10;
-    }
-
-    // For other countries, require between 10 and 15 digits
-    return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+    return digitsOnly.length === 10;
   };
 
   const handleNext = () => {
@@ -79,9 +63,13 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
     if (!formData.contactNumber?.trim()) {
       newErrors.contactNumber = "Contact number is required";
     } else if (!validatePhoneNumber(formData.contactNumber)) {
-      newErrors.contactNumber = selectedCountry?.dialCode === '+91'
-        ? 'Please enter a valid 10-digit mobile number for India'
-        : 'Please enter a valid phone number (10-15 digits)';
+      newErrors.contactNumber = "Please enter a valid 10-digit contact number";
+    }
+
+    if (!formData.whatsappNumber?.trim()) {
+      newErrors.whatsappNumber = "WhatsApp number is required";
+    } else if (!validatePhoneNumber(formData.whatsappNumber)) {
+      newErrors.whatsappNumber = "Please enter a valid 10-digit WhatsApp number";
     }
 
     setErrors(newErrors);
@@ -90,10 +78,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
       return; // Don't proceed if there are errors
     }
 
-    onUpdateData({
-      ...formData,
-      whatsappNumber: formData.contactNumber,
-    });
+    onUpdateData(formData);
     onNext();
   };
 
@@ -170,13 +155,13 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
               <h3 className="text-white h2 mb-4">Contact Details</h3>
 
               <div className="space-y-4">
-                {/* Contact Number (merged with WhatsApp) */}
+                {/* Contact Number */}
                 <div className="relative">
                   <div className="relative mb-1">
-                      <label className="block section-text secondary-text">Contact / WhatsApp Number*</label>
+                      <label className="block section-text secondary-text">Contact Number*</label>
                       <div className="absolute top-0 right-0">
                         <Tooltip
-                          content="Contact / WhatsApp Number"
+                          content="Primary contact number"
                         >
                           <svg
                             className="w-4 h-4 text-blue cursor-help"
@@ -201,7 +186,6 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                       onChange={(value) =>
                         handleInputChange("contactNumber", value)
                       }
-                      onCountryChange={(c) => setSelectedCountry(c as any)}
                       variant="filled"
                       disabled={false}
                     />
@@ -213,7 +197,48 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                     </p>
                   )}
                 </div>
-                
+
+                {/* WhatsApp Number */}
+                <div className="relative">
+                  <div className="relative mb-1">
+                      <label className="block section-text secondary-text">WhatsApp Number*</label>
+                      <div className="absolute top-0 right-0">
+                        <Tooltip
+                          content="WhatsApp number for booking communication"
+                        >
+                          <svg
+                            className="w-4 h-4 text-blue cursor-help"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </Tooltip>
+                      </div>
+                    </div>
+                  <div className="relative">
+                    <PhoneInput
+                      placeholder="Enter WhatsApp number"
+                      value={formData.whatsappNumber}
+                      onChange={(value) =>
+                        handleInputChange("whatsappNumber", value)
+                      }
+                      variant="filled"
+                      disabled={false}
+                    />
+                  </div>
+                  {errors.whatsappNumber && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.whatsappNumber}
+                    </p>
+                  )}
+                </div>
 
                 {/* Email */}
                 <div className="relative">

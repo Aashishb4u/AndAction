@@ -407,6 +407,33 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   }, [activeTab, handleProfileShortsScroll]);
 
   useEffect(() => {
+    if (activeTab === "shorts") return;
+    const container = shortsContainerRef.current;
+    if (!container) return;
+
+    const videos = Array.from(container.querySelectorAll<HTMLVideoElement>("video"));
+    videos.forEach((video) => {
+      video.pause();
+      video.muted = true;
+    });
+
+    const iframes = Array.from(
+      container.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
+    );
+    iframes.forEach((iframe) => {
+      if (!iframe.contentWindow) return;
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+        "*",
+      );
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func: "mute", args: [] }),
+        "*",
+      );
+    });
+  }, [activeTab]);
+
+  useEffect(() => {
     const wrapper = shortsTabWrapperRef.current;
     if (!wrapper) return;
 
@@ -426,6 +453,46 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       };
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== "shorts") return;
+    const container = shortsContainerRef.current;
+    if (!container) return;
+
+    const activeShortId = profileShorts[shortsCurrentIndex]?.id;
+    if (!activeShortId) return;
+
+    const shortNodes = Array.from(
+      container.querySelectorAll<HTMLElement>("[data-short-id]"),
+    );
+
+    shortNodes.forEach((node) => {
+      const isActiveNode = node.dataset.shortId === activeShortId;
+
+      const videos = Array.from(node.querySelectorAll<HTMLVideoElement>("video"));
+      videos.forEach((video) => {
+        if (!isActiveNode) {
+          video.pause();
+          video.muted = true;
+        }
+      });
+
+      const iframes = Array.from(
+        node.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
+      );
+      iframes.forEach((iframe) => {
+        if (!iframe.contentWindow || isActiveNode) return;
+        iframe.contentWindow.postMessage(
+          JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+          "*",
+        );
+        iframe.contentWindow.postMessage(
+          JSON.stringify({ event: "command", func: "mute", args: [] }),
+          "*",
+        );
+      });
+    });
+  }, [activeTab, shortsCurrentIndex, profileShorts]);
 
   const handleProfileShortBookmark = useCallback(
     (id: string) => {
@@ -963,6 +1030,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               <div
                 key={`${short.id}-${short.absoluteIndex}`}
                 className="absolute inset-0 w-full h-full"
+                data-short-id={short.id}
                 style={{ top: `${short.absoluteIndex * 100}%` }}
               >
                 <ShortsPlayer

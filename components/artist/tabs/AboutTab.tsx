@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Tooltip from "@/components/ui/Tooltip";
 import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import DateInput from "@/components/ui/DateInput";
+import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { Info } from "lucide-react";
 import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
@@ -61,6 +62,7 @@ const AboutTab: React.FC<AboutTabProps> = ({
 
   const [subTypeInput, setSubTypeInput] = useState<string>("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   const handleInputChange = <K extends keyof AboutDraft>(
     field: K,
@@ -71,6 +73,42 @@ const AboutTab: React.FC<AboutTabProps> = ({
       [field]: value,
     }));
   };
+
+  useEffect(() => {
+    const fetchLocationFromPinCode = async () => {
+      const pin = draft.pinCode.trim();
+      if (!/^\d{6}$/.test(pin)) return;
+
+      setIsFetchingLocation(true);
+      try {
+        const response = await fetch(`/api/geocode/pincode?pin=${pin}`);
+        const data = await response.json();
+
+        if (data?.success && data?.data) {
+          const normalizedState = data.data.state
+            ? String(data.data.state).toLowerCase().replace(/\s+/g, "-")
+            : "";
+          const normalizedCity = String(
+            data.data.city || data.data.district || "",
+          )
+            .toLowerCase()
+            .replace(/\s+/g, "-");
+
+          setDraft((prev) => ({
+            ...prev,
+            state: normalizedState || prev.state,
+            city: normalizedCity || prev.city,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch location:", error);
+      } finally {
+        setIsFetchingLocation(false);
+      }
+    };
+
+    fetchLocationFromPinCode();
+  }, [draft.pinCode, setDraft]);
 
   return (
     <div className="md:space-y-5 space-y-4 pb-24 md:pb-0">
@@ -83,7 +121,7 @@ const AboutTab: React.FC<AboutTabProps> = ({
           required
         />
         <div className="absolute top-0 right-0">
-          <Tooltip content="Your professional/stage name that will be displayed to clients">
+          <Tooltip content="Your stage name or artist alias that fans will recognize you by. This will be displayed on your public profile.">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
@@ -125,10 +163,17 @@ const AboutTab: React.FC<AboutTabProps> = ({
       </div>
 
       {/* Address */}
-      <Input
+      <AddressAutocomplete
         label="Office/Home full address*"
+        placeholder="Search for your address or use location"
         value={draft.address}
-        onChange={(e) => handleInputChange("address", e.target.value)}
+        onChange={(value) => handleInputChange("address", value)}
+        onLocationSelect={(loc) => {
+          handleInputChange("address", loc.address);
+          if (loc.pinCode) handleInputChange("pinCode", loc.pinCode);
+          if (loc.state) handleInputChange("state", loc.state);
+          if (loc.city) handleInputChange("city", loc.city);
+        }}
         required
       />
 
@@ -137,7 +182,10 @@ const AboutTab: React.FC<AboutTabProps> = ({
         <Input
           label="PIN code*"
           value={draft.pinCode}
-          onChange={(e) => handleInputChange("pinCode", e.target.value)}
+          onChange={(e) =>
+            handleInputChange("pinCode", e.target.value.replace(/\D/g, "").slice(0, 6))
+          }
+          maxLength={6}
           required
         />
         <Select
@@ -145,6 +193,7 @@ const AboutTab: React.FC<AboutTabProps> = ({
           options={INDIAN_STATES}
           value={draft.state}
           onChange={(value) => handleInputChange("state", value)}
+          disabled={isFetchingLocation}
           required
         />
         <Select
@@ -152,20 +201,39 @@ const AboutTab: React.FC<AboutTabProps> = ({
           options={INDIAN_CITIES}
           value={draft.city}
           onChange={(value) => handleInputChange("city", value)}
+          disabled={isFetchingLocation}
           required
         />
       </div>
+      {isFetchingLocation && (
+        <p className="text-sm text-primary-pink -mt-2">Fetching location...</p>
+      )}
 
       {/* Contact Number */}
       <div className="relative text-sm">
         <Input
-          label="Contact / Whatsapp number*"
+          label="Contact number*"
           value={draft.contactNumber}
           onChange={(e) => handleInputChange("contactNumber", e.target.value)}
           required
         />
         <div className="absolute top-0 right-0">
-          <Tooltip content="Primary contact number shown to users and used for calls/WhatsApp fallback">
+          <Tooltip content="Primary contact number">
+            <Info size={16} className="text-blue" />
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* WhatsApp Number */}
+      <div className="relative text-sm">
+        <Input
+          label="WhatsApp number*"
+          value={draft.whatsappNumber}
+          onChange={(e) => handleInputChange("whatsappNumber", e.target.value)}
+          required
+        />
+        <div className="absolute top-0 right-0">
+          <Tooltip content="WhatsApp number for booking communication">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>

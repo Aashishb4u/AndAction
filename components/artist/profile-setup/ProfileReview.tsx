@@ -248,7 +248,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                     Stage Name
                   </span>
                   <span className="text-white text-base">
-                    {data.stageName || "MJ Singer"}
+                    {data.stageName || "N/A"}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -293,7 +293,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <span className="text-white text-base">
                     {data.yearsOfExperience
                       ? getExperienceLabel(data.yearsOfExperience)
-                      : "4 years"}
+                      : "N/A"}
                   </span>
                 </div>
               </div>
@@ -302,8 +302,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
               <div className="space-y-2 px-4">
                 <p className="text-text-gray text-sm">Short bio</p>
                 <p className="text-white text-base leading-relaxed">
-                  {data.shortBio ||
-                    "No bio available."}
+                  {data.shortBio || "N/A"}
                 </p>
               </div>
             </div>
@@ -415,7 +414,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <p className="text-white text-base">
                     {data.performingDurationFrom && data.performingDurationTo
                       ? `${data.performingDurationFrom} - ${data.performingDurationTo} mins`
-                      : "45 - 90 mins"}
+                      : "N/A"}
                   </p>
                 </div>
                 <div>
@@ -423,7 +422,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <p className="text-white text-base">
                     {(data.performingMembers !== undefined && data.performingMembers !== null && String(data.performingMembers).trim() !== "")
                       ? `${data.performingMembers} members`
-                      : `0 members`}
+                      : "N/A"}
                     
                   </p>
                 </div>
@@ -432,7 +431,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <p className="text-white text-base">
                     {(data.offStageMembers !== undefined && data.offStageMembers !== null && String(data.offStageMembers).trim() !== "")
                       ? `${data.offStageMembers} members`
-                      : `0 members`}
+                      : "N/A"}
                    
                   </p>
                 </div>
@@ -477,19 +476,19 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div>
                   <p className="text-text-gray mb-1">Contact number</p>
                   <p className="text-white text-base">
-                    +91 - {data.contactNumber || "7226038336"}
+                    {data.contactNumber ? `+91 - ${data.contactNumber}` : "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">WhatsApp number</p>
                   <p className="text-white text-base">
-                    +91 - {data.whatsappNumber || "7226038336"}
+                    {data.whatsappNumber ? `+91 - ${data.whatsappNumber}` : "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">Email ID</p>
                   <p className="text-white text-base">
-                    {data.email || "andactionapp@gmail.com"}
+                    {data.email || "N/A"}
                   </p>
                 </div>
               </div>

@@ -247,7 +247,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
           <div className="hidden lg:flex items-center space-x-4">
             {/* Search Icon */}
             <button
-              onClick={() => router.push("/artists")}
+              onClick={() => router.push("/search")}
               className="p-2 text-text-light-gray hover:text-white transition-colors duration-200"
             >
               <Search className="size-6" />
@@ -306,7 +306,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                 className="p-2 text-text-light-gray hover:text-white transition-colors duration-200"
               >
                 <svg
-                  className="w-8 h-8"
+                  className="w-6 h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -329,7 +329,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
               className=" text-text-light-gray hover:text-white transition-colors duration-200"
             >
               <svg
-                className="w-8 h-8"
+                className="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

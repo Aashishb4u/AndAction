@@ -50,6 +50,9 @@ const performingMembersOptions = [
 ];
 
 const offStageMembersOptions = performingMembersOptions;
+
+const chipClassName =
+  "inline-flex items-center rounded-full border border-border-color bg-background px-3 py-1.5 text-xs font-medium text-white";
 const PerformanceTab: React.FC<PerformanceTabProps> = ({
   draft,
   setDraft,
@@ -160,23 +163,22 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
 
         {/* Selected values display */}
         <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-12">
-          <span
-            className={
-              draft.performingLanguages.length > 0
-                ? "text-white"
-                : "text-text-gray"
-            }
-          >
-            {draft.performingLanguages.length > 0
-              ? draft.performingLanguages
-                  .map(
-                    (val) =>
-                      performingLanguageOptions.find((opt) => opt.value === val)
-                        ?.label || val,
-                  )
-                  .join(", ")
-              : "No languages selected"}
-          </span>
+          {draft.performingLanguages.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {draft.performingLanguages.map((val) => {
+                const label =
+                  performingLanguageOptions.find((opt) => opt.value === val)
+                    ?.label || val;
+                return (
+                  <span key={val} className={chipClassName}>
+                    {label}
+                  </span>
+                );
+              })}
+            </div>
+          ) : (
+            <span className="text-text-gray">No languages selected</span>
+          )}
         </div>
 
         {/* Trigger button */}
@@ -252,21 +254,21 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
 
         {/* Selected values display */}
         <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-12">
-          <span
-            className={
-              draft.eventTypes.length > 0 ? "text-white" : "text-text-gray"
-            }
-          >
-            {draft.eventTypes.length > 0
-              ? draft.eventTypes
-                  .map(
-                    (val) =>
-                      eventTypeOptions.find((opt) => opt.value === val)
-                        ?.label || val,
-                  )
-                  .join(", ")
-              : "No event types selected"}
-          </span>
+          {draft.eventTypes.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {draft.eventTypes.map((val) => {
+                const label =
+                  eventTypeOptions.find((opt) => opt.value === val)?.label || val;
+                return (
+                  <span key={val} className={chipClassName}>
+                    {label}
+                  </span>
+                );
+              })}
+            </div>
+          ) : (
+            <span className="text-text-gray">No event types selected</span>
+          )}
         </div>
 
         {/* Trigger button */}
@@ -337,26 +339,27 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
 
         {/* Selected values display */}
         <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-12">
-          <span
-            className={
-              draft.performingStates.length > 0
-                ? "text-white"
-                : "text-text-gray"
-            }
-          >
-            {draft.performingStates.length > 0
-              ? draft.performingStates.length ===
-                INDIAN_STATES.length
-                ? "PAN India (All States)"
-                : draft.performingStates
-                    .map(
-                      (val) =>
-                        INDIAN_STATES.find((opt) => opt.value === val)
-                          ?.label || val,
-                    )
-                    .join(", ")
-              : "No states selected"}
-          </span>
+          {draft.performingStates.length > 0 ? (
+            draft.performingStates.length === INDIAN_STATES.length ? (
+              <div className="flex flex-wrap gap-1.5">
+                <span className={chipClassName}>PAN India (All States)</span>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {draft.performingStates.map((val) => {
+                  const label =
+                    INDIAN_STATES.find((opt) => opt.value === val)?.label || val;
+                  return (
+                    <span key={val} className={chipClassName}>
+                      {label}
+                    </span>
+                  );
+                })}
+              </div>
+            )
+          ) : (
+            <span className="text-text-gray">No states selected</span>
+          )}
         </div>
 
         {/* Trigger button */}
@@ -435,13 +438,13 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
             <Input
               value={draft.minDuration}
               onChange={(e) => handleInputChange("minDuration", e.target.value)}
-              placeholder="120 mins"
+              placeholder=""
               required
             />
             <Input
               value={draft.maxDuration}
               onChange={(e) => handleInputChange("maxDuration", e.target.value)}
-              placeholder="160 mins"
+              placeholder=""
               required
             />
           </div>

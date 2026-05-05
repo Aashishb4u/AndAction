@@ -364,7 +364,7 @@ export default function ArtistDashboard() {
               onScroll={() =>
                 scheduleIndexUpdate(mobileCarouselRef, mobileRafRef, setMobileActiveIndex)
               }
-              className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex gap-8 snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {profilesForUi.map((profile) => {
                 const profileArtistType = (() => {
