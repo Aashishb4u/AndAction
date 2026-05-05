@@ -6,6 +6,8 @@ import { uploadToVPS, deleteFromVPS } from "@/lib/vps-upload";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 
+const MAX_IMAGE_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
+
 function normalizeExtension(mimeType: string) {
   const raw = mimeType.split("/")[1] || "bin";
   return raw.split("+")[0].toLowerCase();
@@ -97,6 +99,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    if (mimeType.startsWith("image/") && buffer.length > MAX_IMAGE_UPLOAD_SIZE_BYTES) {
+      return ApiErrors.badRequest("Image size must be 20MB or smaller.");
+    }
 
     if (mimeType.startsWith("image/")) {
       let fileUrl = "";

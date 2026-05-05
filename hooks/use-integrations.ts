@@ -33,8 +33,14 @@ function clearYouTubeVideoCache(
   queryClient: QueryClient,
   artistProfileId: string | null | undefined,
 ) {
-  queryClient.setQueryData(videoKeys.list("videos", artistProfileId), []);
-  queryClient.setQueryData(videoKeys.list("shorts", artistProfileId), []);
+  queryClient.removeQueries({
+    queryKey: videoKeys.list("videos", artistProfileId),
+    exact: true,
+  });
+  queryClient.removeQueries({
+    queryKey: videoKeys.list("shorts", artistProfileId),
+    exact: true,
+  });
 }
 
 async function fetchIntegrationStatus(
@@ -190,8 +196,10 @@ export function useYouTubeConnectByChannel(artistProfileId?: string | null) {
       toast.success(`YouTube channel "${data.channelName}" connected successfully`);
 
       clearYouTubeVideoCache(queryClient, artistProfileId);
-      queryClient.invalidateQueries({ queryKey: videoKeys.all });
-      await queryClient.refetchQueries({ queryKey: videoKeys.all });
+      queryClient.invalidateQueries({
+        queryKey: videoKeys.all,
+        refetchType: "active",
+      });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to connect YouTube channel");
@@ -219,7 +227,10 @@ export function useYouTubeDisconnect(artistProfileId?: string | null) {
       toast.success("YouTube account disconnected successfully");
 
       clearYouTubeVideoCache(queryClient, artistProfileId);
-      queryClient.invalidateQueries({ queryKey: videoKeys.all });
+      queryClient.invalidateQueries({
+        queryKey: videoKeys.all,
+        refetchType: "active",
+      });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to disconnect YouTube");
