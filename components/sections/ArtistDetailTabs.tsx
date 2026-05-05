@@ -64,6 +64,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const [shortsCurrentIndex, setShortsCurrentIndex] = useState(0);
   const [shortsSoundEnabled, setShortsSoundEnabled] = useState<boolean>(true);
   const shortsContainerRef = useRef<HTMLDivElement>(null);
+  const shortsTabWrapperRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
   const touchEndY = useRef<number>(0);
   const lastScrollTime = useRef<number>(0);
@@ -365,6 +366,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     };
     const onTouchMove = (e: TouchEvent) => {
       if (ignoreShortsSwipeRef.current) return;
+      e.preventDefault();
       touchEndY.current = e.touches[0].clientY;
     };
     const onTouchEnd = (e: TouchEvent) => {
@@ -391,7 +393,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
     el.addEventListener("wheel", onWheel, { passive: false });
     el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
     el.addEventListener("touchend", onTouchEnd, { passive: true });
     window.addEventListener("keydown", onKeyDown, { passive: false } as any);
 
@@ -403,6 +405,27 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       window.removeEventListener("keydown", onKeyDown as any);
     };
   }, [activeTab, handleProfileShortsScroll]);
+
+  useEffect(() => {
+    const wrapper = shortsTabWrapperRef.current;
+    if (!wrapper) return;
+
+    if (activeTab === "shorts") {
+      const prevOverflow = document.body.style.overflow;
+      const prevTouchAction = document.body.style.touchAction;
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+      wrapper.style.overscrollBehavior = "none";
+      wrapper.style.touchAction = "none";
+
+      return () => {
+        document.body.style.overflow = prevOverflow;
+        document.body.style.touchAction = prevTouchAction;
+        wrapper.style.overscrollBehavior = "";
+        wrapper.style.touchAction = "";
+      };
+    }
+  }, [activeTab]);
 
   const handleProfileShortBookmark = useCallback(
     (id: string) => {
@@ -916,7 +939,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       <div
         ref={shortsContainerRef}
         className="relative w-full bg-black overflow-hidden rounded-2xl"
-        style={{ height: "calc(100vh - 14rem)" }}
+        style={{
+          height: isMobile ? "calc(100dvh - 8.5rem)" : "calc(100vh - 14rem)",
+          overscrollBehavior: "contain",
+          touchAction: "none",
+        }}
       >
         <div
           className="relative h-full"
@@ -1004,7 +1031,12 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           </div>
         </div>
 
-        <div className="md:p-6 p-4 pb-32">{renderContent()}</div>
+        <div
+          ref={shortsTabWrapperRef}
+          className={activeTab === "shorts" ? "p-0 overflow-hidden" : "md:p-6 p-4 pb-32"}
+        >
+          {renderContent()}
+        </div>
       </div>
     );
   }
