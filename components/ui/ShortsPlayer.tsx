@@ -53,9 +53,35 @@ interface ShortsPlayerProps {
 }
 
 function extractYouTubeId(url: string) {
-  const regExp = /(?:v=|youtu\.be\/|embed\/)([0-9A-Za-z_-]{11})/;
-  const match = url.match(regExp);
-  return match ? match[1] : null;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace("www.", "");
+    if (host === "youtu.be") {
+      const id = parsed.pathname.split("/").filter(Boolean)[0];
+      return id && id.length === 11 ? id : null;
+    }
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      const watchId = parsed.searchParams.get("v");
+      if (watchId && watchId.length === 11) return watchId;
+
+      const parts = parsed.pathname.split("/").filter(Boolean);
+      const shortsIndex = parts.indexOf("shorts");
+      if (shortsIndex !== -1 && parts[shortsIndex + 1]?.length === 11) {
+        return parts[shortsIndex + 1];
+      }
+
+      const embedIndex = parts.indexOf("embed");
+      if (embedIndex !== -1 && parts[embedIndex + 1]?.length === 11) {
+        return parts[embedIndex + 1];
+      }
+    }
+    return null;
+  } catch {
+    const fallback = url.match(
+      /(?:v=|youtu\.be\/|embed\/|shorts\/)([0-9A-Za-z_-]{11})/,
+    );
+    return fallback ? fallback[1] : null;
+  }
 }
 
 const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
@@ -91,30 +117,19 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   }, [shouldLoad]);
 
   useEffect(() => {
-    if (!videoRef.current) return;
-
-    if (isActive) {
-      videoRef.current.play().catch(() => { });
-    } else {
-      videoRef.current.pause();
-    }
-  }, [isActive]);
-
-  useEffect(() => {
     if (isYouTube) return;
 
     const video = videoRef.current;
     if (!video) return;
 
-    if (isActive && isVideoLoaded) {
+    if (isActive && shouldLoad && isVideoLoaded) {
       video.muted = !soundEnabled;
       video.play().then(() => setIsPlaying(true)).catch(() => { });
     } else {
       video.pause();
-      video.currentTime = 0;
       setIsPlaying(false);
     }
-  }, [isActive, isVideoLoaded, isYouTube]);
+  }, [isActive, isVideoLoaded, isYouTube, shouldLoad, soundEnabled]);
 
   /* ------------- NATIVE VIDEO: sync muted property ------------- */
 
@@ -159,8 +174,13 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     }, 300);
 
     setIsPlaying(isActive);
-    return () => clearTimeout(timer);
-  }, [isActive, isYouTube, short.id]);
+    return () => {
+      clearTimeout(timer);
+      // Ensure audio never leaks from previously active short
+      sendCommand("pauseVideo");
+      sendCommand("mute");
+    };
+  }, [isActive, isYouTube, short.id, soundEnabled]);
 
   /* ---------------- YOUTUBE CONTROL: mute/unmute ---------------- */
   useEffect(() => {
@@ -279,9 +299,11 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
           <video
             ref={videoRef}
             src={short.videoUrl}
-            preload={shouldLoad ? "auto" : "none"}   // 🔥 main fix
+            preload={isActive ? "auto" : "metadata"}
             playsInline
-            muted={!soundEnabled}
+            muted={!isActive || !soundEnabled}
+            onLoadedData={() => setIsVideoLoaded(true)}
+            onCanPlay={() => setIsVideoLoaded(true)}
           />
         ))}
 
