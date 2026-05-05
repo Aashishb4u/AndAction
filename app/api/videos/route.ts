@@ -201,7 +201,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
           where,
           skip: offset,
           take: limit,
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
           select: videoSelect as any,
         }),
         prisma.video.count({ where }),

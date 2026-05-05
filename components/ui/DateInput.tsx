@@ -103,6 +103,14 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       onChange?.(formatted);
     };
 
+    const closePickerAfterSelection = () => {
+      // Ensure the calendar closes immediately on mobile and desktop
+      // after selecting a date.
+      if (typeof document === "undefined") return;
+      const activeEl = document.activeElement as HTMLElement | null;
+      activeEl?.blur?.();
+    };
+
     const baseClasses = `
       w-full md:px-4 px-3 py-3 placeholder-text-gray
       border rounded-lg transition-all duration-200
@@ -130,6 +138,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
           <DatePicker
               selected={selectedDate}
               onChange={handlePickerChange}
+              onSelect={closePickerAfterSelection}
               onChangeRaw={handleChangeRaw}
               placeholderText={placeholder}
               disabled={disabled}
@@ -145,6 +154,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
               dropdownMode="scroll"
               yearDropdownItemNumber={100}
               scrollableYearDropdown
+              shouldCloseOnSelect
             />
 
           <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />

@@ -13,6 +13,7 @@ export type AboutDraft = {
   state: string;
   city: string;
   contactNumber: string;
+  whatsappNumber: string;
   email: string;
   achievements: string;
   yearsOfExperience: string;
@@ -67,6 +68,12 @@ export function createAboutDraft(artist: Artist): AboutDraft {
     state: (extendedArtist.state || "").toLowerCase(),
     city: (extendedArtist.city || "").toLowerCase(),
     contactNumber: extendedArtist.contactNumber || extendedArtist.phone || "",
+    whatsappNumber:
+      extendedArtist.whatsappNumber ||
+      extendedArtist.contactNumber ||
+      extendedArtist.whatsapp ||
+      extendedArtist.phone ||
+      "",
     email: extendedArtist.contactEmail || extendedArtist.email || "",
     achievements: Array.isArray(artist.achievements)
       ? artist.achievements.join(", ")

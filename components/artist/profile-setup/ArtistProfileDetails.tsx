@@ -112,12 +112,16 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     useState<string[]>(initialSubTypes);
   const [subTypeInput, setSubTypeInput] = useState<string>("");
 
+  const normalizeSubType = (value: string) => value.trim().toLowerCase();
+
   const addSubTypeTag = (rawValue: string) => {
     const v = rawValue.trim();
     if (!v) return;
+    const normalizedValue = normalizeSubType(v);
 
     setSelectedSubTypes((prev) => {
-      if (prev.includes(v)) return prev;
+      const exists = prev.some((item) => normalizeSubType(item) === normalizedValue);
+      if (exists) return prev;
       const next = [v, ...prev];
       const csv = next.join(",");
       setFormData((current) => ({
@@ -194,7 +198,11 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   const addSuggestionIfNew = (value: string) => {
     const v = value?.trim();
     if (!v) return;
-    if (!subArtistSuggestions.includes(v)) {
+    const normalizedValue = normalizeSubType(v);
+    const exists = subArtistSuggestions.some(
+      (item) => normalizeSubType(item) === normalizedValue,
+    );
+    if (!exists) {
       const next = [v, ...subArtistSuggestions].slice(0, 50);
       setSubArtistSuggestions(next);
       persistSuggestions(next);
@@ -311,7 +319,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       const imageUrl = (json as any)?.data?.imageUrl;
 
       const updatedData = {
-        profilePhoto: compressedFile,
+        profilePhoto: file,
         avatarUrl: imageUrl,
       };
 
@@ -407,10 +415,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       return; // Don't proceed if there are errors
     }
 
-    // Persist sub-artist type into suggestions if new
-    if (formData.subArtistType) {
-      addSuggestionIfNew(formData.subArtistType);
-    }
+    // Persist each selected sub-artist type individually (never as a CSV blob).
+    selectedSubTypes.forEach(addSuggestionIfNew);
 
     onUpdateData(formData);
     onNext();
@@ -728,7 +734,10 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                           }}
                           onClick={() => {
                             // add suggestion as a tag
-                            if (!selectedSubTypes.includes(s)) {
+                            const exists = selectedSubTypes.some(
+                              (item) => normalizeSubType(item) === normalizeSubType(s),
+                            );
+                            if (!exists) {
                               const next = [s, ...selectedSubTypes];
                               setSelectedSubTypes(next);
                               const csv = next.join(",");

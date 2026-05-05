@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AboutTab from "./tabs/AboutTab";
 import PerformanceTab from "./tabs/PerformanceTab";
 import VideosTab from "./tabs/VideosTab";
@@ -51,6 +51,11 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
     createPerformanceDraft(artist),
   );
 
+  useEffect(() => {
+    setAboutDraft(createAboutDraft(artist));
+    setPerformanceDraft(createPerformanceDraft(artist));
+  }, [artist.id, (artist as any).contactNumber, (artist as any).whatsappNumber]);
+
   const resetAboutDraft = () => setAboutDraft(createAboutDraft(artist));
   const resetPerformanceDraft = () =>
     setPerformanceDraft(createPerformanceDraft(artist));
@@ -79,7 +84,7 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
         city: aboutDraft.city,
         state: aboutDraft.state,
         contactNumber: aboutDraft.contactNumber,
-        whatsappNumber: aboutDraft.contactNumber,
+        whatsappNumber: aboutDraft.whatsappNumber,
         contactEmail: aboutDraft.email,
         shortBio: aboutDraft.shortBio,
         achievements: aboutDraft.achievements,

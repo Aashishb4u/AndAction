@@ -80,7 +80,7 @@ export function transformArtist(raw: RawArtistFromAPI): Artist {
     userId: raw.user.id,
     id: raw.id,
     name: fullName,
-    category: capitalize(raw.artistType || "Artist"),
+    category: capitalize(raw.artistType || ""),
     location: capitalize(raw.user.state || ""),
     duration,
     startingPrice: raw.soloChargesFrom || 0,
