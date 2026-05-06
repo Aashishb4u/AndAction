@@ -61,6 +61,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       chargesWithBacklineDescription,
       youtubeChannelId,
       instagramId,
+      profileImage,
     } = body;
 
     if (!userId) {
@@ -342,6 +343,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         ...(chargesWithBacklineDescription !== undefined && { chargesWithBacklineDescription }),
         ...(youtubeChannelId !== undefined && { youtubeChannelId }),
         ...(instagramId !== undefined && { instagramId }),
+        ...(profileImage !== undefined && { profileImage: profileImage }),
       },
     });
 
@@ -349,6 +351,55 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       where: { id: userId },
       include: { artists: { orderBy: { profileOrder: "asc" }, take: 1 } },
     });
+
+    // Sync avatar to admin panel if profileImage was updated
+    if (profileImage !== undefined) {
+      try {
+        const adminBase = 
+          (process.env.ADMIN_API_BASE_URL ||
+            process.env.NEXT_PUBLIC_ADMIN_BASE_URL ||
+            "https://admin.andaction.in")
+            .trim()
+            .replace(/\/+$/, "");
+
+        const vpsSecret = (process.env.VPS_UPLOAD_SECRET || "").trim();
+        const publicSecret = (process.env.PUBLIC_UPLOAD_SECRET || "").trim();
+        const secrets = Array.from(
+          new Set([vpsSecret, publicSecret].filter((s) => typeof s === "string" && s)),
+        );
+        
+        if (secrets.length > 0) {
+          const email = refreshedUser.email || "";
+          const phoneNumber = refreshedUser.phoneNumber || "";
+          const profileImageUrl = updatedArtistProfile.profileImage || "";
+
+          for (const secret of secrets) {
+            try {
+              const res = await fetch(`${adminBase}/api/media/sync-avatar`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-upload-secret": secret,
+                },
+                body: JSON.stringify({
+                  email: email || null,
+                  phoneNumber: phoneNumber || null,
+                  avatarUrl: profileImageUrl,
+                }),
+              });
+              if (res.ok) {
+                console.log(`✅ Synced artist profileImage to admin panel: ${email}`);
+                break;
+              }
+            } catch {
+              // Continue to next secret
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to sync profileImage to admin panel:", error);
+      }
+    }
 
     return successResponse(
       {

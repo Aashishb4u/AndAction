@@ -44,7 +44,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
             return ApiErrors.notFound('User not found');
         }
 
-        // Update user's avatar
+        // Update user's avatar first
         const updatedUser = await prisma.user.update({
             where: { id: user.id },
             data: { 
@@ -57,14 +57,45 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
                 firstName: true,
                 lastName: true,
                 avatar: true,
-                phoneNumber: true
+                phoneNumber: true,
+                role: true
             }
         });
+
+        // Also update artist's profileImage if user is an artist
+        let updatedArtist = null;
+        if (updatedUser.role === 'artist') {
+            const primaryArtist = await prisma.artist.findFirst({
+                where: { 
+                    userId: user.id,
+                    profileOrder: 0 
+                },
+                select: { id: true, profileImage: true }
+            });
+
+            if (primaryArtist) {
+                updatedArtist = await prisma.artist.update({
+                    where: { id: primaryArtist.id },
+                    data: { 
+                        profileImage: avatarUrl.trim(),
+                        updatedAt: new Date()
+                    },
+                    select: {
+                        id: true,
+                        profileImage: true
+                    }
+                });
+                console.log(`✅ Artist profileImage synced from admin panel: ${updatedUser.email} -> ${avatarUrl}`);
+            }
+        }
 
         console.log(`✅ Avatar synced from admin panel for user: ${updatedUser.email || updatedUser.phoneNumber}`);
 
         return successResponse(
-            { user: updatedUser },
+            { 
+                user: updatedUser,
+                artist: updatedArtist
+            },
             'Avatar synced successfully from admin panel'
         );
 
