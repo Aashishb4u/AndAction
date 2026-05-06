@@ -73,7 +73,7 @@ async function countArtistsInRadius(
   radius: number,
   verified: boolean,
 ): Promise<number> {
-  const typeMatches = getArtistTypeMatches(type);
+  const typeMatches = await getArtistTypeMatches(type);
 
   const result = await prisma.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*) as count
@@ -110,7 +110,7 @@ async function fetchArtistsInRadius(
   verified: boolean,
   limit: number = 50,
 ) {
-  const typeMatches = getArtistTypeMatches(type);
+  const typeMatches = await getArtistTypeMatches(type);
 
   const artists = await prisma.$queryRaw<Array<any>>`
     SELECT 
