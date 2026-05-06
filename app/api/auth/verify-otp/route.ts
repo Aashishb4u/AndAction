@@ -79,6 +79,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
                         firstName: user.firstName,
                         lastName: user.lastName,
                         role: user.role,
+                        isAccountVerified: user.isAccountVerified,
+                        isArtistVerified: user.isArtistVerified,
                     },
                 },
                 "OTP verified successfully"
