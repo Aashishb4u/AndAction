@@ -389,8 +389,8 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
 
                   {showSubSuggestions && (
                     <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
-                      {/* Show typed text as first suggestion if not empty and not already selected */}
-                      {subInput.trim() && !selectedSubTypes.includes(subInput.trim()) && (
+                      {/* Always show typed text as first suggestion if not empty */}
+                      {subInput.trim() && (
                         <button
                           key="typed-input"
                           type="button"
@@ -406,6 +406,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                         </button>
                       )}
                       
+                      {/* Show existing suggestions */}
                       {subArtistSuggestions
                         .filter((s) =>
                           s.toLowerCase().includes((subInput || "").toLowerCase()) &&
@@ -426,10 +427,11 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                             {s}
                           </button>
                         ))}
-                      {subArtistSuggestions.filter((s) =>
-                        s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                        
+                      {/* Show no suggestions only if no input and no matches */}
+                      {!subInput.trim() && subArtistSuggestions.filter((s) =>
                         !selectedSubTypes.includes(s)
-                      ).length === 0 && !subInput.trim() && (
+                      ).length === 0 && (
                         <div className="px-3 py-2 text-sm text-text-gray">No suggestions</div>
                       )}
                     </div>

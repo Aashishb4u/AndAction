@@ -710,10 +710,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
               {/* Suggestions dropdown */}
               {showSuggestions && (
                 <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
-                  {/* Show typed text as first suggestion if not empty and not already selected */}
-                  {subTypeInput.trim() && !selectedSubTypes.some(
-                    (item) => normalizeSubType(item) === normalizeSubType(subTypeInput.trim())
-                  ) && (
+                  {/* Always show typed text as first suggestion if not empty */}
+                  {subTypeInput.trim() && (
                     <button
                       key="typed-input"
                       type="button"
@@ -731,58 +729,57 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                     </button>
                   )}
                   
-                  {subArtistSuggestions.filter((s) =>
-                    s
-                      .toLowerCase()
-                      .includes((subTypeInput || "").toLowerCase()) &&
+                  {/* Show existing suggestions */}
+                  {subArtistSuggestions
+                    .filter((s) =>
+                      s
+                        .toLowerCase()
+                        .includes((subTypeInput || "").toLowerCase()) &&
+                      !selectedSubTypes.some(
+                        (item) => normalizeSubType(item) === normalizeSubType(s)
+                      )
+                    )
+                    .map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                        }}
+                        onClick={() => {
+                          // add suggestion as a tag
+                          const exists = selectedSubTypes.some(
+                            (item) => normalizeSubType(item) === normalizeSubType(s),
+                          );
+                          if (!exists) {
+                            const next = [s, ...selectedSubTypes];
+                            setSelectedSubTypes(next);
+                            const csv = next.join(",");
+                            setFormData((prev) => ({
+                              ...prev,
+                              subArtistType: csv,
+                            }));
+                            onUpdateData({ subArtistType: csv });
+                            addSuggestionIfNew(s);
+                          }
+                          setSubTypeInput("");
+                          setShowSuggestions(false);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                    
+                  {/* Show no suggestions only if no input and no matches */}
+                  {!subTypeInput.trim() && subArtistSuggestions.filter((s) =>
                     !selectedSubTypes.some(
                       (item) => normalizeSubType(item) === normalizeSubType(s)
                     )
-                  ).length === 0 && !subTypeInput.trim() ? (
+                  ).length === 0 && (
                     <div className="px-3 py-2 text-sm text-text-gray">
                       No suggestions
                     </div>
-                  ) : (
-                    subArtistSuggestions
-                      .filter((s) =>
-                        s
-                          .toLowerCase()
-                          .includes((subTypeInput || "").toLowerCase()) &&
-                        !selectedSubTypes.some(
-                          (item) => normalizeSubType(item) === normalizeSubType(s)
-                        )
-                      )
-                      .map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                          }}
-                          onClick={() => {
-                            // add suggestion as a tag
-                            const exists = selectedSubTypes.some(
-                              (item) => normalizeSubType(item) === normalizeSubType(s),
-                            );
-                            if (!exists) {
-                              const next = [s, ...selectedSubTypes];
-                              setSelectedSubTypes(next);
-                              const csv = next.join(",");
-                              setFormData((prev) => ({
-                                ...prev,
-                                subArtistType: csv,
-                              }));
-                              onUpdateData({ subArtistType: csv });
-                              addSuggestionIfNew(s);
-                            }
-                            setSubTypeInput("");
-                            setShowSuggestions(false);
-                          }}
-                          className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
-                        >
-                          {s}
-                        </button>
-                      ))
                   )}
                 </div>
               )}
