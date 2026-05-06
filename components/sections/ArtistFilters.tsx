@@ -215,6 +215,23 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
 
           {showSubSuggestions && (
             <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
+              {/* Show typed text as first suggestion if not empty and not already selected */}
+              {subInput.trim() && !selectedSubTypes.includes(subInput.trim()) && (
+                <button
+                  key="typed-input"
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    addSubType(subInput.trim());
+                    setSubInput("");
+                    setShowSubSuggestions(false);
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm border-b border-border-color"
+                >
+                  Add "{subInput.trim()}"
+                </button>
+              )}
+              
               {subArtistSuggestions
                 .filter((s) =>
                   s.toLowerCase().includes((subInput || "").toLowerCase()) &&
@@ -238,7 +255,7 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
               {subArtistSuggestions.filter((s) =>
                 s.toLowerCase().includes((subInput || "").toLowerCase()) &&
                 !selectedSubTypes.includes(s)
-              ).length === 0 && (
+              ).length === 0 && !subInput.trim() && (
                 <div className="px-3 py-2 text-sm text-text-gray">No suggestions</div>
               )}
             </div>

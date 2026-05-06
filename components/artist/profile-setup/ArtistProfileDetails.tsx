@@ -710,11 +710,35 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
               {/* Suggestions dropdown */}
               {showSuggestions && (
                 <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
+                  {/* Show typed text as first suggestion if not empty and not already selected */}
+                  {subTypeInput.trim() && !selectedSubTypes.some(
+                    (item) => normalizeSubType(item) === normalizeSubType(subTypeInput.trim())
+                  ) && (
+                    <button
+                      key="typed-input"
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                      }}
+                      onClick={() => {
+                        addSubTypeTag(subTypeInput.trim());
+                        setSubTypeInput("");
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm border-b border-border-color"
+                    >
+                      Add "{subTypeInput.trim()}"
+                    </button>
+                  )}
+                  
                   {subArtistSuggestions.filter((s) =>
                     s
                       .toLowerCase()
-                      .includes((subTypeInput || "").toLowerCase()),
-                  ).length === 0 ? (
+                      .includes((subTypeInput || "").toLowerCase()) &&
+                    !selectedSubTypes.some(
+                      (item) => normalizeSubType(item) === normalizeSubType(s)
+                    )
+                  ).length === 0 && !subTypeInput.trim() ? (
                     <div className="px-3 py-2 text-sm text-text-gray">
                       No suggestions
                     </div>
@@ -723,7 +747,10 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                       .filter((s) =>
                         s
                           .toLowerCase()
-                          .includes((subTypeInput || "").toLowerCase()),
+                          .includes((subTypeInput || "").toLowerCase()) &&
+                        !selectedSubTypes.some(
+                          (item) => normalizeSubType(item) === normalizeSubType(s)
+                        )
                       )
                       .map((s) => (
                         <button

@@ -334,6 +334,23 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
 
           {showSubSuggestions && (
             <div className="absolute z-40 left-0 right-0 mt-1 bg-background border border-border-color rounded-lg max-h-48 overflow-auto">
+              {/* Show typed text as first suggestion if not empty and not already selected */}
+              {subInput.trim() && !formData.subCategory.includes(subInput.trim()) && (
+                <button
+                  key="typed-input"
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    handleInputChange("subCategory", [...formData.subCategory, subInput.trim()]);
+                    setSubInput("");
+                    setShowSubSuggestions(false);
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white text-sm border-b border-border-color"
+                >
+                  Add "{subInput.trim()}"
+                </button>
+              )}
+              
               {subArtistSuggestions
                 .filter((s) =>
                   s.toLowerCase().includes((subInput || "").toLowerCase()) &&
@@ -357,7 +374,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
               {subArtistSuggestions.filter((s) =>
                 s.toLowerCase().includes((subInput || "").toLowerCase()) &&
                 !formData.subCategory.includes(s)
-              ).length === 0 && (
+              ).length === 0 && !subInput.trim() && (
                   <div className="px-3 py-2 text-gray-400">No suggestions</div>
                 )}
             </div>
