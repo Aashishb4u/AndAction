@@ -139,7 +139,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
     // 🔍 SEARCH (name, bio, or user firstName/lastName)
     if (search) {
-      const typeMatches = getArtistTypeMatches(search);
+      const typeMatches = await getArtistTypeMatches(search);
       where.OR = [
         { stageName: { contains: search, mode: "insensitive" } },
         { shortBio: { contains: search, mode: "insensitive" } },
@@ -161,7 +161,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // REQUIRED FILTER: artistType
     // ---------------------------
     if (type) {
-      const typeMatches = getArtistTypeMatches(type);
+      const typeMatches = await getArtistTypeMatches(type);
       where.artistType = { in: typeMatches };
     }
 

@@ -4,40 +4,102 @@
  * Shared across all artist API endpoints
  */
 
-export function getArtistTypeMatches(queryType: string): string[] {
-  const typeMap: Record<string, string[]> = {
-    // "live-band": ["live-band", "Live Band", "Live Band ", "band", "Band", "bands", "Live Band / Group"],
-    // "live band": ["live-band", "Live Band", "Live Band ", "band", "Band", "bands", "Live Band / Group"],
-    // band: ["live-band", "Live Band", "Live Band ", "band", "Band", "bands", "Live Band / Group"],
-    // bands: ["live-band", "Live Band", "Live Band ", "band", "Band", "bands", "Live Band / Group"],
-    // spiritual: ["spiritual", "Devotional/Spiritual Singer", "Spiritual / Devotional Singer", "Devotional / Spiritual Singer"],
-    // "devotional/spiritual singer": ["spiritual", "Devotional/Spiritual Singer", "Spiritual / Devotional Singer", "Devotional / Spiritual Singer"],
-    singer: ["singer", "Singer"],
-    dancer: ["dancer", "Dancer / Dance Group"],
-    musician: ["musician", "Musician"],
-    anchor: ["anchor", "Anchor / Emcee / Host"],
-    dj: ["dj", "DJ / VJ"],
-    "dj-based-band": ["dj-based-band", "DJ Based Band"],
-    "dj-percussionist": ["dj-percussionist", "Dj Percussionist", "DJ Percussionist"],
-    "live-band": ["live-band", "band", "Band", "Live Band", "Live Band ", "Live Band / Group"],
-    comedian: ["comedian", "Comedian", "Comedian / Mimicry"],
-    "stand-up-comedian": ["stand-up-comedian", "Stand-up Comedian", "Stand Up Comedian"],
-    magician: ["magician", "Magician / Illusionist"],
-    actor: ["actor", "Actor / Performer"],
-    mimicry: ["mimicry", "Mimicry", "Mimicry / Impressionist", "Comedian / Mimicry"],
-    "special-acts": ["special-act", "special-acts", "Special Act", "Special Act Performer"],
-    "spiritual-singer": ["spiritual-singer", "spiritual", "Spiritual / Devotional Singer", "Devotional / Spiritual Singer"],
-    "kids-entertainer": ["kids-entertainer", "Kids Entertainer"],
-    band: ["live-band", "band", "Band", "Live Band", "Live Band ", "Live Band / Group"],
-    spiritual: ["spiritual-singer", "spiritual", "Spiritual / Devotional Singer", "Devotional / Spiritual Singer"],
-    "live band": ["live-band", "band", "Band", "Live Band", "Live Band ", "Live Band / Group"],
-    comedians: ["comedian", "Comedian", "Comedian / Mimicry"],
-    "dj percussionist": ["dj-percussionist", "Dj Percussionist", "DJ Percussionist"],
-    "special-act": ["special-act", "special-acts", "Special Act", "Special Act Performer"],
-    "spiritual / devotional singer": ["spiritual-singer", "spiritual", "Spiritual / Devotional Singer", "Devotional / Spiritual Singer"],
-    "devotional / spiritual singer": ["spiritual-singer", "spiritual", "Spiritual / Devotional Singer", "Devotional / Spiritual Singer"],
-  };
+import { prisma } from "./prisma";
 
-  const normalizedType = queryType.trim().toLowerCase();
-  return typeMap[normalizedType] || [queryType.trim()];
+// Cache for artist categories to avoid repeated DB calls
+let artistCategoriesCache: Array<{ value: string; label: string }> | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+async function getArtistCategories(): Promise<Array<{ value: string; label: string }>> {
+  const now = Date.now();
+  
+  // Return cached data if still valid
+  if (artistCategoriesCache && (now - cacheTimestamp) < CACHE_DURATION) {
+    return artistCategoriesCache;
+  }
+
+  try {
+    const categories = await prisma.artist_categories.findMany({
+      where: { isActive: true },
+      select: { value: true, label: true },
+      orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
+    });
+
+    artistCategoriesCache = categories;
+    cacheTimestamp = now;
+    return categories;
+  } catch (error) {
+    console.error("Failed to fetch artist categories:", error);
+    // Return empty array as fallback
+    return [];
+  }
+}
+
+export async function getArtistTypeMatches(queryType: string): Promise<string[]> {
+  const categories = await getArtistCategories();
+  
+  // If no categories found, fallback to the query type itself
+  if (categories.length === 0) {
+    return [queryType.trim()];
+  }
+
+  const normalizedQuery = queryType.trim().toLowerCase();
+  
+  // Find exact matches first
+  const exactMatches = categories.filter(
+    cat => cat.value.toLowerCase() === normalizedQuery || 
+           cat.label.toLowerCase() === normalizedQuery
+  );
+  
+  if (exactMatches.length > 0) {
+    return exactMatches.map(cat => cat.value);
+  }
+
+  // Find partial matches
+  const partialMatches = categories.filter(
+    cat => cat.value.toLowerCase().includes(normalizedQuery) || 
+           cat.label.toLowerCase().includes(normalizedQuery)
+  );
+  
+  if (partialMatches.length > 0) {
+    return partialMatches.map(cat => cat.value);
+  }
+
+  // If no matches found, return the original query
+  return [queryType.trim()];
+}
+
+// Synchronous version for backward compatibility
+// This uses cached data or returns the query as fallback
+export function getArtistTypeMatchesSync(queryType: string): string[] {
+  if (!artistCategoriesCache || (Date.now() - cacheTimestamp) >= CACHE_DURATION) {
+    // No cache available, return query as fallback
+    return [queryType.trim()];
+  }
+
+  const normalizedQuery = queryType.trim().toLowerCase();
+  
+  // Find exact matches first
+  const exactMatches = artistCategoriesCache.filter(
+    cat => cat.value.toLowerCase() === normalizedQuery || 
+           cat.label.toLowerCase() === normalizedQuery
+  );
+  
+  if (exactMatches.length > 0) {
+    return exactMatches.map(cat => cat.value);
+  }
+
+  // Find partial matches
+  const partialMatches = artistCategoriesCache.filter(
+    cat => cat.value.toLowerCase().includes(normalizedQuery) || 
+           cat.label.toLowerCase().includes(normalizedQuery)
+  );
+  
+  if (partialMatches.length > 0) {
+    return partialMatches.map(cat => cat.value);
+  }
+
+  // If no matches found, return the original query
+  return [queryType.trim()];
 }
