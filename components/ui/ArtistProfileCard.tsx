@@ -1,11 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Artist } from "@/types";
 import Bookmark from "../icons/bookmark";
 import { buildArtishProfileUrl } from "@/lib/utils";
+import { useSession } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ArtistProfileCardProps {
   artist: Artist;
@@ -21,6 +23,10 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   className = "",
 }) => {
   const router = useRouter();
+  const { data: session, update: updateSession } = useSession();
+  const queryClient = useQueryClient();
+  const [localImage, setLocalImage] = useState<string>(artist.image || "");
+
   const formatPrice = (price: number) => {
     return `₹ ${price.toLocaleString()}`;
   };
@@ -33,6 +39,31 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
     e.stopPropagation();
     onBookmark(artist.id);
   };
+
+  // Sync image changes to admin panel
+  const syncImageToAdmin = async (imageUrl: string) => {
+    try {
+      const response = await fetch('/api/users/update-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          avatar: imageUrl,
+        }),
+      });
+
+      if (response.ok) {
+        console.log('✅ Synced image to admin panel');
+      }
+    } catch (error) {
+      console.error('Failed to sync image to admin panel:', error);
+    }
+  };
+
+  useEffect(() => {
+    setLocalImage(artist.image || "");
+  }, [artist.image]);
 
   const normalizedLocation = (() => {
     const raw = (artist.location || "").trim();
@@ -63,12 +94,18 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
             style={{ backgroundColor: "#111" }}
           >
             <Image
-              src={buildArtishProfileUrl(artist.image || "")}
+              src={buildArtishProfileUrl(localImage || artist.image || "")}
               alt={artist.name}
               fill
               className="object-cover scale-[1.02]"
               sizes="(max-width: 640px) 120px, 128px"
               unoptimized
+              onLoad={() => {
+                // Sync image changes to admin panel
+                if (localImage && localImage !== artist.image) {
+                  syncImageToAdmin(localImage);
+                }
+              }}
             />
           </div>
 
