@@ -12,7 +12,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors, successResponse } from '@/lib/api-response';
 // FIX: Assuming you export the 'auth' function for server-side session access
-import { auth } from '@/auth'; 
+import { auth } from '@/auth';
+import { geocodeAddress } from '@/lib/geocoding'; 
 
 /**
  * Strips sensitive data (like tokens and passwords) from the User object
@@ -146,7 +147,52 @@ export async function PUT(request: NextRequest): Promise<NextResponse<any>> {
             return ApiErrors.badRequest('No valid fields provided for update.');
         }
 
-        // 4. Update the User Record
+        // 4. Geocode location if city or state was updated
+        let coordinatesUpdate: { latitude?: number | null; longitude?: number | null; geocodedAt?: Date | null } | null = null;
+        
+        if (updateData.city !== undefined || updateData.state !== undefined) {
+            const city = updateData.city || body.city;
+            const state = updateData.state || body.state;
+            
+            if (city && typeof city === 'string' && city.trim() !== '') {
+                try {
+                    const geocodeResult = await geocodeAddress(city.trim(), state);
+                    if (geocodeResult) {
+                        coordinatesUpdate = {
+                            latitude: geocodeResult.lat,
+                            longitude: geocodeResult.lng,
+                            geocodedAt: new Date()
+                        };
+                        console.log(`✅ Geocoded location for user ${userId}: ${city}, ${state || ''} -> ${geocodeResult.lat}, ${geocodeResult.lng}`);
+                    } else {
+                        // Clear coordinates if geocoding fails
+                        coordinatesUpdate = {
+                            latitude: null,
+                            longitude: null,
+                            geocodedAt: null
+                        };
+                        console.warn(`⚠️ Failed to geocode location for user ${userId}: ${city}, ${state || ''}`);
+                    }
+                } catch (error) {
+                    console.error(`❌ Error geocoding location for user ${userId}:`, error);
+                    // Don't fail the whole update if geocoding fails
+                }
+            } else {
+                // Clear coordinates if city is empty
+                coordinatesUpdate = {
+                    latitude: null,
+                    longitude: null,
+                    geocodedAt: null
+                };
+            }
+        }
+
+        // Merge coordinates update with other update data
+        if (coordinatesUpdate) {
+            Object.assign(updateData, coordinatesUpdate);
+        }
+
+        // 5. Update the User Record
         const updatedUser = await prisma.user.update({
             where: { id: userId },
             data: updateData,
@@ -166,6 +212,9 @@ export async function PUT(request: NextRequest): Promise<NextResponse<any>> {
                 zip: true,
                 gender: true,
                 dob: true,
+                latitude: true,
+                longitude: true,
+                geocodedAt: true,
             }
         });
 
