@@ -99,6 +99,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [loadAttempts, setLoadAttempts] = useState(0);
   const [hasError, setHasError] = useState(false);
+  const [youTubeIframeKey, setYouTubeIframeKey] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
@@ -189,68 +190,27 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   useEffect(() => {
     if (!isYouTube) return;
 
-    const iframe = document.getElementById(
-      `yt-${short.id}`
-    ) as HTMLIFrameElement | null;
-    if (!iframe?.contentWindow) return;
+    // YouTube iframe API is causing errors, so we'll use iframe reload for audio control
+    setIsPlaying(isActive);
+  }, [isActive, isYouTube]);
 
-    const sendCommand = (func: string, args: any[] = []) => {
-      iframe.contentWindow?.postMessage(
-        JSON.stringify({ event: "command", func, args }),
-        "*"
-      );
-    };
-
-    // Enhanced YouTube control with retry mechanism
-    const controlVideo = () => {
-      if (isActive) {
-        sendCommand("playVideo");
-        setTimeout(() => {
-          sendCommand(soundEnabled ? "unMute" : "mute");
-        }, 100);
-      } else {
-        sendCommand("pauseVideo");
-        sendCommand("mute");
-      }
-      setIsPlaying(isActive);
-    };
-
-    // Initial control
-    controlVideo();
-    
-    // Retry after delay for iframe readiness
-    const retryTimer = setTimeout(controlVideo, 500);
-    
-    // Final retry
-    const finalTimer = setTimeout(controlVideo, 1000);
-
-    return () => {
-      clearTimeout(retryTimer);
-      clearTimeout(finalTimer);
-      // Ensure cleanup
-      sendCommand("pauseVideo");
-      sendCommand("mute");
-    };
-  }, [isActive, isYouTube, short.id, soundEnabled]);
-
-  /* ---------------- YOUTUBE CONTROL: mute/unmute ---------------- */
+  /* ---------------- YOUTUBE AUDIO CONTROL VIA IFRAME RELOAD ---------------- */
   useEffect(() => {
-    if (!isYouTube) return;
+    if (!isYouTube || !isActive) return;
 
-    const iframe = document.getElementById(
-      `yt-${short.id}`
-    ) as HTMLIFrameElement | null;
-    if (!iframe?.contentWindow) return;
+    // When sound state changes for active YouTube video, reload iframe with new audio params
+    if (isActive && shouldLoad) {
+      setYouTubeIframeKey(prev => prev + 1);
+    }
+  }, [soundEnabled, isActive, isYouTube, shouldLoad]);
 
-    iframe.contentWindow.postMessage(
-      JSON.stringify({
-        event: "command",
-        func: soundEnabled ? "unMute" : "mute",
-        args: [],
-      }),
-      "*"
-    );
-  }, [soundEnabled, isYouTube, short.id]);
+  // Also reload iframe when becoming active to ensure correct audio state
+  useEffect(() => {
+    if (!isYouTube || !isActive || !shouldLoad) return;
+
+    // Reload iframe when this short becomes active to ensure correct audio state
+    setYouTubeIframeKey(prev => prev + 1);
+  }, [isActive, isYouTube, shouldLoad]);
 
   /* ---------------- PROGRESS BAR ---------------- */
 
@@ -277,22 +237,8 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
 
   const handleVideoClick = () => {
     if (isYouTube) {
-      const iframe = document.getElementById(
-        `yt-${short.id}`
-      ) as HTMLIFrameElement | null;
-
-      if (!iframe?.contentWindow) return;
-
-      iframe.contentWindow.postMessage(
-        JSON.stringify({
-          event: "command",
-          func: isPlaying ? "pauseVideo" : "playVideo",
-          args: [],
-        }),
-        "*"
-      );
-
-      setIsPlaying(!isPlaying);
+      // YouTube iframe control disabled - clicking won't affect playback
+      // This prevents API errors
       return;
     }
 
@@ -312,18 +258,11 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     setSoundEnabled(newState);
 
     if (isYouTube) {
-      const iframe = document.getElementById(
-        `yt-${short.id}`
-      ) as HTMLIFrameElement | null;
-
-      iframe?.contentWindow?.postMessage(
-        JSON.stringify({
-          event: "command",
-          func: newState ? "unMute" : "mute",
-          args: [],
-        }),
-        "*"
-      );
+      // For YouTube, we'll reload the iframe with new audio parameters
+      // This prevents API errors while still allowing audio control
+      if (isActive) {
+        setYouTubeIframeKey(prev => prev + 1);
+      }
     }
   };
 
@@ -340,6 +279,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       {shouldLoad &&
         (isYouTube ? (
           <iframe
+            key={youTubeIframeKey}
             id={`yt-${short.id}`}
             className="absolute inset-0 w-full h-full pointer-events-none"
             src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=${isActive && soundEnabled ? 0 : 1}&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${typeof window !== "undefined" ? window.location.origin : ""

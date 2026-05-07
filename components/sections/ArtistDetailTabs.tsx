@@ -432,25 +432,13 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         video.preload = "metadata";
       });
 
-      // Pause and mute all YouTube iframes
+      // Pause and mute all YouTube iframes - API control disabled
       const iframes = Array.from(
         container.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
       );
       iframes.forEach((iframe) => {
-        if (!iframe.contentWindow) return;
-        // Send multiple pause/mute commands to ensure they stop
-        iframe.contentWindow.postMessage(
-          JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
-          "*",
-        );
-        iframe.contentWindow.postMessage(
-          JSON.stringify({ event: "command", func: "mute", args: [] }),
-          "*",
-        );
-        iframe.contentWindow.postMessage(
-          JSON.stringify({ event: "command", func: "stopVideo", args: [] }),
-          "*",
-        );
+        // YouTube iframe API control disabled - no postMessage calls
+        // This prevents "this.api.isExternalMethodAvailable is not a function" errors
       });
     };
 
@@ -520,34 +508,13 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           }
         });
 
-        // Handle YouTube iframes
+        // Handle YouTube iframes - API control disabled to prevent errors
         const iframes = Array.from(
           node.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
         );
         iframes.forEach((iframe) => {
-          if (!iframe.contentWindow) return;
-          
-          if (isActiveNode) {
-            // Active iframe: ensure it's ready with proper audio state
-            iframe.contentWindow.postMessage(
-              JSON.stringify({ event: "command", func: shortsSoundEnabled ? "unMute" : "mute", args: [] }),
-              "*",
-            );
-          } else {
-            // Inactive iframe: force stop and mute
-            iframe.contentWindow.postMessage(
-              JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
-              "*",
-            );
-            iframe.contentWindow.postMessage(
-              JSON.stringify({ event: "command", func: "mute", args: [] }),
-              "*",
-            );
-            iframe.contentWindow.postMessage(
-              JSON.stringify({ event: "command", func: "stopVideo", args: [] }),
-              "*",
-            );
-          }
+          // YouTube iframe API control disabled - no postMessage calls
+          // This prevents "this.api.isExternalMethodAvailable is not a function" errors
         });
       });
     };
