@@ -87,20 +87,21 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   const handleViewAll = () => {
     if (artists.length === 0) {
       setShowNoArtistModal(true);
-    } else {
-      const params = new URLSearchParams({ type: getTypeParam() });
-
-      if (
-        location &&
-        Number.isFinite(location.lat) &&
-        Number.isFinite(location.lng)
-      ) {
-        params.set("lat", String(location.lat));
-        params.set("lng", String(location.lng));
-      }
-
-      router.push(`/artists?${params.toString()}`);
+      return;
     }
+
+    const params = new URLSearchParams({ type: getTypeParam() });
+
+    if (
+      location &&
+      Number.isFinite(location.lat) &&
+      Number.isFinite(location.lng)
+    ) {
+      params.set("lat", String(location.lat));
+      params.set("lng", String(location.lng));
+    }
+
+    router.push(`/artists?${params.toString()}`);
   };
 
   return (

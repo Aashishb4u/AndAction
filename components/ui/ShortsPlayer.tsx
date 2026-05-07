@@ -97,6 +97,8 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   const [showControls, setShowControls] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const [loadAttempts, setLoadAttempts] = useState(0);
+  const [hasError, setHasError] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
@@ -111,25 +113,69 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   useEffect(() => {
     if (!videoRef.current) return;
 
-    if (shouldLoad) {
-      videoRef.current.load();   // 🔥 load only when needed
+    if (shouldLoad && !isVideoLoaded && !hasError) {
+      // Reset and reload video
+      videoRef.current.load();
+      setLoadAttempts(prev => prev + 1);
     }
-  }, [shouldLoad]);
+  }, [shouldLoad, isVideoLoaded, hasError]);
+
+  // Enhanced video loading with error handling
+  const handleVideoError = () => {
+    if (loadAttempts < 3) {
+      // Retry loading
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.load();
+        }
+      }, 1000 * (loadAttempts + 1));
+    } else {
+      setHasError(true);
+    }
+  };
+
+  const handleVideoSuccess = () => {
+    setIsVideoLoaded(true);
+    setHasError(false);
+  };
 
   useEffect(() => {
     if (isYouTube) return;
 
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || hasError) return;
 
     if (isActive && shouldLoad && isVideoLoaded) {
-      video.muted = !soundEnabled;
-      video.play().then(() => setIsPlaying(true)).catch(() => { });
+      // Ensure video is ready before playing
+      const attemptPlay = async () => {
+        try {
+          video.muted = !soundEnabled;
+          await video.play();
+          setIsPlaying(true);
+        } catch (error) {
+          // Retry with user interaction fallback
+          setTimeout(() => {
+            if (isActive && video.paused) {
+              video.muted = true;
+              video.play().then(() => {
+                setIsPlaying(true);
+                if (soundEnabled) {
+                  video.muted = false;
+                }
+              }).catch(() => {
+                setIsPlaying(false);
+              });
+            }
+          }, 500);
+        }
+      };
+      
+      attemptPlay();
     } else {
       video.pause();
       setIsPlaying(false);
     }
-  }, [isActive, isVideoLoaded, isYouTube, shouldLoad, soundEnabled]);
+  }, [isActive, isVideoLoaded, isYouTube, shouldLoad, soundEnabled, hasError]);
 
   /* ------------- NATIVE VIDEO: sync muted property ------------- */
 
@@ -148,35 +194,40 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     ) as HTMLIFrameElement | null;
     if (!iframe?.contentWindow) return;
 
-    const sendCommand = (func: string) => {
+    const sendCommand = (func: string, args: any[] = []) => {
       iframe.contentWindow?.postMessage(
-        JSON.stringify({ event: "command", func, args: [] }),
+        JSON.stringify({ event: "command", func, args }),
         "*"
       );
     };
 
-    // Send immediately and again after a delay to catch late-loading iframes
-    if (isActive) {
-      sendCommand("playVideo");
-    } else {
-      sendCommand("pauseVideo");
-      sendCommand("mute");
-    }
-
-    const timer = setTimeout(() => {
+    // Enhanced YouTube control with retry mechanism
+    const controlVideo = () => {
       if (isActive) {
         sendCommand("playVideo");
-        sendCommand(soundEnabled ? "unMute" : "mute");
+        setTimeout(() => {
+          sendCommand(soundEnabled ? "unMute" : "mute");
+        }, 100);
       } else {
         sendCommand("pauseVideo");
         sendCommand("mute");
       }
-    }, 300);
+      setIsPlaying(isActive);
+    };
 
-    setIsPlaying(isActive);
+    // Initial control
+    controlVideo();
+    
+    // Retry after delay for iframe readiness
+    const retryTimer = setTimeout(controlVideo, 500);
+    
+    // Final retry
+    const finalTimer = setTimeout(controlVideo, 1000);
+
     return () => {
-      clearTimeout(timer);
-      // Ensure audio never leaks from previously active short
+      clearTimeout(retryTimer);
+      clearTimeout(finalTimer);
+      // Ensure cleanup
       sendCommand("pauseVideo");
       sendCommand("mute");
     };
@@ -302,14 +353,36 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
             preload={isActive ? "auto" : "metadata"}
             playsInline
             muted={!isActive || !soundEnabled}
-            onLoadedData={() => setIsVideoLoaded(true)}
-            onCanPlay={() => setIsVideoLoaded(true)}
+            onLoadedData={handleVideoSuccess}
+            onCanPlay={handleVideoSuccess}
+            onError={handleVideoError}
+            onLoadStart={() => setIsVideoLoaded(false)}
           />
         ))}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+      {/* Error state for video loading */}
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+          <div className="text-center text-white">
+            <div className="text-red-400 mb-2">Failed to load video</div>
+            <button
+              onClick={() => {
+                setHasError(false);
+                setLoadAttempts(0);
+                setIsVideoLoaded(false);
+                if (videoRef.current) {
+                  videoRef.current.load();
+                }
+              }}
+              className="px-4 py-2 bg-primary-pink rounded-lg text-sm"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
-      {showControls && !isYouTube && (
+      {showControls && !isYouTube && !hasError && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="bg-black/50 rounded-full p-4">
             {isPlaying ? (

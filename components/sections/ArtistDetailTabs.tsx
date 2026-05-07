@@ -101,6 +101,16 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     router.replace(`${pathname}?tab=${tab}`, { scroll: false });
+    
+    // Smooth scroll to tabs when switching to Shorts tab
+    if (tab === "shorts") {
+      setTimeout(() => {
+        const tabsElement = document.querySelector('[data-tabs-container]');
+        if (tabsElement) {
+          tabsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
   };
 
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
@@ -407,30 +417,53 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   }, [activeTab, handleProfileShortsScroll]);
 
   useEffect(() => {
-    if (activeTab === "shorts") return;
+    if (activeTab !== "shorts") return;
     const container = shortsContainerRef.current;
     if (!container) return;
 
-    const videos = Array.from(container.querySelectorAll<HTMLVideoElement>("video"));
-    videos.forEach((video) => {
-      video.pause();
-      video.muted = true;
-    });
+    // Enhanced cleanup for all videos and iframes
+    const cleanupMedia = () => {
+      // Pause and reset all native videos
+      const videos = Array.from(container.querySelectorAll<HTMLVideoElement>("video"));
+      videos.forEach((video) => {
+        video.pause();
+        video.muted = true;
+        video.currentTime = 0;
+        video.preload = "metadata";
+      });
 
-    const iframes = Array.from(
-      container.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
-    );
-    iframes.forEach((iframe) => {
-      if (!iframe.contentWindow) return;
-      iframe.contentWindow.postMessage(
-        JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
-        "*",
+      // Pause and mute all YouTube iframes
+      const iframes = Array.from(
+        container.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
       );
-      iframe.contentWindow.postMessage(
-        JSON.stringify({ event: "command", func: "mute", args: [] }),
-        "*",
-      );
-    });
+      iframes.forEach((iframe) => {
+        if (!iframe.contentWindow) return;
+        // Send multiple pause/mute commands to ensure they stop
+        iframe.contentWindow.postMessage(
+          JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+          "*",
+        );
+        iframe.contentWindow.postMessage(
+          JSON.stringify({ event: "command", func: "mute", args: [] }),
+          "*",
+        );
+        iframe.contentWindow.postMessage(
+          JSON.stringify({ event: "command", func: "stopVideo", args: [] }),
+          "*",
+        );
+      });
+    };
+
+    // Initial cleanup
+    cleanupMedia();
+
+    // Set up interval to ensure no audio leaks
+    const cleanupInterval = setInterval(cleanupMedia, 1000);
+
+    return () => {
+      clearInterval(cleanupInterval);
+      cleanupMedia();
+    };
   }, [activeTab]);
 
   useEffect(() => {
@@ -466,33 +499,73 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       container.querySelectorAll<HTMLElement>("[data-short-id]"),
     );
 
-    shortNodes.forEach((node) => {
-      const isActiveNode = node.dataset.shortId === activeShortId;
+    // Enhanced audio management with immediate cleanup
+    const cleanupInactiveMedia = () => {
+      shortNodes.forEach((node) => {
+        const isActiveNode = node.dataset.shortId === activeShortId;
 
-      const videos = Array.from(node.querySelectorAll<HTMLVideoElement>("video"));
-      videos.forEach((video) => {
-        if (!isActiveNode) {
-          video.pause();
-          video.muted = true;
-        }
-      });
+        // Handle native videos
+        const videos = Array.from(node.querySelectorAll<HTMLVideoElement>("video"));
+        videos.forEach((video) => {
+          if (isActiveNode) {
+            // Active video: ensure it's ready to play
+            video.muted = !shortsSoundEnabled;
+            video.preload = "auto";
+          } else {
+            // Inactive video: force stop and reset
+            video.pause();
+            video.muted = true;
+            video.currentTime = 0;
+            video.preload = "metadata";
+          }
+        });
 
-      const iframes = Array.from(
-        node.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
-      );
-      iframes.forEach((iframe) => {
-        if (!iframe.contentWindow || isActiveNode) return;
-        iframe.contentWindow.postMessage(
-          JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
-          "*",
+        // Handle YouTube iframes
+        const iframes = Array.from(
+          node.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
         );
-        iframe.contentWindow.postMessage(
-          JSON.stringify({ event: "command", func: "mute", args: [] }),
-          "*",
-        );
+        iframes.forEach((iframe) => {
+          if (!iframe.contentWindow) return;
+          
+          if (isActiveNode) {
+            // Active iframe: ensure it's ready with proper audio state
+            iframe.contentWindow.postMessage(
+              JSON.stringify({ event: "command", func: shortsSoundEnabled ? "unMute" : "mute", args: [] }),
+              "*",
+            );
+          } else {
+            // Inactive iframe: force stop and mute
+            iframe.contentWindow.postMessage(
+              JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+              "*",
+            );
+            iframe.contentWindow.postMessage(
+              JSON.stringify({ event: "command", func: "mute", args: [] }),
+              "*",
+            );
+            iframe.contentWindow.postMessage(
+              JSON.stringify({ event: "command", func: "stopVideo", args: [] }),
+              "*",
+            );
+          }
+        });
       });
-    });
-  }, [activeTab, shortsCurrentIndex, profileShorts]);
+    };
+
+    // Immediate cleanup
+    cleanupInactiveMedia();
+    
+    // Additional cleanup after a short delay to catch any delayed media initialization
+    const delayedCleanup = setTimeout(cleanupInactiveMedia, 200);
+    
+    // Regular cleanup interval to prevent audio leaks
+    const cleanupInterval = setInterval(cleanupInactiveMedia, 500);
+
+    return () => {
+      clearTimeout(delayedCleanup);
+      clearInterval(cleanupInterval);
+    };
+  }, [activeTab, shortsCurrentIndex, profileShorts, shortsSoundEnabled]);
 
   const handleProfileShortBookmark = useCallback(
     (id: string) => {
@@ -1076,6 +1149,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         <div
           className="sticky top-0 bg-background border-b z-40"
           style={{ borderColor: "#232323" }}
+          data-tabs-container
         >
           <div className="flex bg-card overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
@@ -1114,7 +1188,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       className="min-h-screen bg-card rounded-2xl border"
       style={{ borderColor: "#232323" }}
     >
-      <div className="border-b border-border-color">
+      <div 
+        className="border-b border-border-color"
+        data-tabs-container
+      >
         <div className="flex px-8">
           {tabs.map((tab) => (
             <button
