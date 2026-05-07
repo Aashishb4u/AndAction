@@ -139,6 +139,13 @@ function normalizeTypeForRequest(type: string) {
   if (t === "dj based band" || t === "dj-based-band") return "dj-based-band";
   if (t === "dj percussionist" || t === "dj-percussionist" || t === "djpercussionist") return "dj-percussionist";
   if (t === "comedian" || t === "comedians" || t === "comedy" || t === "comedian/mimicry" || t === "comedian-mimicry") return "comedian-mimicry";
+  
+  // Add missing category mappings
+  if (t === "singer" || t === "singers") return "singer";
+  if (t === "dancer" || t === "dancers") return "dancer";
+  if (t === "musician" || t === "musicians") return "musician";
+  if (t === "magician" || t === "magicians") return "magician";
+  if (t === "anchor" || t === "anchors") return "anchor";
 
   // Keep common aliases stable with current constants values.
   if (t === "special act" || t === "specialact" || t === "special-act" || t === "special act performer") return "special-act";

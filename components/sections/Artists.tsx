@@ -59,7 +59,6 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
           title: category.label,
           artistsCount: (artistsByType[category.value] || []).length,
         }))
-        .filter((category) => category.artistsCount > 0)
         .map(({ key, title }) => ({ key, title })),
     [categories, artistsByType],
   );
