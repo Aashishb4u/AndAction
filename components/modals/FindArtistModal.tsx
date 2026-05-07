@@ -334,6 +334,24 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
 
           {showSubSuggestions && (
             <div className="absolute z-40 left-0 right-0 mt-1 bg-background border border-border-color rounded-lg max-h-48 overflow-auto">
+              {/* Always show typed text as first suggestion if not empty */}
+              {subInput.trim() && (
+                <button
+                  key="typed-input"
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    handleInputChange("subCategory", [...formData.subCategory, subInput.trim()]);
+                    setSubInput("");
+                    // Keep dropdown open so newly added item appears in suggestions
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white text-sm border-b border-border-color"
+                >
+                  Add "{subInput.trim()}"
+                </button>
+              )}
+              
+              {/* Show existing suggestions */}
               {subArtistSuggestions
                 .filter((s) =>
                   s.toLowerCase().includes((subInput || "").toLowerCase()) &&
@@ -347,15 +365,16 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
                     onClick={() => {
                       handleInputChange("subCategory", [...formData.subCategory, s]);
                       setSubInput("");
-                      setShowSubSuggestions(false);
+                      // Keep dropdown open for continuous selection
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white text-sm"
                   >
                     {s}
                   </button>
                 ))}
-              {subArtistSuggestions.filter((s) =>
-                s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                
+              {/* Show no suggestions only if no input and no matches */}
+              {!subInput.trim() && subArtistSuggestions.filter((s) =>
                 !formData.subCategory.includes(s)
               ).length === 0 && (
                   <div className="px-3 py-2 text-gray-400">No suggestions</div>
