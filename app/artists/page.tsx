@@ -131,27 +131,32 @@ const getArtists = async (
 // Normalize category values for API requests / URLs
 function normalizeTypeForRequest(type: string) {
   if (!type) return type;
-  const t = type.trim().toLowerCase();
+  const t = type.trim();
 
-  if (t === "band" || t === "bands" || t === "live band" || t === "liveband") return "live-band";
-  if (t === "spiritual" || t === "spiritual / devotional singer" || t === "devotional / spiritual singer" || t === "devotional/spiritual singer") return "spiritual";
-  if (t === "dj/vj" || t === "dj / vj") return "dj";
-  if (t === "dj based band" || t === "dj-based-band") return "dj-based-band";
-  if (t === "dj percussionist" || t === "dj-percussionist" || t === "djpercussionist") return "dj-percussionist";
-  if (t === "comedian" || t === "comedians" || t === "comedy" || t === "comedian/mimicry" || t === "comedian-mimicry") return "comedian-mimicry";
-  
-  // Add missing category mappings
-  if (t === "singer" || t === "singers") return "singer";
-  if (t === "dancer" || t === "dancers") return "dancer";
-  if (t === "musician" || t === "musicians") return "musician";
-  if (t === "magician" || t === "magicians") return "magician";
-  if (t === "anchor" || t === "anchors") return "anchor";
+  // Handle exact database values first - don't convert if already in correct format
+  if (t === "Live Band" || t === "live-band") return "Live Band";
+  if (t === "spiritual") return "spiritual";
+  if (t === "dj") return "dj";
+  if (t === "dj-based-band") return "dj-based-band";
+  if (t === "dj-percussionist") return "dj-percussionist";
+  if (t === "comedian-mimicry") return "comedian-mimicry";
+  if (t === "special-act") return "special-act";
+  if (t === "kids-entertainer") return "kids-entertainer";
+  if (t === "motivational-speaker") return "motivational-speaker";
+  if (t === "folk-artist") return "folk-artist";
 
-  // Keep common aliases stable with current constants values.
-  if (t === "special act" || t === "specialact" || t === "special-act" || t === "special act performer") return "special-act";
-  if (t === "kids entertainer" || t === "kids entertainers" || t === "kidsentertainer" || t === "kids-entertainer") return "kids-entertainer";
-  if (t === "motivational speaker" || t === "motivational-speaker") return "motivational-speaker";
-  if (t === "folk artist" || t === "folk-artist") return "folk-artist";
+  // Handle common aliases that map to database values
+  const lowerT = t.toLowerCase();
+  if (lowerT === "band" || lowerT === "bands" || lowerT === "live band" || lowerT === "liveband") return "Live Band";
+  if (lowerT === "spiritual" || lowerT === "spiritual / devotional singer" || lowerT === "devotional / spiritual singer" || lowerT === "devotional/spiritual singer") return "spiritual";
+  if (lowerT === "dj/vj" || lowerT === "dj / vj") return "dj";
+  if (lowerT === "dj based band" || lowerT === "dj-based-band") return "dj-based-band";
+  if (lowerT === "dj percussionist" || lowerT === "dj-percussionist" || lowerT === "djpercussionist") return "dj-percussionist";
+  if (lowerT === "comedian" || lowerT === "comedians" || lowerT === "comedy" || lowerT === "comedian/mimicry" || lowerT === "comedian-mimicry") return "comedian-mimicry";
+  if (lowerT === "special act" || lowerT === "specialact" || lowerT === "special-act" || lowerT === "special act performer") return "special-act";
+  if (lowerT === "kids entertainer" || lowerT === "kids entertainers" || lowerT === "kidsentertainer" || lowerT === "kids-entertainer") return "kids-entertainer";
+  if (lowerT === "motivational speaker" || lowerT === "motivational-speaker") return "motivational-speaker";
+  if (lowerT === "folk artist" || lowerT === "folk-artist") return "folk-artist";
 
   return type.trim();
 }
@@ -159,7 +164,6 @@ function normalizeTypeForRequest(type: string) {
 function normalizeTypeForUrl(type: string) {
   // Keep internal filter values stable, but format outgoing URL params for UX/readability.
   const normalized = normalizeTypeForRequest(type);
-  if (normalized === "live-band") return "Live Band";
   return normalized;
 }
 

@@ -18,7 +18,9 @@ export function useArtistCategories() {
   const query = useQuery({
     queryKey: CATEGORY_QUERY_KEY,
     queryFn: fetchArtistCategories,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const categories = useMemo(() => query.data || [], [query.data]);
