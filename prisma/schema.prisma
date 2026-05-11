@@ -273,6 +273,7 @@ model artists_sub_categories {
 
   @@unique([categoryId, subCategoryLabel])
   @@index([categoryId])
+  @@map("artists_sub_categories")
 }
 
 model otps {
