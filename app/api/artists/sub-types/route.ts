@@ -7,12 +7,51 @@ import { NextRequest } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type SubTypesResponse = ApiResponse<{ subTypes: string[] }>;
+type DebugInfo = {
+  dbMeta?: {
+    db: string;
+    schema: string;
+    search_path: string | null;
+    server_addr: string | null;
+    server_port: number | null;
+  } | null;
+  input?: {
+    categoryValue: string;
+  };
+  resolved?: {
+    categoryId: string | null;
+  };
+  counts?: {
+    total_cnt: number;
+    live_band_cnt: number;
+  } | null;
+  tableInfo?: Array<{ table_schema: string; table_name: string }>;
+  fetch?: {
+    rawCount?: number;
+    prismaCount?: number;
+    rawSample?: string[];
+    prismaSample?: string[];
+  };
+  databaseUrl?: { host: string | null; database: string | null } | null;
+};
+
+type SubTypesResponse = ApiResponse<{ subTypes: string[]; debug?: DebugInfo }>;
 
 const DEBUG = process.env.DEBUG_SUBTYPES === "1";
 
 function debugLog(...args: unknown[]) {
   if (DEBUG) console.log("[sub-types]", ...args);
+}
+
+function sanitizeDatabaseUrl(value: string | undefined) {
+  if (!value) return null;
+  try {
+    const u = new URL(value);
+    const db = u.pathname ? u.pathname.replace(/^\//, "") : null;
+    return { host: u.host || null, database: db || null };
+  } catch {
+    return null;
+  }
 }
 
 function sortAndDedupeCaseInsensitive(items: string[]) {
@@ -169,8 +208,19 @@ export async function GET(req: NextRequest): Promise<SubTypesResponse> {
   try {
     const categoryValue = req.nextUrl.searchParams.get("category") || "";
     debugLog("GET", { url: req.nextUrl.toString(), categoryValue });
+    const debugRequested =
+      req.nextUrl.searchParams.get("debug") === "1" &&
+      process.env.NODE_ENV !== "production";
 
-    if (DEBUG) {
+    let debugInfo: DebugInfo | undefined;
+    if (debugRequested) {
+      debugInfo = {
+        input: { categoryValue },
+        databaseUrl: sanitizeDatabaseUrl(process.env.DATABASE_URL),
+      };
+    }
+
+    if (DEBUG || debugRequested) {
       try {
         const meta = await prisma.$queryRaw<
           Array<{
@@ -189,6 +239,7 @@ export async function GET(req: NextRequest): Promise<SubTypesResponse> {
             inet_server_port()::int as server_port
         `;
         debugLog("db-meta", meta?.[0] ?? null);
+        if (debugInfo) debugInfo.dbMeta = meta?.[0] ?? null;
 
         const counts = await prisma.$queryRaw<
           Array<{ total_cnt: number; live_band_cnt: number }>
@@ -198,6 +249,18 @@ export async function GET(req: NextRequest): Promise<SubTypesResponse> {
             (SELECT count(*)::int FROM public.artists_sub_categories WHERE category_id='cat_live_band') as live_band_cnt
         `;
         debugLog("table-counts", counts?.[0] ?? null);
+        if (debugInfo) debugInfo.counts = counts?.[0] ?? null;
+
+        const tableInfo = await prisma.$queryRaw<
+          Array<{ table_schema: string; table_name: string }>
+        >`
+          SELECT table_schema::text, table_name::text
+          FROM information_schema.tables
+          WHERE table_name = 'artists_sub_categories'
+          ORDER BY table_schema, table_name
+        `;
+        debugLog("table-info", tableInfo);
+        if (debugInfo) debugInfo.tableInfo = tableInfo;
       } catch (e) {
         debugLog("debug meta failed", e);
       }
@@ -206,23 +269,58 @@ export async function GET(req: NextRequest): Promise<SubTypesResponse> {
     if (categoryValue.trim()) {
       try {
         const categoryId = await resolveCategoryIdFromValue(categoryValue);
-        if (!categoryId) return successResponse({ subTypes: [] });
-        const subTypes = await fetchSubTypesByCategoryId(categoryId);
+        if (debugInfo) debugInfo.resolved = { categoryId };
+        if (!categoryId) return successResponse({ subTypes: [], debug: debugInfo });
+
+        const [rawRows, prismaRows] = await Promise.all([
+          prisma.$queryRaw<Array<{ sub_category_label: string }>>`
+            SELECT sub_category_label
+            FROM public.artists_sub_categories
+            WHERE category_id = ${categoryId}
+               OR btrim(category_id) = btrim(${categoryId})
+            ORDER BY sub_category_label ASC
+          `,
+          prisma.artists_sub_categories
+            .findMany({
+              where: { categoryId },
+              select: { subCategoryLabel: true },
+              orderBy: { subCategoryLabel: "asc" },
+            })
+            .catch(() => [] as Array<{ subCategoryLabel: string }>),
+        ]);
+
+        const raw = sortAndDedupeCaseInsensitive(
+          rawRows.map((r) => r.sub_category_label),
+        );
+        const viaPrisma = sortAndDedupeCaseInsensitive(
+          prismaRows.map((r) => r.subCategoryLabel),
+        );
+
+        if (debugInfo) {
+          debugInfo.fetch = {
+            rawCount: raw.length,
+            prismaCount: viaPrisma.length,
+            rawSample: raw.slice(0, 10),
+            prismaSample: viaPrisma.slice(0, 10),
+          };
+        }
+
+        const subTypes = raw.length > 0 ? raw : viaPrisma;
         debugLog("GET result", { categoryId, count: subTypes.length });
-        return successResponse({ subTypes });
+        return successResponse({ subTypes, debug: debugInfo });
       } catch (error) {
         console.error("[sub-types] category query failed:", error);
-        return successResponse({ subTypes: [] });
+        return successResponse({ subTypes: [], debug: debugInfo });
       }
     }
 
     try {
       const subTypes = await fetchAllDistinctSubTypes();
       debugLog("GET result", { categoryId: null, count: subTypes.length });
-      return successResponse({ subTypes });
+      return successResponse({ subTypes, debug: debugInfo });
     } catch (error) {
       console.error("[sub-types] query failed:", error);
-      return successResponse({ subTypes: [] });
+      return successResponse({ subTypes: [], debug: debugInfo });
     }
   } catch (error) {
     console.error("[sub-types] failed:", error);
