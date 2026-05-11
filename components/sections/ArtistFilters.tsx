@@ -89,7 +89,10 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
     label: cat.label,
   }));
 
-  const { subTypes: subArtistSuggestions } = useSubArtistTypes();
+  const isSubCategoryDisabled = !filters.category || filters.category === "all";
+  const { subTypes: subArtistSuggestions } = useSubArtistTypes(
+    isSubCategoryDisabled ? undefined : filters.category,
+  );
   const [subInput, setSubInput] = useState("");
   const [showSubSuggestions, setShowSubSuggestions] = useState(false);
 
@@ -168,7 +171,11 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
           label="Artist Category"
           value={filters.category}
           options={categoryOptions}
-          onChange={(value) => onFilterChange("category", value)}
+          onChange={(value) => {
+            onFilterChange("category", value);
+            setSubInput("");
+            setShowSubSuggestions(false);
+          }}
           required
         />
 
@@ -193,13 +200,19 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
               type="text"
               placeholder={selectedSubTypes.length === 0 ? "Type to search" : ""}
               value={subInput}
+              disabled={isSubCategoryDisabled}
               onChange={(e) => {
+                if (isSubCategoryDisabled) return;
                 setSubInput(e.target.value);
                 setShowSubSuggestions(true);
               }}
-              onFocus={() => setShowSubSuggestions(true)}
+              onFocus={() => {
+                if (isSubCategoryDisabled) return;
+                setShowSubSuggestions(true);
+              }}
               onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
               onKeyDown={(e) => {
+                if (isSubCategoryDisabled) return;
                 if (e.key === "Enter" || e.key === ",") {
                   e.preventDefault();
                   const v = subInput.trim().replace(/,$/, "");
@@ -213,8 +226,26 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
             />
           </div>
 
-          {showSubSuggestions && (
+          {showSubSuggestions && !isSubCategoryDisabled && (
             <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
+              {/* Always show typed text as first suggestion if not empty */}
+              {subInput.trim() && (
+                <button
+                  key="typed-input"
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    addSubType(subInput.trim());
+                    setSubInput("");
+                    // Keep dropdown open so newly added item appears in suggestions
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm border-b border-border-color"
+                >
+                  Add "{subInput.trim()}"
+                </button>
+              )}
+              
+              {/* Show existing suggestions */}
               {subArtistSuggestions
                 .filter((s) =>
                   s.toLowerCase().includes((subInput || "").toLowerCase()) &&
@@ -228,15 +259,16 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
                     onClick={() => {
                       addSubType(s);
                       setSubInput("");
-                      setShowSubSuggestions(false);
+                      // Keep dropdown open for continuous selection
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
                   >
                     {s}
                   </button>
                 ))}
-              {subArtistSuggestions.filter((s) =>
-                s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                
+              {/* Show no suggestions only if no input and no matches */}
+              {!subInput.trim() && subArtistSuggestions.filter((s) =>
                 !selectedSubTypes.includes(s)
               ).length === 0 && (
                 <div className="px-3 py-2 text-sm text-text-gray">No suggestions</div>

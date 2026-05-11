@@ -10,6 +10,7 @@ import { ArtistProfileSetupData, ArtistProfileSetupPreferences } from "@/types";
 import Cropper from "react-easy-crop";
 import { Area } from "react-easy-crop";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -129,7 +130,6 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
         subArtistType: csv,
       }));
       onUpdateData({ subArtistType: csv });
-      addSuggestionIfNew(v);
       return next;
     });
   };
@@ -161,9 +161,10 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [subArtistSuggestions, setSubArtistSuggestions] = useState<string[]>(
-    [],
-  );
+  const {
+    subTypes: subArtistSuggestions,
+    refetch: refetchSubArtistSuggestions,
+  } = useSubArtistTypes(formData.artistType);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [uploadMessage, setUploadMessage] = useState("");
@@ -185,46 +186,32 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     onUpdateData(updatedData);
   };
 
-  // Persist suggestions to localStorage
-  const persistSuggestions = (items: string[]) => {
-    try {
-      localStorage.setItem("subArtistTypes", JSON.stringify(items));
-    } catch (e) {
-      // ignore
-    }
+  const handleArtistTypeChange = (value: string) => {
+    const updatedData = {
+      ...formData,
+      artistType: value,
+      subArtistType: "",
+    };
+    setFormData(updatedData);
+    onUpdateData(updatedData);
+    setSelectedSubTypes([]);
+    setSubTypeInput("");
+    setShowSuggestions(false);
   };
 
-  // Add new suggestion if not exists
-  const addSuggestionIfNew = (value: string) => {
-    const v = value?.trim();
-    if (!v) return;
-    const normalizedValue = normalizeSubType(v);
-    const exists = subArtistSuggestions.some(
-      (item) => normalizeSubType(item) === normalizedValue,
-    );
-    if (!exists) {
-      const next = [v, ...subArtistSuggestions].slice(0, 50);
-      setSubArtistSuggestions(next);
-      persistSuggestions(next);
-    }
-  };
+  const createSubArtistTypeInDb = async (label: string) => {
+    const category = (formData.artistType || "").trim();
+    const trimmedLabel = (label || "").trim();
+    if (!category || !trimmedLabel) return;
 
-  useEffect(() => {
-    const defaults = preferences?.subArtistSuggestions ?? [];
-    if (!defaults.length) return;
-    try {
-      const raw = localStorage.getItem("subArtistTypes");
-      if (raw) {
-        const items: string[] = JSON.parse(raw);
-        const merged = Array.from(new Set([...items, ...defaults]));
-        setSubArtistSuggestions(merged);
-        return;
-      }
-      setSubArtistSuggestions(defaults);
-    } catch {
-      setSubArtistSuggestions(defaults);
-    }
-  }, [preferences?.subArtistSuggestions]);
+    await fetch("/api/artists/sub-types", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category, label: trimmedLabel }),
+    }).catch(() => {});
+
+    refetchSubArtistSuggestions();
+  };
 
   // Sync formData when data prop changes (for editing existing profiles)
   useEffect(() => {
@@ -415,12 +402,11 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       return; // Don't proceed if there are errors
     }
 
-    // Persist each selected sub-artist type individually (never as a CSV blob).
-    selectedSubTypes.forEach(addSuggestionIfNew);
-
     onUpdateData(formData);
     onNext();
   };
+
+  const isSubArtistDisabled = !(formData.artistType || "").trim();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -619,7 +605,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
               <Select
                 placeholder="Select or write artist type"
                 value={formData.artistType}
-                onChange={(value) => handleInputChange("artistType", value)}
+                onChange={(value) => handleArtistTypeChange(value as string)}
                 options={artistTypes}
               />
               {errors.artistType && (
@@ -666,8 +652,6 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                           subArtistType: csv,
                         }));
                         onUpdateData({ subArtistType: csv });
-                        // persist suggestion list
-                        persistSuggestions(next);
                       }}
                       className="text-text-gray hover:text-white"
                       aria-label={`Remove ${tag}`}
@@ -679,19 +663,32 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
                 <input
                   type="text"
-                  placeholder="e.g. Classical, Bollywood, Fusion"
+                  placeholder={
+                    isSubArtistDisabled
+                      ? "Select artist type first"
+                      : "e.g. Classical, Bollywood, Fusion"
+                  }
                   value={subTypeInput}
-                  onChange={(e) => handleSubTypeInputChange(e.target.value)}
-                  onFocus={() => setShowSuggestions(true)}
+                  disabled={isSubArtistDisabled}
+                  onChange={(e) => {
+                    if (isSubArtistDisabled) return;
+                    handleSubTypeInputChange(e.target.value);
+                  }}
+                  onFocus={() => {
+                    if (isSubArtistDisabled) return;
+                    setShowSuggestions(true);
+                  }}
                   onBlur={() =>
                     setTimeout(() => setShowSuggestions(false), 150)
                   }
                   onKeyDown={(e) => {
+                    if (isSubArtistDisabled) return;
                     if (e.key === "Enter" || e.key === ",") {
                       e.preventDefault();
                       const v = subTypeInput.trim().replace(/,$/, "");
                       if (v) {
                         addSubTypeTag(v);
+                        createSubArtistTypeInDb(v);
                         setSubTypeInput("");
                       }
                     } else if (e.key === "Backspace" && !subTypeInput) {
@@ -708,54 +705,66 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
               </div>
 
               {/* Suggestions dropdown */}
-              {showSuggestions && (
+              {showSuggestions && !isSubArtistDisabled && (
                 <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
-                  {subArtistSuggestions.filter((s) =>
-                    s
-                      .toLowerCase()
-                      .includes((subTypeInput || "").toLowerCase()),
-                  ).length === 0 ? (
+                  {/* Always show typed text as first suggestion if not empty */}
+                  {subTypeInput.trim() && (
+                    <button
+                      key="typed-input"
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                      }}
+                      onClick={() => {
+                        const v = subTypeInput.trim();
+                        addSubTypeTag(v);
+                        createSubArtistTypeInDb(v);
+                        setSubTypeInput("");
+                        // Keep dropdown open so newly added item appears in suggestions
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm border-b border-border-color"
+                    >
+                      Add "{subTypeInput.trim()}"
+                    </button>
+                  )}
+                  
+                  {/* Show existing suggestions */}
+                  {subArtistSuggestions
+                    .filter((s) =>
+                      s
+                        .toLowerCase()
+                        .includes((subTypeInput || "").toLowerCase()) &&
+                      !selectedSubTypes.some(
+                        (item) => normalizeSubType(item) === normalizeSubType(s)
+                      )
+                    )
+                    .map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                        }}
+                        onClick={() => {
+                          addSubTypeTag(s);
+                          setSubTypeInput("");
+                          // Keep dropdown open for continuous selection
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                    
+                  {/* Show no suggestions only if no input and no matches */}
+                  {!subTypeInput.trim() && subArtistSuggestions.filter((s) =>
+                    !selectedSubTypes.some(
+                      (item) => normalizeSubType(item) === normalizeSubType(s)
+                    )
+                  ).length === 0 && (
                     <div className="px-3 py-2 text-sm text-text-gray">
                       No suggestions
                     </div>
-                  ) : (
-                    subArtistSuggestions
-                      .filter((s) =>
-                        s
-                          .toLowerCase()
-                          .includes((subTypeInput || "").toLowerCase()),
-                      )
-                      .map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                          }}
-                          onClick={() => {
-                            // add suggestion as a tag
-                            const exists = selectedSubTypes.some(
-                              (item) => normalizeSubType(item) === normalizeSubType(s),
-                            );
-                            if (!exists) {
-                              const next = [s, ...selectedSubTypes];
-                              setSelectedSubTypes(next);
-                              const csv = next.join(",");
-                              setFormData((prev) => ({
-                                ...prev,
-                                subArtistType: csv,
-                              }));
-                              onUpdateData({ subArtistType: csv });
-                              addSuggestionIfNew(s);
-                            }
-                            setSubTypeInput("");
-                            setShowSuggestions(false);
-                          }}
-                          className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
-                        >
-                          {s}
-                        </button>
-                      ))
                   )}
                 </div>
               )}

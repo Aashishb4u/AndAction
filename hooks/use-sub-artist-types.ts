@@ -1,54 +1,33 @@
 import { useState, useEffect } from "react";
 
-const defaultSubTypes = [
-  "Classical",
-  "Contemporary",
-  "Folk",
-  "Bollywood",
-  "Western",
-  "Fusion",
-  "Devotional",
-];
-
 /**
- * Fetches all unique sub-artist types from the API and merges with defaults.
- * Returns a sorted, deduplicated list.
+ * Fetches sub-artist types from the API.
+ * - If categoryValue is provided, returns sub-types for that category only.
+ * - If categoryValue is not provided, returns all available sub-types.
  */
-export function useSubArtistTypes() {
-  const [subTypes, setSubTypes] = useState<string[]>(defaultSubTypes);
-  const [loading, setLoading] = useState(true);
+export function useSubArtistTypes(categoryValue?: string) {
+  const [subTypes, setSubTypes] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
 
     async function fetchSubTypes() {
+      setLoading(true);
       try {
-        const res = await fetch("/api/artists/sub-types");
+        const category = (categoryValue || "").trim();
+        const url = category
+          ? `/api/artists/sub-types?category=${encodeURIComponent(category)}`
+          : "/api/artists/sub-types";
+
+        const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch");
         const json = await res.json();
         const fetched: string[] = json.data?.subTypes || [];
-
-        if (!cancelled) {
-          // Merge API results with defaults (case-insensitive dedup)
-          const seen = new Set<string>();
-          const merged: string[] = [];
-
-          for (const item of [...fetched, ...defaultSubTypes]) {
-            const key = item.toLowerCase();
-            if (!seen.has(key)) {
-              seen.add(key);
-              merged.push(item);
-            }
-          }
-
-          merged.sort((a, b) =>
-            a.localeCompare(b, undefined, { sensitivity: "base" }),
-          );
-
-          setSubTypes(merged);
-        }
+        if (!cancelled) setSubTypes(fetched);
       } catch {
-        // keep defaults on error
+        if (!cancelled) setSubTypes([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -58,7 +37,7 @@ export function useSubArtistTypes() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [categoryValue, refreshKey]);
 
-  return { subTypes, loading };
+  return { subTypes, loading, refetch: () => setRefreshKey((k) => k + 1) };
 }
