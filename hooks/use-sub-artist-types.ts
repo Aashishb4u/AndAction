@@ -17,12 +17,11 @@ export function useSubArtistTypes(categoryValue?: string) {
       setLoading(true);
       try {
         const category = (categoryValue || "").trim();
-        const baseUrl = category
+        const url = category
           ? `/api/artists/sub-types?category=${encodeURIComponent(category)}`
           : "/api/artists/sub-types";
-        const url = `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}v=${refreshKey}`;
 
-        const res = await fetch(url, { cache: "no-store" });
+        const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch");
         const json = await res.json();
         const fetched: string[] = json.data?.subTypes || [];

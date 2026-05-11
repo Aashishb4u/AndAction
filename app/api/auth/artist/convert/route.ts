@@ -14,7 +14,7 @@ export async function POST(_request: NextRequest): Promise<NextResponse> {
     const result = await prisma.$transaction(async (tx) => {
       const existingUser = await tx.user.findUnique({
         where: { id: session.user.id },
-        include: { artist: true },
+        include: { artists: { orderBy: { profileOrder: "asc" }, take: 1 } },
       });
 
       if (!existingUser) {
@@ -23,17 +23,19 @@ export async function POST(_request: NextRequest): Promise<NextResponse> {
 
       const fullName = `${existingUser.firstName || ""} ${existingUser.lastName || ""}`.trim();
 
-      const artistProfile = existingUser.artist
-        ? existingUser.artist
-        : await tx.artist.create({
-            data: {
-              userId: existingUser.id,
-              stageName: fullName || null,
-              contactEmail: existingUser.email || null,
-              contactNumber: existingUser.phoneNumber || null,
-              whatsappNumber: existingUser.phoneNumber || null,
-            },
-          });
+      const existingArtistProfile = existingUser.artists?.[0] ?? null;
+      const artistProfile =
+        existingArtistProfile ??
+        (await tx.artist.create({
+          data: {
+            userId: existingUser.id,
+            profileOrder: 0,
+            stageName: fullName || null,
+            contactEmail: existingUser.email || null,
+            contactNumber: existingUser.phoneNumber || null,
+            whatsappNumber: existingUser.phoneNumber || null,
+          },
+        }));
 
       const updatedUser =
         existingUser.role === "artist"

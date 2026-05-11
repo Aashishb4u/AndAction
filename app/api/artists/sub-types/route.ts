@@ -2,7 +2,6 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ApiErrors, ApiResponse, successResponse } from "@/lib/api-response";
 import { normalizeArtistCategoryValue } from "@/lib/artist-category-utils";
-import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 import { NextRequest } from "next/server";
 
 type SubTypesResponse = ApiResponse<{ subTypes: string[] }>;
@@ -28,73 +27,73 @@ async function resolveCategoryIdFromValue(rawValue: string) {
   const raw = (rawValue || "").trim();
   if (!raw) return null;
 
-  const candidates = sortAndDedupeCaseInsensitive([
-    raw,
-    normalizeArtistCategoryValue(raw),
-    ...getArtistTypeMatches(raw),
-  ]);
+  const normalized = normalizeArtistCategoryValue(raw);
+  const candidates = Array.from(new Set([raw, normalized].filter(Boolean)));
 
-  const or = candidates.flatMap((value) => [
-    { value: { equals: value, mode: "insensitive" as const } },
-    { label: { equals: value, mode: "insensitive" as const } },
-  ]);
+  for (const candidate of candidates) {
+    const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT id
+      FROM artist_categories
+      WHERE id = ${candidate}
+         OR lower(value) = lower(${candidate})
+         OR lower(label) = lower(${candidate})
+         OR lower(value) = lower(replace(${candidate}, '-', ' '))
+         OR lower(label) = lower(replace(${candidate}, '-', ' '))
+         OR lower(replace(value, '-', ' ')) = lower(replace(${candidate}, '-', ' '))
+         OR lower(replace(value, ' ', '-')) = lower(replace(${candidate}, ' ', '-'))
+      LIMIT 1
+    `;
 
-  const category = await prisma.artist_categories.findFirst({
-    where: {
-      OR: or,
-    },
-    select: { id: true },
-  });
+    if (rows[0]?.id) return rows[0].id;
+  }
 
-  return category?.id ?? null;
+  return null;
 }
 
-function hasSubCategoriesModel() {
-  const client = prisma as unknown as Record<string, unknown>;
-  const model = client["artists_sub_categories"] as
-    | { findMany?: unknown; findFirst?: unknown; create?: unknown }
-    | undefined;
+async function fetchSubTypesByCategoryId(categoryId: string) {
+  const rows = await prisma.$queryRaw<Array<{ sub_category_label: string }>>`
+    SELECT sub_category_label
+    FROM artists_sub_categories
+    WHERE category_id = ${categoryId}
+    ORDER BY sub_category_label ASC
+  `;
 
-  return (
-    !!model &&
-    typeof model.findMany === "function" &&
-    typeof model.findFirst === "function" &&
-    typeof model.create === "function"
-  );
+  return sortAndDedupeCaseInsensitive(rows.map((r) => r.sub_category_label));
+}
+
+async function fetchAllDistinctSubTypes() {
+  const rows = await prisma.$queryRaw<Array<{ sub_category_label: string }>>`
+    SELECT DISTINCT sub_category_label
+    FROM artists_sub_categories
+    ORDER BY sub_category_label ASC
+  `;
+
+  return sortAndDedupeCaseInsensitive(rows.map((r) => r.sub_category_label));
 }
 
 export async function GET(req: NextRequest): Promise<SubTypesResponse> {
   try {
     const categoryValue = req.nextUrl.searchParams.get("category") || "";
 
-    if (!hasSubCategoriesModel()) {
+    if (categoryValue.trim()) {
+      try {
+        const categoryId = await resolveCategoryIdFromValue(categoryValue);
+        if (!categoryId) return successResponse({ subTypes: [] });
+        const subTypes = await fetchSubTypesByCategoryId(categoryId);
+        return successResponse({ subTypes });
+      } catch (error) {
+        console.error("[sub-types] category query failed:", error);
+        return successResponse({ subTypes: [] });
+      }
+    }
+
+    try {
+      const subTypes = await fetchAllDistinctSubTypes();
+      return successResponse({ subTypes });
+    } catch (error) {
+      console.error("[sub-types] query failed:", error);
       return successResponse({ subTypes: [] });
     }
-
-    if (categoryValue.trim()) {
-      const categoryId = await resolveCategoryIdFromValue(categoryValue);
-      if (!categoryId) return successResponse({ subTypes: [] });
-
-      const rows = await prisma.artists_sub_categories.findMany({
-        where: { categoryId },
-        select: { subCategoryLabel: true },
-        orderBy: { subCategoryLabel: "asc" },
-      });
-
-      return successResponse({
-        subTypes: sortAndDedupeCaseInsensitive(rows.map((r) => r.subCategoryLabel)),
-      });
-    }
-
-    const rows = await prisma.artists_sub_categories.findMany({
-      select: { subCategoryLabel: true },
-      distinct: ["subCategoryLabel"],
-      orderBy: { subCategoryLabel: "asc" },
-    });
-
-    return successResponse({
-      subTypes: sortAndDedupeCaseInsensitive(rows.map((r) => r.subCategoryLabel)),
-    });
   } catch (error) {
     console.error("[sub-types] failed:", error);
     return ApiErrors.internalError("Failed to fetch sub-types");
@@ -132,48 +131,47 @@ export async function POST(req: NextRequest): Promise<CreateSubTypeResponse> {
   if (!trimmedLabel) return ApiErrors.badRequest("Label is required");
 
   try {
-    if (!hasSubCategoriesModel()) {
-      return ApiErrors.internalError(
-        "Sub-categories table is not available. Please run DB migrations.",
-      );
-    }
-
     const categoryId = await resolveCategoryIdFromValue(trimmedCategoryValue);
     if (!categoryId) return ApiErrors.badRequest("Invalid category");
 
-    const existing = await prisma.artists_sub_categories.findFirst({
-      where: {
-        categoryId,
-        subCategoryLabel: { equals: trimmedLabel, mode: "insensitive" },
-      },
-      select: { id: true, categoryId: true, subCategoryLabel: true },
-    });
+    const existingRows = await prisma.$queryRaw<
+      Array<{ id: number; category_id: string; sub_category_label: string }>
+    >`
+      SELECT id, category_id, sub_category_label
+      FROM artists_sub_categories
+      WHERE category_id = ${categoryId}
+        AND lower(sub_category_label) = lower(${trimmedLabel})
+      LIMIT 1
+    `;
+    const existing = existingRows[0];
 
     if (existing) {
       return successResponse({
         created: false,
         subType: {
           id: existing.id,
-          label: existing.subCategoryLabel,
-          categoryId: existing.categoryId,
+          label: existing.sub_category_label,
+          categoryId: existing.category_id,
         },
       });
     }
 
-    const created = await prisma.artists_sub_categories.create({
-      data: {
-        categoryId,
-        subCategoryLabel: trimmedLabel,
-      },
-      select: { id: true, categoryId: true, subCategoryLabel: true },
-    });
+    const insertedRows = await prisma.$queryRaw<
+      Array<{ id: number; category_id: string; sub_category_label: string }>
+    >`
+      INSERT INTO artists_sub_categories (category_id, sub_category_label, created_at, updated_at)
+      VALUES (${categoryId}, ${trimmedLabel}, NOW(), NOW())
+      RETURNING id, category_id, sub_category_label
+    `;
+    const created = insertedRows[0];
+    if (!created) return ApiErrors.internalError("Failed to create sub-type");
 
     return successResponse({
       created: true,
       subType: {
         id: created.id,
-        label: created.subCategoryLabel,
-        categoryId: created.categoryId,
+        label: created.sub_category_label,
+        categoryId: created.category_id,
       },
     });
   } catch (error) {
