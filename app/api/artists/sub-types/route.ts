@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ApiErrors, ApiResponse, successResponse } from "@/lib/api-response";
 import { normalizeArtistCategoryValue } from "@/lib/artist-category-utils";
+import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 import { NextRequest } from "next/server";
 
 type SubTypesResponse = ApiResponse<{ subTypes: string[] }>;
@@ -24,15 +25,23 @@ function sortAndDedupeCaseInsensitive(items: string[]) {
 }
 
 async function resolveCategoryIdFromValue(rawValue: string) {
-  const normalizedValue = normalizeArtistCategoryValue(rawValue);
-  if (!normalizedValue) return null;
+  const raw = (rawValue || "").trim();
+  if (!raw) return null;
+
+  const candidates = sortAndDedupeCaseInsensitive([
+    raw,
+    normalizeArtistCategoryValue(raw),
+    ...getArtistTypeMatches(raw),
+  ]);
+
+  const or = candidates.flatMap((value) => [
+    { value: { equals: value, mode: "insensitive" as const } },
+    { label: { equals: value, mode: "insensitive" as const } },
+  ]);
 
   const category = await prisma.artist_categories.findFirst({
     where: {
-      OR: [
-        { value: { equals: normalizedValue, mode: "insensitive" } },
-        { label: { equals: normalizedValue, mode: "insensitive" } },
-      ],
+      OR: or,
     },
     select: { id: true },
   });
@@ -54,93 +63,38 @@ function hasSubCategoriesModel() {
   );
 }
 
-async function getDerivedSubTypesFromArtists(categoryValue?: string) {
-  const normalized = categoryValue ? normalizeArtistCategoryValue(categoryValue) : "";
-
-  const artists = await prisma.artist.findMany({
-    where: {
-      subArtistType: { not: null },
-      ...(normalized
-        ? { artistType: { equals: normalized, mode: "insensitive" } }
-        : {}),
-    },
-    select: { subArtistType: true },
-  });
-
-  const derived: string[] = [];
-  for (const artist of artists) {
-    if (!artist.subArtistType) continue;
-    derived.push(
-      ...artist.subArtistType
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-    );
-  }
-
-  return sortAndDedupeCaseInsensitive(derived);
-}
-
 export async function GET(req: NextRequest): Promise<SubTypesResponse> {
   try {
     const categoryValue = req.nextUrl.searchParams.get("category") || "";
 
-    if (categoryValue.trim()) {
-      if (!hasSubCategoriesModel()) {
-        const subTypes = await getDerivedSubTypesFromArtists(categoryValue);
-        return successResponse({ subTypes });
-      }
-
-      try {
-        const categoryId = await resolveCategoryIdFromValue(categoryValue);
-        if (!categoryId) return successResponse({ subTypes: [] });
-
-        const rows = await prisma.artists_sub_categories.findMany({
-          where: { categoryId },
-          select: { subCategoryLabel: true },
-          orderBy: { subCategoryLabel: "asc" },
-        });
-
-        return successResponse({
-          subTypes: sortAndDedupeCaseInsensitive(
-            rows.map((r) => r.subCategoryLabel),
-          ),
-        });
-      } catch (error) {
-        console.error("[sub-types] category query failed, falling back to artists:", error);
-        const subTypes = await getDerivedSubTypesFromArtists(categoryValue);
-        return successResponse({ subTypes });
-      }
-    }
-
-    const derivedFromArtistsPromise = getDerivedSubTypesFromArtists();
-
     if (!hasSubCategoriesModel()) {
-      const subTypes = await derivedFromArtistsPromise;
-      return successResponse({ subTypes });
+      return successResponse({ subTypes: [] });
     }
 
-    try {
-      const [rows, derivedFromArtists] = await Promise.all([
-        prisma.artists_sub_categories.findMany({
-          select: { subCategoryLabel: true },
-          distinct: ["subCategoryLabel"],
-          orderBy: { subCategoryLabel: "asc" },
-        }),
-        derivedFromArtistsPromise,
-      ]);
+    if (categoryValue.trim()) {
+      const categoryId = await resolveCategoryIdFromValue(categoryValue);
+      if (!categoryId) return successResponse({ subTypes: [] });
 
-      const subTypes = sortAndDedupeCaseInsensitive([
-        ...rows.map((r) => r.subCategoryLabel),
-        ...derivedFromArtists,
-      ]);
+      const rows = await prisma.artists_sub_categories.findMany({
+        where: { categoryId },
+        select: { subCategoryLabel: true },
+        orderBy: { subCategoryLabel: "asc" },
+      });
 
-      return successResponse({ subTypes });
-    } catch (error) {
-      console.error("[sub-types] query failed, falling back to artists:", error);
-      const subTypes = await derivedFromArtistsPromise;
-      return successResponse({ subTypes });
+      return successResponse({
+        subTypes: sortAndDedupeCaseInsensitive(rows.map((r) => r.subCategoryLabel)),
+      });
     }
+
+    const rows = await prisma.artists_sub_categories.findMany({
+      select: { subCategoryLabel: true },
+      distinct: ["subCategoryLabel"],
+      orderBy: { subCategoryLabel: "asc" },
+    });
+
+    return successResponse({
+      subTypes: sortAndDedupeCaseInsensitive(rows.map((r) => r.subCategoryLabel)),
+    });
   } catch (error) {
     console.error("[sub-types] failed:", error);
     return ApiErrors.internalError("Failed to fetch sub-types");
