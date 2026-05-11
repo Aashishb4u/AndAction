@@ -161,7 +161,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // REQUIRED FILTER: artistType
     // ---------------------------
     if (type) {
-      const typeMatches = getArtistTypeMatches(type);
+      const typeMatches = await getArtistTypeMatches(type);
       where.artistType = { in: typeMatches };
     }
 
