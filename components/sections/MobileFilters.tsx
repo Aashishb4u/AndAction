@@ -85,7 +85,10 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Sub-category multi-tag state
-  const { subTypes: subArtistSuggestions } = useSubArtistTypes();
+  const isSubCategoryDisabled = !filters.category;
+  const { subTypes: subArtistSuggestions } = useSubArtistTypes(
+    isSubCategoryDisabled ? undefined : filters.category,
+  );
   const [subInput, setSubInput] = useState("");
   const [showSubSuggestions, setShowSubSuggestions] = useState(false);
 
@@ -340,7 +343,11 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     label="Artist Category"
                     value={filters.category}
                     options={categoryOptions}
-                    onChange={(value) => onFilterChange("category", value as string)}
+                    onChange={(value) => {
+                      onFilterChange("category", value as string);
+                      setSubInput("");
+                      setShowSubSuggestions(false);
+                    }}
                     required
                     placeholder="Select Category"
                   />
@@ -365,15 +372,27 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     ))}
                     <input
                       type="text"
-                      placeholder={selectedSubTypes.length === 0 ? "Type to search sub-category" : ""}
+                      placeholder={
+                        isSubCategoryDisabled
+                          ? "Select category first"
+                          : selectedSubTypes.length === 0
+                            ? "Type to search sub-category"
+                            : ""
+                      }
                       value={subInput}
                       onChange={(e) => {
+                        if (isSubCategoryDisabled) return;
                         setSubInput(e.target.value);
                         setShowSubSuggestions(true);
                       }}
-                      onFocus={() => setShowSubSuggestions(true)}
+                      disabled={isSubCategoryDisabled}
+                      onFocus={() => {
+                        if (isSubCategoryDisabled) return;
+                        setShowSubSuggestions(true);
+                      }}
                       onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
                       onKeyDown={(e) => {
+                        if (isSubCategoryDisabled) return;
                         if (e.key === "Enter" || e.key === ",") {
                           e.preventDefault();
                           const v = subInput.trim().replace(/,$/, "");
@@ -387,7 +406,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                     />
                   </div>
 
-                  {showSubSuggestions && (
+                  {showSubSuggestions && !isSubCategoryDisabled && (
                     <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
                       {/* Always show typed text as first suggestion if not empty */}
                       {subInput.trim() && (

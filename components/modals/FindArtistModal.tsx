@@ -45,8 +45,10 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     location: "",
   });
 
-  // Fetch sub-artist types from database
-  const { subTypes: fetchedSubArtistTypes } = useSubArtistTypes();
+  const isSubCategoryDisabled = !formData.artistCategory;
+  const { subTypes: subArtistSuggestions } = useSubArtistTypes(
+    isSubCategoryDisabled ? undefined : formData.artistCategory,
+  );
   const { categories } = useArtistCategories();
 
   const [preferences, setPreferences] =
@@ -148,25 +150,6 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     const list = preferences?.states;
     return Array.isArray(list) && list.length > 0 ? list : INDIAN_STATES;
   }, [preferences]);
-
-  const subArtistSuggestions = useMemo(() => {
-    const prefList = Array.isArray(preferences?.subArtistSuggestions)
-      ? preferences?.subArtistSuggestions
-      : [];
-    const merged = [...fetchedSubArtistTypes, ...prefList];
-    const seen = new Set<string>();
-    const deduped: string[] = [];
-    for (const item of merged) {
-      const v = String(item || "").trim();
-      if (!v) continue;
-      const key = v.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      deduped.push(v);
-    }
-    deduped.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-    return deduped;
-  }, [fetchedSubArtistTypes, preferences]);
 
   // Language dropdown state
   const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
@@ -281,7 +264,12 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             placeholder="Select category"
             options={categories}
             value={formData.artistCategory}
-            onChange={(value) => handleInputChange("artistCategory", value)}
+            onChange={(value) => {
+              handleInputChange("artistCategory", value);
+              handleInputChange("subCategory", []);
+              setSubInput("");
+              setShowSubSuggestions(false);
+            }}
             required
           />
         </div>
@@ -308,15 +296,27 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             ))}
             <input
               type="text"
-              placeholder={formData.subCategory.length === 0 ? "Type to search sub-category" : ""}
+              placeholder={
+                isSubCategoryDisabled
+                  ? "Select category first"
+                  : formData.subCategory.length === 0
+                    ? "Type to search sub-category"
+                    : ""
+              }
               value={subInput}
               onChange={(e) => {
+                if (isSubCategoryDisabled) return;
                 setSubInput(e.target.value);
                 setShowSubSuggestions(true);
               }}
-              onFocus={() => setShowSubSuggestions(true)}
+              disabled={isSubCategoryDisabled}
+              onFocus={() => {
+                if (isSubCategoryDisabled) return;
+                setShowSubSuggestions(true);
+              }}
               onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
               onKeyDown={(e) => {
+                if (isSubCategoryDisabled) return;
                 if (e.key === "Enter" || e.key === ",") {
                   e.preventDefault();
                   const v = subInput.trim().replace(/,$/, "");
@@ -332,7 +332,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             />
           </div>
 
-          {showSubSuggestions && (
+          {showSubSuggestions && !isSubCategoryDisabled && (
             <div className="absolute z-40 left-0 right-0 mt-1 bg-background border border-border-color rounded-lg max-h-48 overflow-auto">
               {/* Always show typed text as first suggestion if not empty */}
               {subInput.trim() && (

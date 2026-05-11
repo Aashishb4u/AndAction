@@ -264,6 +264,17 @@ model artist_categories {
   @@index([sortOrder])
 }
 
+model artists_sub_categories {
+  id               Int      @id @default(autoincrement())
+  categoryId       String   @map("category_id") @db.Text
+  subCategoryLabel String   @map("sub_category_label") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@unique([categoryId, subCategoryLabel])
+  @@index([categoryId])
+}
+
 model otps {
   id          String   @id
   phoneNumber String

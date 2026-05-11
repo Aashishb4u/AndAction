@@ -303,11 +303,11 @@ export default function MobileSearchPage() {
                       height={40}
                       className="rounded-full object-cover w-10 h-10"
                     />
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium text-base text-white">
+                    <div className="flex flex-col items-start text-left">
+                      <span className="font-medium text-base text-white text-left">
                         {artist.name}
                       </span>
-                      <span className="text-sm text-gray-400">
+                      <span className="text-sm text-gray-400 text-left">
                         {artist.categoryLabel}
                         {artist.subArtistTypes.length > 0
                           ? ` • ${artist.subArtistTypes.slice(0, 2).join(", ")}`
