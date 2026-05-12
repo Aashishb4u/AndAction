@@ -311,7 +311,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <Support className="size-6 text-text-gray" />
                 <span className="text-text-gray secondary-text">For any query</span>
               </div>
-              <p className="text-white secondary-grey-text">Contact Us : 8860014889</p>
+              <p className="text-white secondary-grey-text">Contact Us : 8595114889</p>
             </div>
           </div>
 

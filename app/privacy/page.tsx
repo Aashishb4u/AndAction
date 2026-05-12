@@ -226,11 +226,11 @@ const PrivacyPage = () => {
               <span>official@andaction.in</span>
             </a>
             <a
-              href="tel:+918860014889"
+              href="tel:+918595114889"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
             >
               <Phone className="w-4 h-4" />
-              <span>+91 8860014889</span>
+              <span>+91 85951114889</span>
             </a>
           </div>
         </section>

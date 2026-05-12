@@ -168,7 +168,7 @@ const FAQPage = () => {
             </a>
 
             <a
-              href="tel:+918860014889"
+              href="tel:+918595114889"
               className="flex items-center gap-4 p-6 bg-card/50 rounded-xl border border-background-light hover:border-primary-orange/30 transition-all duration-300 group"
             >
               <div className="text-primary-orange group-hover:scale-110 transition-transform duration-300">
@@ -176,7 +176,7 @@ const FAQPage = () => {
               </div>
               <div>
                 <h3 className="text-white font-semibold mb-1">Phone Support</h3>
-                <p className="text-text-gray text-sm">+91 8860014889</p>
+                <p className="text-text-gray text-sm">+91 8595114889</p>
                 <p className="text-text-gray text-xs">Mon-Fri, 9 AM - 6 PM IST</p>
               </div>
             </a>

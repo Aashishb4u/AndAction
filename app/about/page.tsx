@@ -74,7 +74,8 @@ const AboutPage = () => {
 
           <div className="prose prose-lg max-w-none">
             <p className="text-text-light-gray leading-relaxed mb-4">
-              At And-Action, we make discovering and booking artists effortless. Whether you&apos;re looking for a magician to amaze kids at a birthday party, a live band to set the mood at your wedding, or a Sufi group to elevate your cocktail night, we connect you directly with top-tier performers—no middlemen, no hefty commissions.
+              ANDACTION is a brand owned and operated by MINDFUL TECH INNOVATIONS (OPC) PVT LTD, a registered company under the laws of India.<br />
+              At ANDACTION, we make discovering and booking artists effortless. Whether you&apos;re looking for a magician to amaze kids at a birthday party, a live band to set the mood at your wedding, or a Sufi group to elevate your cocktail night, we connect you directly with top-tier performers—no middlemen, no hefty commissions.
             </p>
 
             <p className="text-text-light-gray leading-relaxed mb-4">
@@ -140,11 +141,11 @@ const AboutPage = () => {
                 <span>official@andaction.in</span>
               </a>
               <a
-                href="tel:+918860014889"
+                href="tel:+918595114889"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
               >
                 <Phone className="w-4 h-4" />
-                <span>+91 8860014889</span>
+                <span>+91 8595114889</span>
               </a>
             </div>
           </div>

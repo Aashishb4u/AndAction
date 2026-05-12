@@ -19,8 +19,8 @@ const ContactPage = () => {
     {
       icon: <Phone className="w-6 h-6" />,
       title: 'Phone',
-      details: '+91 8860014889',
-      link: 'tel:+918860014889',
+      details: '+91 8595114889',
+      link: 'tel:+918595114889',
       description: 'Available Mon-Sat, 9AM-6PM IST',
     },
     {
@@ -132,10 +132,10 @@ const ContactPage = () => {
           <p className="text-text-gray">
             For urgent matters, please call us directly at{' '}
             <a
-              href="tel:+918860014889"
+              href="tel:+918595114889"
               className="text-primary-pink hover:text-primary-orange transition-colors duration-200 font-medium"
             >
-              +91 8860014889
+              +91 8595114889
             </a>
           </p>
         </div>
