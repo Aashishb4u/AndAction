@@ -216,8 +216,8 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
               </div>
               <p className="text-white">
                 Contact Us:{' '}
-                <Link href="tel:+918860014889" className="hover:underline">
-                  +91 8860014889
+                <Link href="tel:+918595114889" className="hover:underline">
+                  +91 8595114889
                 </Link>
               </p>
             </div>

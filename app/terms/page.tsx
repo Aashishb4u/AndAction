@@ -121,6 +121,7 @@ const TermsPage = () => {
         {/* Introduction */}
         <section>
           <p className="text-text-light-gray leading-relaxed mb-6">
+            ANDACTION is a brand owned and operated by MINDFUL TECH INNOVATIONS (OPC) PVT LTD, a registered company under the laws of India.<br />
             These Terms and Conditions (&quot;Terms&quot;) govern your use of the ANDACTION platform and services.
             By accessing or using our service, you agree to be bound by these Terms. If you disagree with
             any part of these terms, then you may not access the service.
@@ -230,11 +231,11 @@ const TermsPage = () => {
               <span>official@andaction.in</span>
             </a>
             <a
-              href="tel:+918860014889"
+              href="tel:+918595114889"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
             >
               <Phone className="w-4 h-4" />
-              <span>+91 8860014889</span>
+              <span>+91 8595114889</span>
             </a>
           </div>
         </section>
