@@ -188,7 +188,7 @@ async function fetchTopRatedNationwide(
   limit: number = 50,
 ) {
   const typeMatches = await getArtistTypeMatches(type);
-
+//issue here;
   const artists = await prisma.artist.findMany({
     where: {
       artistType: {
