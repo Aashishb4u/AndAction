@@ -10,6 +10,7 @@ import { getArtishName } from "@/lib/utils";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
 import { toast } from "react-toastify";
+import { useSession } from "next-auth/react";
 
 interface ArtistDetailTabsProps {
   artist: Artist;
@@ -22,6 +23,8 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   artist,
   isMobile = false,
 }) => {
+  const { status: sessionStatus } = useSession();
+  const withBookmarks = sessionStatus === "authenticated";
   const { categories } = useArtistCategories();
   const resolveArtistTypeLabel = useCallback(
     (rawValue?: string) => findCategoryLabel(categories, rawValue),
@@ -65,6 +68,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const [shortsSoundEnabled, setShortsSoundEnabled] = useState<boolean>(true);
   const shortsContainerRef = useRef<HTMLDivElement>(null);
   const shortsTabWrapperRef = useRef<HTMLDivElement>(null);
+  const tabsHeaderRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
   const touchEndY = useRef<number>(0);
   const lastScrollTime = useRef<number>(0);
@@ -101,6 +105,15 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     router.replace(`${pathname}?tab=${tab}`, { scroll: false });
+
+    if (tab === "shorts") {
+      requestAnimationFrame(() => {
+        tabsHeaderRef.current?.scrollIntoView({
+          block: "start",
+          behavior: "smooth",
+        });
+      });
+    }
   };
 
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
@@ -163,7 +176,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         if (page === 1) setIsInitialLoadingVideos(true);
         setIsLoadingVideos(true);
         const res = await fetch(
-          `/api/videos?type=videos&artistId=${artist.userId}&withBookmarks=true&page=${page}&limit=${VIDEOS_PER_PAGE}`,
+          `/api/videos?type=videos&artistId=${artist.userId}&withBookmarks=${withBookmarks ? "true" : "false"}&page=${page}&limit=${VIDEOS_PER_PAGE}`,
         );
         const json = await res.json();
         const newVideos = json?.data?.videos || [];
@@ -181,7 +194,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         isFetchingVideosRef.current = false;
       }
     },
-    [artist?.userId],
+    [artist?.userId, withBookmarks],
   );
 
   // Fetch shorts page
@@ -193,7 +206,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         if (page === 1) setIsInitialLoadingShorts(true);
         setIsLoadingShorts(true);
         const res = await fetch(
-          `/api/videos?type=shorts&artistId=${artist.userId}&withBookmarks=true&page=${page}&limit=${SHORTS_PER_PAGE}`,
+          `/api/videos?type=shorts&artistId=${artist.userId}&withBookmarks=${withBookmarks ? "true" : "false"}&page=${page}&limit=${SHORTS_PER_PAGE}`,
         );
         const json = await res.json();
         const newShorts = json?.data?.videos || [];
@@ -211,7 +224,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         isFetchingShortsRef.current = false;
       }
     },
-    [artist?.userId],
+    [artist?.userId, withBookmarks],
   );
 
   // Initial fetch
@@ -301,12 +314,8 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   }, [artistShorts, resolveArtistTypeLabel, artist.id]);
 
   const visibleProfileShorts = useMemo(() => {
-    const visibleWindowSize = 2;
     const startIndex = Math.max(0, shortsCurrentIndex - 1);
-    const endIndex = Math.min(
-      profileShorts.length - 1,
-      startIndex + (visibleWindowSize - 1),
-    );
+    const endIndex = Math.min(profileShorts.length - 1, shortsCurrentIndex + 1);
 
     return profileShorts.slice(startIndex, endIndex + 1).map((short, idx) => ({
       ...short,
@@ -333,7 +342,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const handleProfileShortsScroll = useCallback(
     (direction: "up" | "down") => {
       const now = Date.now();
-      if (now - lastScrollTime.current < 120) return;
+      if (now - lastScrollTime.current < 80) return;
       lastScrollTime.current = now;
 
       setShortsCurrentIndex((prev) => {
@@ -351,7 +360,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     if (!el) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) < 8) return;
+      if (Math.abs(e.deltaY) < 3) return;
       e.preventDefault();
       handleProfileShortsScroll(e.deltaY > 0 ? "down" : "up");
     };
@@ -376,7 +385,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       }
       touchEndY.current = e.changedTouches[0]?.clientY ?? touchEndY.current;
       const delta = touchStartY.current - touchEndY.current;
-      if (Math.abs(delta) < 40) return;
+      if (Math.abs(delta) < 30) return;
       handleProfileShortsScroll(delta > 0 ? "down" : "up");
     };
 
@@ -414,7 +423,6 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     const videos = Array.from(container.querySelectorAll<HTMLVideoElement>("video"));
     videos.forEach((video) => {
       video.pause();
-      video.muted = true;
     });
 
     const iframes = Array.from(
@@ -424,10 +432,6 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       if (!iframe.contentWindow) return;
       iframe.contentWindow.postMessage(
         JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
-        "*",
-      );
-      iframe.contentWindow.postMessage(
-        JSON.stringify({ event: "command", func: "mute", args: [] }),
         "*",
       );
     });
@@ -473,7 +477,6 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       videos.forEach((video) => {
         if (!isActiveNode) {
           video.pause();
-          video.muted = true;
         }
       });
 
@@ -484,10 +487,6 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         if (!iframe.contentWindow || isActiveNode) return;
         iframe.contentWindow.postMessage(
           JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
-          "*",
-        );
-        iframe.contentWindow.postMessage(
-          JSON.stringify({ event: "command", func: "mute", args: [] }),
           "*",
         );
       });
@@ -1024,8 +1023,6 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             const isActive = short.absoluteIndex === shortsCurrentIndex;
             const isNext = short.absoluteIndex === shortsCurrentIndex + 1;
 
-            if (!isActive && !isNext) return null;
-
             return (
               <div
                 key={`${short.id}-${short.absoluteIndex}`}
@@ -1039,7 +1036,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                   shouldLoad={isActive || isNext}
                   onBookmark={handleProfileShortBookmark}
                   onShare={handleProfileShortShare}
-                  soundEnabled={shortsSoundEnabled}
+                  soundEnabled={isActive ? shortsSoundEnabled : false}
                   setSoundEnabled={setShortsSoundEnabled}
                 />
               </div>
@@ -1074,6 +1071,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     return (
       <div className="bg-background min-h-screen">
         <div
+          ref={tabsHeaderRef}
           className="sticky top-0 bg-background border-b z-40"
           style={{ borderColor: "#232323" }}
         >
@@ -1114,7 +1112,14 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       className="min-h-screen bg-card rounded-2xl border"
       style={{ borderColor: "#232323" }}
     >
-      <div className="border-b border-border-color">
+      <div
+        ref={tabsHeaderRef}
+        className={
+          activeTab === "shorts"
+            ? "sticky top-0 z-40 bg-card border-b border-border-color"
+            : "border-b border-border-color"
+        }
+      >
         <div className="flex px-8">
           {tabs.map((tab) => (
             <button

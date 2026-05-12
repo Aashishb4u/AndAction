@@ -160,7 +160,6 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       sendCommand("playVideo");
     } else {
       sendCommand("pauseVideo");
-      sendCommand("mute");
     }
 
     const timer = setTimeout(() => {
@@ -169,16 +168,13 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
         sendCommand(soundEnabled ? "unMute" : "mute");
       } else {
         sendCommand("pauseVideo");
-        sendCommand("mute");
       }
     }, 300);
 
     setIsPlaying(isActive);
     return () => {
       clearTimeout(timer);
-      // Ensure audio never leaks from previously active short
       sendCommand("pauseVideo");
-      sendCommand("mute");
     };
   }, [isActive, isYouTube, short.id, soundEnabled]);
 
@@ -291,6 +287,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
           <iframe
             id={`yt-${short.id}`}
             className="absolute inset-0 w-full h-full pointer-events-none"
+            loading={isActive ? "eager" : "lazy"}
             src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=${isActive && soundEnabled ? 0 : 1}&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${typeof window !== "undefined" ? window.location.origin : ""
               }`}
             allow="autoplay; encrypted-media"

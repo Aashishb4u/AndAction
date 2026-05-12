@@ -150,15 +150,18 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
 
   const FilterChip: React.FC<{
     label: string;
-    isActive: boolean;
+    isOpen: boolean;
+    isSelected: boolean;
     onClick: () => void;
-  }> = ({ label, isActive, onClick }) => (
+  }> = ({ label, isOpen, isSelected, onClick }) => (
     <button
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2 rounded-full border filter-chip whitespace-nowrap flex-shrink-0 btn2 ${
-        isActive
-          ? "bg-primary-pink border-primary-pink text-white"
-          : "bg-background border-[#2D2D2D] text-gray-300 hover:border-gray-500"
+        isSelected
+          ? "gradient-button border-transparent text-white"
+          : isOpen
+            ? "bg-background border-primary-pink text-white"
+            : "bg-background border-[#2D2D2D] text-gray-300 hover:border-gray-500"
       }`}
     >
       <span>{label}</span>
@@ -258,7 +261,8 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
               <FilterChip
                 key={chip.key}
                 label={chip.label}
-                isActive={activeDropdown === chip.key}
+                isOpen={activeDropdown === chip.key}
+                isSelected={Boolean(filters[chip.key as keyof Filters])}
                 onClick={() =>
                   setActiveDropdown(
                     activeDropdown === chip.key ? null : chip.key,

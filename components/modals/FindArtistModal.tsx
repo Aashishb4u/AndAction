@@ -566,9 +566,9 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             variant="secondary"
             size="md"
             onClick={handleReset}
-            className="md:flex-1 text-primary-pink bg-[#1B1B1B]! px-8 py-3"
+            className="md:flex-1 px-8 py-3 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0"
           >
-            <span className="gradient-text secondary-grey-text">Reset</span>
+            <span className="secondary-grey-text">Reset</span>
           </Button>
 
           <Button
@@ -586,10 +586,9 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             variant="secondary"
             size="md"
             onClick={handleReset}
-            className="flex-1 text-primary-pink bg-[#1B1B1B]! px-8 py-3 
-             focus:ring-1 focus:ring-primary-pink focus:ring-offset-0"
+            className="flex-1 px-8 py-3 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0"
           >
-            <span className="gradient-text secondary-grey-text">Reset</span>
+            <span className="secondary-grey-text">Reset</span>
           </Button>
 
           <Button
