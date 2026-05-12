@@ -65,7 +65,15 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
+    const headerToken = bearerMatch?.[1] ?? null;
+    const queryToken =
+      request.nextUrl.searchParams.get("token") ||
+      request.nextUrl.searchParams.get("secret");
+    const providedSecret =
+      headerToken || request.headers.get("x-cron-secret") || queryToken;
+
+    if (cronSecret && providedSecret !== cronSecret) {
       await updateCronJobRecord(cronJobId, "failed", "Unauthorized");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -96,7 +104,7 @@ export async function GET(request: NextRequest) {
     for (const artist of allArtists) {
       const mostRecentVideo = await prisma.video.findFirst({
         where: {
-          userId: artist.userId,
+          artistId: artist.id,
           source: "youtube",
         },
         orderBy: {
@@ -203,6 +211,14 @@ async function syncArtistYoutubeRollingWindow(params: {
 }): Promise<{ recentCount: number; newVideoCount: number; deleted: number; inserted: number }> {
   const { artistId, userId, youtubeChannelId, hasOAuthToken } = params;
 
+  const artistProfiles = await prisma.artist.count({ where: { userId } });
+  if (artistProfiles === 1) {
+    await prisma.video.updateMany({
+      where: { userId, source: "youtube", artistId: null },
+      data: { artistId },
+    });
+  }
+
   const auth = await buildYouTubeAuth(artistId, hasOAuthToken);
   const uploadsPlaylistId = await getUploadsPlaylistId(
     youtubeChannelId,
@@ -236,9 +252,19 @@ async function syncArtistYoutubeRollingWindow(params: {
 
   const recentVideoIds = detailedVideos.map((v) => v.id);
 
-  const existingVideos = await prisma.video.findMany({
+  await prisma.video.updateMany({
     where: {
       userId,
+      source: "youtube",
+      youtubeVideoId: { in: recentVideoIds },
+      artistId: null,
+    },
+    data: { artistId },
+  });
+
+  const existingVideos = await prisma.video.findMany({
+    where: {
+      artistId,
       source: "youtube",
       youtubeVideoId: {
         in: recentVideoIds,
@@ -269,7 +295,7 @@ async function syncArtistYoutubeRollingWindow(params: {
 
   const oldestVideosToDelete = await prisma.video.findMany({
     where: {
-      userId,
+      artistId,
       source: "youtube",
     },
     orderBy: [
@@ -301,6 +327,7 @@ async function syncArtistYoutubeRollingWindow(params: {
     return {
       youtubeVideoId: video.id,
       userId,
+      artistId,
       title: video.title,
       description: video.description,
       url: `https://www.youtube.com/watch?v=${video.id}`,

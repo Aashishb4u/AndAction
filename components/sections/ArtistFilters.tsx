@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Filters } from "@/types";
+import React, { useEffect, useMemo, useState } from "react";
+import { ArtistProfileSetupPreferences, Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
 import { INDIAN_STATES } from "@/lib/constants";
@@ -22,13 +22,13 @@ interface ArtistFiltersProps {
   className?: string;
 }
 
-const genderOptions: FilterOption[] = [
+const fallbackGenderOptions: FilterOption[] = [
   { value: "male", label: "Male" },
   { value: "female", label: "Female" },
   { value: "other", label: "Other" },
 ];
 
-const budgetOptions: FilterOption[] = [
+const fallbackBudgetOptions: FilterOption[] = [
   { value: "0-10000", label: "₹0 - ₹10,000" },
   { value: "10000-25000", label: "₹10,000 - ₹25,000" },
   { value: "25000-50000", label: "₹25,000 - ₹50,000" },
@@ -36,9 +36,7 @@ const budgetOptions: FilterOption[] = [
   { value: "100000+", label: "₹1,00,000+" },
 ];
 
-
-
-const eventTypeOptions: FilterOption[] = [
+const fallbackEventTypeOptions: FilterOption[] = [
   { value: "wedding", label: "Wedding" },
   { value: "corporate", label: "Corporate" },
   { value: "birthday", label: "Birthday" },
@@ -46,15 +44,13 @@ const eventTypeOptions: FilterOption[] = [
   { value: "concert", label: "Concert" },
 ];
 
-const languageOptions: FilterOption[] = [
+const fallbackLanguageOptions: FilterOption[] = [
   { value: "hindi", label: "Hindi" },
   { value: "english", label: "English" },
   { value: "gujarati", label: "Gujarati" },
   { value: "marathi", label: "Marathi" },
   { value: "punjabi", label: "Punjabi" },
 ];
-
-const locationOptions: FilterOption[] = INDIAN_STATES;
 
 const FilterSelect: React.FC<{
   label: string;
@@ -95,6 +91,58 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
   );
   const [subInput, setSubInput] = useState("");
   const [showSubSuggestions, setShowSubSuggestions] = useState(false);
+  const [preferences, setPreferences] =
+    useState<ArtistProfileSetupPreferences | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const load = async () => {
+      try {
+        const res = await fetch("/api/preferences/artist-profile", {
+          cache: "no-store",
+        });
+        const json = await res.json();
+        const prefs = json?.data?.preferences as ArtistProfileSetupPreferences;
+        if (!isActive) return;
+        if (prefs && typeof prefs === "object") setPreferences(prefs);
+        else setPreferences(null);
+      } catch {
+        if (!isActive) return;
+        setPreferences(null);
+      }
+    };
+
+    load();
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const genderOptions = useMemo(() => {
+    const list = preferences?.genders;
+    return Array.isArray(list) && list.length > 0 ? list : fallbackGenderOptions;
+  }, [preferences]);
+
+  const budgetOptions = useMemo(() => {
+    const list = preferences?.budgets;
+    return Array.isArray(list) && list.length > 0 ? list : fallbackBudgetOptions;
+  }, [preferences]);
+
+  const eventTypeOptions = useMemo(() => {
+    const list = preferences?.eventTypes;
+    return Array.isArray(list) && list.length > 0 ? list : fallbackEventTypeOptions;
+  }, [preferences]);
+
+  const languageOptions = useMemo(() => {
+    const list = preferences?.languages;
+    return Array.isArray(list) && list.length > 0 ? list : fallbackLanguageOptions;
+  }, [preferences]);
+
+  const stateOptions = useMemo(() => {
+    const list = preferences?.states;
+    return Array.isArray(list) && list.length > 0 ? list : INDIAN_STATES;
+  }, [preferences]);
 
   // Parse comma-separated subCategory into array
   const selectedSubTypes = filters.subCategory
@@ -294,7 +342,7 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
         <FilterSelect
           label="Event State"
           value={filters.eventState}
-          options={INDIAN_STATES}
+          options={stateOptions}
           onChange={(value) => onFilterChange("eventState", value)}
         />
 
@@ -315,7 +363,7 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
         <FilterSelect
           label="Artist State"
           value={filters.location}
-          options={locationOptions}
+          options={stateOptions}
           onChange={(value) => onFilterChange("location", value)}
         />
       </div>

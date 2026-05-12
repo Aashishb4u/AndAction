@@ -262,6 +262,8 @@ export interface ArtistProfileSetupData {
 }
 
 export interface ArtistProfileSetupPreferences {
+  genders: SelectOption[];
+  budgets: SelectOption[];
   languages: SelectOption[];
   eventTypes: SelectOption[];
   memberOptions: SelectOption[];

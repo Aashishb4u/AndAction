@@ -259,7 +259,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               {user.role !== "artist" && (
                 <button
                   onClick={handleJoinArtistClick}
-                  className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
+                  className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1 text-[24px] leading-[32px]"
                 >
                   {isConvertingArtist ? "Joining..." : "Join as an Artist"}
                 </button>
@@ -280,7 +280,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <br />
               <button
                 onClick={handleJoinArtistClick}
-                className="block gradient-text hover:opacity-80 transition-opacity duration-200 h1"
+                className="block gradient-text hover:opacity-80 transition-opacity duration-200 h1 text-[24px] leading-[32px]"
               >
                 Join as an artist
               </button>

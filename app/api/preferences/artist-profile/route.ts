@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 type Option = { value: string; label: string };
 
 const DEFAULT_PREFERENCES: {
+  genders: Option[];
+  budgets: Option[];
   languages: Option[];
   eventTypes: Option[];
   memberOptions: Option[];
@@ -11,6 +13,18 @@ const DEFAULT_PREFERENCES: {
   states: Option[];
   subArtistSuggestions: string[];
 } = {
+  genders: [
+    { value: "male", label: "Male" },
+    { value: "female", label: "Female" },
+    { value: "other", label: "Other" },
+  ],
+  budgets: [
+    { value: "0-10000", label: "₹0 - ₹10,000" },
+    { value: "10000-25000", label: "₹10,000 - ₹25,000" },
+    { value: "25000-50000", label: "₹25,000 - ₹50,000" },
+    { value: "50000-100000", label: "₹50,000 - ₹1,00,000" },
+    { value: "100000+", label: "₹1,00,000+" },
+  ],
   languages: [
     { value: "hindi", label: "Hindi" },
     { value: "english", label: "English" },
@@ -129,6 +143,8 @@ export async function GET() {
       }));
 
     const preferences = {
+      genders: DEFAULT_PREFERENCES.genders,
+      budgets: DEFAULT_PREFERENCES.budgets,
       languages: record.languages as unknown as Option[],
       eventTypes: record.eventTypes as unknown as Option[],
       memberOptions: record.memberOptions as unknown as Option[],

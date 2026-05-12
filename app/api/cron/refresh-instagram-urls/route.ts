@@ -28,7 +28,15 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
+    const headerToken = bearerMatch?.[1] ?? null;
+    const queryToken =
+      request.nextUrl.searchParams.get("token") ||
+      request.nextUrl.searchParams.get("secret");
+    const providedSecret =
+      headerToken || request.headers.get("x-cron-secret") || queryToken;
+
+    if (cronSecret && providedSecret !== cronSecret) {
       await updateCronJobRecord(cronJobId, "failed", "Unauthorized");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -66,7 +74,7 @@ export async function GET(request: NextRequest) {
       // Get the most recent video update for this artist
       const mostRecentVideo = await prisma.video.findFirst({
         where: {
-          userId: artist.userId,
+          artistId: artist.id,
           source: "instagram",
         },
         orderBy: {
@@ -162,6 +170,14 @@ async function refreshArtistInstagramVideos(
   artistId: string,
   userId: string,
 ): Promise<{ videosUpdated: number }> {
+  const artistProfiles = await prisma.artist.count({ where: { userId } });
+  if (artistProfiles === 1) {
+    await prisma.video.updateMany({
+      where: { userId, source: "instagram", artistId: null },
+      data: { artistId },
+    });
+  }
+
   const accessToken = await getValidInstagramToken(artistId);
 
   if (!accessToken) {
@@ -204,7 +220,7 @@ async function refreshArtistInstagramVideos(
     // Delete all Instagram videos for this artist since they have none
     await prisma.video.deleteMany({
       where: {
-        userId: userId,
+        artistId: artistId,
         source: "instagram",
       },
     });
@@ -217,7 +233,7 @@ async function refreshArtistInstagramVideos(
   // Delete videos that are no longer on Instagram
   const deleteResult = await prisma.video.deleteMany({
     where: {
-      userId: userId,
+      artistId: artistId,
       source: "instagram",
       instagramReelId: {
         not: null,
@@ -236,6 +252,7 @@ async function refreshArtistInstagramVideos(
     try {
       const videoData = {
         userId: userId,
+        artistId: artistId,
         title: removeEmojis(reel.caption?.slice(0, 100) || "Instagram Reel"),
         description: removeEmojis(reel.caption || ""),
         url: reel.media_url || "",
@@ -263,6 +280,7 @@ async function refreshArtistInstagramVideos(
           thumbnailUrl: videoData.thumbnailUrl,
           title: videoData.title,
           description: videoData.description,
+          artistId: videoData.artistId,
           updatedAt: new Date(),
         },
         create: videoData,
