@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 /**
  * GET /api/geocode/pincode?pin=<pincode>
  * Fetches location details (city, district, state) from Indian PIN code
- * Uses India Post API for accurate location data
+ * Uses Ola Maps
  */
 export async function GET(req: NextRequest) {
   try {
@@ -24,68 +24,78 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Try India Post API first
-    try {
-      const indiaPostUrl = `https://api.postalpincode.in/pincode/${pincode}`;
-      const response = await fetch(indiaPostUrl);
-      const data = await response.json();
-
-      if (
-        data &&
-        data[0] &&
-        data[0].Status === "Success" &&
-        data[0].PostOffice &&
-        data[0].PostOffice.length > 0
-      ) {
-        const postOffice = data[0].PostOffice[0];
-        
-        return successResponse(
-          {
-            pincode: pincode,
-            city: postOffice.District || postOffice.Block || "",
-            district: postOffice.District || "",
-            state: postOffice.State || "",
-            country: postOffice.Country || "India",
-            region: postOffice.Region || "",
-            division: postOffice.Division || "",
-            postOffice: postOffice.Name || "",
-          },
-          "Location fetched successfully",
-          200
-        );
-      }
-    } catch (apiError) {
-      console.error("India Post API error:", apiError);
+    const apiKey = process.env.OLA_MAPS_API_KEY;
+    if (!apiKey) {
+      return errorResponse(
+        "Location service is not configured",
+        "MISSING_OLA_MAPS_API_KEY",
+        500
+      );
     }
 
-    // If India Post API fails, try alternate API
-    try {
-      const alternateUrl = `https://api.data.gov.in/resource/5c2f62fe-5afa-4119-a499-fec9d604d5bd?api-key=579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b&format=json&filters[pincode]=${pincode}`;
-      const response = await fetch(alternateUrl);
-      const data = await response.json();
+    const url = `https://api.olamaps.io/places/v1/geocode?address=${encodeURIComponent(
+      `${pincode}, India`
+    )}`;
 
-      if (data && data.records && data.records.length > 0) {
-        const record = data.records[0];
-        
-        return successResponse(
-          {
-            pincode: pincode,
-            city: record.districtname || record.Taluk || "",
-            district: record.districtname || "",
-            state: record.statename || "",
-            country: "India",
-            region: record.regionname || "",
-            postOffice: record.officename || "",
-          },
-          "Location fetched successfully",
-          200
-        );
+    const response = await fetch(url, {
+      headers: {
+        "X-API-Key": apiKey,
+      },
+    });
+
+    const data = await response.json().catch(() => null);
+    const geocodingResults = Array.isArray(data?.geocodingResults)
+      ? data.geocodingResults
+      : [];
+
+    if (geocodingResults.length > 0) {
+      const item = geocodingResults[0];
+
+      let city = "";
+      let state = "";
+      let district = "";
+
+      const components = Array.isArray(item?.address_components)
+        ? item.address_components
+        : [];
+      for (const comp of components) {
+        const types: string[] = Array.isArray(comp?.types) ? comp.types : [];
+        if (!city && types.includes("locality")) city = String(comp.short_name ?? "");
+        if (!state && types.includes("administrative_area_level_1"))
+          state = String(comp.long_name ?? "");
+        if (!district && types.includes("administrative_area_level_2"))
+          district = String(comp.long_name ?? "");
       }
-    } catch (apiError) {
-      console.error("Alternate API error:", apiError);
+
+      if (!city) {
+        const parts = String(item?.formatted_address ?? item?.name ?? "")
+          .split(",")
+          .map((p: string) => p.trim())
+          .filter(Boolean);
+        if (parts.length >= 3) {
+          city = parts[0] ?? "";
+          state = state || (parts[1] ?? "");
+        } else if (parts.length > 0) {
+          city = parts[0] ?? "";
+        }
+      }
+
+      return successResponse(
+        {
+          pincode,
+          city: city || district || String(item?.name ?? ""),
+          district: district || city,
+          state,
+          country: "India",
+          region: "",
+          division: "",
+          postOffice: "",
+        },
+        "Location fetched successfully",
+        200
+      );
     }
 
-    // If both APIs fail, return error
     return errorResponse(
       "Could not fetch location for this PIN code. Please enter manually.",
       "LOCATION_NOT_FOUND",

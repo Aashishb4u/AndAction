@@ -230,7 +230,7 @@ const PrivacyPage = () => {
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
             >
               <Phone className="w-4 h-4" />
-              <span>+91 85951114889</span>
+              <span>+91 8595114889</span>
             </a>
           </div>
         </section>

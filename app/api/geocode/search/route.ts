@@ -3,7 +3,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 
 /**
  * GET /api/geocode/search?q=<query>
- * Search for addresses in India using Nominatim (OpenStreetMap)
+ * Search for addresses in India using Ola Maps
  * Returns structured location suggestions for autocomplete
  */
 export async function GET(req: NextRequest) {
@@ -15,48 +15,76 @@ export async function GET(req: NextRequest) {
       return successResponse([], "Query too short", 200);
     }
 
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-      query + ", India"
-    )}&format=json&addressdetails=1&limit=6&countrycodes=in`;
+    const apiKey = process.env.OLA_MAPS_API_KEY;
+    if (!apiKey) {
+      return errorResponse(
+        "Location service is not configured",
+        "MISSING_OLA_MAPS_API_KEY",
+        500
+      );
+    }
+
+    const url = `https://api.olamaps.io/places/v1/geocode?address=${encodeURIComponent(
+      query
+    )}`;
 
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "AndAction-App/1.0",
+        "X-API-Key": apiKey,
       },
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => null);
+    const geocodingResults = Array.isArray(data?.geocodingResults)
+      ? data.geocodingResults
+      : [];
 
-    if (!data || !Array.isArray(data)) {
+    if (geocodingResults.length === 0) {
       return successResponse([], "No results found", 200);
     }
 
-    const results = data.map((item: any) => {
-      const addr = item.address || {};
-      const city =
-        addr.city ||
-        addr.town ||
-        addr.village ||
-        addr.county ||
-        addr.state_district ||
-        "";
-      const state = addr.state || "";
-      const postcode = addr.postcode || "";
-      const suburb = addr.suburb || addr.neighbourhood || "";
-      const road = addr.road || "";
+    const results = geocodingResults.slice(0, 6).map((item: any) => {
+      const formattedAddress = String(
+        item?.formatted_address ?? item?.name ?? ""
+      );
 
-      // Build a readable short address
-      const parts = [road, suburb, city].filter(Boolean);
-      const shortAddress = parts.join(", ");
+      let city = "";
+      let state = "";
+      let postcode = "";
+      let road = "";
+      let suburb = "";
+
+      const components = Array.isArray(item?.address_components)
+        ? item.address_components
+        : [];
+      for (const comp of components) {
+        const types: string[] = Array.isArray(comp?.types) ? comp.types : [];
+        if (!city && types.includes("locality")) city = String(comp.short_name ?? "");
+        if (!state && types.includes("administrative_area_level_1"))
+          state = String(comp.long_name ?? "");
+        if (!postcode && types.includes("postal_code"))
+          postcode = String(comp.long_name ?? comp.short_name ?? "");
+        if (!road && types.includes("route")) road = String(comp.long_name ?? "");
+        if (!suburb && types.includes("sublocality"))
+          suburb = String(comp.long_name ?? comp.short_name ?? "");
+      }
+
+      const shortParts = [road, suburb, city].filter(Boolean);
+      const shortAddress = shortParts.join(", ");
+
+      const lat =
+        item?.geometry?.location?.lat ?? item?.geometry?.viewport?.southwest?.lat;
+      const lon =
+        item?.geometry?.location?.lng ?? item?.geometry?.viewport?.southwest?.lng;
 
       return {
-        displayName: item.display_name,
-        shortAddress: shortAddress || item.display_name,
+        displayName: formattedAddress,
+        shortAddress: shortAddress || formattedAddress,
         city,
         state,
         postcode,
-        lat: item.lat,
-        lon: item.lon,
+        lat: lat != null ? String(lat) : "",
+        lon: lon != null ? String(lon) : "",
       };
     });
 

@@ -74,12 +74,12 @@ const AboutPage = () => {
 
           <div className="prose prose-lg max-w-none">
             <p className="text-text-light-gray leading-relaxed mb-4">
-              ANDACTION is a brand owned and operated by MINDFUL TECH INNOVATIONS (OPC) PVT LTD, a registered company under the laws of India.<br />
+              ANDACTION is a brand owned and operated by MINDFUL TECH INNOVATIONS (OPC) PVT LTD, a registered company under the laws of India.<br /><br />
               At ANDACTION, we make discovering and booking artists effortless. Whether you&apos;re looking for a magician to amaze kids at a birthday party, a live band to set the mood at your wedding, or a Sufi group to elevate your cocktail night, we connect you directly with top-tier performers—no middlemen, no hefty commissions.
             </p>
 
             <p className="text-text-light-gray leading-relaxed mb-4">
-              But that’s not all—And-Action is also a streaming and entertainment platform. If you love watching talented artists perform, you can simply scroll, explore, and enjoy performances from amazing entertainers across various categories, just like a streaming app.
+              But that’s not all ANDACTION is also a streaming and entertainment platform. If you love watching talented artists perform, you can simply scroll, explore, and enjoy performances from amazing entertainers across various categories, just like a streaming app.
             </p>
           </div>
         </section>

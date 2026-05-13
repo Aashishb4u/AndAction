@@ -76,7 +76,7 @@ const INDIAN_CITY_COORDINATES: CityCoordinates = {
 };
 
 /**
- * Geocode an address using Google Maps Geocoding API
+ * Geocode an address using Ola Maps Geocoding API
  * Falls back to local database if API fails
  */
 export async function geocodeAddress(
@@ -94,56 +94,50 @@ export async function geocodeAddress(
     return INDIAN_CITY_COORDINATES[normalizedCity];
   }
 
-  if (process.env.GOOGLE_MAPS_API_KEY) {
-    try {
-      const address = state ? `${city}, ${state}, India` : `${city}, India`;
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-        address
-      )}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
-
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data.status === "OK" && data.results[0]) {
-        const location = data.results[0].geometry.location;
-        console.log(`✅ Geocoded ${city} via Google Maps API`);
-        return {
-          lat: location.lat,
-          lng: location.lng,
-          formattedAddress: data.results[0].formatted_address,
-        };
-      } else {
-        console.warn(`⚠️ Google Maps geocoding failed for ${city}: ${data.status}`);
-      }
-    } catch (error) {
-      console.error(`❌ Error geocoding ${city}:`, error);
-    }
-  }
-
   try {
+    const apiKey = process.env.OLA_MAPS_API_KEY;
+    if (!apiKey) {
+      console.warn("⚠️ OLA_MAPS_API_KEY not set, skipping external geocoding");
+      return null;
+    }
+
     const address = state ? `${city}, ${state}, India` : `${city}, India`;
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+    const url = `https://api.olamaps.io/places/v1/geocode?address=${encodeURIComponent(
       address
-    )}&format=json&limit=1`;
+    )}`;
 
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "AndAction-App/1.0", // Required by Nominatim
+        "X-API-Key": apiKey,
       },
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => null);
+    const geocodingResults = Array.isArray(data?.geocodingResults)
+      ? data.geocodingResults
+      : [];
 
-    if (data && data.length > 0) {
-      console.log(`✅ Geocoded ${city} via Nominatim`);
+    if (geocodingResults.length > 0) {
+      const first = geocodingResults[0];
+      const lat =
+        first?.geometry?.location?.lat ?? first?.geometry?.viewport?.southwest?.lat;
+      const lng =
+        first?.geometry?.location?.lng ?? first?.geometry?.viewport?.southwest?.lng;
+
+      if (lat == null || lng == null) {
+        console.warn(`⚠️ Ola Maps geocoding returned no coordinates for ${city}`);
+        return null;
+      }
+
+      console.log(`✅ Geocoded ${city} via Ola Maps API`);
       return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon),
-        formattedAddress: data[0].display_name,
+        lat: Number(lat),
+        lng: Number(lng),
+        formattedAddress: String(first?.formatted_address ?? first?.name ?? ""),
       };
     }
   } catch (error) {
-    console.error(`❌ Error with Nominatim geocoding for ${city}:`, error);
+    console.error(`❌ Error with Ola Maps geocoding for ${city}:`, error);
   }
 
   // No results from any service

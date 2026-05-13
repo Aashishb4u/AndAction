@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 /**
  * GET /api/geocode/reverse?lat=<lat>&lon=<lon>
  * Reverse geocode coordinates to get address components
- * Uses Nominatim (OpenStreetMap)
+ * Uses Ola Maps
  */
 export async function GET(req: NextRequest) {
   try {
@@ -20,17 +20,33 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
+    const apiKey = process.env.OLA_MAPS_API_KEY;
+    if (!apiKey) {
+      return errorResponse(
+        "Location service is not configured",
+        "MISSING_OLA_MAPS_API_KEY",
+        500
+      );
+    }
+
+    const url = `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${encodeURIComponent(
+      `${lat},${lon}`
+    )}`;
 
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "AndAction-App/1.0",
+        "X-API-Key": apiKey,
       },
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => null);
+    const results = Array.isArray(data?.results)
+      ? data.results
+      : Array.isArray(data?.geocodingResults)
+        ? data.geocodingResults
+        : [];
 
-    if (!data || data.error) {
+    if (results.length === 0) {
       return errorResponse(
         "Could not find address for this location",
         "NOT_FOUND",
@@ -38,32 +54,51 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const addr = data.address || {};
-    const city =
-      addr.city ||
-      addr.town ||
-      addr.village ||
-      addr.county ||
-      addr.state_district ||
-      "";
-    const state = addr.state || "";
-    const postcode = addr.postcode || "";
-    const suburb = addr.suburb || addr.neighbourhood || "";
-    const road = addr.road || "";
+    const item = results[0];
+
+    let city = "";
+    let state = "";
+    let postcode = "";
+    let road = "";
+    let suburb = "";
+
+    const components = Array.isArray(item?.address_components)
+      ? item.address_components
+      : [];
+    for (const comp of components) {
+      const types: string[] = Array.isArray(comp?.types) ? comp.types : [];
+      if (!city && types.includes("locality")) city = String(comp.short_name ?? "");
+      if (!state && types.includes("administrative_area_level_1"))
+        state = String(comp.long_name ?? "");
+      if (!postcode && types.includes("postal_code"))
+        postcode = String(comp.long_name ?? comp.short_name ?? "");
+      if (!road && types.includes("route")) road = String(comp.long_name ?? "");
+      if (!suburb && types.includes("sublocality"))
+        suburb = String(comp.long_name ?? comp.short_name ?? "");
+    }
 
     // Build readable address
     const parts = [road, suburb, city, state].filter(Boolean);
     const formattedAddress = parts.join(", ");
 
+    const displayName = String(item?.formatted_address ?? item?.name ?? "");
+    const resolvedAddress = formattedAddress || displayName;
+
     return successResponse(
       {
-        formattedAddress,
-        displayName: data.display_name,
+        formattedAddress: resolvedAddress,
+        displayName: displayName || resolvedAddress,
         city,
         state,
         postcode,
-        lat: data.lat,
-        lon: data.lon,
+        lat:
+          item?.geometry?.location?.lat != null
+            ? String(item.geometry.location.lat)
+            : String(lat),
+        lon:
+          item?.geometry?.location?.lng != null
+            ? String(item.geometry.location.lng)
+            : String(lon),
       },
       "Location found",
       200
