@@ -121,7 +121,7 @@ const TermsPage = () => {
         {/* Introduction */}
         <section>
           <p className="text-text-light-gray leading-relaxed mb-6">
-            ANDACTION is a brand owned and operated by MINDFUL TECH INNOVATIONS (OPC) PVT LTD, a registered company under the laws of India.<br />
+            ANDACTION is a brand owned and operated by MINDFUL TECH INNOVATIONS (OPC) PVT LTD, a registered company under the laws of India.<br /><br />
             These Terms and Conditions (&quot;Terms&quot;) govern your use of the ANDACTION platform and services.
             By accessing or using our service, you agree to be bound by these Terms. If you disagree with
             any part of these terms, then you may not access the service.

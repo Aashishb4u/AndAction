@@ -106,9 +106,9 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     const normalizedState = normalizeState(suggestion.state);
     const normalizedCity = normalizeCity(suggestion.city);
 
-    onChange(suggestion.shortAddress || suggestion.displayName);
+    onChange(suggestion.displayName || suggestion.shortAddress);
     onLocationSelect({
-      address: suggestion.shortAddress || suggestion.displayName,
+      address: suggestion.displayName || suggestion.shortAddress,
       city: normalizedCity,
       state: normalizedState,
       pinCode: suggestion.postcode || "",
@@ -359,14 +359,15 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                 />
               </svg>
               <div className="min-w-0 flex-1">
-                <p className="text-sm text-white truncate">
-                  {suggestion.shortAddress}
-                </p>
-                <p className="text-xs text-text-gray truncate mt-0.5">
-                  {suggestion.city}
-                  {suggestion.state ? `, ${suggestion.state}` : ""}
-                  {suggestion.postcode ? ` - ${suggestion.postcode}` : ""}
-                </p>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-medium text-white text-sm truncate">
+                    {suggestion.displayName}
+                  </span>
+                  <span className="text-xs text-text-gray truncate mt-0.5">
+                    {[suggestion.city, suggestion.state].filter(Boolean).join(", ")}
+                    {suggestion.postcode ? ` ${suggestion.postcode}` : ""}
+                  </span>
+                </div>
               </div>
             </button>
           ))}

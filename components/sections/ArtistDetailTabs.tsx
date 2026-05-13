@@ -66,6 +66,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
   const [shortsCurrentIndex, setShortsCurrentIndex] = useState(0);
   const [shortsSoundEnabled, setShortsSoundEnabled] = useState<boolean>(true);
+  const [shortsAudioGateOpen, setShortsAudioGateOpen] = useState<boolean>(false);
   const shortsContainerRef = useRef<HTMLDivElement>(null);
   const shortsTabWrapperRef = useRef<HTMLDivElement>(null);
   const tabsHeaderRef = useRef<HTMLDivElement>(null);
@@ -73,6 +74,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const touchEndY = useRef<number>(0);
   const lastScrollTime = useRef<number>(0);
   const ignoreShortsSwipeRef = useRef<boolean>(false);
+  const shortsAudioGateSeqRef = useRef<number>(0);
 
   const formatExperienceLabel = (value: unknown): string | null => {
     if (value === null || value === undefined) return null;
@@ -339,11 +341,62 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     loadMoreProfileShorts();
   }, [shortsCurrentIndex, loadMoreProfileShorts]);
 
+  const stopAllProfileShortsPlayback = useCallback(() => {
+    const container = shortsContainerRef.current;
+    if (!container) return;
+
+    const videos = Array.from(
+      container.querySelectorAll<HTMLVideoElement>("video"),
+    );
+    videos.forEach((video) => {
+      video.pause();
+      video.muted = true;
+    });
+
+    const iframes = Array.from(
+      container.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
+    );
+    iframes.forEach((iframe) => {
+      if (!iframe.contentWindow) return;
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+        "*",
+      );
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func: "mute", args: [] }),
+        "*",
+      );
+    });
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== "shorts") {
+      setShortsAudioGateOpen(false);
+      return;
+    }
+
+    setShortsAudioGateOpen(false);
+    const seq = (shortsAudioGateSeqRef.current += 1);
+
+    const timer = window.setTimeout(() => {
+      if (shortsAudioGateSeqRef.current !== seq) return;
+      setShortsAudioGateOpen(true);
+    }, 250);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [activeTab, shortsCurrentIndex]);
+
   const handleProfileShortsScroll = useCallback(
     (direction: "up" | "down") => {
       const now = Date.now();
       if (now - lastScrollTime.current < 80) return;
       lastScrollTime.current = now;
+
+      shortsAudioGateSeqRef.current += 1;
+      setShortsAudioGateOpen(false);
+      stopAllProfileShortsPlayback();
 
       setShortsCurrentIndex((prev) => {
         if (direction === "down")
@@ -351,7 +404,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         return Math.max(prev - 1, 0);
       });
     },
-    [profileShorts.length],
+    [profileShorts.length, stopAllProfileShortsPlayback],
   );
 
   useEffect(() => {
@@ -423,6 +476,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     const videos = Array.from(container.querySelectorAll<HTMLVideoElement>("video"));
     videos.forEach((video) => {
       video.pause();
+      video.muted = true;
     });
 
     const iframes = Array.from(
@@ -434,7 +488,54 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
         "*",
       );
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func: "mute", args: [] }),
+        "*",
+      );
     });
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== "shorts") return;
+
+    const stopOutsideShortsContainer = () => {
+      const container = shortsContainerRef.current;
+
+      const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("video"));
+      videos.forEach((video) => {
+        if (container?.contains(video)) return;
+        video.pause();
+        video.muted = true;
+      });
+
+      const audios = Array.from(document.querySelectorAll<HTMLAudioElement>("audio"));
+      audios.forEach((audio) => {
+        if (container?.contains(audio)) return;
+        audio.pause();
+        audio.muted = true;
+      });
+
+      const iframes = Array.from(
+        document.querySelectorAll<HTMLIFrameElement>(
+          'iframe[id^="yt-"], iframe[src*="youtube.com/embed"], iframe[src*="youtu.be/"]',
+        ),
+      );
+      iframes.forEach((iframe) => {
+        if (container?.contains(iframe) || !iframe.contentWindow) return;
+        iframe.contentWindow.postMessage(
+          JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+          "*",
+        );
+        iframe.contentWindow.postMessage(
+          JSON.stringify({ event: "command", func: "mute", args: [] }),
+          "*",
+        );
+      });
+    };
+
+    stopOutsideShortsContainer();
+    const timer = setTimeout(stopOutsideShortsContainer, 250);
+    return () => clearTimeout(timer);
   }, [activeTab]);
 
   useEffect(() => {
@@ -477,6 +578,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       videos.forEach((video) => {
         if (!isActiveNode) {
           video.pause();
+          video.muted = true;
         }
       });
 
@@ -489,9 +591,17 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
           "*",
         );
+        iframe.contentWindow.postMessage(
+          JSON.stringify({ event: "command", func: "mute", args: [] }),
+          "*",
+        );
       });
     });
-  }, [activeTab, shortsCurrentIndex, profileShorts]);
+  }, [
+    activeTab,
+    shortsCurrentIndex,
+    profileShorts,
+  ]);
 
   const handleProfileShortBookmark = useCallback(
     (id: string) => {
@@ -1036,7 +1146,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                   shouldLoad={isActive || isNext}
                   onBookmark={handleProfileShortBookmark}
                   onShare={handleProfileShortShare}
-                  soundEnabled={isActive ? shortsSoundEnabled : false}
+                  soundEnabled={isActive ? (shortsAudioGateOpen && shortsSoundEnabled) : false}
                   setSoundEnabled={setShortsSoundEnabled}
                 />
               </div>
