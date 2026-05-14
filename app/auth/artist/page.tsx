@@ -719,7 +719,8 @@ function ArtistAuthContent() {
                       required
                       disabled={isLoading}
                       variant="filled"
-                      id="phoneNumber"
+                      id="artist-signup-phone"
+                      name="artistSignupPhone"
                     />
                   </div>
                 ) : (

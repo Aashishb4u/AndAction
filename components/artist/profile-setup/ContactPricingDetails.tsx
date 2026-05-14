@@ -188,6 +188,8 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                       }
                       variant="filled"
                       disabled={false}
+                      id="artist-contact-number"
+                      name="artistContactNumber"
                     />
                     {/* phone input only — no verify/edit buttons */}
                   </div>
@@ -231,6 +233,8 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
                       }
                       variant="filled"
                       disabled={false}
+                      id="artist-whatsapp-number"
+                      name="artistWhatsappNumber"
                     />
                   </div>
                   {errors.whatsappNumber && (
