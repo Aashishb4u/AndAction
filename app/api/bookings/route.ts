@@ -286,7 +286,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
                 eventLocation: true,
                 // Include details of the other party for context
                 client: { select: { firstName: true, lastName: true, email: true, phoneNumber: true } },
-                artist: { select: { id: true, stageName: true, contactNumber: true } },
+                artist: { select: { stageName: true } },
             },
         });
         const bookings = await hydrateClientPhoneNumbers(bookingsBase);

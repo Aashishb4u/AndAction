@@ -52,9 +52,7 @@ type Booking = {
   };
 
   artist: {
-    id: string;
     stageName: string;
-    contactNumber?: string | null;
   };
 };
 
@@ -176,25 +174,6 @@ export default function ArtistDashboard() {
     activeIndexForProgress >= 0 && activeIndexForProgress < profilesForUi.length
       ? profilesForUi[activeIndexForProgress]?.id
       : null;
-
-  const getPhoneDigits = (raw: unknown) => String(raw ?? "").replace(/\D/g, "");
-  const formatPhoneDisplay = (raw: unknown) => {
-    const digits = getPhoneDigits(raw);
-    if (!digits) return "Phone not added";
-    return digits.length === 10 ? `+91 ${digits}` : `+${digits}`;
-  };
-  const resolveProfileContactNumber = (profileId: string | null) => {
-    if (!profileId) return null;
-    const sessionArtistId = session?.user?.artistProfile?.id ?? null;
-    if (sessionArtistId === profileId) {
-      return (session?.user?.artistProfile as any)?.contactNumber ?? null;
-    }
-    const detailed = profileDetailsById[profileId];
-    if (detailed?.contactNumber !== undefined) return detailed.contactNumber;
-    const summary = profilesForUi.find((p) => p.id === profileId);
-    return summary?.contactNumber ?? null;
-  };
-  const activeProfileContactNumber = resolveProfileContactNumber(activeProfileId);
 
   const clampIndex = (index: number) =>
     Math.max(0, Math.min(totalProfileCards - 1, index));
@@ -559,7 +538,11 @@ export default function ArtistDashboard() {
                         <div className="flex items-center gap-2 mb-3">
                           <Image src="/icons/phone.svg" width={16} height={16} alt="" />
                           <p className="text-xs">
-                          {formatPhoneDisplay(resolveProfileContactNumber(profile.id))}
+                            {(() => {
+                              const digits = String(profile?.contactNumber ?? session?.user?.phoneNumber ?? "").replace(/\D/g, "");
+                              if (!digits) return "Phone not added";
+                              return digits.length === 10 ? `+91 ${digits}` : `+${digits}`;
+                            })()}
                           </p>
                         </div>
 
@@ -732,7 +715,7 @@ export default function ArtistDashboard() {
                         key={booking.id}
                         status={booking.status}
                         clientName={`${booking.client.firstName} ${booking.client.lastName}`}
-                        artistPhone={activeProfileContactNumber ?? null}
+                        clientPhone={booking.clientPhoneNumber ?? booking.client?.phoneNumber ?? null}
                         location={booking.eventLocation}
                         date={formatDate(booking.eventDate)}
                         eventType={booking.eventType}

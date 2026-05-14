@@ -15,7 +15,7 @@ interface BookingCardProps {
   description: string;
 
   status: BookingStatus;         // <-- NEW
-  artistPhone?: string | null;
+  clientPhone?: string | null;   // <-- NEW
 
   onReject: () => void;
   onAccept: () => void;
@@ -31,19 +31,19 @@ const BookingCard: React.FC<BookingCardProps> = ({
   description,
 
   status,          // <-- NEW
-  artistPhone,
+  clientPhone,     // <-- NEW
 
   onReject,
   className = '',
 }) => {
   
   const isPending = status === "PENDING";
-  const artistPhoneDigits = (artistPhone ?? "").replace(/\D/g, "");
-  const hasArtistPhone = artistPhoneDigits.length > 0;
+  const clientPhoneDigits = (clientPhone ?? "").replace(/\D/g, "");
+  const hasClientPhone = clientPhoneDigits.length > 0;
   const telHref =
-    artistPhoneDigits.length === 10
-      ? `tel:+91${artistPhoneDigits}`
-      : `tel:+${artistPhoneDigits}`;
+    clientPhoneDigits.length === 10
+      ? `tel:+91${clientPhoneDigits}`
+      : `tel:+${clientPhoneDigits}`;
   // State for expanding description
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMoreButton, setShowMoreButton] = useState(false);
@@ -134,8 +134,8 @@ const BookingCard: React.FC<BookingCardProps> = ({
           variant="primary"
           size="sm"
           onClick={() => {
-            if (!hasArtistPhone) {
-              toast.info("Artist phone number not available");
+            if (!hasClientPhone) {
+              toast.info("Client phone number not available");
               return;
             }
             window.open(telHref, "_self");

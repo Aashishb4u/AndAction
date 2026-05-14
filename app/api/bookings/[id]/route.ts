@@ -57,7 +57,7 @@ export async function GET(
                 updatedAt: true,
                 // Include related entities for context
                 client: { select: { id: true, firstName: true, lastName: true, email: true, phoneNumber: true } },
-                artist: { select: { id: true, stageName: true, contactEmail: true, contactNumber: true } }
+                artist: { select: { id: true, userId: true, stageName: true, contactEmail: true, contactNumber: true } }
             }
         });
 
@@ -67,10 +67,7 @@ export async function GET(
         
         // Check if the user is authorized: they must be either the client OR the artist who owns the booking
         const isClient = booking.clientId === userId;
-        const isAuthorizedArtist = !!(await prisma.artist.findFirst({
-            where: { userId: userId, id: booking.artistId },
-            select: { id: true }
-        }));
+        const isAuthorizedArtist = booking.artist.userId === userId;
 
         if (!isClient && !isAuthorizedArtist) {
             return ApiErrors.forbidden();
@@ -112,15 +109,6 @@ export async function PUT(
         const body: UpdateBookingRequestBody = await request.json();
         const { newStatus } = body;
 
-        const artistProfile = await prisma.artist.findFirst({
-            where: { userId: userId },
-            select: { id: true, user: { select: { role: true } } }
-        });
-
-        if (artistProfile?.user.role !== 'artist') {
-            return ApiErrors.forbidden();
-        }
-
         // --- 2. Status and Input Validation ---
         const VALID_ARTIST_ACTIONS: BookingStatus[] = [
             BookingStatus.APPROVED, 
@@ -136,20 +124,28 @@ export async function PUT(
         // --- 3. Booking Ownership and Status Check ---
         const existingBooking = await prisma.booking.findUnique({
             where: { id: bookingId },
-            select: { id: true, artistId: true, status: true }
+            select: { id: true, status: true, artist: { select: { userId: true } } }
         });
 
         if (!existingBooking) {
             return ApiErrors.notFound(`Booking with ID ${bookingId} not found.`);
         }
 
-        const ownsBooking = !!(await prisma.artist.findFirst({
-            where: { userId: userId, id: existingBooking.artistId },
-            select: { id: true }
-        }));
-
-        if (!ownsBooking) {
+        if (existingBooking.artist.userId !== userId) {
             return ApiErrors.forbidden();
+        }
+
+        if (
+            (newStatus === BookingStatus.APPROVED || newStatus === BookingStatus.DECLINED) &&
+            existingBooking.status !== BookingStatus.PENDING
+        ) {
+            return ApiErrors.badRequest('Only pending bookings can be approved or declined.');
+        }
+        if (
+            newStatus === BookingStatus.CANCELLED &&
+            existingBooking.status !== BookingStatus.APPROVED
+        ) {
+            return ApiErrors.badRequest('Only approved bookings can be cancelled.');
         }
 
         // Prevent updating a final status (COMPLETED)
