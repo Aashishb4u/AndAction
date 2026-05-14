@@ -17,6 +17,7 @@ export async function GET(_request: NextRequest): Promise<NextResponse<any>> {
         stageName: true,
         artistType: true,
         subArtistType: true,
+        contactNumber: true,
         createdAt: true,
         profileOrder: true,
       },

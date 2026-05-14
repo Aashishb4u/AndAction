@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { Filters } from "@/types";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { ArtistProfileSetupPreferences, Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
 import { INDIAN_STATES } from "@/lib/constants";
@@ -22,15 +22,13 @@ interface MobileFiltersProps {
   className?: string;
 }
 
-const genderOptions: FilterOption[] = [
-  { value: "", label: "Select gender" },
+const fallbackGenderOptions: FilterOption[] = [
   { value: "male", label: "Male" },
   { value: "female", label: "Female" },
   { value: "other", label: "Other" },
 ];
 
-const budgetOptions: FilterOption[] = [
-  { value: "", label: "Select budget" },
+const fallbackBudgetOptions: FilterOption[] = [
   { value: "0-10000", label: "₹0 - ₹10,000" },
   { value: "10000-25000", label: "₹10,000 - ₹25,000" },
   { value: "25000-50000", label: "₹25,000 - ₹50,000" },
@@ -38,13 +36,7 @@ const budgetOptions: FilterOption[] = [
   { value: "100000+", label: "₹1,00,000+" },
 ];
 
-const eventStateOptions: FilterOption[] = [
-  { value: "", label: "Select State" },
-  ...INDIAN_STATES,
-];
-
-const eventTypeOptions: FilterOption[] = [
-  { value: "", label: "Select event type" },
+const fallbackEventTypeOptions: FilterOption[] = [
   { value: "wedding", label: "Wedding" },
   { value: "corporate", label: "Corporate" },
   { value: "birthday", label: "Birthday" },
@@ -52,18 +44,12 @@ const eventTypeOptions: FilterOption[] = [
   { value: "concert", label: "Concert" },
 ];
 
-const languageOptions: FilterOption[] = [
-  { value: "", label: "Select language" },
+const fallbackLanguageOptions: FilterOption[] = [
   { value: "hindi", label: "Hindi" },
   { value: "english", label: "English" },
   { value: "gujarati", label: "Gujarati" },
   { value: "marathi", label: "Marathi" },
   { value: "punjabi", label: "Punjabi" },
-];
-
-const locationOptions: FilterOption[] = [
-  { value: "", label: "Select state" },
-  ...INDIAN_STATES,
 ];
 
 const MobileFilters: React.FC<MobileFiltersProps> = ({
@@ -79,6 +65,71 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
     { value: "", label: "Select Category" },
     ...categories.map((cat) => ({ value: cat.value, label: cat.label })),
   ];
+
+  const [preferences, setPreferences] =
+    useState<ArtistProfileSetupPreferences | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const load = async () => {
+      try {
+        const res = await fetch("/api/preferences/artist-profile", {
+          cache: "no-store",
+        });
+        const json = await res.json();
+        const prefs = json?.data?.preferences as ArtistProfileSetupPreferences;
+        if (!isActive) return;
+        if (prefs && typeof prefs === "object") setPreferences(prefs);
+        else setPreferences(null);
+      } catch {
+        if (!isActive) return;
+        setPreferences(null);
+      }
+    };
+
+    load();
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const genderOptions: FilterOption[] = useMemo(() => {
+    const list = preferences?.genders;
+    const base =
+      Array.isArray(list) && list.length > 0 ? list : fallbackGenderOptions;
+    return [{ value: "", label: "Select gender" }, ...base];
+  }, [preferences]);
+
+  const budgetOptions: FilterOption[] = useMemo(() => {
+    const list = preferences?.budgets;
+    const base =
+      Array.isArray(list) && list.length > 0 ? list : fallbackBudgetOptions;
+    return [{ value: "", label: "Select budget" }, ...base];
+  }, [preferences]);
+
+  const eventTypeOptions: FilterOption[] = useMemo(() => {
+    const list = preferences?.eventTypes;
+    const base =
+      Array.isArray(list) && list.length > 0 ? list : fallbackEventTypeOptions;
+    return [{ value: "", label: "Select event type" }, ...base];
+  }, [preferences]);
+
+  const languageOptions: FilterOption[] = useMemo(() => {
+    const list = preferences?.languages;
+    const base =
+      Array.isArray(list) && list.length > 0 ? list : fallbackLanguageOptions;
+    return [{ value: "", label: "Select language" }, ...base];
+  }, [preferences]);
+
+  const stateOptions: FilterOption[] = useMemo(() => {
+    const list = preferences?.states;
+    const base = Array.isArray(list) && list.length > 0 ? list : INDIAN_STATES;
+    return [{ value: "", label: "Select state" }, ...base];
+  }, [preferences]);
+
+  const eventStateOptions = stateOptions;
+  const locationOptions = stateOptions;
 
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);

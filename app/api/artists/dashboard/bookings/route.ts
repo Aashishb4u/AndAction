@@ -21,6 +21,40 @@ const VALID_STATUSES = ['PENDING', 'APPROVED', 'DECLINED', 'CANCELLED', 'COMPLET
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
+function isMissingColumnClientPhoneNumberError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+    const anyError = error as any;
+    const message = String(anyError?.message || '');
+    return (
+        (anyError?.code === 'P2022' || anyError?.code === 'P2010') &&
+        (message.includes('clientPhoneNumber') || message.includes('clientPhoneNumber'.toLowerCase()))
+    );
+}
+
+async function hydrateClientPhoneNumbers<T extends { id: string }>(
+    bookings: T[]
+): Promise<Array<T & { clientPhoneNumber: string | null }>> {
+    const ids = bookings.map((b) => b.id).filter(Boolean);
+    const base = bookings.map((b) => ({ ...b, clientPhoneNumber: null }));
+    if (ids.length === 0) return base;
+
+    try {
+        const rows = await prisma.$queryRaw<
+            Array<{ id: string; clientPhoneNumber: string | null }>
+        >`SELECT "id", "clientPhoneNumber" FROM "bookings" WHERE "id" IN (${Prisma.join(ids)})`;
+        const map = new Map(rows.map((r) => [r.id, r.clientPhoneNumber] as const));
+        return bookings.map((b) => ({
+            ...b,
+            clientPhoneNumber: map.get(b.id) ?? null,
+        }));
+    } catch (error) {
+        if (isMissingColumnClientPhoneNumberError(error)) {
+            return base;
+        }
+        throw error;
+    }
+}
+
 /**
  * Handles GET requests to retrieve the artist's list of received bookings.
  * Supports filtering by status and pagination via URL query parameters.
@@ -78,7 +112,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         // Count total results for pagination metadata
         const totalBookings = await prisma.booking.count({ where });
 
-        const bookings = await prisma.booking.findMany({
+        const bookingsBase = await prisma.booking.findMany({
             where,
             skip,
             take: limit,
@@ -105,6 +139,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
                 },
             },
         });
+        const bookings = await hydrateClientPhoneNumbers(bookingsBase);
 
         // --- 5. Format Response and Return ---
         
@@ -122,6 +157,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         );
 
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (isMissingColumnClientPhoneNumberError(error)) {
+                return ApiErrors.internalError('Database schema is out of date. Please run Prisma migrations and try again.');
+            }
+        }
         console.error('GET Artist Bookings API Error:', error);
         return ApiErrors.internalError('An unexpected error occurred while fetching artist bookings.');
     }

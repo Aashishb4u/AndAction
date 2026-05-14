@@ -15,7 +15,8 @@ import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { signInWithGoogleAsArtist } from "@/lib/auth";
 import { signIn, useSession } from "next-auth/react";
-import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES } from "@/lib/constants";
+import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-indian-cities";
 
 type ArtistSignUpStep = "join" | "otp" | "password" | "userInfo" | "terms";
 type ContactType = "phone" | "email";
@@ -47,6 +48,27 @@ function ArtistAuthContent() {
   const [city, setCity] = useState("");
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [, setLocationFetched] = useState(false);
+
+  const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(state);
+
+  useEffect(() => {
+    if (!city) return;
+    if (!Array.isArray(cityOptions) || cityOptions.length === 0) return;
+    const canonical = canonicalizeCityValue(city, cityOptions);
+    if (canonical !== city) setCity(canonical);
+  }, [city, cityOptions]);
+
+  const stateOptions = useMemo(() => {
+    if (!state) return INDIAN_STATES;
+    if (INDIAN_STATES.some((s) => s.value === state)) return INDIAN_STATES;
+    return [{ value: state, label: state }, ...INDIAN_STATES];
+  }, [state]);
+
+  const cityOptionsWithCurrent = useMemo(() => {
+    if (!city) return cityOptions;
+    if (cityOptions.some((c) => c.value === city)) return cityOptions;
+    return [{ value: city, label: city }, ...cityOptions];
+  }, [city, cityOptions]);
 
   // Terms step state
   const [noMarketing, setNoMarketing] = useState(true);
@@ -146,13 +168,11 @@ function ArtistAuthContent() {
             const normalizedState = data.data.state
               ? data.data.state.toLowerCase().replace(/\s+/g, "-")
               : "";
-            
-            // Normalize city to match dropdown values (lowercase)
-            const normalizedCity = (data.data.city || data.data.district || "")
-              .toLowerCase();
-            
+
+            const resolvedCity = String(data.data.city || data.data.district || "").trim();
+
             setState(normalizedState);
-            setCity(normalizedCity);
+            setCity(resolvedCity);
             setLocationFetched(true);
             setError(""); // Clear any previous errors
           } else {
@@ -1084,23 +1104,27 @@ function ArtistAuthContent() {
                   label="State*"
                   placeholder="Select"
                   value={state}
-                  onChange={(value) =>
-                    setState(Array.isArray(value) ? (value[0] ?? "") : value)
-                  }
-                  options={INDIAN_STATES}
+                  onChange={(value) => {
+                    const next = Array.isArray(value) ? (value[0] ?? "") : value;
+                    setState(next);
+                    setCity("");
+                  }}
+                  options={stateOptions}
                   required
                   disabled={isLoading || isFetchingLocation}
                 />
                 <Select
                   label="City*"
-                  placeholder="Select"
+                  placeholder={
+                    !state ? "Select state first" : isFetchingCities ? "Loading cities..." : "Select"
+                  }
                   value={city}
                   onChange={(value) =>
                     setCity(Array.isArray(value) ? (value[0] ?? "") : value)
                   }
-                  options={INDIAN_CITIES}
+                  options={cityOptionsWithCurrent}
                   required
-                  disabled={isLoading || isFetchingLocation}
+                  disabled={isLoading || isFetchingLocation || !state || isFetchingCities}
                 />
               </div>
 

@@ -5,6 +5,7 @@ import Button from '@/components/ui/Button';
 import { MapPin, Phone, X } from 'lucide-react';
 import Image from 'next/image';
 import { BookingStatus } from "@prisma/client";
+import { toast } from 'react-toastify';
 
 interface BookingCardProps {
   clientName: string;
@@ -14,7 +15,7 @@ interface BookingCardProps {
   description: string;
 
   status: BookingStatus;         // <-- NEW
-  clientPhone?: string | null;   // <-- NEW
+  artistPhone?: string | null;
 
   onReject: () => void;
   onAccept: () => void;
@@ -30,13 +31,19 @@ const BookingCard: React.FC<BookingCardProps> = ({
   description,
 
   status,          // <-- NEW
-  clientPhone,     // <-- NEW
+  artistPhone,
 
   onReject,
   className = '',
 }) => {
   
   const isPending = status === "PENDING";
+  const artistPhoneDigits = (artistPhone ?? "").replace(/\D/g, "");
+  const hasArtistPhone = artistPhoneDigits.length > 0;
+  const telHref =
+    artistPhoneDigits.length === 10
+      ? `tel:+91${artistPhoneDigits}`
+      : `tel:+${artistPhoneDigits}`;
   // State for expanding description
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMoreButton, setShowMoreButton] = useState(false);
@@ -61,21 +68,15 @@ const BookingCard: React.FC<BookingCardProps> = ({
     <div className={`bg-card border border-border-color rounded-xl p-3 sm:p-4 overflow-hidden ${className}`}>
       
       {/* Header */}
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
+      <div className="relative mb-3 flex items-start justify-between gap-2">
+        <div className="min-w-0 pr-28">
           <h3 className="text-white h3 mb-1 truncate">{clientName}</h3>
           <div className="flex min-w-0 items-center secondary-text text-text-gray mb-2">
             <MapPin className="w-4 h-4 mr-1 shrink-0" />
             <span className="truncate">{location}</span>
           </div>
-          {clientPhone && (
-            <div className="flex min-w-0 items-center secondary-text text-text-gray">
-              <Phone className="w-4 h-4 mr-1 shrink-0" />
-              <span className="truncate">{clientPhone}</span>
-            </div>
-          )}
         </div>
-        <div className="secondary-text text-text-gray self-start sm:text-right">{date}</div>
+        <div className="secondary-text text-text-gray absolute top-0 right-0 text-right whitespace-nowrap">{date}</div>
       </div>
 
       {/* Event Info */}
@@ -129,17 +130,21 @@ const BookingCard: React.FC<BookingCardProps> = ({
         )}
 
         {/* CALL BUTTON (allowed for all statuses IF phone exists) */}
-        {clientPhone && (
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => window.open(`tel:${clientPhone}`, "_self")}
-            className="min-w-30 flex-1"
-          >
-            <Phone className="w-4 h-4 mr-2 shrink-0" />
-            <span className="truncate">Call</span>
-          </Button>
-        )}
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => {
+            if (!hasArtistPhone) {
+              toast.info("Artist phone number not available");
+              return;
+            }
+            window.open(telHref, "_self");
+          }}
+          className="min-w-30 flex-1"
+        >
+          <Phone className="w-4 h-4 mr-2 shrink-0" />
+          <span className="truncate">Call</span>
+        </Button>
 
       </div>
     </div>

@@ -12,7 +12,8 @@ import OTPInput from "@/components/ui/OTPInput";
 import { signUp, getRedirectUrl, signInWithGoogle, signInWithFacebook } from "@/lib/auth";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
-import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES } from "@/lib/constants";
+import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-indian-cities";
 // Password validation intentionally disabled for signup flow per UX request
 
 type SignUpStep = "contact" | "otp" | "password" | "profile" | "terms";
@@ -34,6 +35,33 @@ function SignUpContent() {
   const [lastName, setLastName] = useState("");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
+
+  const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(state);
+
+  useEffect(() => {
+    if (!city) return;
+    if (!Array.isArray(cityOptions) || cityOptions.length === 0) return;
+    const canonical = canonicalizeCityValue(city, cityOptions);
+    if (canonical !== city) setCity(canonical);
+  }, [city, cityOptions]);
+
+  const stateOptions = useMemo(() => {
+    if (!state) return INDIAN_STATES;
+    if (INDIAN_STATES.some((s) => s.value === state)) return INDIAN_STATES;
+    return [{ value: state, label: state }, ...INDIAN_STATES];
+  }, [state]);
+
+  const cityOptionsWithCurrent = useMemo(() => {
+    if (!city) return cityOptions;
+    if (cityOptions.some((c) => c.value === city)) return cityOptions;
+    return [{ value: city, label: city }, ...cityOptions];
+  }, [city, cityOptions]);
+
+  const handleStateChange = (value: string | string[]) => {
+    const next = Array.isArray(value) ? value.join(",") : value;
+    setState(next);
+    setCity("");
+  };
 
   // Terms step state
   const [noMarketing, setNoMarketing] = useState(true);
@@ -963,17 +991,22 @@ function SignUpContent() {
                 <Select
                   label="State*"
                   placeholder="Select"
-                  options={INDIAN_STATES}
+                  options={stateOptions}
                   value={state}
-                  onChange={setState}
+                  onChange={handleStateChange}
                   required
                 />
                 <Select
                   label="City*"
-                  placeholder="Select"
-                  options={INDIAN_CITIES}
+                  placeholder={
+                    !state ? "Select state first" : isFetchingCities ? "Loading cities..." : "Select"
+                  }
+                  options={cityOptionsWithCurrent}
                   value={city}
-                  onChange={setCity}
+                  onChange={(value) =>
+                    setCity(Array.isArray(value) ? value.join(",") : (value as string))
+                  }
+                  disabled={!state || isFetchingCities}
                   required
                 />
               </div>
