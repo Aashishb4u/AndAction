@@ -143,7 +143,8 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      const mobileDigits = formData.mobileNumber.replace(/\D/g, "");
+      onSubmit({ ...formData, mobileNumber: mobileDigits });
       setShowSubmitSuccess(true);
       // Reset form fields and errors after submit
       setFormData({
@@ -231,6 +232,9 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
             onChange={(value) => handleInputChange("mobileNumber", value)}
             error={errors.mobileNumber}
             required
+            id="booking-mobile-number"
+            name="bookingMobileNumber"
+            autoComplete="off"
           />
 
           {/* Location Fields */}

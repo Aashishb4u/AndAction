@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 
 interface Country {
   code: string;
@@ -36,6 +36,8 @@ interface PhoneInputProps {
   disabled?: boolean;
   className?: string;
   id?: string;
+  name?: string;
+  autoComplete?: string;
 }
 
 const PhoneInput: React.FC<PhoneInputProps> = ({
@@ -49,8 +51,12 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   required = false,
   disabled = false,
   className = '',
-  id = 'phone',
+  id,
+  name,
+  autoComplete = 'tel',
 }) => {
+  const generatedId = useId();
+  const inputId = id ?? `phone-${generatedId}`;
   const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -126,8 +132,9 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
             disabled={disabled}
             required={required}
             className="flex-1 bg-transparent border-none outline-none text-white placeholder-text-gray autofill-fix pl-0 rounded-none"
-            id={id}
-            autoComplete="tel"
+            id={inputId}
+            name={name ?? inputId}
+            autoComplete={autoComplete}
             
           />
         </div>

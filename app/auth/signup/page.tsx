@@ -501,6 +501,8 @@ function SignUpContent() {
                     disabled={isLoading}
                     variant="filled"
                     className="secondary-text"
+                    id="signup-phone"
+                    name="signupPhone"
                   />
                 </div>
               ) : (
@@ -983,6 +985,8 @@ function SignUpContent() {
                   required
                   disabled={isLoading}
                   variant="filled"
+                  id="signup-phone-email"
+                  name="signupPhoneEmail"
                 />
               )}
 

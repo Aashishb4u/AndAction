@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 
 export const createBooking = async (artistId: string, formData: any) => {
   try {
+    const mobileDigits = String(formData?.mobileNumber ?? "").replace(/\D/g, "");
     const response = await fetch("/api/bookings", {
       method: "POST",
       headers: {
@@ -24,8 +25,8 @@ export const createBooking = async (artistId: string, formData: any) => {
         eventDate: formData.eventDate,
         eventType: formData.eventType,
         eventLocation: `${formData.city}, ${formData.state}`,
-        mobileNumber: formData.mobileNumber,
-        phoneNumber: formData.mobileNumber,
+        mobileNumber: mobileDigits,
+        phoneNumber: mobileDigits,
         totalPrice: formData.totalPrice,
         notes: formData.note,
       }),
