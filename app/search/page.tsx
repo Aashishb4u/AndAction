@@ -294,7 +294,15 @@ export default function MobileSearchPage() {
                   <button
                     key={artist.id}
                     className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-[#222] transition"
-                    onClick={() => router.push(`/artists/${artist.id}`)}
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        sessionStorage.setItem(
+                          "artistProfile:returnTo",
+                          window.location.pathname + window.location.search,
+                        );
+                      }
+                      router.push(`/artists/${artist.id}`);
+                    }}
                   >
                     <Image
                       src={buildArtishProfileUrl(artist.image)}

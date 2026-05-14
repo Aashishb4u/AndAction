@@ -10,6 +10,7 @@ import { BookingStatus } from "@prisma/client";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
 import { createAuthRedirectUrl } from "@/lib/auth";
+import { toast } from "react-toastify";
 
 export const createBooking = async (artistId: string, formData: any) => {
   try {
@@ -261,7 +262,20 @@ export default function ArtistDetailPage() {
     );
   }
 
-  const handleBack = () => router.back();
+  const handleBack = () => {
+    if (typeof window === "undefined") {
+      router.push("/artists");
+      return;
+    }
+
+    const returnTo = sessionStorage.getItem("artistProfile:returnTo");
+    if (returnTo && returnTo.startsWith("/")) {
+      router.push(returnTo);
+      return;
+    }
+
+    router.push("/artists");
+  };
 
   const handleBookmark = async () => {
     if (!session?.user) {
@@ -313,9 +327,27 @@ export default function ArtistDetailPage() {
   };
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/artists/${artist.id}`;
-    await navigator.clipboard.writeText(url);
-    alert("Profile link copied!");
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const title = artist?.name ? `${artist.name} | ANDACTION` : "ANDACTION";
+    const text = artist?.name
+      ? `Check out ${artist.name} on ANDACTION`
+      : "Check this out on ANDACTION";
+
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await (navigator as any).share({ title, text, url });
+        return;
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied");
+    } catch {
+      toast.error("Unable to share");
+    }
   };
 
   const handleRequestBooking = () => {
