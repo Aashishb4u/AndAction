@@ -254,6 +254,15 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       return ApiErrors.badRequest("Invalid artist user.");
     }
 
+    const normalizedContactNumber =
+      contactNumber !== undefined && contactNumber !== null
+        ? String(contactNumber).replace(/\D/g, "")
+        : undefined;
+    const normalizedWhatsappNumber =
+      whatsappNumber !== undefined && whatsappNumber !== null
+        ? String(whatsappNumber).replace(/\D/g, "")
+        : undefined;
+
     // Check if city or state is being updated
     const isCityUpdated = city !== undefined && city !== existingUser.city;
     const isStateUpdated = state !== undefined && state !== existingUser.state;
@@ -282,6 +291,20 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       }
     }
 
+    const phoneUpdateData: { phoneNumber?: string } = {};
+    if (normalizedContactNumber && normalizedContactNumber.length >= 10 && normalizedContactNumber.length <= 15) {
+      const existingPhoneOwner = await prisma.user.findFirst({
+        where: {
+          phoneNumber: normalizedContactNumber,
+          NOT: { id: userId },
+        },
+        select: { id: true },
+      });
+      if (!existingPhoneOwner) {
+        phoneUpdateData.phoneNumber = normalizedContactNumber;
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
@@ -293,6 +316,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         ...(pinCode !== undefined && { zip: pinCode }),
         ...(city !== undefined && { city }),
         ...(state !== undefined && { state }),
+        ...phoneUpdateData,
         ...geocodeData, // Add geocoded coordinates if available
       },
     });
@@ -331,8 +355,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         ...(performingDurationTo !== undefined && { performingDurationTo }),
         ...(performingMembers !== undefined && { performingMembers }),
         ...(offStageMembers !== undefined && { offStageMembers }),
-        ...(contactNumber !== undefined && { contactNumber }),
-        ...(whatsappNumber !== undefined && { whatsappNumber }),
+        ...(normalizedContactNumber !== undefined && { contactNumber: normalizedContactNumber }),
+        ...(normalizedWhatsappNumber !== undefined && { whatsappNumber: normalizedWhatsappNumber }),
         ...(contactEmail !== undefined && { contactEmail }),
         ...(soloChargesFrom !== undefined && { soloChargesFrom: Number(soloChargesFrom) }),
         ...(soloChargesTo !== undefined && { soloChargesTo: Number(soloChargesTo) }),

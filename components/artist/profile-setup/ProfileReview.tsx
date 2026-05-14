@@ -476,13 +476,17 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div>
                   <p className="text-text-gray mb-1">Contact number</p>
                   <p className="text-white text-base">
-                    {data.contactNumber ? `+91 - ${data.contactNumber}` : "N/A"}
+                    {(data.contactNumber ?? "").replace(/\D/g, "").length
+                      ? `+91 - ${(data.contactNumber ?? "").replace(/\D/g, "")}`
+                      : "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-text-gray mb-1">WhatsApp number</p>
                   <p className="text-white text-base">
-                    {data.whatsappNumber ? `+91 - ${data.whatsappNumber}` : "N/A"}
+                    {(data.whatsappNumber ?? "").replace(/\D/g, "").length
+                      ? `+91 - ${(data.whatsappNumber ?? "").replace(/\D/g, "")}`
+                      : "N/A"}
                   </p>
                 </div>
                 <div>

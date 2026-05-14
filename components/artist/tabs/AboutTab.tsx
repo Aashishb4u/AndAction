@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Tooltip from "@/components/ui/Tooltip";
@@ -9,8 +9,10 @@ import Button from "@/components/ui/Button";
 import DateInput from "@/components/ui/DateInput";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { Info } from "lucide-react";
-import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES } from "@/lib/constants";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
+import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-indian-cities";
 import type { AboutDraft } from "./profileDraftTypes";
 
 interface AboutTabProps {
@@ -30,15 +32,6 @@ const genderOptions = [
 
 // Category options are loaded from artist_categories table.
 
-const subArtistTypeOptions = [
-  { value: "classical", label: "Classical" },
-  { value: "contemporary", label: "Contemporary" },
-  { value: "folk", label: "Folk" },
-  { value: "bollywood", label: "Bollywood" },
-  { value: "western", label: "Western" },
-  { value: "fusion", label: "Fusion" },
-];
-
 const experienceOptions = [
   { value: "1", label: "0-1 years" },
   { value: "2", label: "1-3 years" },
@@ -55,6 +48,11 @@ const AboutTab: React.FC<AboutTabProps> = ({
   onReset,
 }) => {
   const { categories } = useArtistCategories();
+  const isSubArtistDisabled = !(draft.artistType || "").trim();
+  const {
+    subTypes: subArtistSuggestions,
+    refetch: refetchSubArtistSuggestions,
+  } = useSubArtistTypes(isSubArtistDisabled ? undefined : draft.artistType);
 
   const selectedSubTypes = draft.subArtistTypes;
   const setSelectedSubTypes = (next: string[]) =>
@@ -64,6 +62,29 @@ const AboutTab: React.FC<AboutTabProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
+  const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(draft.state);
+
+  const stateOptions = useMemo(() => {
+    if (!draft.state) return INDIAN_STATES;
+    if (INDIAN_STATES.some((s) => s.value === draft.state)) return INDIAN_STATES;
+    return [{ value: draft.state, label: draft.state }, ...INDIAN_STATES];
+  }, [draft.state]);
+
+  const cityOptionsWithCurrent = useMemo(() => {
+    if (!draft.city) return cityOptions;
+    if (cityOptions.some((c) => c.value === draft.city)) return cityOptions;
+    return [{ value: draft.city, label: draft.city }, ...cityOptions];
+  }, [draft.city, cityOptions]);
+
+  useEffect(() => {
+    if (!draft.city) return;
+    if (!Array.isArray(cityOptions) || cityOptions.length === 0) return;
+    const canonical = canonicalizeCityValue(draft.city, cityOptions);
+    if (canonical !== draft.city) {
+      setDraft((prev) => ({ ...prev, city: canonical }));
+    }
+  }, [draft.city, cityOptions, setDraft]);
+
   const handleInputChange = <K extends keyof AboutDraft>(
     field: K,
     value: AboutDraft[K],
@@ -72,6 +93,33 @@ const AboutTab: React.FC<AboutTabProps> = ({
       ...prev,
       [field]: value,
     }));
+  };
+
+  const normalizeSubType = (value: string) => value.trim().toLowerCase();
+
+  const createSubArtistTypeInDb = async (label: string) => {
+    const category = (draft.artistType || "").trim();
+    const trimmedLabel = (label || "").trim();
+    if (!category || !trimmedLabel) return;
+
+    await fetch("/api/artists/sub-types", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category, label: trimmedLabel }),
+    }).catch(() => {});
+
+    refetchSubArtistSuggestions();
+  };
+
+  const addSubTypeTag = (rawValue: string) => {
+    const v = (rawValue || "").trim();
+    if (!v) return;
+
+    setSelectedSubTypes(
+      selectedSubTypes.some((t) => normalizeSubType(t) === normalizeSubType(v))
+        ? selectedSubTypes
+        : [v, ...selectedSubTypes],
+    );
   };
 
   useEffect(() => {
@@ -88,16 +136,12 @@ const AboutTab: React.FC<AboutTabProps> = ({
           const normalizedState = data.data.state
             ? String(data.data.state).toLowerCase().replace(/\s+/g, "-")
             : "";
-          const normalizedCity = String(
-            data.data.city || data.data.district || "",
-          )
-            .toLowerCase()
-            .replace(/\s+/g, "-");
+          const resolvedCity = String(data.data.city || data.data.district || "").trim();
 
           setDraft((prev) => ({
             ...prev,
             state: normalizedState || prev.state,
-            city: normalizedCity || prev.city,
+            city: resolvedCity || prev.city,
           }));
         }
       } catch (error) {
@@ -190,18 +234,24 @@ const AboutTab: React.FC<AboutTabProps> = ({
         />
         <Select
           label="State*"
-          options={INDIAN_STATES}
+          options={stateOptions}
           value={draft.state}
-          onChange={(value) => handleInputChange("state", value)}
+          onChange={(value) => {
+            handleInputChange("state", value as string);
+            handleInputChange("city", "");
+          }}
           disabled={isFetchingLocation}
           required
         />
         <Select
           label="City*"
-          options={INDIAN_CITIES}
+          options={cityOptionsWithCurrent}
           value={draft.city}
           onChange={(value) => handleInputChange("city", value)}
-          disabled={isFetchingLocation}
+          disabled={isFetchingLocation || !draft.state || isFetchingCities}
+          helperText={
+            !draft.state ? "Select state first" : isFetchingCities ? "Loading cities..." : undefined
+          }
           required
         />
       </div>
@@ -260,7 +310,12 @@ const AboutTab: React.FC<AboutTabProps> = ({
           label="Artist Category*"
           options={categories}
           value={draft.artistType}
-          onChange={(value) => handleInputChange("artistType", value)}
+          onChange={(value) => {
+            handleInputChange("artistType", value);
+            handleInputChange("subArtistTypes", []);
+            setSubTypeInput("");
+            setShowSuggestions(false);
+          }}
           required
         />
         <div className="absolute top-0 right-0">
@@ -292,17 +347,30 @@ const AboutTab: React.FC<AboutTabProps> = ({
 
           <input
             className="flex-1 bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-text-gray"
-            placeholder="e.g. Classical, Bollywood, Fusion"
+            placeholder={
+              isSubArtistDisabled
+                ? "Select artist type first"
+                : "e.g. Classical, Bollywood, Fusion"
+            }
             value={subTypeInput}
-            onChange={(e) => setSubTypeInput(e.target.value)}
-            onFocus={() => setShowSuggestions(true)}
+            disabled={isSubArtistDisabled}
+            onChange={(e) => {
+              if (isSubArtistDisabled) return;
+              setSubTypeInput(e.target.value);
+            }}
+            onFocus={() => {
+              if (isSubArtistDisabled) return;
+              setShowSuggestions(true);
+            }}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
             onKeyDown={(e) => {
+              if (isSubArtistDisabled) return;
               if (e.key === 'Enter' || e.key === ',') {
                 e.preventDefault();
                 const v = subTypeInput.trim().replace(/,$/, '');
-                if (v && !selectedSubTypes.includes(v)) {
-                  setSelectedSubTypes([v, ...selectedSubTypes]);
+                if (v) {
+                  addSubTypeTag(v);
+                  createSubArtistTypeInDb(v);
                 }
                 setSubTypeInput('');
               } else if (e.key === 'Backspace' && !subTypeInput) {
@@ -318,31 +386,64 @@ const AboutTab: React.FC<AboutTabProps> = ({
         </div>
 
         {/* Suggestions dropdown */}
-        {showSuggestions && (
+        {showSuggestions && !isSubArtistDisabled && (
           <div className="absolute z-40 left-0 right-0 mt-1 bg-card border border-border-color rounded-lg shadow-lg max-h-48 overflow-auto">
-            {subArtistTypeOptions.filter(o => o.label.toLowerCase().includes((subTypeInput || '').toLowerCase())).length === 0 ? (
-              <div className="px-3 py-2 text-sm text-text-gray">No suggestions</div>
-            ) : (
-              subArtistTypeOptions
-                .filter(o => o.label.toLowerCase().includes((subTypeInput || '').toLowerCase()))
-                .map((o) => (
-                  <button
-                    key={o.value}
-                    type="button"
-                    onMouseDown={(e) => { e.preventDefault(); }}
-                    onClick={() => {
-                      if (!selectedSubTypes.includes(o.label)) {
-                        setSelectedSubTypes([o.label, ...selectedSubTypes]);
-                      }
-                      setSubTypeInput('');
-                      setShowSuggestions(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
-                  >
-                    {o.label}
-                  </button>
-                ))
+            {subTypeInput.trim() && (
+              <button
+                key="typed-input"
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                }}
+                onClick={() => {
+                  const v = subTypeInput.trim();
+                  addSubTypeTag(v);
+                  createSubArtistTypeInDb(v);
+                  setSubTypeInput("");
+                }}
+                className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm border-b border-border-color"
+              >
+                Add "{subTypeInput.trim()}"
+              </button>
             )}
+
+            {subArtistSuggestions
+              .filter(
+                (s) =>
+                  s.toLowerCase().includes((subTypeInput || "").toLowerCase()) &&
+                  !selectedSubTypes.some(
+                    (t) => normalizeSubType(t) === normalizeSubType(s),
+                  ),
+              )
+              .map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                  }}
+                  onClick={() => {
+                    addSubTypeTag(s);
+                    setSubTypeInput("");
+                    setShowSuggestions(false);
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm"
+                >
+                  {s}
+                </button>
+              ))}
+
+            {!subTypeInput.trim() &&
+              subArtistSuggestions.filter(
+                (s) =>
+                  !selectedSubTypes.some(
+                    (t) => normalizeSubType(t) === normalizeSubType(s),
+                  ),
+              ).length === 0 && (
+                <div className="px-3 py-2 text-sm text-text-gray">
+                  No suggestions
+                </div>
+              )}
           </div>
         )}
       </div>

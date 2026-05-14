@@ -71,6 +71,7 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
 
       const payload = {
         userId: session.user.id,
+        artistProfileId: (artist as any)?.id,
 
         // About
         stageName: aboutDraft.stageName,

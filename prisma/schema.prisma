@@ -199,6 +199,7 @@ model Booking {
   id            String        @id @default(cuid())
   clientId      String
   artistId      String
+  clientPhoneNumber String?
   state         String?
   city          String?
   eventDate     DateTime

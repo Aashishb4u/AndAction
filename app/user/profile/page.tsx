@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
-import Select from "@/components/ui/Select";
 import { toast } from "react-toastify";
-import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES } from "@/lib/constants";
+import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-indian-cities";
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -34,6 +34,34 @@ export default function UserProfilePage() {
     state: "",
     city: "",
   });
+
+  const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(formData.state);
+
+  const stateOptions = useMemo(() => {
+    if (!formData.state) return INDIAN_STATES;
+    if (INDIAN_STATES.some((s) => s.value === formData.state)) return INDIAN_STATES;
+    return [{ value: formData.state, label: formData.state }, ...INDIAN_STATES];
+  }, [formData.state]);
+
+  const cityOptionsWithCurrent = useMemo(() => {
+    if (!formData.city) return cityOptions;
+    if (cityOptions.some((c) => c.value === formData.city)) return cityOptions;
+    return [{ value: formData.city, label: formData.city }, ...cityOptions];
+  }, [formData.city, cityOptions]);
+
+  const selectedStateLabel = useMemo(() => {
+    if (!formData.state) return "";
+    return INDIAN_STATES.find((s) => s.value === formData.state)?.label ?? formData.state;
+  }, [formData.state]);
+
+  useEffect(() => {
+    if (!formData.city) return;
+    if (!Array.isArray(cityOptions) || cityOptions.length === 0) return;
+    const canonical = canonicalizeCityValue(formData.city, cityOptions);
+    if (canonical !== formData.city) {
+      setFormData((prev) => ({ ...prev, city: canonical }));
+    }
+  }, [formData.city, cityOptions]);
 
   // Fetch user profile data
   useEffect(() => {
@@ -83,10 +111,19 @@ export default function UserProfilePage() {
   }, [status, router]);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData((prev) => {
+      if (field === "state") {
+        return {
+          ...prev,
+          state: value,
+          city: "",
+        };
+      }
+      return {
+        ...prev,
+        [field]: value,
+      };
+    });
 
     // Validate phone number in real-time
     if (field === "phoneNumber") {
@@ -392,7 +429,7 @@ export default function UserProfilePage() {
                   className="w-full px-3 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between hover:border-gray-500 focus:border-primary-pink transition-all duration-200 disabled:opacity-50"
                 >
                   <span className={formData.state ? "text-white" : "text-text-gray"}>
-                    {formData.state ? INDIAN_STATES.find(s => s.value === formData.state)?.label : "Select state"}
+                    {formData.state ? selectedStateLabel : "Select state"}
                   </span>
                   <svg className="w-6 h-6 text-text-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -400,7 +437,7 @@ export default function UserProfilePage() {
                 </button>
                 {activeDropdown === 'state' && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-gray-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-                    {INDIAN_STATES.map((option) => (
+                    {stateOptions.map((option) => (
                       <button
                         key={option.value}
                         type="button"
@@ -426,12 +463,15 @@ export default function UserProfilePage() {
                 <label className="block section-text mb-1">City*</label>
                 <button
                   type="button"
-                  onClick={() => setActiveDropdown(activeDropdown === 'city' ? null : 'city')}
-                  disabled={isLoading}
+                  onClick={() => {
+                    if (!formData.state || isFetchingCities) return;
+                    setActiveDropdown(activeDropdown === 'city' ? null : 'city');
+                  }}
+                  disabled={isLoading || !formData.state || isFetchingCities}
                   className="w-full px-3 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between hover:border-gray-500 focus:border-primary-pink transition-all duration-200 disabled:opacity-50"
                 >
                   <span className={formData.city ? "text-white" : "text-text-gray"}>
-                    {formData.city ? INDIAN_CITIES.find(c => c.value === formData.city)?.label : "Select city"}
+                    {formData.city ? formData.city : (!formData.state ? "Select state first" : isFetchingCities ? "Loading cities..." : "Select city")}
                   </span>
                   <svg className="w-6 h-6 text-text-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -439,7 +479,7 @@ export default function UserProfilePage() {
                 </button>
                 {activeDropdown === 'city' && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-gray-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-                    {INDIAN_CITIES.map((option) => (
+                    {cityOptionsWithCurrent.map((option) => (
                       <button
                         key={option.value}
                         type="button"

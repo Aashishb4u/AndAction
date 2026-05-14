@@ -42,6 +42,7 @@ type Booking = {
   createdAt: string;
   eventLocation: string;
   notes: string;
+  clientPhoneNumber?: string | null;
 
   client: {
     firstName: string;
@@ -51,7 +52,9 @@ type Booking = {
   };
 
   artist: {
+    id: string;
     stageName: string;
+    contactNumber?: string | null;
   };
 };
 
@@ -65,6 +68,7 @@ type ArtistProfileSummary = {
   stageName: string | null;
   artistType: string | null;
   subArtistType: string | null;
+  contactNumber?: string | null;
   profileOrder: number;
 };
 
@@ -155,6 +159,7 @@ export default function ArtistDashboard() {
             stageName: session.user.artistProfile.stageName ?? null,
             artistType: session.user.artistProfile.artistType ?? null,
             subArtistType: session.user.artistProfile.subArtistType ?? null,
+            contactNumber: (session.user.artistProfile as any).contactNumber ?? null,
             profileOrder: 0,
           },
         ]
@@ -535,8 +540,11 @@ export default function ArtistDashboard() {
                         <div className="flex items-center gap-2 mb-3">
                           <Image src="/icons/phone.svg" width={16} height={16} alt="" />
                           <p className="text-xs">
-                            +91
-                            {session?.user?.phoneNumber || "-"}
+                            {(() => {
+                              const digits = String(profile?.contactNumber ?? session?.user?.phoneNumber ?? "").replace(/\D/g, "");
+                              if (!digits) return "Phone not added";
+                              return digits.length === 10 ? `+91 ${digits}` : `+${digits}`;
+                            })()}
                           </p>
                         </div>
 
@@ -709,7 +717,7 @@ export default function ArtistDashboard() {
                         key={booking.id}
                         status={booking.status}
                         clientName={`${booking.client.firstName} ${booking.client.lastName}`}
-                        clientPhone={booking.client?.phoneNumber ?? null}
+                        artistPhone={booking.artist?.contactNumber ?? null}
                         location={booking.eventLocation}
                         date={formatDate(booking.eventDate)}
                         eventType={booking.eventType}

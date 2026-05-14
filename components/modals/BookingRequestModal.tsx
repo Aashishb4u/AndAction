@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -8,7 +8,8 @@ import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
 import Textarea from "../ui/Textarea";
 import PhoneInput from "../ui/PhoneInput";
-import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES } from "@/lib/constants";
+import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-indian-cities";
 
 interface BookingRequestModalProps {
   isOpen: boolean;
@@ -52,6 +53,34 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof BookingFormData, string>>>({});
+
+  const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(formData.state);
+
+  useEffect(() => {
+    if (!formData.city) return;
+    if (!Array.isArray(cityOptions) || cityOptions.length === 0) return;
+    const canonical = canonicalizeCityValue(formData.city, cityOptions);
+    if (canonical !== formData.city) {
+      setFormData((prev) => ({ ...prev, city: canonical }));
+    }
+  }, [formData.city, cityOptions]);
+
+  const stateOptions = useMemo(() => {
+    if (!formData.state) return INDIAN_STATES;
+    if (INDIAN_STATES.some((s) => s.value === formData.state)) return INDIAN_STATES;
+    return [{ value: formData.state, label: formData.state }, ...INDIAN_STATES];
+  }, [formData.state]);
+
+  const cityOptionsWithCurrent = useMemo(() => {
+    if (!formData.city) return cityOptions;
+    if (cityOptions.some((c) => c.value === formData.city)) return cityOptions;
+    return [{ value: formData.city, label: formData.city }, ...cityOptions];
+  }, [formData.city, cityOptions]);
+
+  const handleStateChange = (value: string | string[]) => {
+    handleInputChange("state", value);
+    handleInputChange("city", "");
+  };
 
   const eventTypeOptions = [
     { value: "wedding", label: "Wedding" },
@@ -209,19 +238,26 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
             <Select
               label="State*"
               placeholder="Select"
-              options={INDIAN_STATES}
+              options={stateOptions}
               value={formData.state}
-              onChange={(value) => handleInputChange("state", value)}
+              onChange={handleStateChange}
               error={errors.state}
               required
             />
             <Select
               label="City*"
-              placeholder="Select"
-              options={INDIAN_CITIES}
+              placeholder={
+                !formData.state
+                  ? "Select state first"
+                  : isFetchingCities
+                    ? "Loading cities..."
+                    : "Select"
+              }
+              options={cityOptionsWithCurrent}
               value={formData.city}
               onChange={(value) => handleInputChange("city", value)}
               error={errors.city}
+              disabled={!formData.state || isFetchingCities}
               required
             />
           </div>

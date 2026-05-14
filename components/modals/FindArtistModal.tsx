@@ -6,9 +6,10 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import DateInput from "@/components/ui/DateInput";
 import Button from "@/components/ui/Button";
-import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/constants";
+import { INDIAN_STATES } from "@/lib/constants";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-indian-cities";
 import { ArtistProfileSetupPreferences } from "@/types";
 
 export interface FindArtistModalProps {
@@ -100,8 +101,6 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
 
 
 
-  const locationOptions = INDIAN_CITIES;
-
   const fallbackEventTypes = [
     { value: "wedding", label: "Wedding" },
     { value: "corporate", label: "Corporate Event" },
@@ -151,6 +150,16 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     return Array.isArray(list) && list.length > 0 ? list : INDIAN_STATES;
   }, [preferences]);
 
+  const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(
+    formData.eventState,
+  );
+
+  const cityOptionsWithCurrent = useMemo(() => {
+    if (!formData.location) return cityOptions;
+    if (cityOptions.some((c) => c.value === formData.location)) return cityOptions;
+    return [{ value: formData.location, label: formData.location }, ...cityOptions];
+  }, [formData.location, cityOptions]);
+
   // Language dropdown state
   const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
 
@@ -195,6 +204,24 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     setFormData((prev) => ({
       ...prev,
       [field]: value as any,
+    }));
+  };
+
+  useEffect(() => {
+    if (!formData.location) return;
+    if (!Array.isArray(cityOptions) || cityOptions.length === 0) return;
+    const canonical = canonicalizeCityValue(formData.location, cityOptions);
+    if (canonical !== formData.location) {
+      setFormData((prev) => ({ ...prev, location: canonical }));
+    }
+  }, [formData.location, cityOptions]);
+
+  const handleEventStateChange = (value: string | string[]) => {
+    const next = Array.isArray(value) ? (value[0] ?? "") : value;
+    setFormData((prev) => ({
+      ...prev,
+      eventState: next,
+      location: "",
     }));
   };
 
@@ -414,7 +441,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
               placeholder="Select state"
               options={stateOptions}
               value={formData.eventState}
-              onChange={(value) => handleInputChange("eventState", value)}
+              onChange={handleEventStateChange}
             />
           </div>
           <div>
@@ -442,10 +469,17 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
           <div>
             <label className="secondary-text  block mb-1">Artist Location</label>
             <Select
-              placeholder="Select location"
-              options={locationOptions}
+              placeholder={
+                !formData.eventState
+                  ? "Select event state first"
+                  : isFetchingCities
+                    ? "Loading cities..."
+                    : "Select city"
+              }
+              options={cityOptionsWithCurrent}
               value={formData.location}
               onChange={(value) => handleInputChange("location", value)}
+              disabled={!formData.eventState || isFetchingCities}
             />
           </div>
         </div>

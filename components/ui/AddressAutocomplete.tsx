@@ -56,7 +56,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   // Normalize city name from API to match INDIAN_CITIES dropdown values
   const normalizeCity = (city: string): string => {
     if (!city) return "";
-    return city.toLowerCase().replace(/\s+/g, "-");
+    return city.trim().replace(/\s+/g, " ");
   };
 
   // Fetch address suggestions
