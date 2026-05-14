@@ -26,6 +26,12 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   };
 
   const handleClick = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(
+        "artistProfile:returnTo",
+        window.location.pathname + window.location.search,
+      );
+    }
     router.push(`/artists/${artist.id}`);
   };
 
