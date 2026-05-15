@@ -214,7 +214,7 @@ model Booking {
   artist        Artist        @relation(fields: [artistId], references: [id], onDelete: Cascade)
   client        User          @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
-  @@unique([artistId, eventDate])
+  // @@unique([artistId, eventDate])
   @@index([clientId])
   @@index([artistId])
   @@index([status])

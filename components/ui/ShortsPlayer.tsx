@@ -124,7 +124,11 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
 
     if (isActive && shouldLoad && isVideoLoaded) {
       video.muted = !soundEnabled;
-      video.play().then(() => setIsPlaying(true)).catch(() => { });
+      if (video.paused) {
+        video.play().then(() => setIsPlaying(true)).catch(() => { });
+      } else {
+        setIsPlaying(true);
+      }
     } else {
       video.pause();
       setIsPlaying(false);
@@ -155,7 +159,6 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       );
     };
 
-    // Send immediately and again after a delay to catch late-loading iframes
     if (isActive) {
       sendCommand("playVideo");
     } else {
@@ -163,12 +166,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     }
 
     const timer = setTimeout(() => {
-      if (isActive) {
-        sendCommand("playVideo");
-        sendCommand(soundEnabled ? "unMute" : "mute");
-      } else {
-        sendCommand("pauseVideo");
-      }
+      sendCommand(isActive ? "playVideo" : "pauseVideo");
     }, 300);
 
     setIsPlaying(isActive);
@@ -176,7 +174,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       clearTimeout(timer);
       sendCommand("pauseVideo");
     };
-  }, [isActive, isYouTube, short.id, soundEnabled]);
+  }, [isActive, isYouTube, short.id]);
 
   /* ---------------- YOUTUBE CONTROL: mute/unmute ---------------- */
   useEffect(() => {
@@ -187,14 +185,20 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     ) as HTMLIFrameElement | null;
     if (!iframe?.contentWindow) return;
 
+    const func = soundEnabled ? "unMute" : "mute";
     iframe.contentWindow.postMessage(
-      JSON.stringify({
-        event: "command",
-        func: soundEnabled ? "unMute" : "mute",
-        args: [],
-      }),
-      "*"
+      JSON.stringify({ event: "command", func, args: [] }),
+      "*",
     );
+
+    const timer = setTimeout(() => {
+      iframe.contentWindow?.postMessage(
+        JSON.stringify({ event: "command", func, args: [] }),
+        "*",
+      );
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [soundEnabled, isYouTube, short.id]);
 
   /* ---------------- PROGRESS BAR ---------------- */
@@ -288,7 +292,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
             id={`yt-${short.id}`}
             className="absolute inset-0 w-full h-full pointer-events-none"
             loading={isActive ? "eager" : "lazy"}
-            src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=${isActive && soundEnabled ? 0 : 1}&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${typeof window !== "undefined" ? window.location.origin : ""
+            src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${typeof window !== "undefined" ? window.location.origin : ""
               }`}
             allow="autoplay; encrypted-media"
           />

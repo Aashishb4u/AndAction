@@ -195,7 +195,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
             if (error.code === 'P2002') {
-                return ApiErrors.badRequest('Booking already exists for this artist on the selected date.');
+                // return ApiErrors.badRequest('Booking already exists for this artist on the selected date.');
+                return ApiErrors.badRequest('Unique constraint violation while creating booking.');
             }
             if (isMissingColumnClientPhoneNumberError(error)) {
                 return ApiErrors.internalError('Database schema is out of date. Please run Prisma migrations and try again.');
