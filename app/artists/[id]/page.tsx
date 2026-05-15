@@ -180,15 +180,17 @@ export default function ArtistDetailPage() {
 
     const fetchData = async () => {
       try {
-        const [fetchedArtist, approvedBookings] = await Promise.all([
-          fetchArtist(),
-          getBookingsByStatus(artistId as string),
-        ]);
+        // const [fetchedArtist, approvedBookings] = await Promise.all([
+        //   fetchArtist(),
+        //   getBookingsByStatus(artistId as string),
+        // ]);
+        const fetchedArtist = await fetchArtist();
 
         setArtist(fetchedArtist ?? null);
-        setDisabledDates(
-          (approvedBookings ?? []).map((b: any) => new Date(b.eventDate)),
-        );
+        // setDisabledDates(
+        //   (approvedBookings ?? []).map((b: any) => new Date(b.eventDate)),
+        // );
+        setDisabledDates([]);
       } catch (error) {
         console.error("Artist detail page load failed:", error);
         setArtist(null);
