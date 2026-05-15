@@ -1,46 +1,40 @@
-'use client';
-
-import React, { useEffect } from 'react';
+import type { Metadata } from "next";
 import Image from 'next/image';
+import AuthLayoutClient from "./AuthLayoutClient";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 interface AuthLayoutProps {
   children: React.ReactNode;
 }
 
 const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
-  // Hide navbar on mobile for auth pages
-  useEffect(() => {
-    document.body.classList.add('auth-page');
-    return () => {
-      document.body.classList.remove('auth-page');
-    };
-  }, []);
-
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Background Image with Overlay */}
-      <div className="absolute inset-0 z-0 md:block hidden">
-        <Image
-          src="/hero-bg.jpg"
-          alt="Background"
-          fill
-          className="object-cover"
-          priority
-        />
-        {/* Dark overlay with reduced opacity and blur effect */}
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-xs" />
-      </div>
+    <AuthLayoutClient>
+      <div className="min-h-screen relative overflow-hidden">
+        <div className="absolute inset-0 z-0 md:block hidden">
+          <Image
+            src="/hero-bg.jpg"
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-xs" />
+        </div>
 
-      {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col">
-        {/* Main Content */}
-        <main className="flex-1 flex md:items-center justify-center md:p-8">
-          <div className="w-full md:max-w-2xl">
-            {children}
-          </div>
-        </main>
+        <div className="relative z-10 min-h-screen flex flex-col">
+          <main className="flex-1 flex md:items-center justify-center md:p-8">
+            <div className="w-full md:max-w-2xl">{children}</div>
+          </main>
+        </div>
       </div>
-    </div>
+    </AuthLayoutClient>
   );
 };
 

@@ -3,6 +3,10 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Join as Artist - AndAction',
   description: 'Join AndAction as an artist and share your talent with the world',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function ArtistAuthLayout({

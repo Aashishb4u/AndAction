@@ -162,7 +162,7 @@ export const signInWithGoogle = async (
 export const signInWithFacebook = async (
   role?: "user" | "artist",
 ): Promise<void> => {
-  const baseUrl = getRedirectUrl();
+  const baseUrl = 'https://andaction.in';
   const callbackUrl =
     role === "artist"
       ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(

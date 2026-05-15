@@ -3,6 +3,10 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Artist Dashboard - AndAction',
   description: 'Manage your content and connect with your audience on AndAction',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function ArtistLayout({

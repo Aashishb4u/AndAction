@@ -2,7 +2,9 @@
 
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import SiteLayout from './SiteLayout';
 
 interface PageLayoutProps {
@@ -21,10 +23,23 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   className = '',
 }) => {
   const router = useRouter();
+  const pathname = usePathname() || '/';
 
   const handleBack = () => {
     router.back();
   };
+
+  const segments = pathname.split('/').filter(Boolean);
+  const breadcrumbs = [
+    { label: 'Home', href: '/' },
+    ...segments.map((seg, index) => {
+      const href = '/' + segments.slice(0, index + 1).join('/');
+      const label = decodeURIComponent(seg)
+        .replace(/[-_]+/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      return { label, href };
+    }),
+  ];
 
   return (
     <SiteLayout>
@@ -42,6 +57,29 @@ const PageLayout: React.FC<PageLayoutProps> = ({
                 <span className="text-sm font-medium">Back</span>
               </button>
             )}
+
+            <nav aria-label="Breadcrumb" className="mb-4">
+              <ol className="flex flex-wrap items-center gap-2 text-sm text-text-light-gray">
+                {breadcrumbs.map((bc, idx) => {
+                  const isLast = idx === breadcrumbs.length - 1;
+                  return (
+                    <li key={bc.href} className="flex items-center gap-2">
+                      {isLast ? (
+                        <span className="text-white">{bc.label}</span>
+                      ) : (
+                        <Link
+                          href={bc.href}
+                          className="hover:text-white transition-colors duration-200"
+                        >
+                          {bc.label}
+                        </Link>
+                      )}
+                      {!isLast && <span className="text-text-light-gray">/</span>}
+                    </li>
+                  );
+                })}
+              </ol>
+            </nav>
 
             {/* Page Title */}
             <div className="text-center mb-8">
