@@ -23,19 +23,26 @@ const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
   const res = await fetch(`/api/videos?${params.toString()}`);
   const json = await res.json();
 
-  return json.data.videos.map((v: any) => ({
-    id: v.id,
-    title: v.title,
-    creator: v.user.artists?.[0]?.stageName || getArtishName(v.user.name, v.user.firstName, v.user.lastName),
-    creatorId: v.user.artists?.[0]?.id,
-    category: v.user.artists?.[0]?.artistType || "",
-    userId: v.user.id,
-    avatar: v.user.artists?.[0]?.profileImage || v.user.avatar || v.user.image,
-    videoUrl: v.url,
-    thumbnail: v.thumbnailUrl,
-    description: "",
-    isBookmarked: false,
-  }));
+  return json.data.videos.map((v: any) => {
+    const artistProfile = v.artist ?? v.user?.artists?.[0] ?? null;
+    const groupId = artistProfile?.id || v.user.id;
+
+    return {
+      id: v.id,
+      title: v.title,
+      creator:
+        artistProfile?.stageName ||
+        getArtishName(v.user.name, v.user.firstName, v.user.lastName),
+      creatorId: artistProfile?.id,
+      category: artistProfile?.artistType || "",
+      groupId,
+      avatar: artistProfile?.profileImage || v.user.avatar || v.user.image,
+      videoUrl: v.url,
+      thumbnail: v.thumbnailUrl,
+      description: "",
+      isBookmarked: false,
+    };
+  });
 };
 import { useState, useEffect, useRef, useCallback } from "react";
 import SiteLayout from "@/components/layout/SiteLayout";
@@ -121,13 +128,13 @@ export default function ShortsPage() {
   const groupedShorts = useMemo(() => {
     if (!shorts.length) return [];
 
-    // Group by userId
+    // Group by profile (fallback: user)
     const shortsByArtist = shorts.reduce(
       (acc, short) => {
-        if (!acc[short.userId]) {
-          acc[short.userId] = [];
+        if (!acc[short.groupId]) {
+          acc[short.groupId] = [];
         }
-        acc[short.userId].push(short);
+        acc[short.groupId].push(short);
         return acc;
       },
       {} as Record<string, typeof shorts>,
@@ -137,8 +144,8 @@ export default function ShortsPage() {
     // Get unique artist IDs in order of first appearance
     const artistOrder: string[] = [];
     shorts.forEach((short) => {
-      if (!artistOrder.includes(short.userId)) {
-        artistOrder.push(short.userId);
+      if (!artistOrder.includes(short.groupId)) {
+        artistOrder.push(short.groupId);
       }
     });
 

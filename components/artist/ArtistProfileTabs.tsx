@@ -84,6 +84,8 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
         pinCode: aboutDraft.pinCode,
         city: aboutDraft.city,
         state: aboutDraft.state,
+        latitude: aboutDraft.latitude,
+        longitude: aboutDraft.longitude,
         contactNumber: aboutDraft.contactNumber,
         whatsappNumber: aboutDraft.whatsappNumber,
         contactEmail: aboutDraft.email,

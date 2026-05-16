@@ -160,6 +160,8 @@ export interface Artist {
   pinCode?: string;
   state?: string;
   city?: string;
+  latitude?: number;
+  longitude?: number;
 
   // PERFORMANCE TAB — already existed
   performingLanguage?: string;

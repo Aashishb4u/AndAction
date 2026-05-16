@@ -208,6 +208,8 @@ function ArtistProfileContent() {
     pinCode: user.zip || "",
     state: user.state || "",
     city: user.city || "",
+    latitude: (user as any).latitude ?? null,
+    longitude: (user as any).longitude ?? null,
     subArtistType: artistProfile.subArtistType || "",
     shortBio: artistProfile.shortBio || "",
     performingLanguage: artistProfile.performingLanguage || "",

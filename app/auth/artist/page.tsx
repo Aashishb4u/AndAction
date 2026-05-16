@@ -43,6 +43,8 @@ function ArtistAuthContent() {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState("");
   const [address, setAddress] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [pinCode, setPinCode] = useState("");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
@@ -460,6 +462,8 @@ function ArtistAuthContent() {
         dateOfBirth,
         gender,
         address,
+        latitude,
+        longitude,
         pinCode,
         state,
         city,
@@ -1066,12 +1070,26 @@ function ArtistAuthContent() {
                 label="Office/Home full address*"
                 placeholder="Search for your address or use location"
                 value={address}
-                onChange={setAddress}
+                onChange={(value) => {
+                  setAddress(value);
+                  setLatitude(null);
+                  setLongitude(null);
+                }}
                 onLocationSelect={(loc) => {
                   setAddress(loc.address);
                   if (loc.pinCode) setPinCode(loc.pinCode);
                   if (loc.state) setState(loc.state);
                   if (loc.city) setCity(loc.city);
+                  setLatitude(
+                    typeof loc.latitude === "number" && Number.isFinite(loc.latitude)
+                      ? loc.latitude
+                      : null,
+                  );
+                  setLongitude(
+                    typeof loc.longitude === "number" && Number.isFinite(loc.longitude)
+                      ? loc.longitude
+                      : null,
+                  );
                   setLocationFetched(true);
                 }}
                 required
@@ -1087,6 +1105,8 @@ function ArtistAuthContent() {
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, "").slice(0, 6);
                   setPinCode(value);
+                  setLatitude(null);
+                  setLongitude(null);
                 }}
                 required
                 disabled={isLoading}
@@ -1109,6 +1129,8 @@ function ArtistAuthContent() {
                     const next = Array.isArray(value) ? (value[0] ?? "") : value;
                     setState(next);
                     setCity("");
+                    setLatitude(null);
+                    setLongitude(null);
                   }}
                   options={stateOptions}
                   required
@@ -1121,7 +1143,12 @@ function ArtistAuthContent() {
                   }
                   value={city}
                   onChange={(value) =>
-                    setCity(Array.isArray(value) ? (value[0] ?? "") : value)
+                    (() => {
+                      const next = Array.isArray(value) ? (value[0] ?? "") : value;
+                      setCity(next);
+                      setLatitude(null);
+                      setLongitude(null);
+                    })()
                   }
                   options={cityOptionsWithCurrent}
                   required

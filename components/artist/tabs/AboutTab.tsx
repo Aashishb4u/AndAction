@@ -211,12 +211,30 @@ const AboutTab: React.FC<AboutTabProps> = ({
         label="Office/Home full address*"
         placeholder="Search for your address or use location"
         value={draft.address}
-        onChange={(value) => handleInputChange("address", value)}
+        onChange={(value) => {
+          setDraft((prev) => ({
+            ...prev,
+            address: value,
+            latitude: null,
+            longitude: null,
+          }));
+        }}
         onLocationSelect={(loc) => {
-          handleInputChange("address", loc.address);
-          if (loc.pinCode) handleInputChange("pinCode", loc.pinCode);
-          if (loc.state) handleInputChange("state", loc.state);
-          if (loc.city) handleInputChange("city", loc.city);
+          setDraft((prev) => ({
+            ...prev,
+            address: loc.address,
+            pinCode: loc.pinCode || prev.pinCode,
+            state: loc.state || prev.state,
+            city: loc.city || prev.city,
+            latitude:
+              typeof loc.latitude === "number" && Number.isFinite(loc.latitude)
+                ? loc.latitude
+                : null,
+            longitude:
+              typeof loc.longitude === "number" && Number.isFinite(loc.longitude)
+                ? loc.longitude
+                : null,
+          }));
         }}
         required
       />
@@ -227,7 +245,12 @@ const AboutTab: React.FC<AboutTabProps> = ({
           label="PIN code*"
           value={draft.pinCode}
           onChange={(e) =>
-            handleInputChange("pinCode", e.target.value.replace(/\D/g, "").slice(0, 6))
+            setDraft((prev) => ({
+              ...prev,
+              pinCode: e.target.value.replace(/\D/g, "").slice(0, 6),
+              latitude: null,
+              longitude: null,
+            }))
           }
           maxLength={6}
           required
@@ -237,8 +260,13 @@ const AboutTab: React.FC<AboutTabProps> = ({
           options={stateOptions}
           value={draft.state}
           onChange={(value) => {
-            handleInputChange("state", value as string);
-            handleInputChange("city", "");
+            setDraft((prev) => ({
+              ...prev,
+              state: value as string,
+              city: "",
+              latitude: null,
+              longitude: null,
+            }));
           }}
           disabled={isFetchingLocation}
           required
@@ -247,7 +275,14 @@ const AboutTab: React.FC<AboutTabProps> = ({
           label="City*"
           options={cityOptionsWithCurrent}
           value={draft.city}
-          onChange={(value) => handleInputChange("city", value)}
+          onChange={(value) =>
+            setDraft((prev) => ({
+              ...prev,
+              city: value,
+              latitude: null,
+              longitude: null,
+            }))
+          }
           disabled={isFetchingLocation || !draft.state || isFetchingCities}
           helperText={
             !draft.state ? "Select state first" : isFetchingCities ? "Loading cities..." : undefined

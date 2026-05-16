@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors, successResponse } from '@/lib/api-response';
-import { geocodeAddress } from '@/lib/geocoding';
+import { geocodeFullAddress } from '@/lib/geocoding';
 
 const parseYearsOfExperienceBucket = (input: unknown): number | null => {
   if (input === null || input === undefined) return null;
@@ -72,16 +72,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     let geocodeData: { latitude?: number; longitude?: number; geocodedAt?: Date } = {};
-    if (user.city && (!user.latitude || !user.longitude)) {
+    if (
+      (!user.latitude || !user.longitude) &&
+      (user.address || user.city || user.state || user.zip)
+    ) {
       try {
-        const coords = await geocodeAddress(user.city, user.state || undefined);
+        const coords = await geocodeFullAddress({
+          address: user.address,
+          city: user.city,
+          state: user.state,
+          pinCode: user.zip,
+          country: "India",
+        });
         if (coords) {
           geocodeData = {
             latitude: coords.lat,
             longitude: coords.lng,
             geocodedAt: new Date(),
           };
-          console.log(`✅ Geocoded ${user.city}: (${coords.lat}, ${coords.lng})`);
         }
       } catch (error) {
         console.error('Geocoding error during profile setup:', error);
@@ -216,6 +224,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       gender,
       dob,
       address,
+      latitude: inputLatitude,
+      longitude: inputLongitude,
       pinCode,
       city,
       state,
@@ -263,31 +273,55 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
         ? String(whatsappNumber).replace(/\D/g, "")
         : undefined;
 
-    // Check if city or state is being updated
+    const parsedLat =
+      typeof inputLatitude === "number"
+        ? inputLatitude
+        : inputLatitude != null && String(inputLatitude).trim() !== ""
+          ? Number(inputLatitude)
+          : null;
+    const parsedLng =
+      typeof inputLongitude === "number"
+        ? inputLongitude
+        : inputLongitude != null && String(inputLongitude).trim() !== ""
+          ? Number(inputLongitude)
+          : null;
+
     const isCityUpdated = city !== undefined && city !== existingUser.city;
     const isStateUpdated = state !== undefined && state !== existingUser.state;
+    const isAddressUpdated = address !== undefined && address !== existingUser.address;
+    const isPinUpdated = pinCode !== undefined && pinCode !== existingUser.zip;
 
     // Prepare geocoding if location changed
     let geocodeData: { latitude?: number; longitude?: number; geocodedAt?: Date } = {};
-    if (isCityUpdated || isStateUpdated) {
+    if (Number.isFinite(parsedLat) && Number.isFinite(parsedLng)) {
+      geocodeData = {
+        latitude: parsedLat as number,
+        longitude: parsedLng as number,
+        geocodedAt: new Date(),
+      };
+    } else if (isAddressUpdated || isPinUpdated || isCityUpdated || isStateUpdated) {
+      const geocodeAddressValue = address !== undefined ? address : existingUser.address;
       const geocodeCity = city !== undefined ? city : existingUser.city;
       const geocodeState = state !== undefined ? state : existingUser.state;
+      const geocodePin = pinCode !== undefined ? pinCode : existingUser.zip;
 
-      if (geocodeCity) {
-        try {
-          const coords = await geocodeAddress(geocodeCity, geocodeState || undefined);
-          if (coords) {
-            geocodeData = {
-              latitude: coords.lat,
-              longitude: coords.lng,
-              geocodedAt: new Date(),
-            };
-            console.log(`✅ Geocoded ${geocodeCity}: (${coords.lat}, ${coords.lng})`);
-          }
-        } catch (error) {
-          console.error('Geocoding error during profile update:', error);
-          // Don't fail the request if geocoding fails
+      try {
+        const coords = await geocodeFullAddress({
+          address: geocodeAddressValue,
+          city: geocodeCity,
+          state: geocodeState,
+          pinCode: geocodePin,
+          country: "India",
+        });
+        if (coords) {
+          geocodeData = {
+            latitude: coords.lat,
+            longitude: coords.lng,
+            geocodedAt: new Date(),
+          };
         }
+      } catch (error) {
+        console.error("Geocoding error during profile update:", error);
       }
     }
 

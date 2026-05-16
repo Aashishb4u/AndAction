@@ -61,6 +61,7 @@ export default function VideoDetailsPage() {
         }
 
         const v = json.data.video;
+        const mainArtistProfile = v.artist ?? v.user?.artists?.[0] ?? null;
 
         // MAIN VIDEO
         setVideoData({
@@ -74,27 +75,41 @@ export default function VideoDetailsPage() {
           isBookmarked: v.isBookmarked,
           bookmarkId: v.bookmarkId,
           artist: {
-            id: v.user?.artist?.id,
-            name: getArtishName(v.user.name, v.user.firstName, v.user.lastName),
-            avatar: v.user.artists?.[0]?.profileImage || v.user.avatar || v.user.image,
+            id: mainArtistProfile?.id || "",
+            name:
+              mainArtistProfile?.stageName ||
+              getArtishName(v.user.name, v.user.firstName, v.user.lastName),
+            avatar:
+              mainArtistProfile?.profileImage ||
+              v.user.avatar ||
+              v.user.image,
             verified: v.user.isArtistVerified,
           },
         });
 
         // RELATED VIDEOS (processed but not rendered yet)
         setRelatedVideos(
-          json.data.related.map((rv: any) => ({
-            id: rv.id,
-            title: rv.title,
-            creator: getArtishName(rv.user.name, rv.user.firstName, rv.user.lastName),
-            thumbnail: rv.thumbnailUrl,
-            videoUrl: rv.url,
-            isBookmarked: rv.isBookmarked,
-            bookmarkId: rv.bookmarkId,
-            creatorImage: rv.user.artists?.[0]?.profileImage || rv.user.avatar || rv.user.image || undefined,
-            artistId: rv.user.artists?.[0]?.id || "",
-            artistType: rv.user.artists?.[0]?.artistType || "",
-          })),
+          json.data.related.map((rv: any) => {
+            const relatedArtistProfile = rv.artist ?? rv.user?.artists?.[0] ?? null;
+            return {
+              id: rv.id,
+              title: rv.title,
+              creator:
+                relatedArtistProfile?.stageName ||
+                getArtishName(rv.user.name, rv.user.firstName, rv.user.lastName),
+              thumbnail: rv.thumbnailUrl,
+              videoUrl: rv.url,
+              isBookmarked: rv.isBookmarked,
+              bookmarkId: rv.bookmarkId,
+              creatorImage:
+                relatedArtistProfile?.profileImage ||
+                rv.user.avatar ||
+                rv.user.image ||
+                undefined,
+              artistId: relatedArtistProfile?.id || "",
+              artistType: relatedArtistProfile?.artistType || "",
+            };
+          }),
         );
         setHasMoreVideos(json.data.videosPagination?.hasNextPage || false);
 
@@ -237,17 +252,22 @@ export default function VideoDetailsPage() {
       );
       const json = await res.json();
       if (json.success && json.data?.related) {
-        const newVideos = json.data.related.map((rv: any) => ({
-          id: rv.id,
-          title: rv.title,
-          creator: getArtishName(rv.user.name, rv.user.firstName, rv.user.lastName),
-          thumbnail: rv.thumbnailUrl,
-          videoUrl: rv.url,
-          isBookmarked: rv.isBookmarked,
-          bookmarkId: rv.bookmarkId,
-          artistId: rv.user.artists?.[0]?.id || "",
-          artistType: rv.user.artists?.[0]?.artistType || "",
-        }));
+        const newVideos = json.data.related.map((rv: any) => {
+          const relatedArtistProfile = rv.artist ?? rv.user?.artists?.[0] ?? null;
+          return {
+            id: rv.id,
+            title: rv.title,
+            creator:
+              relatedArtistProfile?.stageName ||
+              getArtishName(rv.user.name, rv.user.firstName, rv.user.lastName),
+            thumbnail: rv.thumbnailUrl,
+            videoUrl: rv.url,
+            isBookmarked: rv.isBookmarked,
+            bookmarkId: rv.bookmarkId,
+            artistId: relatedArtistProfile?.id || "",
+            artistType: relatedArtistProfile?.artistType || "",
+          };
+        });
         setRelatedVideos((prev) => [...prev, ...newVideos]);
         setVideosPage(nextPage);
         setHasMoreVideos(json.data.videosPagination?.hasNextPage || false);

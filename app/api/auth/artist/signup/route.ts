@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, validatePasswordStrength } from '@/lib/password';
 import { ApiErrors, successResponse } from '@/lib/api-response';
-import { geocodeAddress } from '@/lib/geocoding';
+import { geocodeFullAddress } from '@/lib/geocoding';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -23,6 +23,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       dateOfBirth,
       gender,
       address,
+      latitude: inputLatitude,
+      longitude: inputLongitude,
       pinCode,
       state,
       city,
@@ -81,21 +83,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const hashedPassword = password ? await hashPassword(password) : null;
     const parsedDob = dateOfBirth ? new Date(dateOfBirth) : null;
 
-    // Geocode location if city and state are provided
     let latitude: number | null = null;
     let longitude: number | null = null;
 
-    if (city && state) {
+    const parsedLat =
+      typeof inputLatitude === "number"
+        ? inputLatitude
+        : inputLatitude != null && String(inputLatitude).trim() !== ""
+          ? Number(inputLatitude)
+          : null;
+    const parsedLng =
+      typeof inputLongitude === "number"
+        ? inputLongitude
+        : inputLongitude != null && String(inputLongitude).trim() !== ""
+          ? Number(inputLongitude)
+          : null;
+
+    if (Number.isFinite(parsedLat) && Number.isFinite(parsedLng)) {
+      latitude = parsedLat as number;
+      longitude = parsedLng as number;
+    } else if (address || city || state || pinCode) {
       try {
-        const geocodeResult = await geocodeAddress(city, state);
+        const geocodeResult = await geocodeFullAddress({
+          address,
+          city,
+          state,
+          pinCode,
+          country: "India",
+        });
         if (geocodeResult) {
           latitude = geocodeResult.lat;
           longitude = geocodeResult.lng;
-          console.log(`✅ Geocoded artist location: ${city}, ${state} -> (${latitude}, ${longitude})`);
         }
       } catch (geoError) {
-        console.error('⚠️ Failed to geocode artist location:', geoError);
-        // Continue with signup even if geocoding fails
+        console.error("Failed to geocode artist location:", geoError);
       }
     }
 

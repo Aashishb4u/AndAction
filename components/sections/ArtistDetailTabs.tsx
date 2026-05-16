@@ -172,13 +172,13 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   // Fetch videos page
   const fetchVideosPage = useCallback(
     async (page: number) => {
-      if (!artist?.userId) return;
+      if (!artist?.id) return;
       try {
         isFetchingVideosRef.current = true;
         if (page === 1) setIsInitialLoadingVideos(true);
         setIsLoadingVideos(true);
         const res = await fetch(
-          `/api/videos?type=videos&artistId=${artist.userId}&withBookmarks=${withBookmarks ? "true" : "false"}&page=${page}&limit=${VIDEOS_PER_PAGE}`,
+          `/api/videos?type=videos&artistProfileId=${artist.id}&withBookmarks=${withBookmarks ? "true" : "false"}&page=${page}&limit=${VIDEOS_PER_PAGE}`,
         );
         const json = await res.json();
         const newVideos = json?.data?.videos || [];
@@ -196,19 +196,19 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         isFetchingVideosRef.current = false;
       }
     },
-    [artist?.userId, withBookmarks],
+    [artist?.id, withBookmarks],
   );
 
   // Fetch shorts page
   const fetchShortsPage = useCallback(
     async (page: number) => {
-      if (!artist?.userId) return;
+      if (!artist?.id) return;
       try {
         isFetchingShortsRef.current = true;
         if (page === 1) setIsInitialLoadingShorts(true);
         setIsLoadingShorts(true);
         const res = await fetch(
-          `/api/videos?type=shorts&artistId=${artist.userId}&withBookmarks=${withBookmarks ? "true" : "false"}&page=${page}&limit=${SHORTS_PER_PAGE}`,
+          `/api/videos?type=shorts&artistProfileId=${artist.id}&withBookmarks=${withBookmarks ? "true" : "false"}&page=${page}&limit=${SHORTS_PER_PAGE}`,
         );
         const json = await res.json();
         const newShorts = json?.data?.videos || [];
@@ -226,12 +226,12 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         isFetchingShortsRef.current = false;
       }
     },
-    [artist?.userId, withBookmarks],
+    [artist?.id, withBookmarks],
   );
 
   // Initial fetch
   useEffect(() => {
-    if (!artist?.userId) return;
+    if (!artist?.id) return;
     setArtistVideos([]);
     setArtistShorts([]);
     setVideosPage(1);
@@ -241,7 +241,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     setShortsCurrentIndex(0);
     fetchVideosPage(1);
     fetchShortsPage(1);
-  }, [artist?.userId, fetchVideosPage, fetchShortsPage]);
+  }, [artist?.id, fetchVideosPage, fetchShortsPage]);
 
   // Fetch more videos when page changes (after initial)
   useEffect(() => {
@@ -293,7 +293,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
   const profileShorts = useMemo(() => {
     return artistShorts.map((s: any) => {
-      const artistProfile = s.user?.artists?.[0];
+      const artistProfile = s.artist ?? s.user?.artists?.[0];
       const creator =
         artistProfile?.stageName ||
         getArtishName(s.user?.name, s.user?.firstName, s.user?.lastName);
@@ -1040,13 +1040,13 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               id={video.id}
               title={video.title}
               creator={
+                video.artist?.stageName ||
                 video.user.name ||
                 `${video.user.firstName || ""} ${video.user.lastName || ""}`.trim() ||
                 "Unknown Artist"
               }
               creatorImage={
-                (video.user as any)?.artists?.[0]?.profileImage ||
-                (video.user as any)?.artist?.profileImage ||
+                video.artist?.profileImage ||
                 video.user?.avatar ||
                 video.user?.image ||
                 ""
@@ -1057,10 +1057,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               bookmarkId={video.bookmarkId}
               onBookmark={(data) => toggleBookmark(data)}
               onShare={() => { }}
-              artistId={(video.user as any)?.artist?.id}
+              artistId={video.artist?.id}
               artistType={resolveArtistTypeLabel(
-                (video.user as any)?.artists?.[0]?.artistType ||
-                (video.user as any)?.artist?.artistType,
+                video.artist?.artistType,
               )}
               enableMobileAutoplay={true}
             />

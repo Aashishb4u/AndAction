@@ -32,6 +32,8 @@ export function mapUserForSession(apiUser: any, apiArtist: any) {
     state: apiUser.state,
     address: apiUser.address,
     zip: apiUser.zip,
+    latitude: apiUser.latitude,
+    longitude: apiUser.longitude,
     gender: apiUser.gender,
     dob: apiUser.dob,
     isAccountVerified: apiUser.isAccountVerified,

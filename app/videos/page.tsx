@@ -86,32 +86,43 @@ export default function VideosPage() {
   // Flatten all pages into single array
   const allVideos =
     data?.pages.flatMap((page) =>
-      page.videos.map((v) => ({
-        id: v.id,
-        title: v.title,
-        creator: v.user.artists?.[0]?.stageName || getArtishName(v.user.name, v.user.firstName, v.user.lastName),
-        userId: v.user.id, // Add userId for grouping
-        thumbnail: v.thumbnailUrl,
-        videoUrl: v.url,
-        category: v.user.artists?.[0]?.artistType || "",
-        isBookmarked: v.isBookmarked || false,
-        bookmarkId: v.bookmarkId || null,
-        creatorImage: v.user.artists?.[0]?.profileImage || v.user.avatar || v.user.image || undefined,
-        artistType: resolveArtistTypeLabel(v.user.artists?.[0]?.artistType),
-        artistId: v.user.artists?.[0]?.id || "",
-      })),
+      page.videos.map((v: any) => {
+        const artistProfile = v.artist ?? v.user?.artists?.[0] ?? null;
+        const groupId = artistProfile?.id || v.user.id;
+
+        return {
+          id: v.id,
+          title: v.title,
+          creator:
+            artistProfile?.stageName ||
+            getArtishName(v.user.name, v.user.firstName, v.user.lastName),
+          groupId,
+          thumbnail: v.thumbnailUrl,
+          videoUrl: v.url,
+          category: artistProfile?.artistType || "",
+          isBookmarked: v.isBookmarked || false,
+          bookmarkId: v.bookmarkId || null,
+          creatorImage:
+            artistProfile?.profileImage ||
+            v.user.avatar ||
+            v.user.image ||
+            undefined,
+          artistType: resolveArtistTypeLabel(artistProfile?.artistType),
+          artistId: artistProfile?.id || "",
+        };
+      }),
     ) || [];
 
   // Group videos by artist (all videos from one artist together)
   const groupedVideos = useMemo(() => {
     if (!allVideos.length) return [];
 
-    // Group by userId
+    // Group by profile (fallback: user)
     const videosByArtist = allVideos.reduce((acc, video) => {
-      if (!acc[video.userId]) {
-        acc[video.userId] = [];
+      if (!acc[video.groupId]) {
+        acc[video.groupId] = [];
       }
-      acc[video.userId].push(video);
+      acc[video.groupId].push(video);
       return acc;
     }, {} as Record<string, typeof allVideos>);
 
@@ -119,13 +130,13 @@ export default function VideosPage() {
     // Get unique artist IDs in order of first appearance
     const artistOrder: string[] = [];
     allVideos.forEach(video => {
-      if (!artistOrder.includes(video.userId)) {
-        artistOrder.push(video.userId);
+      if (!artistOrder.includes(video.groupId)) {
+        artistOrder.push(video.groupId);
       }
     });
 
     // Return videos grouped by artist
-    return artistOrder.flatMap(artistId => videosByArtist[artistId]);
+    return artistOrder.flatMap((artistId) => videosByArtist[artistId]);
   }, [allVideos]);
 
   // Infinite scroll: auto-fetch when sentinel enters viewport
