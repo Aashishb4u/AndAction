@@ -36,6 +36,16 @@ export async function GET(req: NextRequest) {
         views: true,
         createdAt: true,
         isShort: true,
+        artistId: true,
+        artist: {
+          select: {
+            id: true,
+            artistType: true,
+            stageName: true,
+            profileImage: true,
+            profileOrder: true,
+          },
+        },
         user: {
           select: {
             id: true,
@@ -59,13 +69,11 @@ export async function GET(req: NextRequest) {
       return ApiErrors.notFound("Video not found.");
     }
 
-    const artistId = mainVideo.user.id;
-
     const baseWhere = {
-      userId: artistId,
+      ...(mainVideo.artistId ? { artistId: mainVideo.artistId } : { userId: mainVideo.user.id }),
       id: { not: videoId },
       isApproved: true,
-    };
+    } as const;
 
     const userSelect = {
       id: true,
@@ -92,6 +100,15 @@ export async function GET(req: NextRequest) {
         select: {
           id: true, title: true, url: true, thumbnailUrl: true,
           duration: true, views: true, createdAt: true, isShort: true,
+          artist: {
+            select: {
+              id: true,
+              artistType: true,
+              stageName: true,
+              profileImage: true,
+              profileOrder: true,
+            },
+          },
           user: { select: userSelect },
         },
       }),
@@ -104,6 +121,15 @@ export async function GET(req: NextRequest) {
         select: {
           id: true, title: true, url: true, thumbnailUrl: true,
           duration: true, views: true, createdAt: true, isShort: true,
+          artist: {
+            select: {
+              id: true,
+              artistType: true,
+              stageName: true,
+              profileImage: true,
+              profileOrder: true,
+            },
+          },
           user: { select: userSelect },
         },
       }),

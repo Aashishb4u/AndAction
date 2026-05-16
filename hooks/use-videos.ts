@@ -18,6 +18,13 @@ interface Video {
   isShort: boolean;
   isBookmarked?: boolean;
   bookmarkId?: string | null;
+  artist: {
+    id: string;
+    artistType: string | null;
+    stageName: string | null;
+    profileImage: string | null;
+    profileOrder: number;
+  } | null;
   user: {
     id: string;
     name: string;
@@ -26,7 +33,12 @@ interface Video {
     avatar: string | null;
     image: string | null;
     isArtistVerified: boolean;
-    artist: { id: string; artistType: string } | null;
+    artists?: Array<{
+      id: string;
+      artistType: string | null;
+      stageName: string | null;
+      profileImage: string | null;
+    }>;
   };
 }
 

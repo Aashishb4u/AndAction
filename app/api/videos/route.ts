@@ -30,7 +30,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       10,
     );
     const type = url.searchParams.get("type"); // "shorts" | "videos" | null
-    const artistId = url.searchParams.get("artistId"); // filter by artist
+    const artistId = url.searchParams.get("artistId"); // filter by userId (legacy)
+    const artistProfileId = url.searchParams.get("artistProfileId"); // filter by artist profile (Artist.id)
     const withBookmarks = url.searchParams.get("withBookmarks") === "true"; // NEW 🔥
     const random = url.searchParams.get("random") === "true";
     const artistCategory = url.searchParams.get("category") || "all";
@@ -67,6 +68,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
     // Artist filter (NEW)
     if (artistId) where.userId = artistId;
+    if (artistProfileId) where.artistId = artistProfileId;
 
     // Ensure limit is reasonable
     limit = Math.min(limit, MAX_LIMIT);
@@ -83,6 +85,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       views: true,
       createdAt: true,
       isShort: true,
+      artist: {
+        select: {
+          id: true,
+          artistType: true,
+          stageName: true,
+          profileImage: true,
+          profileOrder: true,
+        },
+      },
       user: {
         select: {
           id: true,
@@ -125,6 +136,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         ? Prisma.sql`AND v."userId" = ${artistId}`
         : Prisma.empty;
 
+      const artistProfileCondition = artistProfileId
+        ? Prisma.sql`AND v."artistId" = ${artistProfileId}`
+        : Prisma.empty;
+
       const categoryJoin =
         artistCategory && artistCategory !== "all"
           ? Prisma.sql`JOIN "users" cu ON v."userId" = cu.id JOIN "artists" ca ON cu.id = ca."userId"`
@@ -163,6 +178,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             WHERE v."isApproved" = true
             ${typeCondition}
             ${artistCondition}
+            ${artistProfileCondition}
             ${categoryCondition}
           )
           SELECT id
@@ -177,6 +193,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
           WHERE v."isApproved" = true
           ${typeCondition}
           ${artistCondition}
+          ${artistProfileCondition}
           ${categoryCondition}
         `,
       ]);

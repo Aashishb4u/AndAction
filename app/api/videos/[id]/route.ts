@@ -36,6 +36,15 @@ export async function GET(
           views: true,
           createdAt: true,
           isShort: true,
+          artist: {
+            select: {
+              id: true,
+              artistType: true,
+              stageName: true,
+              profileImage: true,
+              profileOrder: true,
+            },
+          },
           user: {
             select: {
               id: true,

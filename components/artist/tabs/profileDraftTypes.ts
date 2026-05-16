@@ -12,6 +12,8 @@ export type AboutDraft = {
   pinCode: string;
   state: string;
   city: string;
+  latitude: number | null;
+  longitude: number | null;
   contactNumber: string;
   whatsappNumber: string;
   email: string;
@@ -67,6 +69,14 @@ export function createAboutDraft(artist: Artist): AboutDraft {
     pinCode: extendedArtist.pinCode || "",
     state: (extendedArtist.state || "").toLowerCase(),
     city: (extendedArtist.city || "").toLowerCase(),
+    latitude:
+      typeof extendedArtist.latitude === "number" && Number.isFinite(extendedArtist.latitude)
+        ? extendedArtist.latitude
+        : null,
+    longitude:
+      typeof extendedArtist.longitude === "number" && Number.isFinite(extendedArtist.longitude)
+        ? extendedArtist.longitude
+        : null,
     contactNumber: extendedArtist.contactNumber || extendedArtist.phone || "",
     whatsappNumber:
       extendedArtist.whatsappNumber ||

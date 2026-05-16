@@ -22,6 +22,9 @@ interface AddressAutocompleteProps {
     city: string;
     state: string;
     pinCode: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    source?: "search" | "gps";
   }) => void;
   required?: boolean;
   disabled?: boolean;
@@ -105,6 +108,9 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const handleSelect = (suggestion: LocationSuggestion) => {
     const normalizedState = normalizeState(suggestion.state);
     const normalizedCity = normalizeCity(suggestion.city);
+    const lat = Number(suggestion.lat);
+    const lon = Number(suggestion.lon);
+    const hasCoords = Number.isFinite(lat) && Number.isFinite(lon);
 
     onChange(suggestion.displayName || suggestion.shortAddress);
     onLocationSelect({
@@ -112,6 +118,9 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       city: normalizedCity,
       state: normalizedState,
       pinCode: suggestion.postcode || "",
+      latitude: hasCoords ? lat : null,
+      longitude: hasCoords ? lon : null,
+      source: "search",
     });
 
     setIsOpen(false);
@@ -139,6 +148,9 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             const loc = data.data;
             const normalizedState = normalizeState(loc.state);
             const normalizedCity = normalizeCity(loc.city);
+            const apiLat = Number(loc.lat);
+            const apiLon = Number(loc.lon);
+            const hasCoords = Number.isFinite(apiLat) && Number.isFinite(apiLon);
 
             onChange(loc.formattedAddress || loc.displayName);
             onLocationSelect({
@@ -146,6 +158,9 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
               city: normalizedCity,
               state: normalizedState,
               pinCode: loc.postcode || "",
+              latitude: hasCoords ? apiLat : latitude,
+              longitude: hasCoords ? apiLon : longitude,
+              source: "gps",
             });
           }
         } catch (err) {
