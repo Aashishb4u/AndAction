@@ -661,7 +661,7 @@ function SignInContent() {
                   size="md"
                   className="w-full"
                 >
-                  Sign in with Mobile Number
+                  <span className="btn2">Sign in with Mobile Number</span>
                 </Button>
 
                 <Button

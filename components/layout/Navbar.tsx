@@ -292,7 +292,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                 style={{ width: '40px', height: '40px' }}
               >
                 <Image
-                  src={buildArtishProfileUrl(latestAvatar ?? user.avatar ?? "")}
+                  src={buildArtishProfileUrl(latestAvatar ?? user.avatar ?? user.image ?? "")}
                   alt={user.firstName || "User"}
                   width={40}
                   height={40}

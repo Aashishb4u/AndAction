@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
@@ -84,6 +84,8 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
   // Sub-category multi-tag UI state
   const [subInput, setSubInput] = useState<string>("");
   const [showSubSuggestions, setShowSubSuggestions] = useState(false);
+  const subSuggestionsHistoryPushedRef = useRef(false);
+  const subSuggestionsClosedByPopstateRef = useRef(false);
 
   const genderOptions = [
     { value: "male", label: "Male" },
@@ -206,6 +208,44 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       [field]: value as any,
     }));
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!showSubSuggestions) return;
+
+    const currentState = window.history.state || {};
+    window.history.pushState(
+      { ...currentState, __andactionOverlay: "findartist-subcategory" },
+      "",
+    );
+    subSuggestionsHistoryPushedRef.current = true;
+
+    const onPopState = () => {
+      subSuggestionsClosedByPopstateRef.current = true;
+      setShowSubSuggestions(false);
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [showSubSuggestions]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (showSubSuggestions) return;
+    if (!subSuggestionsHistoryPushedRef.current) return;
+
+    if (subSuggestionsClosedByPopstateRef.current) {
+      subSuggestionsClosedByPopstateRef.current = false;
+      subSuggestionsHistoryPushedRef.current = false;
+      return;
+    }
+
+    const st = window.history.state as any;
+    if (st && st.__andactionOverlay === "findartist-subcategory") {
+      window.history.back();
+    }
+    subSuggestionsHistoryPushedRef.current = false;
+  }, [showSubSuggestions]);
 
   useEffect(() => {
     if (!formData.location) return;

@@ -122,6 +122,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             select: {
                 id: true,
                 eventDate: true,
+                notes: true,
                 eventType: true,
                 eventLocation: true,
                 totalPrice: true,

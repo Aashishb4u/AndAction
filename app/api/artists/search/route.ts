@@ -26,6 +26,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const url = new URL(request.url);
     const searchParams = url.searchParams;
 
+    const lat = parseFloat(searchParams.get("lat") || "");
+    const lng = parseFloat(searchParams.get("lng") || "");
+    const hasCoords =
+      Number.isFinite(lat) &&
+      Number.isFinite(lng) &&
+      lat >= -90 &&
+      lat <= 90 &&
+      lng >= -180 &&
+      lng <= 180;
+
     // --- 1. Pagination Setup ---
     const page = parseInt(searchParams.get("page") || "1", 10);
     let limit = parseInt(
@@ -85,43 +95,116 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     // Count total results for pagination metadata
     const totalArtists = await prisma.artist.count({ where });
 
-    const artists = await prisma.artist.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: {
-        createdAt: "desc",
-      },
-      select: {
-        id: true,
-        profileImage: true,
-        stageName: true,
-        artistType: true,
-        subArtistType: true,
-        user: {
-          select: {
-            avatar: true,
-            firstName: true,
-            lastName: true,
-            image: true,
+    const artists = hasCoords
+      ? await prisma.$queryRaw<
+          Array<{
+            id: string;
+            profileImage: string | null;
+            stageName: string | null;
+            artistType: string | null;
+            subArtistType: string | null;
+            avatar: string | null;
+            firstName: string | null;
+            lastName: string | null;
+            image: string | null;
+            distance: number | null;
+          }>
+        >(
+          (() => {
+            const like = `%${queryTerm}%`;
+            const typeMatches = getArtistTypeMatches(queryTerm);
+
+            const orConditions: Prisma.Sql[] = [
+              Prisma.sql`a."stageName" ILIKE ${like}`,
+              Prisma.sql`a."subArtistType" ILIKE ${like}`,
+              Prisma.sql`a."artistType" ILIKE ${like}`,
+              Prisma.sql`u."firstName" ILIKE ${like}`,
+              Prisma.sql`u."lastName" ILIKE ${like}`,
+            ];
+
+            if (Array.isArray(typeMatches) && typeMatches.length > 0) {
+              orConditions.push(
+                Prisma.sql`a."artistType" IN (${Prisma.join(typeMatches)})`,
+              );
+            }
+
+            const whereSql = Prisma.sql`WHERE (${Prisma.join(orConditions, Prisma.sql` OR `)})`;
+
+            return Prisma.sql`
+              SELECT
+                a.id,
+                a."profileImage",
+                a."stageName",
+                a."artistType",
+                a."subArtistType",
+                u.avatar,
+                u."firstName",
+                u."lastName",
+                u.image,
+                CASE
+                  WHEN u.latitude IS NOT NULL AND u.longitude IS NOT NULL THEN
+                    (
+                      6371 * acos(
+                        cos(radians(${lat})) *
+                        cos(radians(u.latitude)) *
+                        cos(radians(u.longitude) - radians(${lng})) +
+                        sin(radians(${lat})) *
+                        sin(radians(u.latitude))
+                      )
+                    )
+                  ELSE NULL
+                END AS distance
+              FROM "artists" a
+              INNER JOIN "users" u ON a."userId" = u.id
+              ${whereSql}
+              ORDER BY distance ASC NULLS LAST, a.id ASC
+              LIMIT ${limit} OFFSET ${skip}
+            `;
+          })(),
+        )
+      : await prisma.artist.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: {
+            createdAt: "desc",
           },
-        },
-      },
-    });
+          select: {
+            id: true,
+            profileImage: true,
+            stageName: true,
+            artistType: true,
+            subArtistType: true,
+            user: {
+              select: {
+                avatar: true,
+                firstName: true,
+                lastName: true,
+                image: true,
+              },
+            },
+          },
+        });
 
     // Map to minimal info for suggestions
-    const results = artists.map((a) => ({
-      id: a.id,
-      name:
-        a.stageName ||
-        `${a.user?.firstName || ""} ${a.user?.lastName || ""}`.trim(),
-      category: a.artistType,
-      subArtistTypes: (a.subArtistType || "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      image: a.profileImage || a.user?.avatar || a.user?.image || null,
-    }));
+    const results = (artists as any[]).map((a) => {
+      const stageName = a.stageName ?? null;
+      const firstName = hasCoords ? a.firstName ?? null : a.user?.firstName ?? null;
+      const lastName = hasCoords ? a.lastName ?? null : a.user?.lastName ?? null;
+      const avatar = hasCoords ? a.avatar ?? null : a.user?.avatar ?? null;
+      const userImage = hasCoords ? a.image ?? null : a.user?.image ?? null;
+
+      return {
+        id: a.id,
+        name: stageName || `${firstName || ""} ${lastName || ""}`.trim(),
+        category: a.artistType,
+        subArtistTypes: (a.subArtistType || "")
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean),
+        image: a.profileImage || avatar || userImage || null,
+      };
+    });
 
     console.log(
       "Artist search query:",

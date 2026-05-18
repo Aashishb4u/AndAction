@@ -89,7 +89,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           setIsRequestingLocation(false);
           requestInFlightRef.current = false;
         },
-        { enableHighAccuracy: true },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
       );
     },
     [updateLocationState],

@@ -49,6 +49,25 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const historyPushedRef = useRef(false);
+  const closedByPopstateRef = useRef(false);
+
+  const closeDropdown = useCallback(
+    (reason: "ui" | "back") => {
+      setIsOpen(false);
+      setSuggestions([]);
+      setActiveSuggestion(-1);
+
+      if (typeof window === "undefined") return;
+      if (reason === "back") return;
+
+      const st = window.history.state as any;
+      if (st && st.__andactionOverlay === "address-autocomplete") {
+        window.history.back();
+      }
+    },
+    [],
+  );
 
   // Normalize state name from API to match INDIAN_STATES dropdown values
   const normalizeState = (state: string): string => {
@@ -122,9 +141,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       longitude: hasCoords ? lon : null,
       source: "search",
     });
-
-    setIsOpen(false);
-    setSuggestions([]);
+    closeDropdown("ui");
   };
 
   // Use current GPS location
@@ -134,6 +151,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       return;
     }
 
+    closeDropdown("ui");
     setIsFetchingGPS(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -178,7 +196,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           alert("Could not get your location. Please try again.");
         }
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   };
 
@@ -200,7 +218,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       e.preventDefault();
       handleSelect(suggestions[activeSuggestion]);
     } else if (e.key === "Escape") {
-      setIsOpen(false);
+      closeDropdown("ui");
     }
   };
 
@@ -211,12 +229,50 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         wrapperRef.current &&
         !wrapperRef.current.contains(e.target as Node)
       ) {
-        setIsOpen(false);
+        closeDropdown("ui");
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [closeDropdown]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isOpen) return;
+
+    const currentState = window.history.state || {};
+    window.history.pushState(
+      { ...currentState, __andactionOverlay: "address-autocomplete" },
+      "",
+    );
+    historyPushedRef.current = true;
+
+    const onPopState = () => {
+      closedByPopstateRef.current = true;
+      closeDropdown("back");
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [isOpen, closeDropdown]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (isOpen) return;
+    if (!historyPushedRef.current) return;
+
+    if (closedByPopstateRef.current) {
+      closedByPopstateRef.current = false;
+      historyPushedRef.current = false;
+      return;
+    }
+
+    const st = window.history.state as any;
+    if (st && st.__andactionOverlay === "address-autocomplete") {
+      window.history.back();
+    }
+    historyPushedRef.current = false;
+  }, [isOpen]);
 
   // Cleanup debounce on unmount
   useEffect(() => {

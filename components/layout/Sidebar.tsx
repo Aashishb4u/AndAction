@@ -229,7 +229,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               >
                 <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                   <Image
-                    src={buildArtishProfileUrl(latestAvatar ?? user.avatar ?? "")}
+                    src={buildArtishProfileUrl(latestAvatar ?? user.avatar ?? user.image ?? "")}
                     alt={user.firstName || "User"}
                     width={48}
                     height={48}

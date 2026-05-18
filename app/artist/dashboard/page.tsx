@@ -36,12 +36,12 @@ export function formatDate(input: string | Date) {
 type Booking = {
   id: string;
   eventDate: string;
-  eventType: string;
+  eventType: string | null;
   totalPrice: string;
   status: BookingStatus;
   createdAt: string;
-  eventLocation: string;
-  notes: string;
+  eventLocation: string | null;
+  notes: string | null;
   clientPhoneNumber?: string | null;
 
   client: {
@@ -49,10 +49,6 @@ type Booking = {
     lastName: string;
     email: string | null;
     phoneNumber?: string | null;
-  };
-
-  artist: {
-    stageName: string;
   };
 };
 
@@ -210,7 +206,7 @@ export default function ArtistDashboard() {
   ---------------------------------------------------- */
   const getBookings = async () => {
     try {
-      const response = await fetch("/api/bookings");
+      const response = await fetch("/api/artists/dashboard/bookings");
       const json = await response.json();
 
       const bookingsGrouped: BookingStatusMap = {
@@ -382,7 +378,7 @@ export default function ArtistDashboard() {
                       <div className="flex items-start gap-3">
                         <div className="relative h-31 w-22 shrink-0 overflow-hidden rounded-xl border border-[#e6d7c8] sm:h-35 sm:w-25">
                           <Image
-                            src={buildArtishProfileUrl(profile?.profileImage || session?.user?.avatar || "")}
+                            src={buildArtishProfileUrl(profile?.profileImage || "")}
                             alt={profile?.stageName || fullName || "Artist"}
                             fill
                             unoptimized
@@ -518,7 +514,7 @@ export default function ArtistDashboard() {
                   <div key={profile.id} className="w-full shrink-0 snap-start">
                     <div className="relative aspect-[4/5]">
                       <Image
-                        src={buildArtishProfileUrl(profile?.profileImage || session?.user?.avatar || "")}
+                        src={buildArtishProfileUrl(profile?.profileImage || "")}
                         alt={profile?.stageName || fullName || "Artist"}
                         fill
                         unoptimized
@@ -716,10 +712,10 @@ export default function ArtistDashboard() {
                         status={booking.status}
                         clientName={`${booking.client.firstName} ${booking.client.lastName}`}
                         clientPhone={booking.clientPhoneNumber ?? booking.client?.phoneNumber ?? null}
-                        location={booking.eventLocation}
+                        location={booking.eventLocation ?? ""}
                         date={formatDate(booking.eventDate)}
-                        eventType={booking.eventType}
-                        description={booking.notes}
+                        eventType={booking.eventType ?? ""}
+                        description={booking.notes ?? ""}
                         onReject={() => {
                           if (booking.status === "PENDING") {
                             updateBookingStateLocal(booking.id, "DECLINED");
