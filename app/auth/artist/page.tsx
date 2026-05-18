@@ -487,7 +487,16 @@ function ArtistAuthContent() {
         }
 
         try {
-          await updateSession({ role: "artist" });
+          const convertedProfileId =
+            typeof convertData?.data?.artistProfile?.id === "string"
+              ? convertData.data.artistProfile.id
+              : null;
+          await updateSession({
+            update: {
+              role: "artist",
+              artistProfile: convertedProfileId ? { id: convertedProfileId } : null,
+            },
+          } as any);
         } catch (sessionError) {
           console.warn("Session role update failed after conversion:", sessionError);
         }

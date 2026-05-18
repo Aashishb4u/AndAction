@@ -31,8 +31,10 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   React.useEffect(() => {
-    const avatarUrl = (data as any)?.avatarUrl;
-    if (avatarUrl) {
+    const avatarUrlRaw = (data as any)?.avatarUrl;
+    const avatarUrl =
+      typeof avatarUrlRaw === "string" ? avatarUrlRaw.trim() : "";
+    if (avatarUrl && avatarUrl !== "null" && avatarUrl !== "undefined") {
       setPreviewUrl(avatarUrl);
       return;
     }
@@ -228,6 +230,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                       src={previewUrl}
                       alt="Profile"
                       className="w-full h-full object-cover object-center"
+                      onError={() => setPreviewUrl(null)}
                     />
                   ) : (
                     <Image

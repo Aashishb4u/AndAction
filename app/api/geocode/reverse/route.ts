@@ -1,6 +1,90 @@
 import { NextRequest } from "next/server";
 import { successResponse, errorResponse } from "@/lib/api-response";
 
+type AddressComponent = {
+  long_name?: unknown;
+  short_name?: unknown;
+  types?: unknown;
+};
+
+type ReverseGeocodeItem = {
+  formatted_address?: unknown;
+  name?: unknown;
+  address_components?: unknown;
+  geometry?: {
+    location?: { lat?: unknown; lng?: unknown };
+  };
+};
+
+function getComponentTypes(comp: AddressComponent): string[] {
+  return Array.isArray(comp?.types) ? (comp.types as string[]) : [];
+}
+
+function getCompValue(
+  comp: AddressComponent,
+  mode: "long" | "short" = "long",
+): string {
+  const raw = mode === "short" ? comp?.short_name : comp?.long_name;
+  if (raw == null) return "";
+  return String(raw).trim();
+}
+
+function findFirstComponentValue(
+  components: AddressComponent[],
+  wantedTypes: string[],
+  mode: "long" | "short" = "long",
+): string {
+  for (const comp of components) {
+    const types = getComponentTypes(comp);
+    if (wantedTypes.some((t) => types.includes(t))) {
+      const value = getCompValue(comp, mode);
+      if (value) return value;
+    }
+  }
+  return "";
+}
+
+function scoreReverseResult(item: ReverseGeocodeItem): number {
+  const components = Array.isArray(item?.address_components)
+    ? (item.address_components as AddressComponent[])
+    : [];
+
+  const has = (t: string) =>
+    components.some((c) => getComponentTypes(c).includes(t));
+
+  const formatted = String(item?.formatted_address ?? "").trim();
+
+  const score =
+    (has("street_number") ? 6 : 0) +
+    (has("route") ? 5 : 0) +
+    (has("premise") ? 3 : 0) +
+    (has("subpremise") ? 3 : 0) +
+    (has("neighborhood") ? 2 : 0) +
+    (has("sublocality") || has("sublocality_level_1") ? 2 : 0) +
+    (has("postal_code") ? 2 : 0) +
+    Math.min(4, Math.floor(formatted.length / 25));
+
+  return score;
+}
+
+function pickBestReverseResult(results: ReverseGeocodeItem[]): ReverseGeocodeItem {
+  let best = results[0];
+  let bestScore = -1;
+  let bestLen = 0;
+
+  for (const item of results) {
+    const score = scoreReverseResult(item);
+    const formattedLen = String(item?.formatted_address ?? "").trim().length;
+    if (score > bestScore || (score === bestScore && formattedLen > bestLen)) {
+      best = item;
+      bestScore = score;
+      bestLen = formattedLen;
+    }
+  }
+
+  return best;
+}
+
 /**
  * GET /api/geocode/reverse?lat=<lat>&lon=<lon>
  * Reverse geocode coordinates to get address components
@@ -54,35 +138,56 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const item = results[0];
+    const bestItem = pickBestReverseResult(results as ReverseGeocodeItem[]);
 
-    let city = "";
-    let state = "";
-    let postcode = "";
-    let road = "";
-    let suburb = "";
-
-    const components = Array.isArray(item?.address_components)
-      ? item.address_components
+    const components = Array.isArray(bestItem?.address_components)
+      ? (bestItem.address_components as AddressComponent[])
       : [];
-    for (const comp of components) {
-      const types: string[] = Array.isArray(comp?.types) ? comp.types : [];
-      if (!city && types.includes("locality")) city = String(comp.short_name ?? "");
-      if (!state && types.includes("administrative_area_level_1"))
-        state = String(comp.long_name ?? "");
-      if (!postcode && types.includes("postal_code"))
-        postcode = String(comp.long_name ?? comp.short_name ?? "");
-      if (!road && types.includes("route")) road = String(comp.long_name ?? "");
-      if (!suburb && types.includes("sublocality"))
-        suburb = String(comp.long_name ?? comp.short_name ?? "");
-    }
 
-    // Build readable address
-    const parts = [road, suburb, city, state].filter(Boolean);
-    const formattedAddress = parts.join(", ");
+    const streetNumber = findFirstComponentValue(components, ["street_number"], "short");
+    const road = findFirstComponentValue(components, ["route"], "long");
+    const premise = findFirstComponentValue(components, ["premise"], "long");
+    const subpremise = findFirstComponentValue(components, ["subpremise"], "long");
+    const neighborhood = findFirstComponentValue(components, ["neighborhood"], "long");
+    const suburb =
+      findFirstComponentValue(components, ["sublocality_level_1"], "long") ||
+      findFirstComponentValue(components, ["sublocality"], "long");
+    const city =
+      findFirstComponentValue(components, ["locality"], "short") ||
+      findFirstComponentValue(components, ["postal_town"], "short") ||
+      findFirstComponentValue(components, ["administrative_area_level_2"], "short");
+    const district = findFirstComponentValue(
+      components,
+      ["administrative_area_level_2"],
+      "long",
+    );
+    const state = findFirstComponentValue(
+      components,
+      ["administrative_area_level_1"],
+      "long",
+    );
+    const postcode = findFirstComponentValue(components, ["postal_code"], "long");
+    const country = findFirstComponentValue(components, ["country"], "long");
 
-    const displayName = String(item?.formatted_address ?? item?.name ?? "");
-    const resolvedAddress = formattedAddress || displayName;
+    const formattedFromApi = String(bestItem?.formatted_address ?? "").trim();
+    const displayName = String(bestItem?.name ?? bestItem?.formatted_address ?? "").trim();
+
+    const formattedFromParts = [
+      [streetNumber, road].filter(Boolean).join(" "),
+      premise,
+      subpremise,
+      neighborhood,
+      suburb,
+      city,
+      district && district !== city ? district : "",
+      state,
+      postcode,
+      country,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const resolvedAddress = formattedFromApi || formattedFromParts || displayName;
 
     return successResponse(
       {
@@ -91,13 +196,21 @@ export async function GET(req: NextRequest) {
         city,
         state,
         postcode,
+        district,
+        country,
+        road,
+        suburb,
+        streetNumber,
+        premise,
+        subpremise,
+        neighborhood,
         lat:
-          item?.geometry?.location?.lat != null
-            ? String(item.geometry.location.lat)
+          bestItem?.geometry?.location?.lat != null
+            ? String(bestItem.geometry.location.lat)
             : String(lat),
         lon:
-          item?.geometry?.location?.lng != null
-            ? String(item.geometry.location.lng)
+          bestItem?.geometry?.location?.lng != null
+            ? String(bestItem.geometry.location.lng)
             : String(lon),
       },
       "Location found",

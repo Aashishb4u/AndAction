@@ -76,7 +76,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
 
     let fileUrl = "";
     try {
-      const key = `${userId}/${Date.now()}.${extension}`;
+      const key = `${userId}-${Date.now()}.${extension}`;
       fileUrl = await uploadToVPS({ buffer, key, mimeType });
     } catch {
       fileUrl = await saveImageLocally(userId, buffer, extension);

@@ -9,6 +9,7 @@ import ContactPricingDetails from "@/components/artist/profile-setup/ContactPric
 import ProfileReview from "@/components/artist/profile-setup/ProfileReview";
 import VideosSocialMedia from "@/components/artist/profile-setup/VideosSocialMedia";
 import SuccessModal from "@/components/artist/profile-setup/SuccessModal";
+import AdditionalProfileModal from "@/components/artist/profile-setup/AdditionalProfileModal";
 import { useSession } from "next-auth/react";
 import type { ArtistProfileSetupPreferences } from "@/types";
 
@@ -32,6 +33,7 @@ function ProfileSetupPageContent() {
   // proceeding through the normal sequential flow.
   const [editingFromReview, setEditingFromReview] = useState<ProfileSetupStep | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isAddProfileOpen, setIsAddProfileOpen] = useState(false);
   const [didInitFromQuery, setDidInitFromQuery] = useState(false);
   const [isConvertingAccount, setIsConvertingAccount] = useState(false);
   const hasTriggeredConversionRef = useRef(false);
@@ -201,9 +203,27 @@ function ProfileSetupPageContent() {
       }
 
       if (parsed.profileData && typeof parsed.profileData === "object") {
+        const rawArtistProfileId = (parsed.profileData as any)?.artistProfileId;
+        const normalizedArtistProfileId =
+          typeof rawArtistProfileId === "string" &&
+          rawArtistProfileId.trim() &&
+          rawArtistProfileId.trim() !== "undefined" &&
+          rawArtistProfileId.trim() !== "null"
+            ? rawArtistProfileId.trim()
+            : "";
+        const rawAvatarUrl = (parsed.profileData as any)?.avatarUrl;
+        const normalizedAvatarUrl =
+          typeof rawAvatarUrl === "string" &&
+          rawAvatarUrl.trim() &&
+          rawAvatarUrl.trim() !== "undefined" &&
+          rawAvatarUrl.trim() !== "null"
+            ? rawAvatarUrl.trim()
+            : "";
         setProfileData((prev) => ({
           ...prev,
           ...parsed.profileData,
+          artistProfileId: normalizedArtistProfileId,
+          avatarUrl: normalizedAvatarUrl,
           profilePhoto: null,
         }));
       }
@@ -242,8 +262,18 @@ function ProfileSetupPageContent() {
       setProfileData((prev) => ({
         ...prev,
         // Keep restored draft values when present; use profile/session only as fallback.
-        artistProfileId: prev.artistProfileId || profile.id,
-        avatarUrl: prev.avatarUrl || user.avatar || "",
+        artistProfileId:
+          prev.artistProfileId &&
+          prev.artistProfileId !== "undefined" &&
+          prev.artistProfileId !== "null"
+            ? prev.artistProfileId
+            : profile.id,
+        avatarUrl:
+          prev.avatarUrl ||
+          profile.profileImage ||
+          user.avatar ||
+          user.image ||
+          "",
         stageName: prev.stageName || profile.stageName || "",
         artistType: prev.artistType || profile.artistType || "",
         subArtistType: prev.subArtistType || profile.subArtistType || "",
@@ -289,6 +319,49 @@ function ProfileSetupPageContent() {
       }));
     }
   }, [session]);
+
+  useEffect(() => {
+    if (!session?.user?.id || !hasLoadedDraft) return;
+    if (profileData.artistProfileId) return;
+    if (session.user.role !== "artist") return;
+    let cancelled = false;
+
+    const hydrateProfileId = async () => {
+      try {
+        const res = await fetch("/api/artists/profiles", { cache: "no-store" });
+        const json = await res.json().catch(() => null);
+        const firstProfile = json?.success ? json?.data?.profiles?.[0] : null;
+        const firstId =
+          typeof firstProfile?.id === "string" ? firstProfile.id.trim() : "";
+        if (!firstId || cancelled) return;
+
+        setProfileData((prev) => ({
+          ...prev,
+          artistProfileId: prev.artistProfileId || firstId,
+          avatarUrl:
+            prev.avatarUrl ||
+            (typeof firstProfile?.profileImage === "string"
+              ? firstProfile.profileImage
+              : "") ||
+            session.user.avatar ||
+            session.user.image ||
+            "",
+        }));
+      } catch {}
+    };
+
+    hydrateProfileId();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    session?.user?.id,
+    session?.user?.role,
+    session?.user?.avatar,
+    session?.user?.image,
+    hasLoadedDraft,
+    profileData.artistProfileId,
+  ]);
 
   // Pre-fill email from session if available
   useEffect(() => {
@@ -513,33 +586,7 @@ function ProfileSetupPageContent() {
     if (session?.user?.id) {
       localStorage.removeItem(getDraftStorageKey(session.user.id));
     }
-    setCurrentStep("overview");
-    setProfileData({
-      artistProfileId: "",
-      profilePhoto: null,
-      avatarUrl: "",
-      stageName: "",
-      artistType: "",
-      subArtistType: "",
-      achievements: "",
-      yearsOfExperience: "",
-      shortBio: "",
-      performingLanguages: [],
-      performingEventTypes: [],
-      performingStates: [],
-      performingDurationFrom: "",
-      performingDurationTo: "",
-      performingMembers: "",
-      offStageMembers: "",
-      contactNumber: "",
-      whatsappNumber: "",
-      sameAsContact: false,
-      email: "",
-      soloCharges: "",
-      soloDescription: "",
-      backingCharges: "",
-      backingDescription: "",
-    });
+    setIsAddProfileOpen(true);
   };
 
   const renderCurrentStep = () => {
@@ -658,6 +705,10 @@ function ProfileSetupPageContent() {
         isOpen={showSuccessModal}
         onGoToDashboard={handleGoToDashboard}
         onAddAnotherProfile={handleAddAnotherProfile}
+      />
+      <AdditionalProfileModal
+        isOpen={isAddProfileOpen}
+        onClose={() => setIsAddProfileOpen(false)}
       />
     </div>
   );

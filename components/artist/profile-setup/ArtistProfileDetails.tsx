@@ -11,8 +11,8 @@ import Cropper from "react-easy-crop";
 import { Area } from "react-easy-crop";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
-import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 
 interface ArtistProfileDetailsProps {
   data: ArtistProfileSetupData;
@@ -77,8 +77,8 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   preferences,
 }) => {
   const { categories: artistTypes } = useArtistCategories();
-  const { update: updateSession } = useSession();
   const queryClient = useQueryClient();
+  const { data: session, update: updateSession } = useSession();
 
   const [formData, setFormData] = useState({
     profilePhoto: data.profilePhoto || null,
@@ -260,22 +260,18 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       const localPreviewUrl = URL.createObjectURL(file);
       setPreview(localPreviewUrl);
 
-      if (!artistProfileId) {
-        const updatedData = {
-          profilePhoto: file,
-          avatarUrl: localPreviewUrl,
-        };
-
-        setFormData((prev) => ({ ...prev, ...updatedData }));
-        onUpdateData(updatedData);
-        setUploadMessage("Profile photo selected.");
-        setUploading(false);
-        return;
-      }
-
       const formDataUpload = new FormData();
       formDataUpload.append("file", file);
-      formDataUpload.append("artistProfileId", artistProfileId);
+      if (artistProfileId) {
+        formDataUpload.append("artistProfileId", artistProfileId);
+      }
+
+      const optimisticData = {
+        profilePhoto: file,
+        avatarUrl: localPreviewUrl,
+      };
+      setFormData((prev) => ({ ...prev, ...optimisticData }));
+      onUpdateData(optimisticData);
 
       const res = await fetch("/api/media/upload", {
         method: "POST",
@@ -307,19 +303,40 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 
       const updatedData = {
         profilePhoto: file,
-        avatarUrl: imageUrl,
+        avatarUrl:
+          typeof imageUrl === "string" && imageUrl.trim()
+            ? imageUrl
+            : localPreviewUrl,
       };
 
       setFormData((prev) => ({ ...prev, ...updatedData }));
       onUpdateData(updatedData);
       if (typeof imageUrl === "string" && imageUrl.trim()) {
-        await updateSession?.({ avatar: imageUrl, image: imageUrl } as any).catch(
-          () => {},
-        );
         queryClient.invalidateQueries({ queryKey: ["videos"] });
+        try {
+          const profileIdForSession =
+            typeof artistProfileId === "string" && artistProfileId.trim()
+              ? artistProfileId.trim()
+              : session?.user?.artistProfile?.id;
+          await updateSession({
+            update: {
+              avatar: imageUrl,
+              artistProfile: profileIdForSession
+                ? {
+                    ...(session?.user?.artistProfile ?? { id: profileIdForSession }),
+                    id: profileIdForSession,
+                    profileImage: imageUrl,
+                  }
+                : session?.user?.artistProfile ?? null,
+            },
+          } as any);
+        } catch {}
       }
       setUploadMessage(
-        messageFromJson || "Profile photo uploaded successfully.",
+        messageFromJson ||
+          (typeof imageUrl === "string" && imageUrl.trim()
+            ? "Profile photo uploaded successfully."
+            : "Profile photo selected."),
       );
 
       setUploading(false);

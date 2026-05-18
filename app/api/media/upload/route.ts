@@ -107,7 +107,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     if (mimeType.startsWith("image/")) {
       let fileUrl = "";
       try {
-        const key = `${userId}/${Date.now()}.${fileExtension}`;
+        const key = `${userId}-${Date.now()}.${fileExtension}`;
         fileUrl = await uploadToVPS({ buffer, key, mimeType });
       } catch (uploadErr) {
         console.error("VPS image upload failed, using local fallback:", uploadErr);
@@ -124,36 +124,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
         if (existingArtist.profileImage && existingArtist.profileImage !== fileUrl) {
           await deleteFromVPS(existingArtist.profileImage).catch(() => {});
         }
-        const currentUser = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { avatar: true, image: true, email: true, phoneNumber: true },
-        });
-        if (currentUser?.avatar && currentUser.avatar !== fileUrl) {
-          await deleteFromVPS(currentUser.avatar).catch(() => {});
-        }
-        if (
-          currentUser?.image &&
-          currentUser.image !== fileUrl &&
-          currentUser.image !== currentUser.avatar
-        ) {
-          await deleteFromVPS(currentUser.image).catch(() => {});
-        }
 
-        await prisma.$transaction([
-          prisma.artist.update({
-            where: { id: existingArtist.id },
-            data: { profileImage: fileUrl },
-          }),
-          prisma.user.update({
-            where: { id: userId },
-            data: { avatar: fileUrl, image: fileUrl },
-          }),
-        ]);
-
-        await syncAvatarToAdminPanel({
-          email: currentUser?.email,
-          phoneNumber: currentUser?.phoneNumber,
-          avatarUrl: fileUrl,
+        await prisma.artist.update({
+          where: { id: existingArtist.id },
+          data: { profileImage: fileUrl },
         });
       } else {
         const currentUser = await prisma.user.findUnique({
@@ -195,7 +169,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
       return ApiErrors.badRequest("Title and duration are required.");
     }
 
-    const key = `${userId}/${Date.now()}.${fileExtension}`;
+    const key = `${userId}-${Date.now()}.${fileExtension}`;
     const fileUrl = await uploadToVPS({ buffer, key, mimeType });
 
     const artistCheck = await prisma.artist.findFirst({

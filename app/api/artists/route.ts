@@ -360,7 +360,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
     let artists: any[] = [];
 
-    if (hasCoords && !requestedState) {
+    if (hasCoords) {
       const allArtists = await prisma.artist.findMany({
         where,
         select: baseSelect,

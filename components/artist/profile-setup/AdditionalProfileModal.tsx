@@ -316,9 +316,9 @@ export default function AdditionalProfileModal(props: {
       email: session?.user?.email || "",
       contactNumber: session?.user?.phoneNumber || "",
       whatsappNumber: session?.user?.phoneNumber || "",
-      avatarUrl: session?.user?.avatar || "",
+      avatarUrl: "",
     }));
-  }, [isOpen, session?.user?.email, session?.user?.phoneNumber, session?.user?.avatar]);
+  }, [isOpen, session?.user?.email, session?.user?.phoneNumber]);
 
   const stepTitle = useMemo(() => {
     switch (currentStep) {

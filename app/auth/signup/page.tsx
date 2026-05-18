@@ -563,8 +563,8 @@ function SignUpContent() {
                   }
                   disabled={isLoading}
                 >
-                  Sign up with{" "}
-                  {contactType === "phone" ? "Email" : "Mobile Number"}
+                  <span className="btn2">Sign up with{" "}
+                  {contactType === "phone" ? "Email" : "Mobile Number"}</span>
                 </Button>
 
                 <Button
