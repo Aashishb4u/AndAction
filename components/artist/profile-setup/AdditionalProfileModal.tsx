@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import Modal from "@/components/ui/Modal";
 import ArtistProfileDetails from "@/components/artist/profile-setup/ArtistProfileDetails";
@@ -282,6 +282,7 @@ export default function AdditionalProfileModal(props: {
   const [data, setData] = useState<WizardData>(initialData);
   const [preferences, setPreferences] =
     useState<ArtistProfileSetupPreferences | null>(null);
+  const didInitForOpenRef = useRef(false);
 
   useEffect(() => {
     let isActive = true;
@@ -308,15 +309,32 @@ export default function AdditionalProfileModal(props: {
 
   useEffect(() => {
     if (!isOpen) return;
+    if (didInitForOpenRef.current) return;
+    didInitForOpenRef.current = true;
+
     setCurrentStep("artistDetails");
     setSubmitting(false);
     setCreatedProfileId(null);
-    setData((prev) => ({
+    setData({
       ...initialData,
       email: session?.user?.email || "",
       contactNumber: session?.user?.phoneNumber || "",
       whatsappNumber: session?.user?.phoneNumber || "",
       avatarUrl: "",
+    });
+  }, [isOpen, session?.user?.email, session?.user?.phoneNumber]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      didInitForOpenRef.current = false;
+      return;
+    }
+
+    setData((prev) => ({
+      ...prev,
+      email: prev.email || session?.user?.email || "",
+      contactNumber: prev.contactNumber || session?.user?.phoneNumber || "",
+      whatsappNumber: prev.whatsappNumber || session?.user?.phoneNumber || "",
     }));
   }, [isOpen, session?.user?.email, session?.user?.phoneNumber]);
 
