@@ -142,8 +142,6 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   );
   const [subInput, setSubInput] = useState("");
   const [showSubSuggestions, setShowSubSuggestions] = useState(false);
-  const subSuggestionsHistoryPushedRef = useRef(false);
-  const subSuggestionsClosedByPopstateRef = useRef(false);
 
   const selectedSubTypes = filters.subCategory
     ? filters.subCategory.split(",").map((s) => s.trim()).filter(Boolean)
@@ -178,44 +176,6 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
         document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [activeDropdown]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!showSubSuggestions) return;
-
-    const currentState = window.history.state || {};
-    window.history.pushState(
-      { ...currentState, __andactionOverlay: "mobilefilters-subcategory" },
-      "",
-    );
-    subSuggestionsHistoryPushedRef.current = true;
-
-    const onPopState = () => {
-      subSuggestionsClosedByPopstateRef.current = true;
-      setShowSubSuggestions(false);
-    };
-
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [showSubSuggestions]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (showSubSuggestions) return;
-    if (!subSuggestionsHistoryPushedRef.current) return;
-
-    if (subSuggestionsClosedByPopstateRef.current) {
-      subSuggestionsClosedByPopstateRef.current = false;
-      subSuggestionsHistoryPushedRef.current = false;
-      return;
-    }
-
-    const st = window.history.state as any;
-    if (st && st.__andactionOverlay === "mobilefilters-subcategory") {
-      window.history.back();
-    }
-    subSuggestionsHistoryPushedRef.current = false;
-  }, [showSubSuggestions]);
 
   const getFilterLabel = (filterKey: string, value: string) => {
     if (!value) return filterKey.charAt(0).toUpperCase() + filterKey.slice(1);
