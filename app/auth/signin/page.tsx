@@ -4,6 +4,7 @@ import React, { useState, Suspense, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Input, { PasswordInput } from "@/components/ui/Input";
+import PhoneInput from "@/components/ui/PhoneInput";
 import Button from "@/components/ui/Button";
 import {
   signInWithGoogle,
@@ -372,14 +373,25 @@ function SignInContent() {
 
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
-      <div className="flex justify-between items-center mr-4 ml-4 pt-4 md:pt-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
-        <Image
-          src="/logo.png"
-          alt="ANDACTION Logo"
-          className="h-5 w-[180px] object-contain"
-          width={180}
-          height={20}
-        />
+      <div className="flex justify-between items-center px-4 py-3 md:px-20 md:py-4">
+        <div className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="ANDACTION Logo"
+            width={173}
+            height={19}
+            className="block md:hidden object-contain"
+            priority
+          />
+          <Image
+            src="/logo.png"
+            alt="ANDACTION Logo"
+            width={215}
+            height={24}
+            className="hidden md:block object-contain"
+            priority
+          />
+        </div>
 
         {(step === 'input' || signInMethod === 'email') && (
           <button
@@ -422,20 +434,24 @@ function SignInContent() {
             </p>
             <form onSubmit={handlePhoneSubmit} className="space-y-6">
               <div>
-                <Input
-                  id="signin-phone-input"
-                  label="Mobile Number"
-                  type="tel"
+                <label className="secondary-text block mb-1">
+                  Mobile number
+                </label>
+                <PhoneInput
                   placeholder="Enter 10-digit mobile number"
-                  className="bg-[#2D2D2D]"
                   value={phoneNumber}
-                  onChange={(e) => {
-                    setPhoneNumber(e.target.value.replace(/\D/g, ""));
+                  onChange={(value) => {
+                    const next = value.replace(/\D/g, "").slice(0, 10);
+                    setPhoneNumber(next);
                     setInputError("");
                   }}
-                  variant="filled"
+                  onCountryChange={(country) => setCountryCode(country.dialCode)}
                   required
-                  maxLength={10}
+                  disabled={isLoading}
+                  variant="filled"
+                  className="secondary-text"
+                  id="signin-phone-input"
+                  name="signinPhone"
                 />
                 {inputError && (
                   <p className="text-red-400 text-sm mt-2">{inputError}</p>
@@ -478,7 +494,7 @@ function SignInContent() {
                   size="md"
                   className="w-full"
                 >
-                  Sign in with Email
+                  <span className="btn2">Sign in with Email</span>
                 </Button>
 
                 <Button

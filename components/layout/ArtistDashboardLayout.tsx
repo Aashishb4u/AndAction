@@ -65,37 +65,61 @@ const ArtistDashboardLayout: React.FC<ArtistDashboardLayoutProps> = ({
   }, [session?.user?.id]);
 
   return (
-    <div className={`min-h-screen bg-black ${className}`}>
+    <div className={`min-h-screen bg-[#0f0f0f] ${className}`}>
       {/* Navigation Bar */}
       {!hideNavbar && (
-        <nav className="flex items-center justify-between px-6 py-4 container mx-auto">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.png" alt="ANDACTION Logo" width={180} height={180} />
-        </Link>
-
-        {/* Right Side - Profile and Menu */}
-        <div className="flex items-center gap-4">
-          {/* Profile Icon */}
-          <div onClick={toggleSidebar} className="hidden md:block w-10 h-10 rounded-full overflow-hidden border-2 border-border-color cursor-pointer">
+        <nav className="flex items-center justify-between px-4 py-3 lg:px-20 lg:py-4">
+          {/* Logo */}
+          <Link href="/" className="flex items-center">
             <Image
-              src={buildArtishProfileUrl(latestAvatar ?? session?.user?.avatar ?? session?.user?.image ?? '')}
-              alt="Profile"
-              width={40}
-              height={40}
-              unoptimized
-              className="object-cover object-center"
+              src="/logo.png"
+              alt="ANDACTION Logo"
+              width={173}
+              height={19}
+              className="block lg:hidden"
+              priority
             />
-          </div>
+            <Image
+              src="/logo.png"
+              alt="ANDACTION Logo"
+              width={215}
+              height={24}
+              className="hidden lg:block"
+              priority
+            />
+          </Link>
 
-          {/* Menu Button */}
-          <button
-            onClick={toggleSidebar}
-            className="md:hidden p-2 text-white hover:text-primary-pink transition-colors duration-200"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-        </div>
+          {/* Right Side - Profile and Menu */}
+          <div className="flex items-center gap-4">
+            {/* Profile Icon */}
+            <div
+              onClick={toggleSidebar}
+              className="hidden md:block w-10 h-10 rounded-full overflow-hidden border-2 border-border-color cursor-pointer"
+            >
+              <Image
+                src={buildArtishProfileUrl(
+                  latestAvatar ??
+                    session?.user?.avatar ??
+                    session?.user?.image ??
+                    "",
+                )}
+                alt="Profile"
+                width={40}
+                height={40}
+                unoptimized
+                className="object-cover object-center"
+              />
+            </div>
+
+            {/* Menu Button */}
+            <button
+              onClick={toggleSidebar}
+              className="md:hidden flex items-center justify-center w-10 h-10 text-white hover:text-primary-pink transition-colors duration-200"
+              aria-label="Open menu"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          </div>
         </nav>
       )}
 

@@ -196,6 +196,12 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
     router.push("/auth/artist?step=userInfo&convert=true");
   };
 
+  const handleUseNewContactForArtist = async () => {
+    setShowJoinArtistConfirm(false);
+    await signOut({ redirect: false });
+    router.push(createAuthRedirectUrl("/auth/artist", pathname));
+  };
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-[9999] ${
@@ -210,8 +216,8 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
           : undefined
       }
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 lg:h-16">
+      <div className="w-full px-4 py-3 lg:px-20 lg:py-4">
+        <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
@@ -220,6 +226,16 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
                 alt="ANDACTION Logo"
                 width={173}
                 height={19}
+                className="block lg:hidden"
+                priority
+              />
+              <Image
+                src="/logo.png"
+                alt="ANDACTION Logo"
+                width={215}
+                height={24}
+                className="hidden lg:block"
+                priority
               />
             </Link>
           </div>
@@ -303,10 +319,11 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
             ) : (
               <button
                 onClick={handleToggleSidebar}
-                className="p-2 text-text-light-gray hover:text-white transition-colors duration-200"
+                className="flex items-center justify-center text-text-light-gray hover:text-white transition-colors duration-200"
+                aria-label="Open menu"
               >
                 <svg
-                  className="w-8 h-8"
+                  className="w-6 h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -326,7 +343,8 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
           <div className="lg:hidden">
             <button
               onClick={handleToggleSidebar}
-              className=" text-text-light-gray hover:text-white transition-colors duration-200"
+              className="flex items-center justify-center text-text-light-gray hover:text-white transition-colors duration-200"
+              aria-label="Open menu"
             >
               <svg
                 className="w-6 h-6"
@@ -350,11 +368,13 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
         open={showJoinArtistConfirm}
         onOpenChange={setShowJoinArtistConfirm}
         title="Join as an Artist?"
-        description="We will open artist onboarding details first, then continue to profile setup."
-        confirmText="Continue"
-        cancelText="Not now"
+        description="Choose how you want to continue with artist onboarding."
+        confirmText="Continue with same phone/email"
+        secondaryText="Use new phone/email"
+        cancelText="Cancel"
         variant="default"
         onConfirm={handleConfirmJoinAsArtist}
+        onSecondary={handleUseNewContactForArtist}
       />
     </nav>
   );

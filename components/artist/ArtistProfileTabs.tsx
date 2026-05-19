@@ -194,7 +194,7 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
       </div>
 
       {/* Tab Content */}
-      <div className="min-h-125 md:p-5 p-4 pt-0">{renderTabContent()}</div>
+      <div className="min-h-125 md:p-5 p-4 pt-0 pb-24 md:pb-0">{renderTabContent()}</div>
     </div>
   );
 };

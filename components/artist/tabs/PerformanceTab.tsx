@@ -548,12 +548,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex md:justify-end gap-4 items-center md:pt-5 py-2 px-3 fixed md:static bottom-0 left-0 right-0 bg-card md:bg-transparent z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-card px-2 py-3 flex gap-8 items-center z-50 md:static md:mt-6 md:z-auto">
         <Button
           variant="secondary"
           onClick={onReset}
           disabled={isSaving}
-          className="w-full md:w-auto text-xs! md:text-base"
+          className="flex-1"
         >
           <span className="gradient-text">Reset</span>
         </Button>
@@ -562,7 +562,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
           variant="primary"
           onClick={handleSaveClick}
           disabled={isSaving}
-          className="w-full md:w-auto text-xs! md:text-base"
+          className="flex-1"
         >
           {isSaving ? "Saving..." : "Save Changes"}
         </Button>

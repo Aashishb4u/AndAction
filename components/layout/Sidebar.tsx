@@ -134,6 +134,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     router.push("/auth/artist?step=userInfo&convert=true");
   };
 
+  const handleUseNewContactForArtist = async () => {
+    setShowJoinArtistConfirm(false);
+    await signOut({ redirect: false });
+    router.push(createAuthRedirectUrl("/auth/artist", pathname));
+  };
+
   const handleInstallApp = async () => {
     if (isInstalling) return;
 
@@ -259,7 +265,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               {user.role !== "artist" && (
                 <button
                   onClick={handleJoinArtistClick}
-                  className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1 text-[24px] leading-[32px]"
+                  className="block gradient-text hover:opacity-80 transition-opacity duration-200 mt-3 h1"
                 >
                   {isConvertingArtist ? "Joining..." : "Join as an Artist"}
                 </button>
@@ -280,7 +286,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <br />
               <button
                 onClick={handleJoinArtistClick}
-                className="block gradient-text hover:opacity-80 transition-opacity duration-200 h1 text-[24px] leading-[32px]"
+                className="block gradient-text hover:opacity-80 transition-opacity duration-200 h1"
               >
                 Join as an artist
               </button>
@@ -346,12 +352,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <ConfirmDialog
         open={showJoinArtistConfirm}
         onOpenChange={setShowJoinArtistConfirm}
-        title="Join as an Artist?"
-        description="We will open artist onboarding details first, then continue to profile setup."
-        confirmText="Continue"
-        cancelText="Not now"
+        title="Join as an Artist"
+        description="Choose how you want to continue with artist onboarding."
+        confirmText="Continue with same phone/email"
+        secondaryText="Use new phone/email"
+        cancelText="Cancel"
         variant="default"
         onConfirm={handleConfirmJoinAsArtist}
+        onSecondary={handleUseNewContactForArtist}
       />
     </>
   );
