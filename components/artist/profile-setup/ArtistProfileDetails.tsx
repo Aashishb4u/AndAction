@@ -500,14 +500,22 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
               <div className="relative">
                 <div className="w-[150px] h-[200px] bg-card border border-dashed border-border-color rounded-md flex flex-col gap-3 text-center items-center justify-center overflow-hidden">
                   {preview ? (
-                    <Image
-                      src={preview}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                      width={150}
-                      height={200}
-                      unoptimized
-                    />
+                    preview.startsWith("blob:") || preview.startsWith("data:") ? (
+                      <img
+                        src={preview}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Image
+                        src={preview}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                        width={150}
+                        height={200}
+                        unoptimized
+                      />
+                    )
                   ) : (
                     <>
                       <Image
