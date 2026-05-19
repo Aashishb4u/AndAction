@@ -153,7 +153,7 @@ export const signInWithGoogle = async (
   const callbackUrl =
     role === "artist"
       ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
-          baseUrl,
+          'http://andaction.in',
         )}`
       : baseUrl;
   await nextAuthSignIn("google", { callbackUrl, redirect: true });
