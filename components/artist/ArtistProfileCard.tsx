@@ -238,7 +238,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         <div className="flex-1" />
 
         {/* Artist Info (unchanged UI) */}
-        <div className="p-6 space-y-4">
+        <div className="px-4 py-6 space-y-4">
           <div className="flex flex-col items-start gap-3">
             {uploadMessage && (
               <p className="text-green-400 text-sm">{uploadMessage}</p>
@@ -268,9 +268,9 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
               <Button
                 variant="primary"
-                size="sm"
+                size="xs"
                 onClick={onEdit}
-                className="shrink-0 self-start rounded-full px-3 py-1.5"
+                className="shrink-0 self-start rounded-full px-4 py-1.5 md:py-2 btn2"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Profile

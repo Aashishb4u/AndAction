@@ -429,15 +429,24 @@ function SignUpContent() {
 
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
-      <div className="flex justify-between items-center mr-4 ml-4 pt-4 md:pt-0 md:mr-12 md:ml-12 md:mt-6 md:mb-6">
+      <div className="flex justify-between items-center px-4 py-3 md:px-20 md:py-4">
         {/* Logo */}
-        <div>
+        <div className="flex items-center">
           <Image
             src="/logo.png"
             alt="ANDACTION Logo"
-            className="h-5 w-[180px] object-contain"
-            width={180}
-            height={20}
+            width={173}
+            height={19}
+            className="block md:hidden object-contain"
+            priority
+          />
+          <Image
+            src="/logo.png"
+            alt="ANDACTION Logo"
+            width={215}
+            height={24}
+            className="hidden md:block object-contain"
+            priority
           />
         </div>
 

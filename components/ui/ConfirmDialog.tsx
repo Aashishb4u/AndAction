@@ -11,8 +11,10 @@ interface ConfirmDialogProps {
   title: string;
   description: string;
   confirmText?: string;
+  secondaryText?: string;
   cancelText?: string;
   onConfirm: () => void;
+  onSecondary?: () => void;
   onCancel?: () => void;
   variant?: "danger" | "warning" | "default";
   isLoading?: boolean;
@@ -24,8 +26,10 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   title,
   description,
   confirmText = "Confirm",
+  secondaryText,
   cancelText = "Cancel",
   onConfirm,
+  onSecondary,
   onCancel,
   variant = "default",
   isLoading = false,
@@ -37,6 +41,11 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
   const handleConfirm = () => {
     onConfirm();
+  };
+
+  const handleSecondary = () => {
+    onSecondary?.();
+    onOpenChange(false);
   };
 
   const iconColors = {
@@ -78,7 +87,11 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </Dialog.Description>
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div
+            className={`grid gap-3 ${
+              secondaryText ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2"
+            }`}
+          >
             <Button
               variant="outline"
               className="flex-1"
@@ -87,6 +100,16 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             >
               {cancelText}
             </Button>
+            {secondaryText && (
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={handleSecondary}
+                disabled={isLoading}
+              >
+                {secondaryText}
+              </Button>
+            )}
             <Button
               variant="primary"
               className={`flex-1 ${
