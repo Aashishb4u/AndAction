@@ -319,7 +319,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
             ) : (
               <button
                 onClick={handleToggleSidebar}
-                className="flex items-center justify-center text-text-light-gray hover:text-white transition-colors duration-200"
+                className="flex items-center justify-center w-10 h-10 text-text-light-gray hover:text-white transition-colors duration-200"
                 aria-label="Open menu"
               >
                 <svg
@@ -343,7 +343,7 @@ const Navbar: React.FC<NavbarWithSidebarProps> = ({
           <div className="lg:hidden">
             <button
               onClick={handleToggleSidebar}
-              className="flex items-center justify-center text-text-light-gray hover:text-white transition-colors duration-200"
+              className="flex items-center justify-center w-10 h-10 text-text-light-gray hover:text-white transition-colors duration-200"
               aria-label="Open menu"
             >
               <svg

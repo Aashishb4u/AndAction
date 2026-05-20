@@ -34,6 +34,7 @@ function ProfileSetupPageContent() {
   const [editingFromReview, setEditingFromReview] = useState<ProfileSetupStep | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isAddProfileOpen, setIsAddProfileOpen] = useState(false);
+  const [addProfileDraftId, setAddProfileDraftId] = useState<string | null>(null);
   const [didInitFromQuery, setDidInitFromQuery] = useState(false);
   const [isConvertingAccount, setIsConvertingAccount] = useState(false);
   const hasTriggeredConversionRef = useRef(false);
@@ -581,12 +582,35 @@ function ProfileSetupPageContent() {
     router.push("/artist/dashboard");
   };
 
-  const handleAddAnotherProfile = () => {
+  const handleAddAnotherProfile = async () => {
     setShowSuccessModal(false);
     if (session?.user?.id) {
       localStorage.removeItem(getDraftStorageKey(session.user.id));
     }
-    setIsAddProfileOpen(true);
+    const userId = session?.user?.id;
+    if (!userId) {
+      setIsAddProfileOpen(true);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/artists/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          createNewProfile: true,
+        }),
+      });
+
+      const json = await response.json().catch(() => null);
+      const createdId = json?.data?.artistProfile?.id;
+      setAddProfileDraftId(typeof createdId === "string" ? createdId : null);
+    } catch {
+      setAddProfileDraftId(null);
+    } finally {
+      setIsAddProfileOpen(true);
+    }
   };
 
   const renderCurrentStep = () => {
@@ -708,7 +732,11 @@ function ProfileSetupPageContent() {
       />
       <AdditionalProfileModal
         isOpen={isAddProfileOpen}
-        onClose={() => setIsAddProfileOpen(false)}
+        initialArtistProfileId={addProfileDraftId}
+        onClose={() => {
+          setIsAddProfileOpen(false);
+          setAddProfileDraftId(null);
+        }}
       />
     </div>
   );

@@ -22,9 +22,7 @@ export function ServiceWorkerRegistration() {
             if (newWorker) {
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New service worker available, reload to activate
-                  console.log('New version available, reloading...');
-                  window.location.reload();
+                  console.log('New version available');
                 }
               });
             }
