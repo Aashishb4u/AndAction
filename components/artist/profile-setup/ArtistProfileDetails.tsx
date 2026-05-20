@@ -20,6 +20,7 @@ interface ArtistProfileDetailsProps {
   onBack: () => void;
   onUpdateData: (data: Partial<ArtistProfileSetupData>) => void;
   preferences: ArtistProfileSetupPreferences | null;
+  syncUserAvatar?: boolean;
 }
 
 // Helper function to create cropped image
@@ -74,6 +75,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   onBack,
   onUpdateData,
   preferences,
+  syncUserAvatar = true,
 }) => {
   const { categories: artistTypes } = useArtistCategories();
   const queryClient = useQueryClient();
@@ -262,6 +264,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       formDataUpload.append("file", file);
       if (artistProfileId) {
         formDataUpload.append("artistProfileId", artistProfileId);
+        formDataUpload.append("syncUserAvatar", syncUserAvatar ? "true" : "false");
       }
 
       const optimisticData = {
