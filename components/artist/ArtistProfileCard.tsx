@@ -95,6 +95,9 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       if (artist?.id) {
         formData.append("artistProfileId", String(artist.id));
       }
+      const shouldSyncUserAvatar =
+        artist?.profileOrder === 0 || artist?.profileOrder === undefined || artist?.profileOrder === null;
+      formData.append("syncUserAvatar", shouldSyncUserAvatar ? "true" : "false");
 
       const res = await fetch("/api/media/upload", {
         method: "POST",

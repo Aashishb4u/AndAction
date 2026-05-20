@@ -101,6 +101,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
       typeof artistProfileIdRaw === "string" && artistProfileIdRaw.trim()
         ? artistProfileIdRaw.trim()
         : null;
+    const syncUserAvatarRaw = formData.get("syncUserAvatar");
+    const syncUserAvatar =
+      syncUserAvatarRaw === null || syncUserAvatarRaw === undefined
+        ? true
+        : String(syncUserAvatarRaw).toLowerCase() !== "false";
 
     if (!file || !(file instanceof Blob)) {
       return ApiErrors.badRequest("No file uploaded or invalid file.");
@@ -137,10 +142,44 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
           await deleteFromVPS(existingArtist.profileImage).catch(() => {});
         }
 
-        await prisma.artist.update({
-          where: { id: existingArtist.id },
-          data: { profileImage: fileUrl },
-        });
+        if (syncUserAvatar) {
+          const currentUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { avatar: true, image: true, email: true, phoneNumber: true },
+          });
+          if (currentUser?.avatar && currentUser.avatar !== fileUrl) {
+            await deleteFromVPS(currentUser.avatar).catch(() => {});
+          }
+          if (
+            currentUser?.image &&
+            currentUser.image !== fileUrl &&
+            currentUser.image !== currentUser.avatar
+          ) {
+            await deleteFromVPS(currentUser.image).catch(() => {});
+          }
+
+          await prisma.$transaction([
+            prisma.artist.update({
+              where: { id: existingArtist.id },
+              data: { profileImage: fileUrl },
+            }),
+            prisma.user.update({
+              where: { id: userId },
+              data: { avatar: fileUrl, image: fileUrl },
+            }),
+          ]);
+
+          await syncAvatarToAdminPanel({
+            email: currentUser?.email,
+            phoneNumber: currentUser?.phoneNumber,
+            avatarUrl: fileUrl,
+          });
+        } else {
+          await prisma.artist.update({
+            where: { id: existingArtist.id },
+            data: { profileImage: fileUrl },
+          });
+        }
       } else {
         const currentUser = await prisma.user.findUnique({
           where: { id: userId },

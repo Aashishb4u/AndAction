@@ -505,6 +505,7 @@ export default function AdditionalProfileModal(props: {
             onBack={goBack}
             onUpdateData={onUpdateData}
             preferences={preferences}
+            syncUserAvatar={false}
           />
         )}
 
