@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { uploadToVPS, deleteFromVPS } from "@/lib/vps-upload";
+import { randomUUID } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 
@@ -11,6 +12,16 @@ const MAX_IMAGE_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 function normalizeExtension(mimeType: string) {
   const raw = mimeType.split("/")[1] || "bin";
   return raw.split("+")[0].toLowerCase();
+}
+
+function buildImageKey(params: {
+  userId: string;
+  artistProfileId: string | null;
+  extension: string;
+}) {
+  const safeExt = params.extension || "bin";
+  const profilePart = params.artistProfileId ? params.artistProfileId : "user";
+  return `${params.userId}-${profilePart}-${Date.now()}-${randomUUID()}.${safeExt}`;
 }
 
 async function syncAvatarToAdminPanel(params: {
@@ -62,12 +73,13 @@ async function syncAvatarToAdminPanel(params: {
 async function saveImageLocally(
   userId: string,
   buffer: Buffer,
-  extension: string
+  extension: string,
+  artistProfileId: string | null,
 ) {
   const safeExt = ["jpg", "jpeg", "png", "webp", "gif", "svg"].includes(extension)
     ? extension
     : "jpg";
-  const fileName = `${userId}-${Date.now()}.${safeExt}`;
+  const fileName = buildImageKey({ userId, artistProfileId, extension: safeExt });
   const relativeDir = path.join("uploads", "images");
   const absoluteDir = path.join(process.cwd(), "public", relativeDir);
   await mkdir(absoluteDir, { recursive: true });
@@ -107,11 +119,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     if (mimeType.startsWith("image/")) {
       let fileUrl = "";
       try {
-        const key = `${userId}-${Date.now()}.${fileExtension}`;
+        const key = buildImageKey({ userId, artistProfileId, extension: fileExtension });
         fileUrl = await uploadToVPS({ buffer, key, mimeType });
       } catch (uploadErr) {
         console.error("VPS image upload failed, using local fallback:", uploadErr);
-        fileUrl = await saveImageLocally(userId, buffer, fileExtension);
+        fileUrl = await saveImageLocally(userId, buffer, fileExtension, artistProfileId);
       }
 
       // Delete old profile photo from VPS to avoid orphaned files

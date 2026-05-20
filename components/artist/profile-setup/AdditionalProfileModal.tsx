@@ -269,10 +269,11 @@ function IntegrationsStep(props: {
 
 export default function AdditionalProfileModal(props: {
   isOpen: boolean;
+  initialArtistProfileId?: string | null;
   onClose: () => void;
   onCreated?: (profile: { id: string }) => void;
 }) {
-  const { isOpen, onClose, onCreated } = props;
+  const { isOpen, initialArtistProfileId, onClose, onCreated } = props;
   const { data: session } = useSession();
   const userId = session?.user?.id || null;
 
@@ -314,15 +315,16 @@ export default function AdditionalProfileModal(props: {
 
     setCurrentStep("artistDetails");
     setSubmitting(false);
-    setCreatedProfileId(null);
+    setCreatedProfileId(initialArtistProfileId ?? null);
     setData({
       ...initialData,
       email: session?.user?.email || "",
       contactNumber: session?.user?.phoneNumber || "",
       whatsappNumber: session?.user?.phoneNumber || "",
       avatarUrl: "",
+      artistProfileId: initialArtistProfileId ?? "",
     });
-  }, [isOpen, session?.user?.email, session?.user?.phoneNumber]);
+  }, [isOpen, initialArtistProfileId, session?.user?.email, session?.user?.phoneNumber]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -384,47 +386,87 @@ export default function AdditionalProfileModal(props: {
     if (!userId || submitting) return null;
     setSubmitting(true);
     try {
-      const response = await fetch("/api/artists/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          createNewProfile: true,
-          stageName: data.stageName,
-          artistType: data.artistType,
-          subArtistType: data.subArtistType,
-          achievements: data.achievements,
-          yearsOfExperience: data.yearsOfExperience,
-          shortBio: data.shortBio,
-          performingLanguages: data.performingLanguages,
-          performingEventTypes: data.performingEventTypes,
-          performingStates: data.performingStates,
-          performingDurationFrom: data.performingDurationFrom,
-          performingDurationTo: data.performingDurationTo,
-          performingMembers: data.performingMembers,
-          offStageMembers: data.offStageMembers,
-          contactNumber: data.contactNumber,
-          whatsappNumber: data.whatsappNumber,
-          contactEmail: data.email,
-          soloChargesFrom: data.soloCharges,
-          soloChargesTo: null,
-          soloChargesDescription: data.soloDescription,
-          chargesWithBacklineFrom: data.backingCharges,
-          chargesWithBacklineTo: null,
-          chargesWithBacklineDescription: data.backingDescription,
-        }),
-      });
+      const targetProfileId =
+        typeof data.artistProfileId === "string" && data.artistProfileId.trim()
+          ? data.artistProfileId.trim()
+          : null;
+
+      const requestInit: RequestInit = targetProfileId
+        ? {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId,
+              artistProfileId: targetProfileId,
+              stageName: data.stageName,
+              artistType: data.artistType,
+              subArtistType: data.subArtistType,
+              achievements: data.achievements,
+              yearsOfExperience: data.yearsOfExperience,
+              shortBio: data.shortBio,
+              performingLanguage: data.performingLanguages?.join(","),
+              performingEventType: data.performingEventTypes?.join(","),
+              performingStates: data.performingStates?.join(","),
+              performingDurationFrom: data.performingDurationFrom,
+              performingDurationTo: data.performingDurationTo,
+              performingMembers: data.performingMembers,
+              offStageMembers: data.offStageMembers,
+              contactNumber: data.contactNumber,
+              whatsappNumber: data.whatsappNumber,
+              contactEmail: data.email,
+              soloChargesFrom: data.soloCharges,
+              soloChargesTo: null,
+              soloChargesDescription: data.soloDescription,
+              chargesWithBacklineFrom: data.backingCharges,
+              chargesWithBacklineTo: null,
+              chargesWithBacklineDescription: data.backingDescription,
+            }),
+          }
+        : {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId,
+              createNewProfile: true,
+              stageName: data.stageName,
+              artistType: data.artistType,
+              subArtistType: data.subArtistType,
+              achievements: data.achievements,
+              yearsOfExperience: data.yearsOfExperience,
+              shortBio: data.shortBio,
+              performingLanguages: data.performingLanguages,
+              performingEventTypes: data.performingEventTypes,
+              performingStates: data.performingStates,
+              performingDurationFrom: data.performingDurationFrom,
+              performingDurationTo: data.performingDurationTo,
+              performingMembers: data.performingMembers,
+              offStageMembers: data.offStageMembers,
+              contactNumber: data.contactNumber,
+              whatsappNumber: data.whatsappNumber,
+              contactEmail: data.email,
+              soloChargesFrom: data.soloCharges,
+              soloChargesTo: null,
+              soloChargesDescription: data.soloDescription,
+              chargesWithBacklineFrom: data.backingCharges,
+              chargesWithBacklineTo: null,
+              chargesWithBacklineDescription: data.backingDescription,
+            }),
+          };
+
+      const response = await fetch("/api/artists/profile", requestInit);
 
       const json = await response.json();
       if (!response.ok || !json?.success) return null;
 
       const created = json?.data?.artistProfile;
-      if (created?.id) {
-        if (data.profilePhoto) {
+      const createdId =
+        typeof created?.id === "string" ? (created.id as string) : targetProfileId;
+      if (createdId) {
+        if (!targetProfileId && data.profilePhoto) {
           try {
             const formDataUpload = new FormData();
             formDataUpload.append("file", data.profilePhoto);
-            formDataUpload.append("artistProfileId", String(created.id));
+            formDataUpload.append("artistProfileId", String(createdId));
             await fetch("/api/media/upload", {
               method: "POST",
               body: formDataUpload,
@@ -433,8 +475,8 @@ export default function AdditionalProfileModal(props: {
           }
         }
 
-        onCreated?.({ id: created.id });
-        return created.id;
+        onCreated?.({ id: createdId });
+        return createdId;
       }
       return null;
     } catch {
@@ -452,6 +494,7 @@ export default function AdditionalProfileModal(props: {
       size="xl"
       variant="bottom-sheet"
       className="bg-card"
+      closeOnBackdropClick={false}
     >
       <div className="p-4 sm:p-6">
         {currentStep === "artistDetails" && (

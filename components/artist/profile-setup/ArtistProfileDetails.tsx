@@ -12,7 +12,6 @@ import { Area } from "react-easy-crop";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 
 interface ArtistProfileDetailsProps {
   data: ArtistProfileSetupData;
@@ -78,7 +77,6 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
 }) => {
   const { categories: artistTypes } = useArtistCategories();
   const queryClient = useQueryClient();
-  const { data: session, update: updateSession } = useSession();
 
   const [formData, setFormData] = useState({
     profilePhoto: data.profilePhoto || null,
@@ -313,24 +311,6 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       onUpdateData(updatedData);
       if (typeof imageUrl === "string" && imageUrl.trim()) {
         queryClient.invalidateQueries({ queryKey: ["videos"] });
-        try {
-          const profileIdForSession =
-            typeof artistProfileId === "string" && artistProfileId.trim()
-              ? artistProfileId.trim()
-              : session?.user?.artistProfile?.id;
-          await updateSession({
-            update: {
-              avatar: imageUrl,
-              artistProfile: profileIdForSession
-                ? {
-                    ...(session?.user?.artistProfile ?? { id: profileIdForSession }),
-                    id: profileIdForSession,
-                    profileImage: imageUrl,
-                  }
-                : session?.user?.artistProfile ?? null,
-            },
-          } as any);
-        } catch {}
       }
       setUploadMessage(
         messageFromJson ||

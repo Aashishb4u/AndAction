@@ -48,17 +48,24 @@ function calculateDistanceKm(
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  return 6371 * c;
+  const distance = 6371 * c;
+  return Number.isFinite(distance) ? distance : NaN;
 }
 
 function sortArtistsByDistance<T extends { distance: number | null }>(
   artists: T[],
 ): T[] {
   return [...artists].sort((a, b) => {
-    if (a.distance === null && b.distance === null) return 0;
-    if (a.distance === null) return 1;
-    if (b.distance === null) return -1;
-    const distanceDelta = a.distance - b.distance;
+    const aDistance =
+      typeof a.distance === "number" && Number.isFinite(a.distance) ? a.distance : null;
+    const bDistance =
+      typeof b.distance === "number" && Number.isFinite(b.distance) ? b.distance : null;
+
+    if (aDistance === null && bDistance === null) return 0;
+    if (aDistance === null) return 1;
+    if (bDistance === null) return -1;
+
+    const distanceDelta = aDistance - bDistance;
     if (distanceDelta !== 0) return distanceDelta;
     return String((a as { id?: string }).id ?? "").localeCompare(
       String((b as { id?: string }).id ?? ""),
@@ -87,11 +94,17 @@ async function countArtistsInRadius(
       ${verified ? Prisma.sql`AND u."isAccountVerified" = true AND u."isArtistVerified" = true` : Prisma.empty}
       AND (
         6371 * acos(
-          cos(radians(${userLat})) * 
-          cos(radians(u.latitude)) * 
-          cos(radians(u.longitude) - radians(${userLng})) + 
-          sin(radians(${userLat})) * 
-          sin(radians(u.latitude))
+          LEAST(
+            1,
+            GREATEST(
+              -1,
+              cos(radians(${userLat})) * 
+              cos(radians(u.latitude)) * 
+              cos(radians(u.longitude) - radians(${userLng})) + 
+              sin(radians(${userLat})) * 
+              sin(radians(u.latitude))
+            )
+          )
         )
       ) <= ${radius}
   `;
@@ -131,11 +144,17 @@ async function fetchArtistsInRadius(
       u.longitude,
       (
         6371 * acos(
-          cos(radians(${userLat})) * 
-          cos(radians(u.latitude)) * 
-          cos(radians(u.longitude) - radians(${userLng})) + 
-          sin(radians(${userLat})) * 
-          sin(radians(u.latitude))
+          LEAST(
+            1,
+            GREATEST(
+              -1,
+              cos(radians(${userLat})) * 
+              cos(radians(u.latitude)) * 
+              cos(radians(u.longitude) - radians(${userLng})) + 
+              sin(radians(${userLat})) * 
+              sin(radians(u.latitude))
+            )
+          )
         )
       ) AS distance
     FROM "artists" a
@@ -148,11 +167,17 @@ async function fetchArtistsInRadius(
       ${verified ? Prisma.sql`AND u."isAccountVerified" = true AND u."isArtistVerified" = true` : Prisma.empty}
       AND (
         6371 * acos(
-          cos(radians(${userLat})) * 
-          cos(radians(u.latitude)) * 
-          cos(radians(u.longitude) - radians(${userLng})) + 
-          sin(radians(${userLat})) * 
-          sin(radians(u.latitude))
+          LEAST(
+            1,
+            GREATEST(
+              -1,
+              cos(radians(${userLat})) * 
+              cos(radians(u.latitude)) * 
+              cos(radians(u.longitude) - radians(${userLng})) + 
+              sin(radians(${userLat})) * 
+              sin(radians(u.latitude))
+            )
+          )
         )
       ) <= ${radius}
     ORDER BY distance ASC
@@ -168,7 +193,7 @@ async function fetchArtistsInRadius(
     subArtistType: artist.subArtistType,
     shortBio: artist.shortBio,
     yearsOfExperience: artist.yearsOfExperience,
-    distance: Number(artist.distance),
+    distance: Number.isFinite(Number(artist.distance)) ? Number(artist.distance) : null,
     user: {
       id: artist.userId,
       firstName: artist.firstName,
@@ -176,8 +201,8 @@ async function fetchArtistsInRadius(
       avatar: artist.avatar,
       city: artist.city,
       state: artist.state,
-      latitude: Number(artist.latitude),
-      longitude: Number(artist.longitude),
+      latitude: Number.isFinite(Number(artist.latitude)) ? Number(artist.latitude) : null,
+      longitude: Number.isFinite(Number(artist.longitude)) ? Number(artist.longitude) : null,
     },
   }));
 }
@@ -323,14 +348,15 @@ async function fetchArtistsWithProgressiveSearch(
         typeof artist.user.latitude === "number" &&
         typeof artist.user.longitude === "number"
       ) {
+        const distance = calculateDistanceKm(
+          userLat,
+          userLng,
+          artist.user.latitude,
+          artist.user.longitude,
+        );
         return {
           ...artist,
-          distance: calculateDistanceKm(
-            userLat,
-            userLng,
-            artist.user.latitude,
-            artist.user.longitude,
-          ),
+          distance: Number.isFinite(distance) ? distance : null,
         };
       }
 
