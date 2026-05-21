@@ -18,6 +18,42 @@ interface SearchMetadata {
   } | null;
 }
 
+const INDIA_GEO_BOUNDS = {
+  minLat: 6,
+  maxLat: 37.5,
+  minLng: 68,
+  maxLng: 98,
+} as const;
+
+function normalizeIndiaLatLng(
+  latitude: unknown,
+  longitude: unknown,
+): { lat: number; lng: number } | null {
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+
+  const inIndia =
+    lat >= INDIA_GEO_BOUNDS.minLat &&
+    lat <= INDIA_GEO_BOUNDS.maxLat &&
+    lng >= INDIA_GEO_BOUNDS.minLng &&
+    lng <= INDIA_GEO_BOUNDS.maxLng;
+
+  if (inIndia) return { lat, lng };
+
+  const swappedInIndia =
+    lng >= INDIA_GEO_BOUNDS.minLat &&
+    lng <= INDIA_GEO_BOUNDS.maxLat &&
+    lat >= INDIA_GEO_BOUNDS.minLng &&
+    lat <= INDIA_GEO_BOUNDS.maxLng;
+
+  if (swappedInIndia) return { lat: lng, lng: lat };
+
+  return { lat, lng };
+}
+
 function getSearchMessage(strategy: string, radius: number): string {
   switch (strategy) {
     case "nearby":
@@ -82,6 +118,26 @@ async function countArtistsInRadius(
 ): Promise<number> {
   const typeMatches = await getArtistTypeMatches(type);
 
+  const effectiveLatSql = Prisma.sql`CASE
+    WHEN u.latitude BETWEEN ${INDIA_GEO_BOUNDS.minLat} AND ${INDIA_GEO_BOUNDS.maxLat}
+      AND u.longitude BETWEEN ${INDIA_GEO_BOUNDS.minLng} AND ${INDIA_GEO_BOUNDS.maxLng}
+      THEN u.latitude
+    WHEN u.longitude BETWEEN ${INDIA_GEO_BOUNDS.minLat} AND ${INDIA_GEO_BOUNDS.maxLat}
+      AND u.latitude BETWEEN ${INDIA_GEO_BOUNDS.minLng} AND ${INDIA_GEO_BOUNDS.maxLng}
+      THEN u.longitude
+    ELSE u.latitude
+  END`;
+
+  const effectiveLngSql = Prisma.sql`CASE
+    WHEN u.latitude BETWEEN ${INDIA_GEO_BOUNDS.minLat} AND ${INDIA_GEO_BOUNDS.maxLat}
+      AND u.longitude BETWEEN ${INDIA_GEO_BOUNDS.minLng} AND ${INDIA_GEO_BOUNDS.maxLng}
+      THEN u.longitude
+    WHEN u.longitude BETWEEN ${INDIA_GEO_BOUNDS.minLat} AND ${INDIA_GEO_BOUNDS.maxLat}
+      AND u.latitude BETWEEN ${INDIA_GEO_BOUNDS.minLng} AND ${INDIA_GEO_BOUNDS.maxLng}
+      THEN u.latitude
+    ELSE u.longitude
+  END`;
+
   const result = await prisma.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*) as count
     FROM "artists" a
@@ -99,10 +155,10 @@ async function countArtistsInRadius(
             GREATEST(
               -1,
               cos(radians(${userLat})) * 
-              cos(radians(u.latitude)) * 
-              cos(radians(u.longitude) - radians(${userLng})) + 
+              cos(radians(${effectiveLatSql})) * 
+              cos(radians(${effectiveLngSql}) - radians(${userLng})) + 
               sin(radians(${userLat})) * 
-              sin(radians(u.latitude))
+              sin(radians(${effectiveLatSql}))
             )
           )
         )
@@ -124,6 +180,26 @@ async function fetchArtistsInRadius(
   limit: number = 50,
 ) {
   const typeMatches = await getArtistTypeMatches(type);
+
+  const effectiveLatSql = Prisma.sql`CASE
+    WHEN u.latitude BETWEEN ${INDIA_GEO_BOUNDS.minLat} AND ${INDIA_GEO_BOUNDS.maxLat}
+      AND u.longitude BETWEEN ${INDIA_GEO_BOUNDS.minLng} AND ${INDIA_GEO_BOUNDS.maxLng}
+      THEN u.latitude
+    WHEN u.longitude BETWEEN ${INDIA_GEO_BOUNDS.minLat} AND ${INDIA_GEO_BOUNDS.maxLat}
+      AND u.latitude BETWEEN ${INDIA_GEO_BOUNDS.minLng} AND ${INDIA_GEO_BOUNDS.maxLng}
+      THEN u.longitude
+    ELSE u.latitude
+  END`;
+
+  const effectiveLngSql = Prisma.sql`CASE
+    WHEN u.latitude BETWEEN ${INDIA_GEO_BOUNDS.minLat} AND ${INDIA_GEO_BOUNDS.maxLat}
+      AND u.longitude BETWEEN ${INDIA_GEO_BOUNDS.minLng} AND ${INDIA_GEO_BOUNDS.maxLng}
+      THEN u.longitude
+    WHEN u.longitude BETWEEN ${INDIA_GEO_BOUNDS.minLat} AND ${INDIA_GEO_BOUNDS.maxLat}
+      AND u.latitude BETWEEN ${INDIA_GEO_BOUNDS.minLng} AND ${INDIA_GEO_BOUNDS.maxLng}
+      THEN u.latitude
+    ELSE u.longitude
+  END`;
 
   const artists = await prisma.$queryRaw<Array<any>>`
     SELECT 
@@ -149,10 +225,10 @@ async function fetchArtistsInRadius(
             GREATEST(
               -1,
               cos(radians(${userLat})) * 
-              cos(radians(u.latitude)) * 
-              cos(radians(u.longitude) - radians(${userLng})) + 
+              cos(radians(${effectiveLatSql})) * 
+              cos(radians(${effectiveLngSql}) - radians(${userLng})) + 
               sin(radians(${userLat})) * 
-              sin(radians(u.latitude))
+              sin(radians(${effectiveLatSql}))
             )
           )
         )
@@ -172,10 +248,10 @@ async function fetchArtistsInRadius(
             GREATEST(
               -1,
               cos(radians(${userLat})) * 
-              cos(radians(u.latitude)) * 
-              cos(radians(u.longitude) - radians(${userLng})) + 
+              cos(radians(${effectiveLatSql})) * 
+              cos(radians(${effectiveLngSql}) - radians(${userLng})) + 
               sin(radians(${userLat})) * 
-              sin(radians(u.latitude))
+              sin(radians(${effectiveLatSql}))
             )
           )
         )
@@ -344,20 +420,13 @@ async function fetchArtistsWithProgressiveSearch(
   const supplementalArtists = nationwideCandidates
     .filter((artist) => !nearbyIds.has(artist.id))
     .map((artist) => {
-      if (
-        typeof artist.user.latitude === "number" &&
-        typeof artist.user.longitude === "number"
-      ) {
-        const distance = calculateDistanceKm(
-          userLat,
-          userLng,
-          artist.user.latitude,
-          artist.user.longitude,
-        );
-        return {
-          ...artist,
-          distance: Number.isFinite(distance) ? distance : null,
-        };
+      const normalized = normalizeIndiaLatLng(
+        artist.user.latitude,
+        artist.user.longitude,
+      );
+      if (normalized) {
+        const distance = calculateDistanceKm(userLat, userLng, normalized.lat, normalized.lng);
+        return { ...artist, distance: Number.isFinite(distance) ? distance : null };
       }
 
       return {
