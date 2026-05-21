@@ -13,6 +13,42 @@ import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
+const INDIA_GEO_BOUNDS = {
+  minLat: 6,
+  maxLat: 37.5,
+  minLng: 68,
+  maxLng: 98,
+} as const;
+
+function normalizeIndiaLatLng(
+  latitude: unknown,
+  longitude: unknown,
+): { lat: number; lng: number } | null {
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+
+  const inIndia =
+    lat >= INDIA_GEO_BOUNDS.minLat &&
+    lat <= INDIA_GEO_BOUNDS.maxLat &&
+    lng >= INDIA_GEO_BOUNDS.minLng &&
+    lng <= INDIA_GEO_BOUNDS.maxLng;
+
+  if (inIndia) return { lat, lng };
+
+  const swappedInIndia =
+    lng >= INDIA_GEO_BOUNDS.minLat &&
+    lng <= INDIA_GEO_BOUNDS.maxLat &&
+    lat >= INDIA_GEO_BOUNDS.minLng &&
+    lat <= INDIA_GEO_BOUNDS.maxLng;
+
+  if (swappedInIndia) return { lat: lng, lng: lat };
+
+  return { lat, lng };
+}
+
 function parseBudgetFilter(rawBudget: string):
   | { mode: "range"; min: number; max: number }
   | { mode: "min"; min: number }
@@ -367,18 +403,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       });
 
       const withDistance = allArtists.map((artist) => {
-        const artistLat = artist.user.latitude;
-        const artistLng = artist.user.longitude;
+        const normalized = normalizeIndiaLatLng(
+          artist.user.latitude,
+          artist.user.longitude,
+        );
 
-        if (
-          typeof artistLat === "number" &&
-          Number.isFinite(artistLat) &&
-          typeof artistLng === "number" &&
-          Number.isFinite(artistLng)
-        ) {
+        if (normalized) {
           return {
             ...artist,
-            distance: calculateDistanceKm(lat, lng, artistLat, artistLng),
+            distance: calculateDistanceKm(lat, lng, normalized.lat, normalized.lng),
           };
         }
 

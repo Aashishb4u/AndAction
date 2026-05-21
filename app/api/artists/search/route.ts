@@ -113,6 +113,32 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
           (() => {
             const like = `%${queryTerm}%`;
             const typeMatches = getArtistTypeMatches(queryTerm);
+            const indiaBounds = {
+              minLat: 6,
+              maxLat: 37.5,
+              minLng: 68,
+              maxLng: 98,
+            } as const;
+
+            const effectiveLatSql = Prisma.sql`CASE
+              WHEN u.latitude BETWEEN ${indiaBounds.minLat} AND ${indiaBounds.maxLat}
+                AND u.longitude BETWEEN ${indiaBounds.minLng} AND ${indiaBounds.maxLng}
+                THEN u.latitude
+              WHEN u.longitude BETWEEN ${indiaBounds.minLat} AND ${indiaBounds.maxLat}
+                AND u.latitude BETWEEN ${indiaBounds.minLng} AND ${indiaBounds.maxLng}
+                THEN u.longitude
+              ELSE u.latitude
+            END`;
+
+            const effectiveLngSql = Prisma.sql`CASE
+              WHEN u.latitude BETWEEN ${indiaBounds.minLat} AND ${indiaBounds.maxLat}
+                AND u.longitude BETWEEN ${indiaBounds.minLng} AND ${indiaBounds.maxLng}
+                THEN u.longitude
+              WHEN u.longitude BETWEEN ${indiaBounds.minLat} AND ${indiaBounds.maxLat}
+                AND u.latitude BETWEEN ${indiaBounds.minLng} AND ${indiaBounds.maxLng}
+                THEN u.latitude
+              ELSE u.longitude
+            END`;
 
             const orConditions: Prisma.Sql[] = [
               Prisma.sql`a."stageName" ILIKE ${like}`,
@@ -146,10 +172,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
                     (
                       6371 * acos(
                         cos(radians(${lat})) *
-                        cos(radians(u.latitude)) *
-                        cos(radians(u.longitude) - radians(${lng})) +
+                        cos(radians(${effectiveLatSql})) *
+                        cos(radians(${effectiveLngSql}) - radians(${lng})) +
                         sin(radians(${lat})) *
-                        sin(radians(u.latitude))
+                        sin(radians(${effectiveLatSql}))
                       )
                     )
                   ELSE NULL
