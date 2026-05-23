@@ -140,6 +140,19 @@ export async function PUT(request: NextRequest): Promise<NextResponse<any>> {
                 updateData[field] = body[field];
             }
         });
+
+        if (Object.prototype.hasOwnProperty.call(updateData, 'avatar')) {
+            const raw = updateData.avatar;
+            if (raw === null) {
+            } else {
+                const v = String(raw).trim();
+                if (!/^\d+$/.test(v)) {
+                    delete updateData.avatar;
+                } else {
+                    updateData.avatar = v;
+                }
+            }
+        }
         
         // 3. Input Validation Check
         if (Object.keys(updateData).length === 0) {

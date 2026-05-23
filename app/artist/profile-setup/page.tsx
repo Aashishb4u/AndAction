@@ -272,8 +272,6 @@ function ProfileSetupPageContent() {
         avatarUrl:
           prev.avatarUrl ||
           profile.profileImage ||
-          user.avatar ||
-          user.image ||
           "",
         stageName: prev.stageName || profile.stageName || "",
         artistType: prev.artistType || profile.artistType || "",
@@ -344,8 +342,6 @@ function ProfileSetupPageContent() {
             (typeof firstProfile?.profileImage === "string"
               ? firstProfile.profileImage
               : "") ||
-            session.user.avatar ||
-            session.user.image ||
             "",
         }));
       } catch {}
@@ -358,8 +354,6 @@ function ProfileSetupPageContent() {
   }, [
     session?.user?.id,
     session?.user?.role,
-    session?.user?.avatar,
-    session?.user?.image,
     hasLoadedDraft,
     profileData.artistProfileId,
   ]);
@@ -457,14 +451,8 @@ function ProfileSetupPageContent() {
       console.log("Artist Profile Created Successfully:", data);
 
       const updatedArtistProfile = data?.data?.artistProfile ?? null;
-      const avatarToUse =
-        (profileData as any).avatarUrl &&
-        (profileData as any).avatarUrl.trim() !== ""
-          ? (profileData as any).avatarUrl
-          : (session?.user?.avatar ?? null);
 
       await update({
-        avatar: avatarToUse,
         artistProfile: updatedArtistProfile,
         isArtistVerified: true,
       });

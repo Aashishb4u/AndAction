@@ -104,7 +104,7 @@ const mapArtistData = (artist: any): Artist => ({
       artist.user?.lastName ?? null,
     ),
   location: (artist.user?.state || "").trim(),
-  thumbnail: artist.profileImage || artist.user.avatar || "/avatars/default.jpg",
+  thumbnail: artist.profileImage || "/avatars/default.jpg",
   videoUrl: mockVideoUrl,
   distance: artist.distance !== undefined ? artist.distance : null,
 });

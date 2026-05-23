@@ -36,7 +36,7 @@ const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
       creatorId: artistProfile?.id,
       category: artistProfile?.artistType || "",
       groupId,
-      avatar: artistProfile?.profileImage || v.user.avatar || v.user.image,
+      avatar: artistProfile?.profileImage || "",
       videoUrl: v.url,
       thumbnail: v.thumbnailUrl,
       description: "",

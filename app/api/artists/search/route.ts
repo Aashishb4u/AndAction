@@ -217,8 +217,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       const stageName = a.stageName ?? null;
       const firstName = hasCoords ? a.firstName ?? null : a.user?.firstName ?? null;
       const lastName = hasCoords ? a.lastName ?? null : a.user?.lastName ?? null;
-      const avatar = hasCoords ? a.avatar ?? null : a.user?.avatar ?? null;
-      const userImage = hasCoords ? a.image ?? null : a.user?.image ?? null;
 
       return {
         id: a.id,
@@ -228,7 +226,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
           .split(",")
           .map((s: string) => s.trim())
           .filter(Boolean),
-        image: a.profileImage || avatar || userImage || null,
+        image: a.profileImage || null,
       };
     });
 
