@@ -45,13 +45,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
     const fetchLatest = async () => {
       try {
+        if (user.role === "artist") {
+          const res = await fetch("/api/artists/profiles", { cache: "no-store" });
+          if (!res.ok) return;
+          const json = await res.json().catch(() => null);
+          const profiles = json?.data?.profiles;
+          const first = Array.isArray(profiles) ? profiles[0] : null;
+          const profileImage =
+            first && typeof first.profileImage === "string"
+              ? first.profileImage.trim()
+              : "";
+          if (!cancelled) setLatestAvatar(profileImage || null);
+          return;
+        }
+
         const res = await fetch("/api/users/profile", { cache: "no-store" });
         if (!res.ok) return;
         const json = await res.json().catch(() => null);
         const avatar = json?.data?.avatar;
-        if (!cancelled && typeof avatar === "string") {
-          setLatestAvatar(avatar);
-        }
+        if (!cancelled && typeof avatar === "string") setLatestAvatar(avatar);
       } catch {}
     };
 

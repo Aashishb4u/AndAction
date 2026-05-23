@@ -51,7 +51,7 @@ export default function ShortDetailsPage() {
           artist: {
             id: v.user?.artist?.id,
             name: getArtishName(v.user.name, v.user.firstName, v.user.lastName),
-            avatar: v.user.avatar || v.user.image,
+            avatar: v.artist?.profileImage || v.user?.artists?.[0]?.profileImage || "",
             verified: v.user.isArtistVerified,
           },
         });

@@ -102,11 +102,7 @@ export default function VideosPage() {
           category: artistProfile?.artistType || "",
           isBookmarked: v.isBookmarked || false,
           bookmarkId: v.bookmarkId || null,
-          creatorImage:
-            artistProfile?.profileImage ||
-            v.user.avatar ||
-            v.user.image ||
-            undefined,
+          creatorImage: artistProfile?.profileImage || undefined,
           artistType: resolveArtistTypeLabel(artistProfile?.artistType),
           artistId: artistProfile?.id || "",
         };

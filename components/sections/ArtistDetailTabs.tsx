@@ -305,7 +305,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         creatorId: artistProfile?.id || artist.id,
         category: resolveArtistTypeLabel(artistProfile?.artistType || ""),
         userId: s.user?.id || "",
-        avatar: artistProfile?.profileImage || s.user?.avatar || s.user?.image || "",
+        avatar: artistProfile?.profileImage || "",
         videoUrl: s.url,
         thumbnail: s.thumbnailUrl,
         description: s.description || "",
@@ -1046,10 +1046,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 "Unknown Artist"
               }
               creatorImage={
-                video.artist?.profileImage ||
-                video.user?.avatar ||
-                video.user?.image ||
-                ""
+                video.artist?.profileImage || ""
               }
               thumbnail={video.thumbnailUrl}
               videoUrl={video.url}

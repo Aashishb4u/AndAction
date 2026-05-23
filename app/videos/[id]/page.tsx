@@ -79,10 +79,7 @@ export default function VideoDetailsPage() {
             name:
               mainArtistProfile?.stageName ||
               getArtishName(v.user.name, v.user.firstName, v.user.lastName),
-            avatar:
-              mainArtistProfile?.profileImage ||
-              v.user.avatar ||
-              v.user.image,
+            avatar: mainArtistProfile?.profileImage || "",
             verified: v.user.isArtistVerified,
           },
         });
@@ -101,11 +98,7 @@ export default function VideoDetailsPage() {
               videoUrl: rv.url,
               isBookmarked: rv.isBookmarked,
               bookmarkId: rv.bookmarkId,
-              creatorImage:
-                relatedArtistProfile?.profileImage ||
-                rv.user.avatar ||
-                rv.user.image ||
-                undefined,
+              creatorImage: relatedArtistProfile?.profileImage || undefined,
               artistId: relatedArtistProfile?.id || "",
               artistType: relatedArtistProfile?.artistType || "",
             };

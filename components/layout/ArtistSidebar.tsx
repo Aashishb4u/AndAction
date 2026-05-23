@@ -40,13 +40,16 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
 
     const fetchLatest = async () => {
       try {
-        const res = await fetch('/api/users/profile', { cache: 'no-store' });
+        const res = await fetch('/api/artists/profiles', { cache: 'no-store' });
         if (!res.ok) return;
         const json = await res.json().catch(() => null);
-        const avatar = json?.data?.avatar;
-        if (!cancelled && typeof avatar === 'string') {
-          setLatestAvatar(avatar);
-        }
+        const profiles = json?.data?.profiles;
+        const first = Array.isArray(profiles) ? profiles[0] : null;
+        const profileImage =
+          first && typeof first.profileImage === 'string'
+            ? first.profileImage.trim()
+            : '';
+        if (!cancelled) setLatestAvatar(profileImage || null);
       } catch {}
     };
 
@@ -119,7 +122,7 @@ const ArtistSidebar: React.FC<ArtistSidebarProps> = ({ isOpen, onClose }) => {
   const displayName =
     artist?.stageName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
   const displayRole = artist?.artistType || user?.role || 'Artist';
-  const avatar = buildArtishProfileUrl(latestAvatar ?? user?.avatar ?? user?.image ?? '');
+  const avatar = buildArtishProfileUrl(latestAvatar ?? '');
 
   return (
     <>

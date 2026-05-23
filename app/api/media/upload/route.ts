@@ -4,8 +4,6 @@ import { ApiErrors, successResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { uploadToVPS, deleteFromVPS } from "@/lib/vps-upload";
 import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 
 const MAX_IMAGE_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 
@@ -24,69 +22,6 @@ function buildImageKey(params: {
   return `${params.userId}-${profilePart}-${Date.now()}-${randomUUID()}.${safeExt}`;
 }
 
-async function syncAvatarToAdminPanel(params: {
-  email?: string | null;
-  phoneNumber?: string | null;
-  avatarUrl: string;
-}) {
-  const adminBase =
-    (process.env.ADMIN_API_BASE_URL ||
-      process.env.NEXT_PUBLIC_ADMIN_BASE_URL ||
-      "https://admin.andaction.in")
-      .trim()
-      .replace(/\/+$/, "");
-
-  const vpsSecret = (process.env.VPS_UPLOAD_SECRET || "").trim();
-  const publicSecret = (process.env.PUBLIC_UPLOAD_SECRET || "").trim();
-  const secrets = Array.from(
-    new Set([vpsSecret, publicSecret].filter((s) => typeof s === "string" && s)),
-  );
-  if (secrets.length === 0) return;
-
-  const email = typeof params.email === "string" ? params.email.trim() : "";
-  const phoneNumber =
-    typeof params.phoneNumber === "string" ? params.phoneNumber.trim() : "";
-  const avatarUrl = params.avatarUrl?.trim();
-  if (!avatarUrl) return;
-  if (!email && !phoneNumber) return;
-
-  for (const secret of secrets) {
-    try {
-      const res = await fetch(`${adminBase}/api/media/sync-avatar`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-upload-secret": secret,
-        },
-        body: JSON.stringify({
-          email: email || null,
-          phoneNumber: phoneNumber || null,
-          avatarUrl,
-        }),
-      });
-      if (res.ok) return;
-    } catch {
-    }
-  }
-}
-
-async function saveImageLocally(
-  userId: string,
-  buffer: Buffer,
-  extension: string,
-  artistProfileId: string | null,
-) {
-  const safeExt = ["jpg", "jpeg", "png", "webp", "gif", "svg"].includes(extension)
-    ? extension
-    : "jpg";
-  const fileName = buildImageKey({ userId, artistProfileId, extension: safeExt });
-  const relativeDir = path.join("uploads", "images");
-  const absoluteDir = path.join(process.cwd(), "public", relativeDir);
-  await mkdir(absoluteDir, { recursive: true });
-  await writeFile(path.join(absoluteDir, fileName), buffer);
-  return `/${relativeDir.replace(/\\/g, "/")}/${fileName}`;
-}
-
 export async function POST(request: NextRequest): Promise<NextResponse<any>> {
   const session = await auth();
   if (!session?.user?.id) return ApiErrors.unauthorized();
@@ -101,11 +36,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
       typeof artistProfileIdRaw === "string" && artistProfileIdRaw.trim()
         ? artistProfileIdRaw.trim()
         : null;
-    const syncUserAvatarRaw = formData.get("syncUserAvatar");
-    const syncUserAvatar =
-      syncUserAvatarRaw === null || syncUserAvatarRaw === undefined
-        ? true
-        : String(syncUserAvatarRaw).toLowerCase() !== "false";
 
     if (!file || !(file instanceof Blob)) {
       return ApiErrors.badRequest("No file uploaded or invalid file.");
@@ -122,87 +52,28 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     }
 
     if (mimeType.startsWith("image/")) {
-      let fileUrl = "";
-      try {
-        const key = buildImageKey({ userId, artistProfileId, extension: fileExtension });
-        fileUrl = await uploadToVPS({ buffer, key, mimeType });
-      } catch (uploadErr) {
-        console.error("VPS image upload failed, using local fallback:", uploadErr);
-        fileUrl = await saveImageLocally(userId, buffer, fileExtension, artistProfileId);
+      if (!artistProfileId) {
+        return ApiErrors.badRequest("artistProfileId is required for image uploads.");
       }
 
-      // Delete old profile photo from VPS to avoid orphaned files
-      if (artistProfileId) {
-        const existingArtist = await prisma.artist.findFirst({
-          where: { id: artistProfileId, userId },
-          select: { id: true, profileImage: true },
-        });
-        if (!existingArtist) return ApiErrors.notFound("Artist profile not found.");
-        if (existingArtist.profileImage && existingArtist.profileImage !== fileUrl) {
-          await deleteFromVPS(existingArtist.profileImage).catch(() => {});
-        }
+      const key = buildImageKey({ userId, artistProfileId, extension: fileExtension });
+      const fileUrl = await uploadToVPS({ buffer, key, mimeType });
 
-        if (syncUserAvatar) {
-          const currentUser = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { avatar: true, image: true, email: true, phoneNumber: true },
-          });
-          if (currentUser?.avatar && currentUser.avatar !== fileUrl) {
-            await deleteFromVPS(currentUser.avatar).catch(() => {});
-          }
-          if (
-            currentUser?.image &&
-            currentUser.image !== fileUrl &&
-            currentUser.image !== currentUser.avatar
-          ) {
-            await deleteFromVPS(currentUser.image).catch(() => {});
-          }
+      const existingArtist = await prisma.artist.findFirst({
+        where: { id: artistProfileId, userId },
+        select: { id: true, profileImage: true },
+      });
 
-          await prisma.$transaction([
-            prisma.artist.update({
-              where: { id: existingArtist.id },
-              data: { profileImage: fileUrl },
-            }),
-            prisma.user.update({
-              where: { id: userId },
-              data: { avatar: fileUrl, image: fileUrl },
-            }),
-          ]);
+      if (!existingArtist) return ApiErrors.notFound("Artist profile not found.");
 
-          await syncAvatarToAdminPanel({
-            email: currentUser?.email,
-            phoneNumber: currentUser?.phoneNumber,
-            avatarUrl: fileUrl,
-          });
-        } else {
-          await prisma.artist.update({
-            where: { id: existingArtist.id },
-            data: { profileImage: fileUrl },
-          });
-        }
-      } else {
-        const currentUser = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { avatar: true, image: true, email: true, phoneNumber: true },
-        });
-        if (currentUser?.avatar) {
-          await deleteFromVPS(currentUser.avatar).catch(() => {});
-        }
-        if (currentUser?.image && currentUser.image !== currentUser.avatar) {
-          await deleteFromVPS(currentUser.image).catch(() => {});
-        }
-
-        await prisma.user.update({
-          where: { id: userId },
-          data: { avatar: fileUrl, image: fileUrl },
-        });
-
-        await syncAvatarToAdminPanel({
-          email: currentUser?.email,
-          phoneNumber: currentUser?.phoneNumber,
-          avatarUrl: fileUrl,
-        });
+      if (existingArtist.profileImage && existingArtist.profileImage !== fileUrl) {
+        await deleteFromVPS(existingArtist.profileImage).catch(() => {});
       }
+
+      await prisma.artist.update({
+        where: { id: existingArtist.id },
+        data: { profileImage: fileUrl },
+      });
 
       return successResponse(
         { imageUrl: fileUrl },

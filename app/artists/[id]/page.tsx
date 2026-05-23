@@ -131,7 +131,7 @@ export default function ArtistDetailPage() {
           category: a.artistType,
           subCategory: [a.subArtistType],
           location: `${a.user.state || ""}`,
-          image: a.profileImage || a.user.avatar,
+          image: a.profileImage || "/avatars/default.jpg",
 
           bio: a.shortBio || "",
           yearsOfExperience: a.yearsOfExperience || 0,

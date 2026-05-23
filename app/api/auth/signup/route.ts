@@ -83,6 +83,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     // Hash password only if provided (email signups)
     const hashedPassword = password ? await hashPassword(password) : null;
 
+    const rawAvatar = avatar === null || avatar === undefined ? "" : String(avatar).trim();
+    const safeAvatar = /^\d+$/.test(rawAvatar) ? rawAvatar : null;
+
     // Create user
     const newUser = await prisma.user.create({
       data: {
@@ -94,7 +97,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
         lastName,
         city: city || null,
         state: state || null,
-        avatar: avatar ? String(avatar) : null,
+        avatar: safeAvatar,
         role: 'user' as UserRole,
         isAccountVerified: true, // OTP flow verified earlier
         isArtistVerified: false,
