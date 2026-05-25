@@ -24,7 +24,7 @@ interface ArtistSectionProps {
   className?: string;
 }
 
-const MAX_VISIBLE = 11; // 11 artists + 1 "View All" card = 12 total
+const MAX_VISIBLE = 12; // Show 12 artists total
 
 const ArtistSection: React.FC<ArtistSectionProps> = ({
   title,
@@ -289,45 +289,7 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
                   />
                 ))}
 
-                {/* View All card as the last card in the scroll */}
-                {hasMore && (
-                  <button
-                    onClick={handleViewAll}
-                    className="relative flex-shrink-0 w-[150px] h-[225px] md:w-[200px] md:h-[300px] rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 flex flex-col items-center justify-center gap-3 group"
-                    style={{
-                      backgroundColor: '#1B1B1B',
-                      border: '1px solid var(--border-color)',
-                    }}
-                  >
-                    {/* Gradient background on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary-pink/10 to-primary-orange/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
 
-                    {/* Arrow circle */}
-                    <div className="relative z-10 w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-primary-pink flex items-center justify-center group-hover:bg-primary-pink/20 transition-all duration-300">
-                      <svg
-                        className="w-6 h-6 md:w-7 md:h-7 text-primary-pink transition-transform duration-300 group-hover:translate-x-0.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </div>
-
-                    {/* Label */}
-                    <span className="relative z-10 text-sm md:text-base font-semibold gradient-text">
-                      View All
-                    </span>
-                    <span className="relative z-10 text-xs text-text-gray">
-                      {artists.length}+ artists
-                    </span>
-                  </button>
-                )}
               </>
             )}
           </div>
