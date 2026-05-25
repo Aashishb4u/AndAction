@@ -62,10 +62,10 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         className={`md:bg-card relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer ${className}`}
         onClick={handleClick}
       >
-        <div className="flex py-4 gap-4 items-start">
+        <div className="flex py-2 px-3 gap-4 items-start">
           {/* Artist Image */}
           <div
-            className="relative w-32 aspect-[2/3] rounded-xl overflow-hidden flex-shrink-0"
+            className="relative w-[100px] h-[140px] rounded-lg overflow-hidden flex-shrink-0"
             style={{ backgroundColor: "#111" }}
           >
             <Image
@@ -83,11 +83,11 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
             <div className="flex items-center justify-between gap-2">
               {/* Left: Title + Desc (stacked) */}
               <div className="flex flex-col min-w-0">
-                <h3 className="btn1 text-white artist-name-multiline leading-tight">
+                <h2 className="btn1 text-white artist-name-multiline leading-tight">
                   {artist.name}
-                </h3>
+                </h2>
 
-                <p className="secondary-text text-text-gray">
+                <p className="secondary-text text-text-gray font-poppins font-normal text-base leading-6">
                   {artist.category}
               {normalizedLocation && ` | ${normalizedLocation}`}
                 </p>

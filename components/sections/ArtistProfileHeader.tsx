@@ -109,7 +109,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
             src={buildArtishProfileUrl(artist.image)}
             alt={artist.name || "artist"}
             fill
-            className="object-cover"
+            className="object-cover border-0 outline-0"
             priority
           />
 

@@ -325,6 +325,16 @@ export default function ArtistDashboard() {
     session?.user?.lastName ?? ""
   }`.trim();
 
+  const formatPhoneForDisplay = (rawPhone?: string | null) => {
+    const digits = String(rawPhone ?? "").replace(/\D/g, "");
+    if (!digits) return "";
+    return digits.length === 10 ? `+91 ${digits}` : `+${digits}`;
+  };
+
+  const contactDisplay = session?.user?.email?.trim()
+    ? session.user.email.trim()
+    : formatPhoneForDisplay(session?.user?.phoneNumber);
+
   const displayArtistType = (() => {
     const rawType = artist?.artistType?.trim() || "";
     if (!rawType) return "";
@@ -375,8 +385,8 @@ export default function ArtistDashboard() {
                 return (
                   <div key={profile.id} className="w-full shrink-0 snap-start">
                     <div className="rounded-xl border border-border-color bg-card p-3.5 sm:p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="relative h-31 w-22 shrink-0 overflow-hidden rounded-xl border border-[#e6d7c8] sm:h-35 sm:w-25">
+                      <div className="flex items-start gap-2.5">
+                        <div className="relative h-[140px] w-[100px] shrink-0 overflow-hidden rounded-[8px]">
                           <Image
                             src={buildArtishProfileUrl(profile?.profileImage || "")}
                             alt={profile?.stageName || fullName || "Artist"}
@@ -386,26 +396,28 @@ export default function ArtistDashboard() {
                           />
                         </div>
 
-                        <div className="min-w-0 flex-1">
-                          <h2 className="truncate text-lg font-semibold leading-tight text-white sm:text-xl">
-                            {profile?.stageName || fullName}
-                          </h2>
-                          <p className="truncate text-sm text-text-gray sm:text-base">
-                            {session?.user?.email}
-                          </p>
-                          <p className="mt-1 truncate text-sm sm:text-base">{profileArtistType}</p>
-
-                          <div className="mt-2 w-full sm:mt-3">
-                            <Button
-                              onClick={() => router.push(`/artist/profile?profileId=${profile.id}`)}
-                              variant="secondary"
-                              size="sm"
-                              className="w-full min-w-0 rounded-full border-[1.5px] border-border-color px-3 py-2 text-sm"
-                            >
-                              <Pencil className="mr-2 h-4 w-4 shrink-0 text-primary-orange" />
-                              <span className="truncate gradient-text">Edit Profile</span>
-                            </Button>
+                        <div className="min-w-0 flex-1 flex flex-col justify-between gap-3">
+                          <div className="min-w-0">
+                            <h2 className="truncate text-lg font-semibold leading-tight text-white">
+                              {profile?.stageName || fullName}
+                            </h2>
+                            <p className="mt-1 truncate text-base font-normal leading-6 text-text-gray">
+                              {contactDisplay || "Contact not added"}
+                            </p>
+                            <p className="mt-1 truncate text-base font-normal leading-6 text-text-gray">
+                              {profileArtistType}
+                            </p>
                           </div>
+
+                          <Button
+                            onClick={() => router.push(`/artist/profile?profileId=${profile.id}`)}
+                            variant="secondary"
+                            size="sm"
+                            className="w-full min-w-0 rounded-full border-[1.5px] border-border-color px-3 py-2 text-sm"
+                          >
+                            <Pencil className="mr-2 h-4 w-4 shrink-0 text-primary-orange" />
+                            <span className="truncate gradient-text">Edit Profile</span>
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -483,15 +495,15 @@ export default function ArtistDashboard() {
 
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <span className="text-xl font-bold text-white sm:text-2xl">{profileProgress}%</span>
-                  <div className="text-[10px] text-text-gray">Completed</div>
+                  <span className="text-[24px] leading-[100%] font-bold text-white">{profileProgress}%</span>
+                  <div className="text-[10px] leading-[100%] text-text-gray">Completed</div>
                 </div>
               </div>
             </div>
 
             <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-semibold text-white sm:text-xl">Profile Progress</h3>
-              <p className="mt-1 text-sm text-text-gray sm:text-base">Your overall profile progress is showing here.</p>
+              <h3 className="text-[24px] leading-8 font-semibold text-white">Profile Progress</h3>
+              <p className="mt-1 text-[14px] leading-5 text-text-gray">Your overall profile progress is showing here.</p>
             </div>
           </div>
 
@@ -534,11 +546,9 @@ export default function ArtistDashboard() {
                         <div className="flex items-center gap-2 mb-3">
                           <Image src="/icons/phone.svg" width={16} height={16} alt="" />
                           <p className="text-xs">
-                            {(() => {
-                              const digits = String(profile?.contactNumber ?? session?.user?.phoneNumber ?? "").replace(/\D/g, "");
-                              if (!digits) return "Phone not added";
-                              return digits.length === 10 ? `+91 ${digits}` : `+${digits}`;
-                            })()}
+                            {session?.user?.email?.trim()
+                              ? session.user.email.trim()
+                              : formatPhoneForDisplay(profile?.contactNumber ?? session?.user?.phoneNumber) || "Contact not added"}
                           </p>
                         </div>
 
@@ -630,15 +640,15 @@ export default function ArtistDashboard() {
               </svg>
 
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-white">{profileProgress}%</span>
-                <span className="text-[10px] text-text-gray">Completed</span>
+                <span className="text-[24px] leading-[100%] font-bold text-white">{profileProgress}%</span>
+                <span className="text-[10px] leading-[100%] text-text-gray">Completed</span>
               </div>
             </div>
 
-            <h3 className="text-white font-semibold mb-2">
+            <h3 className="text-[24px] leading-8 font-semibold mb-2 text-white">
               Profile Progress
             </h3>
-            <p className="text-text-gray text-sm">
+            <p className="text-[14px] leading-5 text-text-gray">
               Your overall profile progress is showing here.
             </p>
           </div>
