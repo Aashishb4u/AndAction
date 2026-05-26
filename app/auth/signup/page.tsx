@@ -10,6 +10,7 @@ import Checkbox from "@/components/ui/Checkbox";
 import PhoneInput from "@/components/ui/PhoneInput";
 import OTPInput from "@/components/ui/OTPInput";
 import { signUp, getRedirectUrl, signInWithGoogle, signInWithFacebook } from "@/lib/auth";
+import { maskPhone } from "@/lib/utils";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { INDIAN_STATES } from "@/lib/constants";
@@ -635,7 +636,7 @@ function SignUpContent() {
                 <div className="flex items-center gap-2">
                   <span className="text-text-gray">
                     {contactType === "phone"
-                      ? `${phone.slice(0, 2)}******${phone.slice(-3)}`
+                      ? maskPhone(phone)
                       : `${email.slice(0, 2)}****@${email.split("@")[1]}`}
                   </span>{" "}
                   <button

@@ -117,7 +117,7 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
               Profile setup
             </h1>
             <p className="h1 mt-6">
-              Hello{savedFirstName ? `, ${savedFirstName}` : ""} are you ready to Setup your profile
+              Hello{savedFirstName ? ` ${savedFirstName},` : ","} are you ready to setup your profile
             </p>
           </div>
 

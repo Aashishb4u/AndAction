@@ -121,7 +121,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
               variant="outline"
               size="sm"
               onClick={onReject}
-              className="min-w-30 flex-1 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+              className="min-w-30 flex-1 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
             >
               <X className="w-4 h-4 mr-2 shrink-0" />
               <span className="truncate">Reject</span>

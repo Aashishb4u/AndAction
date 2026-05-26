@@ -87,7 +87,7 @@ const Modal: React.FC<ModalProps> = ({
         `}
       >
         {showCloseButton && title && (
-          <div className={`border-b border-border-color px-8 py-6 ${headerClassName}`}>
+          <div className={`border-b border-border-color md:px-6 px-4 py-6 ${headerClassName}`}>
             <div className='flex justify-between items-center'>
               <div>
                 <h2 className='text-white h1'>{title}</h2>

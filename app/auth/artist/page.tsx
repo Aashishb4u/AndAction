@@ -866,9 +866,7 @@ function ArtistAuthContent() {
                 <div className="flex items-center gap-2">
                   <span className="text-text-gray section-text">
                     {contactType === "phone"
-                      ? `${countryCode.replace("+", "")}******${phone.slice(
-                          -3,
-                        )}`
+                      ? `${countryCode} ${maskPhone(phone)}`
                       : `${email.slice(0, 2)}****@${email.split("@")[1]}`}
                   </span>
                   <button
