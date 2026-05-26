@@ -83,7 +83,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     }
 
     return successResponse({ imageUrl: fileUrl }, "Image uploaded successfully.");
-  } catch {
+  } catch (error) {
+    console.error("Error uploading image:", error);
     return ApiErrors.internalError("Unexpected error during image upload.");
   }
 }
