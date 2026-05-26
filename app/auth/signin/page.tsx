@@ -15,6 +15,7 @@ import {
 import Image from "next/image";
 import { signIn, getSession } from "next-auth/react";
 import OTPInput from "@/components/ui/OTPInput";
+import { maskPhone } from "@/lib/utils";
 
 type SignInMethod = "phone" | "email";
 type SignInStep = "input" | "otp" | "password";
@@ -535,7 +536,7 @@ function SignInContent() {
           <div>
             <div className="flex items-center gap-2 mb-6">
               <span className="text-text-gray">
-                {countryCode} {phoneNumber}
+                {countryCode} {maskPhone(phoneNumber)}
               </span>
               <button
                 type="button"

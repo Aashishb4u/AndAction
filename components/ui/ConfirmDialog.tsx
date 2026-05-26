@@ -88,17 +88,16 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
           {/* Actions */}
           <div
-            className={`grid gap-3 ${
-              secondaryText ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2"
-            }`}
+            className={`grid gap-3 grid-cols-1`}
           >
             <Button
-              variant="outline"
-              className="flex-1"
-              onClick={handleCancel}
+              variant="primary"
+              className={`flex-1 ${variant === "danger" ? "!bg-red-600 hover:!bg-red-700" : ""
+                }`}
+              onClick={handleConfirm}
               disabled={isLoading}
             >
-              {cancelText}
+              {isLoading ? "Processing..." : confirmText}
             </Button>
             {secondaryText && (
               <Button
@@ -111,14 +110,12 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               </Button>
             )}
             <Button
-              variant="primary"
-              className={`flex-1 ${
-                variant === "danger" ? "!bg-red-600 hover:!bg-red-700" : ""
-              }`}
-              onClick={handleConfirm}
+              variant="outline"
+              className="flex-1"
+              onClick={handleCancel}
               disabled={isLoading}
             >
-              {isLoading ? "Processing..." : confirmText}
+              {cancelText}
             </Button>
           </div>
         </Dialog.Content>

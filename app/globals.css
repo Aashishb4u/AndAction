@@ -365,6 +365,15 @@ button:focus {
   animation: buttonRipple 0.6s ease-out;
 }
 
+/* Disable ripple for elements with .no-ripple */
+.no-ripple::after {
+  display: none !important;
+}
+
+.no-ripple:active::after {
+  display: none !important;
+}
+
 @keyframes buttonRipple {
   0% {
     opacity: 0.35;

@@ -130,3 +130,18 @@ export function getArtishName(
   if (lastName) return lastName;
   return "Unknown Artist";
 }
+
+/**
+ * Mask a phone number preserving the first 2 and last 3 digits.
+ * Removes non-digit characters before masking.
+ */
+export function maskPhone(phone: string): string {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length <= 4) return digits;
+  const first = digits.slice(0, 2);
+  const last = digits.slice(-3);
+  const middleLength = Math.max(3, digits.length - 5);
+  const middle = "*".repeat(middleLength);
+  return `${first}${middle}${last}`;
+}

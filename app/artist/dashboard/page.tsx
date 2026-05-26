@@ -413,7 +413,7 @@ export default function ArtistDashboard() {
                             onClick={() => router.push(`/artist/profile?profileId=${profile.id}`)}
                             variant="secondary"
                             size="sm"
-                            className="w-full min-w-0 rounded-full border-[1.5px] border-border-color px-3 py-2 text-sm"
+                            className="w-full min-w-0 rounded-full border-[1.5px] border-border-color px-3 py-2 text-sm no-ripple"
                           >
                             <Pencil className="mr-2 h-4 w-4 shrink-0 text-primary-orange" />
                             <span className="truncate gradient-text">Edit Profile</span>
@@ -556,7 +556,7 @@ export default function ArtistDashboard() {
                           onClick={() => router.push(`/artist/profile?profileId=${profile.id}`)}
                           variant="secondary"
                           size="sm"
-                          className="w-full flex items-center justify-center border-[1.5px] border-border-color"
+                          className="w-full flex items-center justify-center border-[1.5px] border-border-color no-ripple"
                         >
                           <Pencil className="w-4 h-4 mr-2 text-primary-orange" />
                           <span className="gradient-text">Edit Profile</span>
@@ -707,7 +707,7 @@ export default function ArtistDashboard() {
                 status.charAt(0) + status.slice(1).toLowerCase();
 
               return (
-                <section key={status} className="space-y-6">
+                <section key={status} className="space-y-3">
                   <h2 className="text-xl font-semibold text-white sm:text-2xl">
                     {sectionTitle}
                     <span className="ml-3 text-sm text-gray-400">
