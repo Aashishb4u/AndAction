@@ -150,11 +150,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
             if (Array.isArray(typeMatches) && typeMatches.length > 0) {
               orConditions.push(
-                Prisma.sql`a."artistType" IN (${Prisma.join(typeMatches)})`,
+                Prisma.sql`a."artistType" IN (${Prisma.join(typeMatches as any)})`,
               );
             }
 
-            const whereSql = Prisma.sql`WHERE (${Prisma.join(orConditions, Prisma.sql` OR `)})`;
+            const whereSql = Prisma.sql`WHERE (${Prisma.join(orConditions as any, " OR ")})`;
 
             return Prisma.sql`
               SELECT

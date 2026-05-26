@@ -8,6 +8,7 @@ import LoadingSpinner from "@/components/ui/Loading";
 import { buildArtishProfileUrl, getArtishName } from "@/lib/utils";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { useLocation } from "@/components/providers/location-provider";
 import {
   findCategoryLabel,
   normalizeArtistCategoryValue,
@@ -33,6 +34,36 @@ type SearchArtist = {
   categoryValue: string;
   subArtistTypes: string[];
   image: string;
+};
+
+const isValidLocation = (location: LocationParams | null | undefined) => {
+  return (
+    !!location &&
+    typeof location.lat === "number" &&
+    Number.isFinite(location.lat) &&
+    Math.abs(location.lat) <= 90 &&
+    typeof location.lng === "number" &&
+    Number.isFinite(location.lng) &&
+    Math.abs(location.lng) <= 180
+  );
+};
+
+const parseStoredLocation = (value: string | null): LocationParams | null => {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value) as { lat?: number; lng?: number };
+    if (
+      typeof parsed.lat === "number" &&
+      Number.isFinite(parsed.lat) &&
+      typeof parsed.lng === "number" &&
+      Number.isFinite(parsed.lng)
+    ) {
+      return { lat: parsed.lat, lng: parsed.lng };
+    }
+  } catch {
+    return null;
+  }
+  return null;
 };
 
 const fetchArtists = async ({
@@ -70,40 +101,35 @@ export default function MobileSearchPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [pageLocation, setPageLocation] = useState<LocationParams | null>(null);
+  const {
+    location: providerLocation,
+    isLocationResolved,
+    requestLocation,
+  } = useLocation();
   const { categories, categoriesWithAll } = useArtistCategories();
   const router = useRouter();
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const fallbackLocation = useMemo(() => {
+    if (typeof window === "undefined") return null;
 
     const urlParams = new URLSearchParams(window.location.search);
     const latFromUrl = parseFloat(urlParams.get("lat") || "");
     const lngFromUrl = parseFloat(urlParams.get("lng") || "");
 
-    if (Number.isFinite(latFromUrl) && Number.isFinite(lngFromUrl)) {
-      setPageLocation({ lat: latFromUrl, lng: lngFromUrl });
-      return;
+    if (
+      Number.isFinite(latFromUrl) &&
+      Number.isFinite(lngFromUrl) &&
+      Math.abs(latFromUrl) <= 90 &&
+      Math.abs(lngFromUrl) <= 180
+    ) {
+      return { lat: latFromUrl, lng: lngFromUrl };
     }
 
-    const cachedLocation = sessionStorage.getItem("userLocationCoords");
-    if (!cachedLocation) return;
-
-    try {
-      const parsed = JSON.parse(cachedLocation) as { lat?: number; lng?: number };
-
-      if (
-        typeof parsed.lat === "number" &&
-        Number.isFinite(parsed.lat) &&
-        typeof parsed.lng === "number" &&
-        Number.isFinite(parsed.lng)
-      ) {
-        setPageLocation({ lat: parsed.lat, lng: parsed.lng });
-      }
-    } catch {
-      setPageLocation(null);
-    }
+    return parseStoredLocation(sessionStorage.getItem("userLocationCoords"));
   }, []);
+
+  const effectiveLocation =
+    isValidLocation(providerLocation) ? providerLocation : fallbackLocation;
 
   const {
     data,
@@ -113,9 +139,9 @@ export default function MobileSearchPage() {
     isFetchingNextPage,
     isError,
   } = useInfiniteQuery({
-      queryKey: ["artists", debouncedSearch, pageLocation?.lat ?? null, pageLocation?.lng ?? null],
+      queryKey: ["artists", debouncedSearch, effectiveLocation?.lat ?? null, effectiveLocation?.lng ?? null],
       queryFn: ({ pageParam }) =>
-        fetchArtists({ pageParam, query: debouncedSearch, location: pageLocation }),
+        fetchArtists({ pageParam, query: debouncedSearch, location: effectiveLocation }),
       initialPageParam: 1,
       getNextPageParam: (lastPage, allPages) => {
         return lastPage.length === 10 ? allPages.length + 1 : undefined;
@@ -219,10 +245,24 @@ export default function MobileSearchPage() {
     setSearch(e.target.value);
   };
 
+  const showLocationUnavailableMessage = isLocationResolved && !effectiveLocation;
+
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-white flex flex-col">
       {/* Top Bar */}
       <div className="p-4 pb-2 mt-2 flex flex-col">
+        {showLocationUnavailableMessage && (
+          <div className="mb-3 rounded-xl border border-[#333] bg-[#111] px-4 py-3 text-sm text-gray-300">
+            Location access is unavailable. Search still works, but results may be less relevant.
+            <button
+              type="button"
+              onClick={() => requestLocation(true)}
+              className="ml-2 underline text-white"
+            >
+              Enable location
+            </button>
+          </div>
+        )}
         <div className="relative w-full ">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
             {/* Fix 3 - when i type smthg the search icon must become white only when i type smthg in search box */}
@@ -348,9 +388,9 @@ export default function MobileSearchPage() {
                     type: cat.value,
                   });
 
-                  if (pageLocation) {
-                    params.set("lat", String(pageLocation.lat));
-                    params.set("lng", String(pageLocation.lng));
+                  if (effectiveLocation) {
+                    params.set("lat", String(effectiveLocation.lat));
+                    params.set("lng", String(effectiveLocation.lng));
                   }
 
                   router.push(`/artists?${params.toString()}`);
