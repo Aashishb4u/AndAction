@@ -457,13 +457,13 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
               <div className="bg-gradient-to-r from-primary-pink to-primary-orange h-1 rounded-full w-1/4"></div>
             </div>
 
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3">
               <div className="flex-shrink-0">
                 <Image
                   src="/icons/user.svg"
                   alt="Artist Profile"
-                  width={32}
-                  height={32}
+                  width={24}
+                  height={24}
                 />
               </div>
               <div className="text-left">
@@ -481,21 +481,21 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
             {/* Profile Photo Upload */}
             <div className="flex justify-center">
               <div className="relative">
-                <div className="w-[150px] h-[200px] bg-card border border-dashed border-border-color rounded-md flex flex-col gap-3 text-center items-center justify-center overflow-hidden">
+                  <div className="w-[132px] h-[197px] bg-card border border-dashed border-border-color rounded-md flex flex-col gap-3 text-center items-center justify-center overflow-hidden">
                   {preview ? (
-                    preview.startsWith("blob:") || preview.startsWith("data:") ? (
-                      <img
-                        src={preview}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Image
-                        src={preview}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                        width={150}
-                        height={200}
+                      preview.startsWith("blob:") || preview.startsWith("data:") ? (
+                        <img
+                          src={preview}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Image
+                          src={preview}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                          width={132}
+                          height={197}
                         unoptimized
                       />
                     )
@@ -708,7 +708,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                       onUpdateData({ subArtistType: csv });
                     }
                   }}
-                  className="flex-1 bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-text-gray"
+                  className="flex-1 bg-transparent focus:outline-none text-base text-white placeholder-text-gray px-0 py-0"
                 />
               </div>
 
@@ -882,7 +882,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       </div>
 
       {/* Bottom Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color px-5 md:px-0 py-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0F0F0F] border-t border-border-color px-5 md:px-0 py-4">
         <div className="max-w-2xl mx-auto">
           <Button
             variant="primary"

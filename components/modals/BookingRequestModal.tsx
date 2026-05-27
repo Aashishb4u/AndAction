@@ -29,7 +29,7 @@ export interface BookingFormData {
   eventDate: string;
   time: string;
   note: string;
-  totalPrice: number | "";
+  // totalPrice (budget) removed from UI — handled by caller/defaults
 }
 
 const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
@@ -49,7 +49,6 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
     eventDate: "",
     time: "",
     note: "",
-    totalPrice: "",
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof BookingFormData, string>>>({});
@@ -124,9 +123,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
     if (!formData.eventType) newErrors.eventType = "Event type is required";
     if (!formData.eventDate) newErrors.eventDate = "Event date is required";
     if (!formData.time) newErrors.time = "Time slot is required";
-    if (formData.totalPrice === "") {
-      newErrors.totalPrice = "Budget is required";
-    }
+    // budget removed from form; no totalPrice validation here
 
     // Validate mobile number format
     if (
@@ -157,7 +154,6 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
         eventDate: "",
         time: "",
         note: "",
-        totalPrice: "",
       });
       setErrors({});
     }
@@ -174,7 +170,6 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
       eventDate: "",
       time: "",
       note: "",
-      totalPrice: "",
     });
     setErrors({});
     onClose();
@@ -202,7 +197,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
     >
       <form onSubmit={handleSubmit} className="flex flex-col h-full">
         {/* Scrollable Content */}
-        <div className="flex-1 md:px-8 px-4 md:py-6 py-4 space-y-6 overflow-y-auto md:max-h-[calc(100vh-300px)] max-h-[calc(90vh-180px)]">
+        <div className="flex-1 md:px-8 px-4 md:py-6 py-4 space-y-4 overflow-y-auto md:max-h-[calc(100vh-300px)] max-h-[calc(90vh-180px)]">
           {/* Name Fields */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <Input
@@ -300,18 +295,7 @@ const BookingRequestModal: React.FC<BookingRequestModalProps> = ({
               required
             />
           </div>
-          <div className="relative">
-            <Input
-              label="Budget*"
-              placeholder="Enter budget"
-              value={formData.totalPrice}
-              onChange={(e) => handleInputChange("totalPrice", e.target.value)}
-              type="number"
-              min={0}
-              error={errors.totalPrice}
-              required
-            />
-          </div>
+          {/* Budget removed per request */}
 
           {/* Note */}
           <div className="relative">

@@ -75,7 +75,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   `;
 
   const variantClasses = {
-    filled: 'bg-[#2D2D2D] border border-border-color focus:border-primary-pink',
+    filled: 'bg-[#1B1B1B] border border-border-color focus:border-primary-pink',
     outlined: 'bg-transparent border border-border-color focus:border-primary-pink'
   };
 
@@ -88,14 +88,14 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
       )}
 
       <div className="relative">
-        <div className={`phone-input ${baseClasses} ${variantClasses[variant]} ${error ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/50' : ''} flex items-center overflow-hidden`}>
+        <div className={`phone-input ${baseClasses} ${variantClasses[variant]} ${error ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/50' : ''} flex items-center`}>
           {/* Country Selector */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               disabled={disabled}
-              className="flex items-center gap-2 pr-2 border-r border-[#404040] mr-2 hover:bg-[#404040] md:px-1 py-1 transition-colors duration-200 rounded-none"
+              className="flex items-center gap-2 pr-2 border-r border-[#404040] mr-2 hover:bg-[#404040] md:px-1 py-1 transition-colors duration-200 rounded-none bg-transparent"
             >
               <span className="flex items-center justify-center" style={{ width: '17px', height: '17px', fontSize: '17px' }}>{selectedCountry.flag}</span>
               <span className="text-white text-sm">{selectedCountry.dialCode}</span>
@@ -106,7 +106,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
 
             {/* Dropdown */}
             {isDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1 w-64 bg-[#2D2D2D] border border-[#404040] rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1 w-64 bg-[#1B1B1B] border border-[#404040] rounded-lg shadow-lg z-[9999] max-h-60 overflow-y-auto">
                 {countries.map((country) => (
                   <button
                     key={country.code}

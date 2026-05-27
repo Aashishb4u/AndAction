@@ -677,7 +677,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               className="p-4 md:bg-background bg-card border rounded-xl"
               style={{ borderColor: "#232323" }}
             >
-              <h3 className="text-text-gray secondary-text mb-2">Bio</h3>
+              <h3 className="text-text-gray  mb-2">Bio</h3>
               <p
                 ref={bioRef}
                 className={`leading-relaxed secondary-grey-text whitespace-pre-line ${isBioExpanded ? "" : "line-clamp-4"}`}
@@ -705,7 +705,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             className="p-4 md:bg-background bg-card border rounded-xl"
             style={{ borderColor: "#232323" }}
           >
-            <h3 className="text-text-gray secondary-text mb-2">
+            <h3 className="text-text-gray  mb-2">
               Years of experience
             </h3>
             <p className="secondary-grey-text">
@@ -744,14 +744,14 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             className="p-4 md:bg-background bg-card border rounded-xl"
             style={{ borderColor: "#232323" }}
           >
-            <h3 className="text-text-gray secondary-text mb-2">
+            <h3 className="text-text-gray  mb-2">
               Sub-Artist Type
             </h3>
             <div className="flex flex-wrap gap-1.5">
               {artistSubTypes.map((type: string, index: number) => (
                 <span
                   key={`${type}-${index}`}
-                  className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
+                  className="px-3 py-1.5 text-white rounded-full border border-border-color  font-medium bg-background"
                 >
                   {type}
                 </span>
@@ -770,21 +770,18 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             className="p-4 md:bg-background bg-card border rounded-xl"
             style={{ borderColor: "#232323" }}
           >
-            <h3 className="text-text-gray secondary-text mb-2">
+            <h3 className="text-text-gray mb-2">
               Achievements / Awards
             </h3>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="space-y-2">
               {artist.achievements
                 .filter(
                   (a: string) => a && a.trim() && a.toLowerCase() !== "n/a",
                 )
                 .map((achievement: string, index: number) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1.5 text-white rounded-full border border-border-color secondary-text font-medium bg-background"
-                  >
+                  <p key={index} className="text-sm text-white leading-6">
                     {achievement}
-                  </span>
+                  </p>
                 ))}
             </div>
           </div>
@@ -859,12 +856,12 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           <>
             {hasPricingSection && (
               <div
-                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                className="md:bg-background bg-card border rounded-lg p-4"
                 style={{ borderColor: "#232323" }}
               >
                 {(hasSoloCharges || !!artist.soloChargesDescription?.trim()) && (
                   <div className={hasBacklineCharges || !!artist.chargesWithBacklineDescription?.trim() ? "mb-6" : ""}>
-                    <h3 className="text-text-gray secondary-text mb-1">Solo Charges</h3>
+                    <h3 className="text-text-gray mb-1">Solo Charges</h3>
                     {hasSoloCharges && (
                       <div className="text-white mb-1">
                         Starting from ₹ {artist.soloChargesFrom}
@@ -878,7 +875,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
                 {(hasBacklineCharges || !!artist.chargesWithBacklineDescription?.trim()) && (
                   <div>
-                    <h3 className="text-text-gray secondary-text mb-1">Charges with backline</h3>
+                    <h3 className="text-text-gray mb-1">Charges with backline</h3>
                     {hasBacklineCharges && (
                       <div className="text-white mb-1">
                         Starting from ₹ {artist.chargesWithBacklineFrom}
@@ -900,10 +897,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 <div className="space-y-4">
                   {hasDuration && (
                     <div>
-                      <h4 className="text-text-gray secondary-text mb-1">
+                      <h4 className="text-text-gray  mb-1">
                         Performing duration
                       </h4>
-                      <p className="text-white text-sm">
+                      <p className="text-white mb-1">
                         {artist.performingDurationFrom || ""}
                         {artist.performingDurationFrom && artist.performingDurationTo
                           ? " - "
@@ -918,10 +915,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
                   {hasPerformingMembers && (
                     <div>
-                      <h4 className="text-text-gray secondary-text mb-1">
+                      <h4 className="text-text-gray mb-1">
                         Performing members
                       </h4>
-                      <p className="text-white text-sm">
+                      <p className="text-whitemb-1">
                         {formatMembersValue(artist.performingMembers)}
                       </p>
                     </div>
@@ -929,10 +926,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
                   {hasOffStageMembers && (
                     <div>
-                      <h4 className="text-text-gray secondary-text mb-1">
+                      <h4 className="text-text-gray  mb-1">
                         Off stage members
                       </h4>
-                      <p className="text-white text-sm">
+                      <p className="text-white mb-1">
                         {formatMembersValue(artist.offStageMembers)}
                       </p>
                     </div>
@@ -943,10 +940,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
             {languages.length > 0 && (
               <div
-                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                className="md:bg-background bg-card border rounded-lg p-4"
                 style={{ borderColor: "#232323" }}
               >
-                <h3 className="text-text-gray secondary-text mb-1">Performing language</h3>
+                <h3 className="text-text-gray  mb-1">Performing language</h3>
                 <div className="flex flex-wrap gap-1.5">
                   {languages.map((language: string, index: number) => (
                     <span
@@ -962,10 +959,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
             {eventTypes.length > 0 && (
               <div
-                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                className="md:bg-background bg-card border rounded-lg p-4"
                 style={{ borderColor: "#232323" }}
               >
-                <h3 className="text-text-gray secondary-text mb-1">Performing event type</h3>
+                <h3 className="text-text-gray  mb-1">Performing event type</h3>
                 <div className="flex flex-wrap gap-1.5">
                   {eventTypes.map((eventType: string, index: number) => (
                     <span
@@ -981,10 +978,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
             {normalizedStates.length > 0 && (
               <div
-                className="md:bg-background bg-card border rounded-lg md:p-6 p-4"
+                className="md:bg-background bg-card border rounded-lg p-4"
                 style={{ borderColor: "#232323" }}
               >
-                <h3 className="text-text-gray secondary-text mb-1">Performing States</h3>
+                <h3 className="text-text-gray  mb-1">Performing States</h3>
                 <div className="flex flex-wrap gap-1.5">
                   {normalizedStates.map((state: string, index: number) => (
                     <span

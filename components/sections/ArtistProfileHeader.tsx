@@ -58,8 +58,10 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
 
   const handleBookingSubmit = (formData: BookingFormData) => {
     // Here you would typically send the data to your API
-    console.log('Booking request submitted:', formData);
-    createBooking(artist.id, formData).then(data => {
+    // ensure backend receives a totalPrice even when budget field removed
+    const payload = { ...formData, totalPrice: Number(artist.startingPrice || 0) } as any;
+    console.log('Booking request submitted:', payload);
+    createBooking(artist.id, payload).then(data => {
       console.log('Booking creation response:', data);
     }).catch(error => {
       console.error('Error creating booking:', error);

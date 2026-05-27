@@ -181,10 +181,10 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`py-4 px-6 md:px-8 border-b-2 font-medium text-base whitespace-nowrap transition-all duration-200 ${
+              className={`py-4 px-6 md:px-8 font-medium text-base whitespace-nowrap transition-all duration-200 ${
                 activeTab === tab.id
-                  ? "border-primary-pink text-white"
-                  : "border-transparent text-text-gray hover:text-white hover:border-[#404040]"
+                  ? "border-primary-pink border-b-4 text-white relative z-10 -mb-1"
+                  : "border-b-2 border-transparent text-text-gray hover:text-white hover:border-[#404040]"
               }`}
             >
               {tab.label}

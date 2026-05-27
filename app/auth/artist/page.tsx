@@ -12,6 +12,8 @@ import PhoneInput from "@/components/ui/PhoneInput";
 import OTPInput from "@/components/ui/OTPInput";
 import DateInput from "@/components/ui/DateInput";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import Tooltip from "@/components/ui/Tooltip";
+import { Info } from "lucide-react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { signInWithGoogleAsArtist } from "@/lib/auth";
 import { signIn, useSession } from "next-auth/react";
@@ -1086,36 +1088,46 @@ function ArtistAuthContent() {
               </div>
 
               {/* Address with Location Picker */}
-              <AddressAutocomplete
-                label="Office/Home full address*"
-                placeholder="Search for your address or use location"
-                value={address}
-                onChange={(value) => {
-                  setAddress(value);
-                  setLatitude(null);
-                  setLongitude(null);
-                }}
-                onLocationSelect={(loc) => {
-                  setAddress(loc.address);
-                  if (loc.pinCode) setPinCode(loc.pinCode);
-                  if (loc.state) setState(loc.state);
-                  if (loc.city) setCity(loc.city);
-                  setLatitude(
-                    typeof loc.latitude === "number" && Number.isFinite(loc.latitude)
-                      ? loc.latitude
-                      : null,
-                  );
-                  setLongitude(
-                    typeof loc.longitude === "number" && Number.isFinite(loc.longitude)
-                      ? loc.longitude
-                      : null,
-                  );
-                  setLocationFetched(true);
-                }}
-                required
-                disabled={isLoading}
-                variant="filled"
-              />
+              <div className="relative">
+                <AddressAutocomplete
+                  label="Office/Home full address*"
+                  placeholder="Search for your address or use location"
+                  value={address}
+                  onChange={(value) => {
+                    setAddress(value);
+                    setLatitude(null);
+                    setLongitude(null);
+                  }}
+                  onLocationSelect={(loc) => {
+                    setAddress(loc.address);
+                    if (loc.pinCode) setPinCode(loc.pinCode);
+                    if (loc.state) setState(loc.state);
+                    if (loc.city) setCity(loc.city);
+                    setLatitude(
+                      typeof loc.latitude === "number" && Number.isFinite(loc.latitude)
+                        ? loc.latitude
+                        : null,
+                    );
+                    setLongitude(
+                      typeof loc.longitude === "number" && Number.isFinite(loc.longitude)
+                        ? loc.longitude
+                        : null,
+                    );
+                    setLocationFetched(true);
+                  }}
+                  required
+                  disabled={isLoading}
+                  variant="filled"
+                />
+                <div className="absolute top-0 right-0">
+                  <Tooltip content="Your work/office location will help us recommend you and show your profile to clients searching near your location. It will not be visible to users on your profile.">
+                    <Info size={16} className="text-blue" />
+                  </Tooltip>
+                </div>
+              </div>
+              <p className="mt-2 text-sm text-text-gray">
+                Your work/office location will help us recommend you and show your profile to clients searching near your location. It will not be visible to users on your profile.
+              </p>
 
               {/* PIN Code */}
               <Input

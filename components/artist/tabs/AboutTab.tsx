@@ -60,6 +60,15 @@ const AboutTab: React.FC<AboutTabProps> = ({
 
   const [subTypeInput, setSubTypeInput] = useState<string>("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [achievementInput, setAchievementInput] = useState("");
+  const [achievementChips, setAchievementChips] = useState<string[]>(() => {
+    return draft.achievements
+      ? draft.achievements
+          .split(/[,\n]+/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : [];
+  });
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(draft.state);
@@ -120,6 +129,55 @@ const AboutTab: React.FC<AboutTabProps> = ({
         ? selectedSubTypes
         : [v, ...selectedSubTypes],
     );
+  };
+
+  useEffect(() => {
+    const chips = draft.achievements
+      ? draft.achievements
+          .split(/[,\n]+/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : [];
+    setAchievementChips(chips);
+  }, [draft.achievements]);
+
+  const syncAchievementChips = (chips: string[]) => {
+    setAchievementChips(chips);
+    setDraft((prev) => ({
+      ...prev,
+      achievements: chips.join(", "),
+    }));
+  };
+
+  const addAchievementChips = (value: string) => {
+    const items = value
+      .split(/\r?\n/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (!items.length) return;
+
+    const nextChips = [...achievementChips];
+    items.forEach((item) => {
+      if (!nextChips.some((existing) => existing.toLowerCase() === item.toLowerCase())) {
+        nextChips.push(item);
+      }
+    });
+
+    syncAchievementChips(nextChips);
+  };
+
+  const handleAchievementBlur = () => {
+    addAchievementChips(achievementInput);
+    setAchievementInput("");
+  };
+
+  const handleAchievementKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addAchievementChips(achievementInput);
+      setAchievementInput("");
+    }
   };
 
   useEffect(() => {
@@ -486,16 +544,46 @@ const AboutTab: React.FC<AboutTabProps> = ({
       {/* Achievements and Years of Experience */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <div className="relative">
-          <Input
-            label="Achievements / Awards"
-            value={draft.achievements}
-            onChange={(e) => handleInputChange("achievements", e.target.value)}
-          />
+          <label className="block secondary-text text-white mb-2">
+            Achievements / Awards
+          </label>
+          <div className="w-full bg-card border border-border-color rounded-lg p-3 text-white flex flex-wrap gap-2 min-h-[4rem]">
+            {achievementChips.map((tag, index) => (
+              <span
+                key={`${tag}-${index}`}
+                className="inline-flex items-center gap-2 bg-background px-3 py-1.5 rounded-full text-sm"
+              >
+                <span>{tag}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = achievementChips.filter((_, idx) => idx !== index);
+                    syncAchievementChips(next);
+                  }}
+                  className="text-text-gray hover:text-white"
+                  aria-label={`Remove ${tag}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            <input
+              className="flex-1 min-w-[10rem] bg-transparent text-white placeholder-text-gray outline-none border-none px-1 py-1 text-sm"
+              placeholder="Press Enter to add a new achievement"
+              value={achievementInput}
+              onChange={(e) => setAchievementInput(e.target.value)}
+              onKeyDown={handleAchievementKeyDown}
+              onBlur={handleAchievementBlur}
+            />
+          </div>
           <div className="absolute top-0 right-0">
-            <Tooltip content="List notable achievements or awards separated by commas">
+            <Tooltip content="List notable achievements or awards. Press Enter to add each item as a separate entry.">
               <Info size={16} className="text-blue" />
             </Tooltip>
           </div>
+          <p className="mt-2 text-sm text-text-gray">
+            Press Enter to add each achievement or award as a separate item.
+          </p>
         </div>
         <div className="relative">
           <Select
