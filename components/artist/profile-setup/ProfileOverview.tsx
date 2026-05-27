@@ -21,8 +21,8 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
         <Image
           src="/icons/user.svg"
           alt="Artist Profile"
-          width={32}
-          height={32}
+          width={24}
+          height={24}
         />
       ),
       title: "Artist Profile Details",
@@ -34,8 +34,8 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
         <Image
           src="/icons/play.svg"
           alt="Artist Profile"
-          width={30}
-          height={30}
+          width={24}
+          height={24}
         />
       ),
       title: "Performance Details",
@@ -47,8 +47,8 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
         <Image
           src="/icons/phone.svg"
           alt="Artist Profile"
-          width={30}
-          height={30}
+          width={24}
+          height={24}
         />
       ),
       title: "Contact & Pricing Details",
@@ -60,8 +60,8 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
         <Image
           src="/icons/video.svg"
           alt="Artist Profile"
-          width={30}
-          height={30}
+          width={24}
+          height={24}
         />
       ),
       title: "Videos & Social Media",
@@ -128,7 +128,7 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
                 <div className="flex items-center gap-4 text-left">
                   <div className="flex-shrink-0">{step.icon}</div>
                   <div className="flex-1">
-                    <h3 className="text-white h3 mb-1">{step.title}</h3>
+                    <h3 className="text-white h3">{step.title}</h3>
                     <p className="text-text-gray text-sm">{step.description}</p>
                   </div>
                 </div>
@@ -142,7 +142,7 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({
       </div>
 
       {/* Fixed Bottom Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color pl-5 pr-4 md:px-0 py-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0F0F0F] border-t border-border-color pl-5 pr-4 md:px-0 py-4">
         <p className="text-text-gray footnote mb-4 md:hidden">
           It only takes 5–10 min and you can edit it later. We’ll save as you
           go.

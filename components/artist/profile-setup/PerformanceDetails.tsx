@@ -238,13 +238,13 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
             </div>
 
             {/* Step Info */}
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3">
               <div className="flex-shrink-0">
                 <Image
                   src="/icons/play.svg"
                   alt="Artist Profile"
-                  width={32}
-                  height={32}
+                  width={24}
+                  height={24}
                 />
               </div>
               <div className="text-left">
@@ -735,7 +735,7 @@ const PerformanceDetails: React.FC<PerformanceDetailsProps> = ({
       </div>
 
       {/* Fixed Bottom Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color px-5 md:px-0 py-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0F0F0F] border-t border-border-color px-5 md:px-0 py-4">
         <div className="max-w-2xl mx-auto">
           <Button variant="primary" size="md" onClick={handleNext} className="w-full">
             Save & Next

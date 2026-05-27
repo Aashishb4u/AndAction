@@ -130,7 +130,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
             </div>
 
             {/* Step Info */}
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3">
               <div className="shrink-0">
                 <Image
                   src="/icons/phone.svg"
@@ -374,7 +374,7 @@ const ContactPricingDetails: React.FC<ContactPricingDetailsProps> = ({
       </div>
 
       {/* Fixed Bottom Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-border-color px-5 md:px-0 py-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0F0F0F] border-t border-border-color px-5 md:px-0 py-4">
         <div className="max-w-md mx-auto">
           <Button
             variant="primary"

@@ -415,6 +415,19 @@ button:focus {
   box-shadow: 0 10px 25px rgba(232, 4, 126, 0.3);
 }
 
+/* Category button gradient for mobile filter active state */
+.category-btn-gradient {
+  background: var(--gradient-primary);
+  transition: all 0.3s ease;
+  box-shadow: none;
+}
+
+.category-btn-gradient:hover {
+  background: var(--gradient-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(232, 4, 126, 0.18);
+}
+
 .gradient-underline {
   position: relative;
   display: inline-block;

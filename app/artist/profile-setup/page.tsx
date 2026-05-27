@@ -711,7 +711,7 @@ function ProfileSetupPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A]">
+    <div className="min-h-screen bg-[#0F0F0F]">
       {renderCurrentStep()}
       <SuccessModal
         isOpen={showSuccessModal}
@@ -732,7 +732,7 @@ function ProfileSetupPageContent() {
 
 function ProfileSetupFallback() {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+    <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-pink mx-auto mb-4"></div>
         <p className="text-text-gray">Loading...</p>
