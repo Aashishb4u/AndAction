@@ -12,7 +12,7 @@ import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-india
 
 export default function UserProfilePage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -166,6 +166,7 @@ export default function UserProfilePage() {
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
+          email: formData.email,
           phoneNumber: formData.phoneNumber || null, // Send null if empty
           countryCode: formData.countryCode,
           state: formData.state,
@@ -176,11 +177,29 @@ export default function UserProfilePage() {
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (data?.success) {
         toast.success("Profile updated successfully!");
+        // Update client session so UI reflects changes immediately
+        try {
+          await updateSession?.({
+            update: {
+              firstName: formData.firstName || undefined,
+              lastName: formData.lastName || undefined,
+              email: formData.email || undefined,
+              avatar: selectedAvatar.toString() || undefined,
+              phoneNumber: formData.phoneNumber || undefined,
+              countryCode: formData.countryCode || undefined,
+              city: formData.city || undefined,
+              state: formData.state || undefined,
+            },
+          } as any);
+        } catch (err) {
+          // ignore session update errors
+        }
+
         router.push("/");
       } else {
-        toast.error(data.message || "Failed to update profile");
+        toast.error(data?.error || data?.message || "Failed to update profile");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -412,9 +431,10 @@ export default function UserProfilePage() {
               label="Email"
               placeholder="Email"
               value={formData.email}
+              onChange={(e) => handleInputChange("email", e.target.value)}
               variant="filled"
               type="email"
-              disabled
+              disabled={isLoading}
             />
 
             {/* Location Fields */}

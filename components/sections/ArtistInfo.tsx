@@ -75,26 +75,32 @@ const ArtistInfo: React.FC<ArtistInfoProps> = ({
         </div>
 
         {/* Right Side: Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 shrink-0">
-          <button
-            onClick={onBookmark}
-            className={`rounded-full flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background ${
-              isBookmarked ? "text-primary-pink" : ""
-            }`}
-            title={isBookmarked ? "Remove Bookmark" : "Bookmark"}
-          >
-            <Bookmark
-              className={`w-5 h-5 sm:w-6 sm:h-6 ${isBookmarked ? "fill-current" : ""}`}
-            />
-          </button>
+        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onBookmark}
+              className={`rounded-full flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background ${
+                isBookmarked ? "text-primary-pink" : ""
+              }`}
+              title={isBookmarked ? "Remove Bookmark" : "Bookmark"}
+            >
+              <Bookmark
+                className={`w-5 h-5 sm:w-6 sm:h-6 ${isBookmarked ? "fill-current" : ""}`}
+              />
+            </button>
+            <span className="hidden md:inline-block bold">{isBookmarked ? 'Bookmarked' : 'Bookmark'}</span>
+          </div>
 
-          <button
-            onClick={onShare}
-            className="rounded-full flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background"
-            title="Share"
-          >
-            <Share className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onShare}
+              className="rounded-full flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 border border-border-color bg-background-light text-white transition-all duration-300 hover:bg-background"
+              title="Share"
+            >
+              <Share className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+            <span className="hidden md:inline-block bold">Share</span>
+          </div>
         </div>
       </div>
     </div>

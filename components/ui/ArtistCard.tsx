@@ -38,7 +38,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   return (
     <div
       key={id}
-      className={`relative flex-shrink-0 w-[150px] h-[225px] md:w-[200px] md:h-[300px] rounded-lg overflow-hidden cursor-pointer bg-text-light-gray/10 transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 ${className}`}
+      className={`relative flex-shrink-0  w-[150px] h-[225px] md:w-[190px] md:h-[300px] rounded-2xl overflow-hidden cursor-pointer bg-text-light-gray/10 transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 ${className}`}
       onClick={handleClick}
     >
       {/* Background Image */}
@@ -65,7 +65,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity duration-300 hover:from-black/60" />
 
       {/* Content */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 text-white transform transition-transform duration-300 select-none">
+      <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform transition-transform duration-300 select-none">
         <h3
           className={`font-semibold signup line-clamp-1 transition-colors duration-300 ${isHovered ? "text-primary-pink" : "text-white"}`}
         >

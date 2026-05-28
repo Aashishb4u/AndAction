@@ -11,7 +11,7 @@ const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
     type: "shorts",
     page: pageParam.toString(),
     limit: SHORTS_PAGE_LIMIT.toString(),
-    random: "true",
+    random: "false",
   });
   if (category && category !== "all") {
     params.set("category", category);

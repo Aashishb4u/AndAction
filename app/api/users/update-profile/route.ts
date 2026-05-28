@@ -87,6 +87,32 @@ export async function PUT(request: NextRequest): Promise<NextResponse<any>> {
             updateData.lastName = body.lastName.trim();
         }
 
+        // Handle email
+        if (body.email !== undefined && body.email !== null) {
+            const emailRaw = typeof body.email === 'string' ? body.email.trim() : '';
+            if (emailRaw) {
+                const emailLower = emailRaw.toLowerCase();
+                // Basic email validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(emailLower)) {
+                    return ApiErrors.badRequest('Invalid email address provided.');
+                }
+
+                const existingEmail = await prisma.user.findFirst({
+                    where: {
+                        email: emailLower,
+                        NOT: { id: userId }
+                    }
+                });
+
+                if (existingEmail) {
+                    return ApiErrors.conflict('This email is already in use by another account.');
+                }
+
+                updateData.email = emailLower;
+            }
+        }
+
         // Handle phoneNumber - only update if it has a valid value
         if (body.phoneNumber !== undefined && body.phoneNumber !== null) {
             const phoneValue = typeof body.phoneNumber === 'string' ? body.phoneNumber.trim() : body.phoneNumber;
@@ -100,7 +126,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<any>> {
                 });
 
                 if (existingUser) {
-                    return ApiErrors.badRequest('This phone number is already in use by another account.');
+                    return ApiErrors.conflict('This phone number is already in use by another account.');
                 }
 
                 updateData.phoneNumber = phoneValue;
