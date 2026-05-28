@@ -291,7 +291,7 @@ export default function VideosPage() {
           {/* Videos Grid */}
           {!isLoading && !isError && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pb-8">
                 {groupedVideos.map((video, idx) => (
                   <VideoCard
                     key={`video-${video.id}-${idx}`}

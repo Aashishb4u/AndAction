@@ -246,10 +246,10 @@ function ArtistProfileContent() {
   };
 
   return (
-    <ArtistDashboardLayout hideNavbar={true}>
-      <div className="flex flex-col lg:flex-row md:gap-5 md:p-6 min-h-screen">
+    <ArtistDashboardLayout>
+      <div className="flex flex-col lg:flex-row md:gap-5 md:p-6 min-h-screen h-screen">
         {/* Left Side - Artist Profile Card */}
-          <div className="w-full lg:w-80 flex-shrink-0 max-w-screen overflow-hidden">
+          <div className="w-full lg:w-80 xl:w-[360px] flex-shrink-0 max-w-screen overflow-hidden h-full">
           <ArtistProfileCard
             onBack={() => router.push("/artist/dashboard")}
             onEdit={() => setIsAddProfileOpen(true)}
@@ -258,14 +258,16 @@ function ArtistProfileContent() {
         </div>
 
         {/* Right Side - Tabs and Content */}
-        <div className="flex-1 md:bg-card w-full md:rounded-lg">
-          <ArtistProfileTabs
-            key={artistData.id}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            artist={artistData}
-            onProfileUpdated={refreshSelectedProfile}
-          />
+        <div className="flex-1 md:bg-card w-full md:rounded-lg overflow-hidden min-h-0 h-full">
+          <div className="h-full overflow-y-auto min-h-0">
+            <ArtistProfileTabs
+              key={artistData.id}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              artist={artistData}
+              onProfileUpdated={refreshSelectedProfile}
+            />
+          </div>
         </div>
       </div>
 

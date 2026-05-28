@@ -351,21 +351,21 @@ const VideoCard: React.FC<VideoCardProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <h3
-                className="btn2 text-white line-clamp-2 transition-colors duration-300 group-hover/link:text-primary-pink"
-                style={{ fontSize: "16px" }}
+                className="btn1 text-white line-clamp-2 transition-colors duration-300 group-hover/link:text-primary-pink"
+                style={{ fontSize: "14px" }}
               >
                 {title}
               </h3>
               <p
                 className="text-text-gray footnote line-clamp-1"
-                style={{ fontSize: "14px" }}
+                style={{ fontSize: "12px" }}
               >
                 <span className="align-middle">{creator}</span>
               </p>
               {artistType ? (
                 <p
                   className="text-text-gray footnote line-clamp-1"
-                  style={{ fontSize: "14px" }}
+                  style={{ fontSize: "12px" }}
                 >
                   <span className="align-middle">{artistType}</span>
                 </p>

@@ -415,8 +415,8 @@ export default function ArtistDetailPage() {
   };
 
   return (
-    <SiteLayout hideNavbar hideBottomBar>
-      <div className="hidden max-w-7xl mx-auto lg:flex min-h-screen bg-background py-10 lg:py-14">
+    <SiteLayout hideBottomBar>
+      <div className="hidden max-w-7xl mx-auto lg:flex min-h-screen bg-background py-18 lg:py-20">
         <div className="w-[400px] flex-shrink-0">
           <ArtistProfileHeader
             artist={displayArtist}
