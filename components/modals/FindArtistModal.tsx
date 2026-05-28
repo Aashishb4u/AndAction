@@ -26,6 +26,7 @@ interface FormData {
   eventDate: string;
   eventType: string;
   performingLanguage: string[];
+  locationState: string;
   location: string;
 }
 
@@ -43,6 +44,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     eventDate: "",
     eventType: "",
     performingLanguage: [],
+    locationState: "",
     location: "",
   });
 
@@ -151,7 +153,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
   }, [preferences]);
 
   const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(
-    formData.eventState,
+    formData.locationState,
   );
 
   const cityOptionsWithCurrent = useMemo(() => {
@@ -221,6 +223,14 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     setFormData((prev) => ({
       ...prev,
       eventState: next,
+    }));
+  };
+
+  const handleLocationStateChange = (value: string | string[]) => {
+    const next = Array.isArray(value) ? (value[0] ?? "") : value;
+    setFormData((prev) => ({
+      ...prev,
+      locationState: next,
       location: "",
     }));
   };
@@ -235,6 +245,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       eventDate: "",
       eventType: "",
       performingLanguage: [],
+      locationState: "",
       location: "",
     });
     setSubInput("");
@@ -249,6 +260,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     if (formData.budget) params.set("budget", formData.budget);
     if (formData.eventState) params.set("state", formData.eventState);
     if (formData.eventType) params.set("eventType", formData.eventType);
+    if (formData.locationState) params.set("artistState", formData.locationState);
     if (formData.location) params.set("location", formData.location);
     if (formData.performingLanguage && formData.performingLanguage.length > 0) {
       // join multiple selected languages as comma-separated
@@ -270,6 +282,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     formData.eventDate ||
     formData.eventType ||
     formData.performingLanguage.length > 0 ||
+    formData.locationState ||
     formData.location,
   );
 
@@ -455,7 +468,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
           </div>
         </div>
 
-        {/* Event Type and Artist Location - Row */}
+        {/* Event Type and Artist State - Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="secondary-text  block mb-1">Event type</label>
@@ -467,21 +480,32 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             />
           </div>
           <div>
-            <label className="secondary-text  block mb-1">Artist Location</label>
+            <label className="secondary-text  block mb-1">Artist State</label>
             <Select
-              placeholder={
-                !formData.eventState
-                  ? "Select event state first"
-                  : isFetchingCities
-                    ? "Loading cities..."
-                    : "Select city"
-              }
-              options={cityOptionsWithCurrent}
-              value={formData.location}
-              onChange={(value) => handleInputChange("location", value)}
-              disabled={!formData.eventState || isFetchingCities}
+              placeholder="Select state"
+              options={stateOptions}
+              value={formData.locationState}
+              onChange={handleLocationStateChange}
             />
           </div>
+        </div>
+
+        {/* Artist Location (city) */}
+        <div>
+          <label className="secondary-text  block mb-1">Artist Location</label>
+          <Select
+            placeholder={
+              !formData.locationState
+                ? "Select artist state first"
+                : isFetchingCities
+                  ? "Loading cities..."
+                  : "Select city"
+            }
+            options={cityOptionsWithCurrent}
+            value={formData.location}
+            onChange={(value) => handleInputChange("location", value)}
+            disabled={!formData.locationState || isFetchingCities}
+          />
         </div>
 
         {/* Performing Language */}

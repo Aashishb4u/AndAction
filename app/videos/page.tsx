@@ -78,7 +78,7 @@ export default function VideosPage() {
     category: selectedCategory,
     withBookmarks: true,
     limit: videoLimit,
-    random: true,
+    random: false,
   });
 
   const toggleBookmarkMutation = useToggleBookmark();
