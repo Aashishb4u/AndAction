@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import { toast } from "react-toastify";
 import { INDIAN_STATES } from "@/lib/constants";
 import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-indian-cities";
+import { formatDisplayLabel } from "@/lib/utils";
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function UserProfilePage() {
 
   const selectedStateLabel = useMemo(() => {
     if (!formData.state) return "";
-    return INDIAN_STATES.find((s) => s.value === formData.state)?.label ?? formData.state;
+    return INDIAN_STATES.find((s) => s.value === formData.state)?.label ?? formatDisplayLabel(formData.state);
   }, [formData.state]);
 
   useEffect(() => {

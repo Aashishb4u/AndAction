@@ -374,7 +374,7 @@ function SignInContent() {
 
   return (
     <div className="bg-background md:border md:border-border-color md:rounded-2xl md:shadow-2xl relative">
-      <div className="flex justify-between items-center px-4 py-3 md:px-20 md:py-4">
+      <div className="flex justify-between items-center px-4 py-3 md:px-12 md:py-4">
         <div className="flex items-center">
           <Image
             src="/logo.png"

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import SiteLayout from '@/components/layout/SiteLayout';
+import { formatDisplayLabel } from '@/lib/utils';
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import ArtistGrid from '@/components/sections/ArtistGrid';
 import VideoCard from '@/components/ui/VideoCard';
@@ -77,7 +78,7 @@ export default function BookmarksPage() {
               bookmarkId: b.id,
               isBookmarked: true,
               category: a.artistType || normalized.category,
-              location: `${a.user.state || ""}` || normalized.location,
+              location: formatDisplayLabel(a.user.state) || normalized.location,
               gender: a.user.gender ?? normalized.gender,
             };
           });

@@ -1,4 +1,5 @@
 import type { Artist } from "@/types";
+import { formatDisplayLabel, formatDisplayLabels } from "@/lib/utils";
 
 type RawArtistFromAPI = {
   id: string;
@@ -81,11 +82,10 @@ export function transformArtist(raw: RawArtistFromAPI): Artist {
     id: raw.id,
     name: fullName,
     category: capitalize(raw.artistType || ""),
-    location: capitalize(raw.user.state || ""),
+    location: formatDisplayLabel(raw.user.state || ""),
     duration,
     startingPrice: raw.soloChargesFrom || 0,
-    languages:
-      raw.performingLanguage?.split(",").map((s) => capitalize(s.trim())) || [],
+    languages: formatDisplayLabels(raw.performingLanguage || null),
     image: raw.profileImage || "/avatars/default.jpg",
     // TODO: Implement bookmark logic
     isBookmarked: false,

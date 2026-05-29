@@ -1,6 +1,6 @@
 "use client";
 
-import { getArtishName } from "@/lib/utils";
+import { getArtishName, formatDisplayLabel } from "@/lib/utils";
 import { useQuery, useQueries } from "@tanstack/react-query";
 
 export interface Artist {
@@ -103,7 +103,7 @@ const mapArtistData = (artist: any): Artist => ({
       artist.user?.firstName ?? null,
       artist.user?.lastName ?? null,
     ),
-  location: (artist.user?.state || "").trim(),
+  location: formatDisplayLabel(artist.user?.state || ""),
   thumbnail: artist.profileImage || "/avatars/default.jpg",
   videoUrl: mockVideoUrl,
   distance: artist.distance !== undefined ? artist.distance : null,

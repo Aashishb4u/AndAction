@@ -98,6 +98,40 @@ export function localDateToUTC(dateString: string): Date {
   return new Date(utcMidnight.getTime() - offsetMs);
 }
 
+export function formatDisplayLabel(raw?: string | null): string {
+  if (!raw) return "";
+
+  return raw
+    .toString()
+    .trim()
+    .split(/[,/]+/)
+    .map((segment) =>
+      segment
+        .trim()
+        .split(/[-_\s]+/)
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ")
+    )
+    .filter(Boolean)
+    .join(", ");
+}
+
+export function formatDisplayLabels(raw?: string | null): string[] {
+  if (!raw) return [];
+
+  return raw
+    .toString()
+    .split(",")
+    .map((item) => formatDisplayLabel(item))
+    .filter(Boolean);
+}
+
+export function formatDisplayValues(values?: string[] | null): string[] {
+  if (!values) return [];
+  return values.map((value) => formatDisplayLabel(value)).filter(Boolean);
+}
+
 export function isTokenExpired(expiryDate: Date | null): boolean {
   if (!expiryDate) return true;
   const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);

@@ -6,7 +6,7 @@ import { Artist } from "@/types";
 import VideoCard from "@/components/ui/VideoCard";
 import ShortsPlayer from "@/components/ui/ShortsPlayer";
 import { Loader2 } from "lucide-react";
-import { getArtishName } from "@/lib/utils";
+import { getArtishName, formatDisplayLabels, formatDisplayValues } from "@/lib/utils";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
 import { toast } from "react-toastify";
@@ -816,13 +816,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         const hasCorePerformanceSection =
           hasDuration || hasPerformingMembers || hasOffStageMembers;
 
-        const languages = artist.languages?.length
-          ? artist.languages
-            .flatMap((lang: string) =>
-              lang.split(",").map((l: string) => l.trim()),
-            )
-            .filter((l: string) => l)
-          : [];
+        const languages = formatDisplayValues(artist.languages);
 
         const eventTypes = artist.performingEventType
           ? artist.performingEventType
@@ -831,12 +825,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             .filter((e: string) => e)
           : [];
 
-        const states = artist.performingStates
-          ? artist.performingStates
-            .split(",")
-            .map((s: string) => s.trim())
-            .filter((s: string) => s)
-          : [];
+        const states = formatDisplayLabels(artist.performingStates);
         const hasPanIndia = states.some(
           (s: string) => s.toLowerCase() === "pan india",
         );

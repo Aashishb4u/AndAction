@@ -7,6 +7,7 @@ import SiteLayout from "@/components/layout/SiteLayout";
 import ArtistProfileHeader from "@/components/sections/ArtistProfileHeader";
 import ArtistDetailTabs from "@/components/sections/ArtistDetailTabs";
 import { BookingStatus } from "@prisma/client";
+import { formatDisplayLabel, formatDisplayLabels } from "@/lib/utils";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
 import { createAuthRedirectUrl } from "@/lib/auth";
@@ -130,14 +131,14 @@ export default function ArtistDetailPage() {
           name: a.stageName || `${a.user.firstName} ${a.user.lastName}`.trim(),
           category: a.artistType,
           subCategory: [a.subArtistType],
-          location: `${a.user.state || ""}`,
+          location: formatDisplayLabel(a.user.state),
           image: a.profileImage || "/avatars/default.jpg",
 
           bio: a.shortBio || "",
           yearsOfExperience: a.yearsOfExperience || 0,
           achievements: a.achievements ? [a.achievements] : [],
           subArtistTypes: a.subArtistType ? [a.subArtistType] : [],
-          languages: a.performingLanguage ? [a.performingLanguage] : [],
+          languages: formatDisplayLabels(a.performingLanguage),
 
           soloChargesFrom: a.soloChargesFrom ?? undefined,
           soloChargesTo: a.soloChargesTo ?? undefined,

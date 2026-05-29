@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { formatDisplayLabel } from "@/lib/utils";
 
 interface LocationSuggestion {
   displayName: string;
