@@ -366,9 +366,9 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
           />
 
           {/* Modal Content */}
-          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl max-h-[80vh] overflow-hidden mobile-filter-modal">
+          <div className="absolute bottom-0 left-0 right-0 bg-[#0f0f0f] rounded-t-2xl max-h-[80vh] overflow-hidden mobile-filter-modal">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-800">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
               <h2 className="text-xl font-semibold text-white">Filters</h2>
               <button
                 onClick={() => setShowFilterModal(false)}
@@ -412,7 +412,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                 {/* Sub-Category (multi-tag) */}
                 <div className="relative">
                   <label className="block text-sm text-white mb-1">Sub-Category</label>
-                  <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
+                  <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap gap-2">
                     {selectedSubTypes.map((tag) => (
                       <span key={tag} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
                         <span className="text-white">{tag}</span>
@@ -458,7 +458,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                           removeSubType(selectedSubTypes[selectedSubTypes.length - 1]);
                         }
                       }}
-                      className="flex-1 min-w-[120px] bg-transparent focus:outline-none px-1 py-1 text-sm placeholder-text-gray"
+                      className="flex-1 min-w-[120px] bg-transparent focus:outline-none md:px-4 px-3 py-3 text-sm placeholder-text-gray"
                     />
                   </div>
 
@@ -582,7 +582,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 border-t border-gray-800 flex gap-3">
+            <div className="p-6 border-t border-[#4b4b4b] flex gap-3">
               <Button
                 variant="secondary"
                 size="xs"

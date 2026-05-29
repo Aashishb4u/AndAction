@@ -317,7 +317,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
         {/* Sub-Category (multi-tag with searchable suggestions) */}
         <div className="relative">
           <label className="secondary-text block mb-1">Sub-Category</label>
-          <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
+          <div className="w-full bg-card border border-border-color rounded-lg  text-white flex flex-wrap gap-2">
             {(formData.subCategory || []).map((tag) => (
               <span key={tag} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
                 <span className="text-white">{tag}</span>
@@ -368,7 +368,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
                   handleInputChange("subCategory", formData.subCategory.slice(0, -1));
                 }
               }}
-              className="flex-1 min-w-[120px] bg-transparent focus:outline-none px-1 py-1 text-sm placeholder-gray-400"
+              className="flex-1 min-w-[120px] bg-transparent focus:outline-none md:px-4 px-3 py-3 text-sm placeholder-gray-400"
             />
           </div>
 
@@ -480,7 +480,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             />
           </div>
           <div>
-            <label className="secondary-text  block mb-1">Artist State</label>
+            <label className="secondary-text  block mb-1">Artist Location</label>
             <Select
               placeholder="Select state"
               options={stateOptions}
@@ -491,7 +491,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
         </div>
 
         {/* Artist Location (city) */}
-        <div>
+        {/* <div>
           <label className="secondary-text  block mb-1">Artist Location</label>
           <Select
             placeholder={
@@ -506,7 +506,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             onChange={(value) => handleInputChange("location", value)}
             disabled={!formData.locationState || isFetchingCities}
           />
-        </div>
+        </div> */}
 
         {/* Performing Language */}
         <div className="relative">
