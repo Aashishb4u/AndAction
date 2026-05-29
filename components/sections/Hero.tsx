@@ -105,7 +105,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
         </div>
         
         <div
-          className="absolute left-1/2 md:top-[-20vh] overflow-hidden top-[-75px] pointer-events-none bg-top bg-no-repeat bg-contain"
+          className="block md:hidden absolute left-1/2 md:top-[-20vh] overflow-hidden top-[-75px] pointer-events-none bg-top bg-no-repeat bg-contain"
           style={{
             width: '100%',
             height: '1800px',
@@ -114,7 +114,19 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
             zIndex: 1,
           }}
         />
+
+         <div
+          className="hidden md:block absolute left-1/2 md:top-[-15vh] overflow-hidden  pointer-events-none bg-top bg-no-repeat bg-contain"
+          style={{
+            width: '100%',
+            height: '2500px',
+            transform: 'translate(-50%, 0)',
+            backgroundImage: "url('/icons/web_focus.svg')",
+            zIndex: 1,
+          }}
+        />
       </div>
+
 
       {/* Find Artist Modal */}
       <FindArtistModal
