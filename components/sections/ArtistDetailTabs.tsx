@@ -884,45 +884,43 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 style={{ borderColor: "#232323" }}
               >
                 <div className="space-y-4">
-                  {hasDuration && (
-                    <div>
-                      <h4 className="text-text-gray  mb-1">
-                        Performing duration
-                      </h4>
-                      <p className="text-white mb-1">
-                        {artist.performingDurationFrom || ""}
-                        {artist.performingDurationFrom && artist.performingDurationTo
-                          ? " - "
-                          : ""}
-                        {artist.performingDurationTo || ""}
-                        {artist.performingDurationFrom || artist.performingDurationTo
-                          ? " mins"
-                          : ""}
-                      </p>
-                    </div>
-                  )}
+                  {/* Desktop: show three fields inline with vertical dividers. Mobile: stacked */}
+                  <div className="flex flex-col md:flex-row md:items-center">
+                    {hasDuration && (
+                      <div className="flex-1 md:px-3">
+                        <h4 className="text-text-gray mb-1">Performing duration</h4>
+                        <p className="text-white mb-1">
+                          {artist.performingDurationFrom || ""}
+                          {artist.performingDurationFrom && artist.performingDurationTo ? " - " : ""}
+                          {artist.performingDurationTo || ""}
+                          {artist.performingDurationFrom || artist.performingDurationTo ? " mins" : ""}
+                        </p>
+                      </div>
+                    )}
 
-                  {hasPerformingMembers && (
-                    <div>
-                      <h4 className="text-text-gray mb-1">
-                        Performing members
-                      </h4>
-                      <p className="text-whitemb-1">
-                        {formatMembersValue(artist.performingMembers)}
-                      </p>
-                    </div>
-                  )}
+                    {/* Divider only on desktop and only when next item exists */}
+                    {hasDuration && (hasPerformingMembers || hasOffStageMembers) && (
+                      <div className="hidden md:flex h-9 w-px [background:var(--border-gradient-light)] flex-shrink-0" />
+                    )}
 
-                  {hasOffStageMembers && (
-                    <div>
-                      <h4 className="text-text-gray  mb-1">
-                        Off stage members
-                      </h4>
-                      <p className="text-white mb-1">
-                        {formatMembersValue(artist.offStageMembers)}
-                      </p>
-                    </div>
-                  )}
+                    {hasPerformingMembers && (
+                      <div className="flex-1 md:px-8">
+                        <h4 className="text-text-gray mb-1">Performing members</h4>
+                        <p className="text-white mb-1">{formatMembersValue(artist.performingMembers)}</p>
+                      </div>
+                    )}
+
+                    {hasPerformingMembers && hasOffStageMembers && (
+                      <div className="hidden md:flex h-9 w-px [background:var(--border-gradient-light)] flex-shrink-0" />
+                    )}
+
+                    {hasOffStageMembers && (
+                      <div className="flex-1 md:px-8">
+                        <h4 className="text-text-gray mb-1">Off stage members</h4>
+                        <p className="text-white mb-1">{formatMembersValue(artist.offStageMembers)}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
