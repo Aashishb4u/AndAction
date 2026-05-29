@@ -420,7 +420,7 @@ const AboutTab: React.FC<AboutTabProps> = ({
 
       {/* Sub-Artist Type (tag-style multi-select) */}      <div className="relative text-sm">
         <label className="block secondary-text text-white mb-1">Sub-Artist type*</label>
-        <div className="w-full bg-card border border-border-color rounded-lg px-3 py-2 text-white flex flex-wrap gap-2">
+        <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap gap-2">
           {selectedSubTypes.map((tag, idx) => (
             <span key={tag + idx} className="inline-flex items-center gap-2 bg-background px-3 py-1 rounded-full text-sm">
               <span>{tag}</span>
