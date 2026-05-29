@@ -270,7 +270,7 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
                   removeSubType(selectedSubTypes[selectedSubTypes.length - 1]);
                 }
               }}
-              className="flex-1 min-w-[80px] bg-transparent focus:outline-none px-1 py-1 text-sm placeholder-text-gray"
+              className="flex-1 min-w-[80px] bg-transparent focus:outline-none md:px-4 px-3 py-3 text-sm placeholder-text-gray"
             />
           </div>
 
