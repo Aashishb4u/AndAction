@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Artist } from "@/types";
 import Bookmark from "../icons/bookmark";
-import { buildArtishProfileUrl } from "@/lib/utils";
+import { buildArtishProfileUrl, formatDisplayLabel, formatDisplayValues } from "@/lib/utils";
 
 interface ArtistProfileCardProps {
   artist: Artist;
@@ -41,7 +41,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   };
 
   const normalizedLocation = (() => {
-    const raw = (artist.location || "").trim();
+    const raw = formatDisplayLabel(artist.location || "").trim();
     if (!raw) return "";
     const lowered = raw.toLowerCase();
     if (lowered === "location not set" || lowered === "unknown") return "";
@@ -125,7 +125,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
                 width={16}
                 height={16}
               />
-              <span className="line-clamp-2">{artist.languages.join(", ")}</span>
+              <span className="line-clamp-2">{formatDisplayValues(artist.languages).join(", ")}</span>
             </div>
           </div>
         </div>

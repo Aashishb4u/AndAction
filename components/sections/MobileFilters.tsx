@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { formatDisplayLabel } from "@/lib/utils";
 import { ArtistProfileSetupPreferences, Filters } from "@/types";
 import Select from "@/components/ui/Select";
 import Button from "../ui/Button";
@@ -189,7 +190,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
 
     const options = optionsMap[filterKey];
     const option = options?.find((opt) => opt.value === value);
-    return option?.label || value;
+    return option?.label || formatDisplayLabel(value);
   };
 
   const filterChips = [

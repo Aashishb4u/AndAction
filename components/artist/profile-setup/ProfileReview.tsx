@@ -114,7 +114,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
   };
 
   const mapLabels = (values: string[], list: { value: string; label: string }[]) =>
-    values.map((v) => list.find((o) => o.value === v)?.label || v);
+    values.map((v) => list.find((o) => o.value === v)?.label || formatDisplayLabel(v));
 
   // Validate performance duration before submit
   const handleNext = () => {

@@ -110,7 +110,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               </Button>
             )}
             <Button
-              variant="outline"
+              variant="secondary"
               className="flex-1"
               onClick={handleCancel}
               disabled={isLoading}
