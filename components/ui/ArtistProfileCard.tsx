@@ -62,7 +62,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         className={`md:bg-card relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer ${className}`}
         onClick={handleClick}
       >
-        <div className="flex py-2 px-3 gap-4 items-start">
+        <div className="flex py-4 gap-4 items-start">
           {/* Artist Image */}
           <div
             className="relative w-[100px] h-[140px] rounded-lg overflow-hidden flex-shrink-0"

@@ -2,7 +2,7 @@ import React from 'react';
 
 const ArtistCardSkeleton: React.FC = () => {
   return (
-    <div className="relative flex-shrink-0 w-[200px] h-[300px] rounded-2xl overflow-hidden animate-pulse bg-text-light-gray/10">
+    <div className="relative flex-shrink-0 w-[150px] h-[225px] md:w-[190px] md:h-[300px] rounded-2xl overflow-hidden animate-pulse bg-text-light-gray/10">
       {/* Skeleton Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-text-light-gray/10 to-background" />
       
