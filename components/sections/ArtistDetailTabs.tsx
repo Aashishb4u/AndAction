@@ -1179,7 +1179,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 {activeTab === tab.id && (
                   <div
                     className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-primary-orange to-primary-pink z-50"
-                    style={{ bottom: "-1px" }}
+                    style={{ bottom: "1px" }}
                   />
                 )}
               </button>
@@ -1224,7 +1224,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               {activeTab === tab.id && (
                 <div
                   className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-primary-orange to-primary-pink z-50"
-                  style={{ bottom: "-1px" }}
+                  style={{ bottom: "1px" }}
                 />
               )}
             </button>

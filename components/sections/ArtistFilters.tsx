@@ -230,9 +230,9 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
         {/* Sub-Category (multi-tag with search) */}
         <div className="mb-6 relative">
           <label className="block text-sm text-white mb-1">Sub-Category</label>
-          <div className="w-full bg-card border border-border-color rounded-lg  text-white flex flex-wrap gap-2">
+          <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap items-center gap-2 px-3 py-2">
             {selectedSubTypes.map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+              <span key={tag} className="inline-flex items-center gap-1 border border-border-color bg-background/80 text-sm px-2 py-1 rounded-full">
                 <span className="text-white">{tag}</span>
                 <button
                   type="button"
@@ -270,7 +270,7 @@ const ArtistFilters: React.FC<ArtistFiltersProps> = ({
                   removeSubType(selectedSubTypes[selectedSubTypes.length - 1]);
                 }
               }}
-              className="flex-1 min-w-[80px] bg-transparent focus:outline-none md:px-4 px-3 py-3 text-sm placeholder-text-gray"
+              className="flex-1 min-w-[80px] bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-text-gray"
             />
           </div>
 
