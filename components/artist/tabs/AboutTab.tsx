@@ -420,9 +420,9 @@ const AboutTab: React.FC<AboutTabProps> = ({
 
       {/* Sub-Artist Type (tag-style multi-select) */}      <div className="relative text-sm">
         <label className="block secondary-text text-white mb-1">Sub-Artist type*</label>
-        <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap gap-2">
+        <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap items-center gap-2 px-3 py-2">
           {selectedSubTypes.map((tag, idx) => (
-            <span key={tag + idx} className="inline-flex items-center gap-2 bg-background px-3 py-1 rounded-full text-sm">
+            <span key={tag + idx} className="inline-flex items-center gap-1 border border-border-color bg-background/80 text-sm px-2 py-1 rounded-full">
               <span>{tag}</span>
               <button
                 type="button"
@@ -439,7 +439,7 @@ const AboutTab: React.FC<AboutTabProps> = ({
           ))}
 
           <input
-            className="flex-1 bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-text-gray"
+            className="flex-1 min-w-[80px] bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-text-gray"
             placeholder={
               isSubArtistDisabled
                 ? "Select artist type first"

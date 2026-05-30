@@ -9,7 +9,6 @@ import Button from "@/components/ui/Button";
 import { INDIAN_STATES } from "@/lib/constants";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
-import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-indian-cities";
 import { ArtistProfileSetupPreferences } from "@/types";
 
 export interface FindArtistModalProps {
@@ -27,7 +26,6 @@ interface FormData {
   eventType: string;
   performingLanguage: string[];
   locationState: string;
-  location: string;
 }
 
 const FindArtistModal: React.FC<FindArtistModalProps> = ({
@@ -45,7 +43,6 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     eventType: "",
     performingLanguage: [],
     locationState: "",
-    location: "",
   });
 
   const isSubCategoryDisabled = !formData.artistCategory;
@@ -152,15 +149,6 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     return Array.isArray(list) && list.length > 0 ? list : INDIAN_STATES;
   }, [preferences]);
 
-  const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(
-    formData.locationState,
-  );
-
-  const cityOptionsWithCurrent = useMemo(() => {
-    if (!formData.location) return cityOptions;
-    if (cityOptions.some((c) => c.value === formData.location)) return cityOptions;
-    return [{ value: formData.location, label: formData.location }, ...cityOptions];
-  }, [formData.location, cityOptions]);
 
   // Language dropdown state
   const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
@@ -209,15 +197,6 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     }));
   };
 
-  useEffect(() => {
-    if (!formData.location) return;
-    if (!Array.isArray(cityOptions) || cityOptions.length === 0) return;
-    const canonical = canonicalizeCityValue(formData.location, cityOptions);
-    if (canonical !== formData.location) {
-      setFormData((prev) => ({ ...prev, location: canonical }));
-    }
-  }, [formData.location, cityOptions]);
-
   const handleEventStateChange = (value: string | string[]) => {
     const next = Array.isArray(value) ? (value[0] ?? "") : value;
     setFormData((prev) => ({
@@ -231,7 +210,6 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     setFormData((prev) => ({
       ...prev,
       locationState: next,
-      location: "",
     }));
   };
 
@@ -246,7 +224,6 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       eventType: "",
       performingLanguage: [],
       locationState: "",
-      location: "",
     });
     setSubInput("");
   };
@@ -260,8 +237,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     if (formData.budget) params.set("budget", formData.budget);
     if (formData.eventState) params.set("state", formData.eventState);
     if (formData.eventType) params.set("eventType", formData.eventType);
-    if (formData.locationState) params.set("artistState", formData.locationState);
-    if (formData.location) params.set("location", formData.location);
+    if (formData.locationState) params.set("location", formData.locationState);
     if (formData.performingLanguage && formData.performingLanguage.length > 0) {
       // join multiple selected languages as comma-separated
       params.set("language", (formData.performingLanguage as string[]).join(","));
@@ -282,8 +258,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
     formData.eventDate ||
     formData.eventType ||
     formData.performingLanguage.length > 0 ||
-    formData.locationState ||
-    formData.location,
+    formData.locationState,
   );
 
   return (
@@ -317,9 +292,9 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
         {/* Sub-Category (multi-tag with searchable suggestions) */}
         <div className="relative">
           <label className="secondary-text block mb-1">Sub-Category</label>
-          <div className="w-full bg-card border border-border-color rounded-lg  text-white flex flex-wrap gap-2">
+          <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap items-center gap-2 px-3 py-2">
             {(formData.subCategory || []).map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+              <span key={tag} className="inline-flex items-center gap-1 border border-border-color bg-background/80 text-sm px-2 py-1 rounded-full">
                 <span className="text-white">{tag}</span>
                 <button
                   type="button"
@@ -368,7 +343,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
                   handleInputChange("subCategory", formData.subCategory.slice(0, -1));
                 }
               }}
-              className="flex-1 min-w-[120px] bg-transparent focus:outline-none md:px-4 px-3 py-3 text-sm placeholder-gray-400"
+              className="flex-1 min-w-[80px] bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-gray-400"
             />
           </div>
 
@@ -480,7 +455,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             />
           </div>
           <div>
-            <label className="secondary-text  block mb-1">Artist Location</label>
+            <label className="secondary-text  block mb-1">Artist state</label>
             <Select
               placeholder="Select state"
               options={stateOptions}
@@ -489,24 +464,6 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             />
           </div>
         </div>
-
-        {/* Artist Location (city) */}
-        {/* <div>
-          <label className="secondary-text  block mb-1">Artist Location</label>
-          <Select
-            placeholder={
-              !formData.locationState
-                ? "Select artist state first"
-                : isFetchingCities
-                  ? "Loading cities..."
-                  : "Select city"
-            }
-            options={cityOptionsWithCurrent}
-            value={formData.location}
-            onChange={(value) => handleInputChange("location", value)}
-            disabled={!formData.locationState || isFetchingCities}
-          />
-        </div> */}
 
         {/* Performing Language */}
         <div className="relative">

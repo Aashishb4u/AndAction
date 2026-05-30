@@ -644,9 +644,9 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                 </Tooltip>
               </div>
 
-              <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap gap-2">
+              <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap items-center gap-2 px-3 py-2">
                 {selectedSubTypes.map((tag) => (
-                  <span key={tag} className="inline-flex items-center gap-2 border border-border-color text-sm md:px-4 px-3 py-3 rounded-full">
+                  <span key={tag} className="inline-flex items-center gap-1 border border-border-color bg-background/80 text-sm px-2 py-1 rounded-full">
                     <span className="text-white">{tag}</span>
                     <button
                       type="button"
@@ -708,7 +708,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                       onUpdateData({ subArtistType: csv });
                     }
                   }}
-                  className="flex-1 bg-transparent focus:outline-none text-base text-white placeholder-text-gray px-0 py-0"
+                  className="flex-1 min-w-[100px] bg-transparent focus:outline-none text-sm text-white placeholder-text-gray px-2 py-1"
                 />
               </div>
 
