@@ -247,9 +247,9 @@ function ArtistProfileContent() {
 
   return (
     <ArtistDashboardLayout>
-      <div className="flex flex-col lg:flex-row md:gap-5 md:p-6 min-h-screen h-screen">
+      <div className="flex flex-col lg:flex-row md:gap-5 md:p-6 min-h-screen">
         {/* Left Side - Artist Profile Card */}
-          <div className="w-full lg:w-80 xl:w-[360px] flex-shrink-0 max-w-screen overflow-hidden h-full">
+          <div className="w-full lg:w-80 xl:w-[360px] flex-shrink-0 max-w-screen ">
           <ArtistProfileCard
             onBack={() => router.push("/artist/dashboard")}
             onEdit={() => setIsAddProfileOpen(true)}
