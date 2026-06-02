@@ -93,6 +93,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   soundEnabled,
   setSoundEnabled,
 }) => {
+  
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -194,7 +195,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   /* ---------------- YOUTUBE CONTROL: mute/unmute ---------------- */
   /* ---------------- YOUTUBE CONTROL: mute/unmute ---------------- */
   useEffect(() => {
-    if (!isYouTube || !ytReady || !isActive) return;
+    if (!isYouTube || !ytReady) return;
 
     const iframe = document.getElementById(
       `yt-${short.id}`
@@ -213,20 +214,22 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       );
     };
 
-    // autoplay safely
+    if (!isActive) {
+      send("pauseVideo");
+      send("mute");
+      return;
+    }
+
     send("playVideo");
 
-    // IMPORTANT
     if (soundEnabled) {
       setTimeout(() => {
         send("unMute");
-        send("setVolume");
       }, 800);
     } else {
       send("mute");
     }
-  }, [soundEnabled, ytReady, isActive, isYouTube, short.id]);
-
+}, [soundEnabled, ytReady, isActive, isYouTube, short.id]);
 
   /* ---------------- PROGRESS BAR ---------------- */
 

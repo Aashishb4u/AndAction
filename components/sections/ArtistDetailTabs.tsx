@@ -104,6 +104,14 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     setActiveTab(valid);
   }, [searchParams]);
 
+  useEffect(() => {
+  console.log("ArtistDetailTabs mounted", isMobile);
+
+  return () => {
+    console.log("ArtistDetailTabs unmounted", isMobile);
+  };
+}, []);
+
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     router.replace(`${pathname}?tab=${tab}`, { scroll: false });

@@ -15,7 +15,10 @@ import { toast } from "react-toastify";
 
 export const createBooking = async (artistId: string, formData: any) => {
   try {
-    const mobileDigits = String(formData?.mobileNumber ?? "").replace(/\D/g, "");
+    const mobileDigits = String(formData?.mobileNumber ?? "").replace(
+      /\D/g,
+      "",
+    );
     const response = await fetch("/api/bookings", {
       method: "POST",
       headers: {
@@ -34,7 +37,7 @@ export const createBooking = async (artistId: string, formData: any) => {
     });
 
     const data = await response.json();
-    return data;  
+    return data;
   } catch (error) {
     console.error("Error creating booking:", error);
     throw error;
@@ -43,7 +46,7 @@ export const createBooking = async (artistId: string, formData: any) => {
 
 export const updateBookingState = async (
   bookingId: string,
-  status: BookingStatus
+  status: BookingStatus,
 ) => {
   try {
     const response = await fetch(`/api/bookings/${bookingId}`, {
@@ -84,6 +87,7 @@ export default function ArtistDetailPage() {
   const [artist, setArtist] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
+  const [isMobileView, setIsMobileView] = useState(false);
 
   const fetchBookmarkStatus = async (artistId: string) => {
     if (!session?.user) return { isBookmarked: false, bookmarkId: null };
@@ -108,6 +112,20 @@ export default function ArtistDetailPage() {
   };
 
 
+useEffect(() => {
+  const checkViewport = () => {
+    setIsMobileView(window.innerWidth < 1024);
+  };
+
+  checkViewport();
+
+  window.addEventListener("resize", checkViewport);
+
+  return () => {
+    window.removeEventListener("resize", checkViewport);
+  };
+}, []);
+
   useEffect(() => {
     if (!artistId) return;
 
@@ -115,7 +133,7 @@ export default function ArtistDetailPage() {
       try {
         const res = await fetch(`/api/artists/${artistId}`);
         const json = await res.json();
-        console.log("Fetched artist data:", json);  
+        console.log("Fetched artist data:", json);
 
         if (!json.success || !json.data?.artist) {
           setArtist(null);
@@ -146,7 +164,8 @@ export default function ArtistDetailPage() {
 
           chargesWithBacklineFrom: a.chargesWithBacklineFrom ?? undefined,
           chargesWithBacklineTo: a.chargesWithBacklineTo ?? undefined,
-          chargesWithBacklineDescription: a.chargesWithBacklineDescription || "",
+          chargesWithBacklineDescription:
+            a.chargesWithBacklineDescription || "",
 
           performingDurationFrom: a.performingDurationFrom || "",
           performingDurationTo: a.performingDurationTo || "",
@@ -209,7 +228,8 @@ export default function ArtistDetailPage() {
 
     return {
       ...artist,
-      category: findCategoryLabel(categories, artist.category) || artist.category,
+      category:
+        findCategoryLabel(categories, artist.category) || artist.category,
     };
   }, [artist, categories]);
 
@@ -356,14 +376,24 @@ export default function ArtistDetailPage() {
 
   const handleRequestBooking = () => {
     if (!session?.user) {
-      router.push(createAuthRedirectUrl("/auth/signin", window.location.pathname + window.location.search));
+      router.push(
+        createAuthRedirectUrl(
+          "/auth/signin",
+          window.location.pathname + window.location.search,
+        ),
+      );
       return;
     }
     console.log("Request booking");
   };
   const handleCall = () => {
     if (!session?.user) {
-      router.push(createAuthRedirectUrl("/auth/signin", window.location.pathname + window.location.search));
+      router.push(
+        createAuthRedirectUrl(
+          "/auth/signin",
+          window.location.pathname + window.location.search,
+        ),
+      );
       return;
     }
     if (artist.contactNumber) {
@@ -372,7 +402,12 @@ export default function ArtistDetailPage() {
   };
   const handleWhatsApp = () => {
     if (!session?.user) {
-      router.push(createAuthRedirectUrl("/auth/signin", window.location.pathname + window.location.search));
+      router.push(
+        createAuthRedirectUrl(
+          "/auth/signin",
+          window.location.pathname + window.location.search,
+        ),
+      );
       return;
     }
     const whatsappTarget = artist.whatsappNumber || artist.contactNumber;
@@ -400,25 +435,46 @@ export default function ArtistDetailPage() {
         return digitsOnly;
       };
 
-      const userName = `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim() || 'a user';
-      const artistName = artist.name || 'Artist';
+      const userName =
+        `${session.user.firstName || ""} ${session.user.lastName || ""}`.trim() ||
+        "a user";
+      const artistName = artist.name || "Artist";
       const message = `Hi ${artistName}, I am ${userName} found your profile on ANDACTION`;
       const encodedMessage = encodeURIComponent(message);
 
       const normalizedNumber = normalizeWhatsappNumber(whatsappTarget);
       if (!normalizedNumber) return;
-      
+
       window.open(
         `https://wa.me/${normalizedNumber}?text=${encodedMessage}`,
-        "_blank"
+        "_blank",
       );
     }
   };
 
   return (
     <SiteLayout hideBottomBar hideNavbarOnMobile>
-      <div className="hidden max-w-7xl mx-auto lg:flex min-h-screen bg-background py-10 lg:py-20">
-        <div className="w-[400px] flex-shrink-0">
+      {!isMobileView ? (
+        <div className="max-w-7xl mx-auto lg:flex min-h-screen bg-background py-10 lg:py-20">
+          <div className="w-[400px] flex-shrink-0">
+            <ArtistProfileHeader
+              artist={displayArtist}
+              disabledDates={disabledDates}
+              onBack={handleBack}
+              onBookmark={handleBookmark}
+              onShare={handleShare}
+              onRequestBooking={handleRequestBooking}
+              onCall={handleCall}
+              onWhatsApp={handleWhatsApp}
+            />
+          </div>
+
+          <div className="flex-1">
+            <ArtistDetailTabs artist={displayArtist} />
+          </div>
+        </div>
+      ) : (
+        <div className="min-h-screen bg-background">
           <ArtistProfileHeader
             artist={displayArtist}
             disabledDates={disabledDates}
@@ -428,28 +484,12 @@ export default function ArtistDetailPage() {
             onRequestBooking={handleRequestBooking}
             onCall={handleCall}
             onWhatsApp={handleWhatsApp}
+            isMobile={true}
           />
-        </div>
 
-        <div className="flex-1">
-          <ArtistDetailTabs artist={displayArtist} />
+          <ArtistDetailTabs artist={displayArtist} isMobile={true} />
         </div>
-      </div>
-
-      <div className="lg:hidden min-h-screen bg-background">
-        <ArtistProfileHeader
-          artist={displayArtist}
-          disabledDates={disabledDates}
-          onBack={handleBack}
-          onBookmark={handleBookmark}
-          onShare={handleShare}
-          onRequestBooking={handleRequestBooking}
-          onCall={handleCall}
-          onWhatsApp={handleWhatsApp}
-          isMobile={true}
-        />
-        <ArtistDetailTabs artist={displayArtist} isMobile={true} />
-      </div>
+      )}
     </SiteLayout>
   );
 }
