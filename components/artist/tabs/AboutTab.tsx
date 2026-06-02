@@ -618,7 +618,7 @@ const AboutTab: React.FC<AboutTabProps> = ({
       </div>
 
       {/* Save Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card px-2 py-3 flex gap-6 items-center z-50 md:static md:mt-6 md:z-auto">
+      <div className="fixed bottom-0 left-0 right-0 bg-card px-2 py-3 flex gap-3 items-center z-50 md:static md:mt-6 md:z-auto">
         <Button
           variant="secondary"
           onClick={onReset}
