@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
 import SiteLayout from './SiteLayout';
+import { useNavigationHistory } from '@/hooks/use-navigation-history';
 
 interface PageLayoutProps {
   title: string;
@@ -24,9 +25,10 @@ const PageLayout: React.FC<PageLayoutProps> = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname() || '/';
+  const { goBack } = useNavigationHistory({ fallbackPath: '/' });
 
   const handleBack = () => {
-    router.back();
+    goBack();
   };
 
   const segments = pathname.split('/').filter(Boolean);
