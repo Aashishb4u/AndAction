@@ -156,8 +156,12 @@ useEffect(() => {
 
           bio: a.shortBio || "",
           yearsOfExperience: a.yearsOfExperience || 0,
-          achievements: a.achievements ? [a.achievements] : [],
-          subArtistTypes: a.subArtistType ? [a.subArtistType] : [],
+          achievements: a.achievements 
+            ? a.achievements.split(/[,\n]+/).map((s: string) => s.trim()).filter(Boolean)
+            : [],
+          subArtistTypes: a.subArtistType 
+            ? a.subArtistType.split(",").map((s: string) => s.trim()).filter(Boolean)
+            : [],
           languages: formatDisplayLabels(a.performingLanguage),
 
           soloChargesFrom: a.soloChargesFrom ?? undefined,

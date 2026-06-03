@@ -382,9 +382,14 @@ export default function ArtistDashboard() {
                   return findCategoryLabel(categories, rawType) || rawType;
                 })();
 
+                const profileContact = (() => {
+                  if (session?.user?.email?.trim()) return session.user.email.trim();
+                  return formatPhoneForDisplay(profile?.contactNumber ?? session?.user?.phoneNumber) || "Contact not added";
+                })();
+
                 return (
                   <div key={profile.id} className="w-full shrink-0 snap-start">
-                    <div className="rounded-xl border border-border-color bg-card p-3.5 sm:p-4">
+                    <div className="rounded-xl border border-border-color bg-card p-4 sm:p-5">
                       <div className="flex items-start gap-2.5">
                         <div className="relative h-[140px] w-[100px] shrink-0 overflow-hidden rounded-[8px]">
                           <Image
@@ -396,16 +401,16 @@ export default function ArtistDashboard() {
                           />
                         </div>
 
-                        <div className="min-w-0 flex-1 flex flex-col justify-between gap-3">
+                        <div className="min-w-0 flex-1 flex flex-col justify-between gap-4">
                           <div className="min-w-0">
-                            <h2 className="truncate text-lg font-semibold leading-tight text-white">
+                            <h2 className="truncate text-[20px] font-semibold leading-tight text-white">
                               {profile?.stageName || fullName}
                             </h2>
-                            <p className="mt-1 truncate text-base font-normal leading-6 text-text-gray">
-                              {contactDisplay || "Contact not added"}
+                            <p className="mt-1 truncate text-base font-normal leading-6 text-white">
+                              {profileArtistType}
                             </p>
                             <p className="mt-1 truncate text-base font-normal leading-6 text-text-gray">
-                              {profileArtistType}
+                              {profileContact}
                             </p>
                           </div>
 
@@ -426,13 +431,15 @@ export default function ArtistDashboard() {
               })}
 
               <div className="w-full shrink-0 snap-start">
-                <div className="rounded-xl border border-border-color bg-gradient-to-b from-[#1A1A1A] to-[#101010] p-4 text-center sm:p-5">
-                  <h2 className="text-xl font-semibold text-white sm:text-2xl">Add New Profile</h2>
-                  <p className="mt-1.5 text-sm text-text-gray sm:text-base">
-                    Showcase your other talent
-                  </p>
+                <div className="rounded-xl border border-border-color bg-gradient-to-b from-[#1A1A1A] to-[#101010] p-4 text-center sm:p-5 flex flex-col h-full">
+                  <div className="flex flex-col flex-1 justify-center">
+                    <h2 className="text-xl font-semibold text-white sm:text-2xl">Add New Profile</h2>
+                    <p className="mt-1.5 text-sm text-text-gray sm:text-base">
+                      Showcase your other talent
+                    </p>
+                  </div>
 
-                  <div className="mt-4">
+                  <div className="mt-4 pt-4">
                     <Button
                       onClick={() => setIsAddProfileOpen(true)}
                       variant="secondary"
@@ -666,7 +673,7 @@ export default function ArtistDashboard() {
               title="Sort by event date"
               aria-label={`Sort by event date, currently ${sortOrder === 'desc' ? 'newest first' : 'oldest first'}`}
             >
-              <span className="gradient-text text-sm sm:text-base">
+              <span className="gradient-text text-sm sm:text-base font-bold">
                 Sort by
               </span>
               <Image

@@ -157,20 +157,12 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
       {/* Section Header */}
       <div className="flex items-center justify-between mb-1 px-4 ">
         <h2 className="h2 text-white">{title}</h2>
-        <div className="relative inline-flex">
-          <button
-            className="gradient-text hover:text-primary-orange transition-colors duration-300 btn1-responsive"
-            onClick={() => handleViewAll()}
-          >
-            View all
-          </button>
-
-          {/* Gradient underline matching View all gradient */}
-          <div
-            className="absolute left-0 right-0 -bottom-1 h-[2px] rounded"
-            style={{ background: 'linear-gradient(90deg,#FF6A3D,#FF2A8E)' }}
-          />
-        </div>
+        <button
+          className="gradient-underline text-[16px] md:text-[18px] font-bold font-['Raleway'] leading-[24px] md:leading-[26px] gradient-text hover:text-primary-orange transition-colors duration-300"
+          onClick={() => handleViewAll()}
+        >
+          View all
+        </button>
       </div>
 
       {/* Modal for no artists found */}

@@ -113,6 +113,20 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     useState<string[]>(initialSubTypes);
   const [subTypeInput, setSubTypeInput] = useState<string>("");
 
+  // Multi-select tags for achievements (UI)
+  const initialAchievements = (() => {
+    const raw = data.achievements || formData.achievements || "";
+    if (!raw) return [] as string[];
+    return raw
+      .split(/[,\n]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  })();
+
+  const [selectedAchievements, setSelectedAchievements] =
+    useState<string[]>(initialAchievements);
+  const [achievementInput, setAchievementInput] = useState<string>("");
+
   const normalizeSubType = (value: string) => value.trim().toLowerCase();
 
   const addSubTypeTag = (rawValue: string) => {
@@ -213,9 +227,44 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     refetchSubArtistSuggestions();
   };
 
+  // Add achievement tag
+  const addAchievementTag = (rawValue: string) => {
+    const v = rawValue.trim();
+    if (!v) return;
+    const normalizedValue = v.toLowerCase();
+
+    setSelectedAchievements((prev) => {
+      const exists = prev.some((item) => item.toLowerCase() === normalizedValue);
+      if (exists) return prev;
+      const next = [...prev, v];
+      const csv = next.join(", ");
+      setFormData((current) => ({
+        ...current,
+        achievements: csv,
+      }));
+      onUpdateData({ achievements: csv });
+      return next;
+    });
+  };
+
+  // Handle achievement input change (for newline/enter)
+  const handleAchievementInputChange = (value: string) => {
+    if (value.includes("\n")) {
+      const parts = value.split("\n");
+      const completed = parts
+        .slice(0, -1)
+        .map((p) => p.trim())
+        .filter(Boolean);
+      completed.forEach(addAchievementTag);
+      setAchievementInput(parts[parts.length - 1] ?? "");
+      return;
+    }
+    setAchievementInput(value);
+  };
+
   // Sync formData when data prop changes (for editing existing profiles)
   useEffect(() => {
-    if (data.artistType || data.stageName || data.subArtistType) {
+    if (data.artistType || data.stageName || data.subArtistType || data.achievements) {
       setFormData({
         profilePhoto: data.profilePhoto || null,
         avatarUrl: (data as any).avatarUrl || "",
@@ -233,13 +282,23 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       }
 
       // Update selected sub types
-      const raw = data.subArtistType || "";
-      if (raw) {
-        const subTypes = raw
+      const rawSubTypes = data.subArtistType || "";
+      if (rawSubTypes) {
+        const subTypes = rawSubTypes
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean);
         setSelectedSubTypes(subTypes);
+      }
+
+      // Update selected achievements
+      const rawAchievements = data.achievements || "";
+      if (rawAchievements) {
+        const achievements = rawAchievements
+          .split(/[,\n]+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        setSelectedAchievements(achievements);
       }
     }
   }, [data.artistType, data.stageName, data.subArtistType, data.achievements, data.yearsOfExperience, data.shortBio, (data as any).avatarUrl, data.profilePhoto]);
@@ -801,14 +860,56 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                     </svg>
                   </Tooltip>
                 </div>
-                <Input
-                  placeholder="Enter achievements"
-                  value={formData.achievements}
-                  onChange={(e) =>
-                    handleInputChange("achievements", e.target.value)
-                  }
-                  variant="filled"
-                />
+                <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap items-center gap-2 px-3 py-2">
+                  {selectedAchievements.map((tag) => (
+                    <span key={tag} className="inline-flex items-center gap-1 border border-border-color bg-background/80 text-sm px-2 py-1 rounded-full">
+                      <span className="text-white">{tag}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = selectedAchievements.filter((t) => t !== tag);
+                          setSelectedAchievements(next);
+                          const csv = next.length ? next.join(", ") : "";
+                          setFormData((prev) => ({
+                            ...prev,
+                            achievements: csv,
+                          }));
+                          onUpdateData({ achievements: csv });
+                        }}
+                        className="text-text-gray hover:text-white"
+                        aria-label={`Remove ${tag}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    placeholder="Press Enter to add achievement"
+                    value={achievementInput}
+                    onChange={(e) => handleAchievementInputChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const v = achievementInput.trim();
+                        if (v) {
+                          addAchievementTag(v);
+                          setAchievementInput("");
+                        }
+                      } else if (e.key === "Backspace" && !achievementInput) {
+                        const next = selectedAchievements.slice(0, -1);
+                        setSelectedAchievements(next);
+                        const csv = next.length ? next.join(", ") : "";
+                        setFormData((prev) => ({
+                          ...prev,
+                          achievements: csv,
+                        }));
+                        onUpdateData({ achievements: csv });
+                      }
+                    }}
+                    className="flex-1 min-w-[100px] bg-transparent focus:outline-none text-sm text-white placeholder-text-gray px-2 py-1"
+                  />
+                </div>
               </div>
 
               <div>

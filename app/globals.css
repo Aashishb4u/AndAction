@@ -403,6 +403,13 @@ button:focus {
   background-clip: text;
 }
 
+.gradient-text:hover {
+  background: var(--primary-orange);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Custom gradient button */
 .gradient-button {
   background: var(--gradient-primary);
@@ -437,10 +444,10 @@ button:focus {
   content: '';
   display: block;
   position: absolute;
-  bottom: 0;
+  bottom: 2px;
   left: 0;
   width: 100%;
-  height: 2px;
+  height: 1px;
   border-radius: 1px;
   background: var(--gradient-primary);
 }
