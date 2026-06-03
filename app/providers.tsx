@@ -2,11 +2,15 @@
 
 import { LocationProvider } from "@/components/providers/location-provider";
 import QueryProvider from "@/components/providers/query-provider";
-import { SessionProvider } from "next-auth/react";
+import { SessionProvider, __NEXTAUTH } from "next-auth/react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  if (typeof window !== "undefined" && __NEXTAUTH?.basePath === "/") {
+    __NEXTAUTH.basePath = "/api/auth";
+  }
+
   return (
     <SessionProvider>
       <LocationProvider>
