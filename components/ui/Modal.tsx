@@ -80,7 +80,7 @@ const Modal: React.FC<ModalProps> = ({
       {/* Modal Content */}
       <div
         className={`
-          relative w-full ${sizeClasses[size]} ${isBottomSheet ? 'max-h-[90vh] rounded-t-2xl md:rounded-2xl' : 'max-h-[90vh] rounded-2xl'} overflow-hidden
+          relative w-full ${sizeClasses[size]} ${isBottomSheet ? 'max-h-[85vh] rounded-t-2xl md:rounded-2xl' : 'max-h-[90vh] rounded-2xl'} overflow-hidden
           bg-background border border-border-color shadow-2xl
           ${isBottomSheet ? 'modal-bottom-sheet' : 'modal-content'}
           ${className}

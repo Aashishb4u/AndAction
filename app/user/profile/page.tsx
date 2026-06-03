@@ -10,9 +10,11 @@ import { toast } from "react-toastify";
 import { INDIAN_STATES } from "@/lib/constants";
 import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-indian-cities";
 import { formatDisplayLabel } from "@/lib/utils";
+import { useNavigationHistory } from "@/hooks/use-navigation-history";
 
 export default function UserProfilePage() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory({ fallbackPath: '/' });
   const { data: session, status, update: updateSession } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -223,7 +225,7 @@ export default function UserProfilePage() {
       {/* Back Button and Title - Title Centered */}
       <div className="relative flex items-center md:justify-center md:mb-8 md:mt-4 mt-2 md:px-0 px-4">
         <button
-          onClick={() => router.back()}
+          onClick={goBack}
           className="absolute left-0 md:left-0 text-white m-3 hover:text-primary-pink transition-colors duration-200 flex items-center gap-4"
           aria-label="Back"
         >

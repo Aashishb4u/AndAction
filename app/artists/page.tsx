@@ -19,6 +19,7 @@ import { transformArtist } from "./transformArtist";
 import ClientWrapper from "@/components/ui/client-wrapper";
 import { Search } from "lucide-react";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 const DEFAULT_LIMIT = 12;
@@ -161,6 +162,7 @@ function ArtistsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const { goBack } = useNavigationHistory({ fallbackPath: '/' });
 
   const pageLocation = useMemo(() => {
     const latFromUrl = parseFloat(searchParams.get("lat") || "");
@@ -570,7 +572,7 @@ function ArtistsPageContent() {
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 md:gap-4 overflow-hidden">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => router.back()}
+                  onClick={goBack}
                   className=" text-white transition-colors flex-shrink-0"
                   aria-label="Go back"
                 >

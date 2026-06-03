@@ -9,6 +9,7 @@ import ArtistDetailTabs from "@/components/sections/ArtistDetailTabs";
 import { BookingStatus } from "@prisma/client";
 import { formatDisplayLabel, formatDisplayLabels } from "@/lib/utils";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
 import { createAuthRedirectUrl } from "@/lib/auth";
 import { toast } from "react-toastify";
@@ -84,6 +85,7 @@ export default function ArtistDetailPage() {
   const { id: artistId } = useParams();
   const { data: session } = useSession();
   const { categories } = useArtistCategories();
+  const { goBackToArtists } = useNavigationHistory({ fallbackPath: '/artists' });
   const [artist, setArtist] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
@@ -154,8 +156,12 @@ useEffect(() => {
 
           bio: a.shortBio || "",
           yearsOfExperience: a.yearsOfExperience || 0,
-          achievements: a.achievements ? [a.achievements] : [],
-          subArtistTypes: a.subArtistType ? [a.subArtistType] : [],
+          achievements: a.achievements 
+            ? a.achievements.split(/[,\n]+/).map((s: string) => s.trim()).filter(Boolean)
+            : [],
+          subArtistTypes: a.subArtistType 
+            ? a.subArtistType.split(",").map((s: string) => s.trim()).filter(Boolean)
+            : [],
           languages: formatDisplayLabels(a.performingLanguage),
 
           soloChargesFrom: a.soloChargesFrom ?? undefined,
@@ -275,7 +281,7 @@ useEffect(() => {
               Artist not found
             </h1>
             <button
-              onClick={() => router.back()}
+              onClick={goBackToArtists}
               className="text-primary-pink hover:text-primary-orange transition-colors"
             >
               Go Back
@@ -287,18 +293,7 @@ useEffect(() => {
   }
 
   const handleBack = () => {
-    if (typeof window === "undefined") {
-      router.push("/artists");
-      return;
-    }
-
-    const returnTo = sessionStorage.getItem("artistProfile:returnTo");
-    if (returnTo && returnTo.startsWith("/")) {
-      router.push(returnTo);
-      return;
-    }
-
-    router.push("/artists");
+    goBackToArtists();
   };
 
   const handleBookmark = async () => {

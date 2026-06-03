@@ -544,10 +544,10 @@ const AboutTab: React.FC<AboutTabProps> = ({
       {/* Achievements and Years of Experience */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <div className="relative">
-          <label className="block secondary-text text-white mb-2">
+          <label className="block secondary-text text-white mb-1">
             Achievements / Awards
           </label>
-          <div className="w-full bg-card border border-border-color rounded-lg p-3 text-white flex flex-wrap gap-2 min-h-[4rem]">
+          <div className="w-full bg-card border border-border-color rounded-lg p-3 text-white flex flex-wrap gap-2 min-h-[2rem]">
             {achievementChips.map((tag, index) => (
               <span
                 key={`${tag}-${index}`}
@@ -568,7 +568,7 @@ const AboutTab: React.FC<AboutTabProps> = ({
               </span>
             ))}
             <input
-              className="flex-1 min-w-[10rem] bg-transparent text-white placeholder-text-gray outline-none border-none px-1 py-1 text-sm"
+              className="flex-1 min-w-[10rem] bg-transparent text-white placeholder-text-gray outline-none border-none text-sm"
               placeholder="Press Enter to add a new achievement"
               value={achievementInput}
               onChange={(e) => setAchievementInput(e.target.value)}
