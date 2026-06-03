@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Artist } from "@/types";
 import Bookmark from "../icons/bookmark";
 import { buildArtishProfileUrl, formatDisplayLabel, formatDisplayValues } from "@/lib/utils";
+import { useNavigationHistory } from "@/hooks/use-navigation-history";
 
 interface ArtistProfileCardProps {
   artist: Artist;
@@ -21,16 +22,15 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   className = "",
 }) => {
   const router = useRouter();
+  const { setReturnPath } = useNavigationHistory();
   const formatPrice = (price: number) => {
     return `₹ ${price.toLocaleString()}`;
   };
 
   const handleClick = () => {
+    // Set the current page as return path before navigating to artist profile
     if (typeof window !== "undefined") {
-      sessionStorage.setItem(
-        "artistProfile:returnTo",
-        window.location.pathname + window.location.search,
-      );
+      setReturnPath(window.location.pathname + window.location.search);
     }
     router.push(`/artists/${artist.id}`);
   };

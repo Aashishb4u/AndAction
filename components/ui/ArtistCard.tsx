@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { buildArtishProfileUrl } from "@/lib/utils";
+import { useNavigationHistory } from "@/hooks/use-navigation-history";
 
 interface ArtistCardProps {
   id: string;
@@ -23,14 +24,13 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   className = "",
 }) => {
   const router = useRouter();
+  const { setReturnPath } = useNavigationHistory();
   const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = () => {
+    // Set the current page as return path before navigating to artist profile
     if (typeof window !== "undefined") {
-      sessionStorage.setItem(
-        "artistProfile:returnTo",
-        window.location.pathname + window.location.search,
-      );
+      setReturnPath(window.location.pathname + window.location.search);
     }
     router.push(`/artists/${id}`);
   };
