@@ -192,6 +192,7 @@ export const {
           if (user.role === "artist" && primaryArtist) {
             safeUser.artistProfile = {
               id: primaryArtist.id,
+              profileImage: primaryArtist.profileImage ?? null,
               stageName: primaryArtist.stageName ?? null,
               artistType: primaryArtist.artistType ?? null,
               subArtistType: primaryArtist.subArtistType ?? null,

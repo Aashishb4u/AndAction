@@ -8,6 +8,7 @@ import LoadingSpinner from "@/components/ui/Loading";
 import { buildArtishProfileUrl, getArtishName } from "@/lib/utils";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { useLocation } from "@/components/providers/location-provider";
 import {
   findCategoryLabel,

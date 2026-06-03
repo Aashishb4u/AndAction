@@ -28,6 +28,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   };
 
   const handleClick = () => {
+    // Set the current page as return path before navigating to artist profile
     if (typeof window !== "undefined") {
       setReturnPath(window.location.pathname + window.location.search);
     }
