@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 
 export interface ModalProps {
   isOpen: boolean;
@@ -13,8 +13,8 @@ export interface ModalProps {
   headerClassName?: string;
   showCloseButton?: boolean;
   closeOnBackdropClick?: boolean;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
-  variant?: 'center' | 'bottom-sheet';
+  size?: "sm" | "md" | "lg" | "xl" | "full";
+  variant?: "center" | "bottom-sheet";
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -22,30 +22,30 @@ const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
-  className = '',
+  className = "",
   showCloseButton = true,
   closeOnBackdropClick = true,
-  size = 'md',
-  headerClassName = '',
-  variant = 'center',
+  size = "md",
+  headerClassName = "",
+  variant = "center",
 }) => {
   // Handle escape key press
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
+      if (event.key === "Escape" && isOpen) {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener("keydown", handleEscape);
       // Prevent body scroll when modal is open
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
 
@@ -57,21 +57,29 @@ const Modal: React.FC<ModalProps> = ({
   };
 
   // Size classes - Updated to match Figma design
+  // const sizeClasses = {
+  //   sm: 'max-w-[400px]',
+  //   md: 'max-w-lg',
+  //   lg: 'max-w-2xl',
+  //   xl: 'max-w-4xl',
+  //   full: 'max-w-full md:mx-4',
+  // };
+
   const sizeClasses = {
-    sm: 'max-w-[400px]',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    full: 'max-w-full md:mx-4',
+    sm: "max-w-[400px]",
+    md: "max-w-lg",
+    lg: "max-w-2xl",
+    xl: "max-w-4xl",
+    full: "w-screen h-screen md:w-full md:h-auto md:max-w-4xl",
   };
 
-  const isBottomSheet = (variant === 'bottom-sheet');
+  const isBottomSheet = variant === "bottom-sheet";
 
   if (!isOpen) return null;
 
   const modalContent = (
     <div
-      className={`fixed inset-0 z-50 flex ${isBottomSheet ? 'items-end' : 'items-center'} justify-center ${isBottomSheet ? 'md:p-4' : 'md:p-4'} modal-backdrop`}
+      className={`fixed inset-0 z-[10001] flex ${isBottomSheet ? "items-end" : "items-center"} justify-center ${isBottomSheet ? "md:p-4" : "md:p-4"} modal-backdrop`}
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
@@ -80,17 +88,27 @@ const Modal: React.FC<ModalProps> = ({
       {/* Modal Content */}
       <div
         className={`
-          relative w-full ${sizeClasses[size]} ${isBottomSheet ? 'max-h-[85vh] rounded-t-2xl md:rounded-2xl' : 'max-h-[90vh] rounded-2xl'} overflow-hidden
+          relative w-full ${sizeClasses[size]} 
+          ${
+            size === "full"
+              ? "h-screen rounded-none md:max-h-[90vh] md:rounded-2xl"
+              : isBottomSheet
+                ? "max-h-screen rounded-t-2xl md:rounded-2xl"
+                : "max-h-screen rounded-2xl"
+          }
+          overflow-hidden
           bg-background border border-border-color shadow-2xl
-          ${isBottomSheet ? 'modal-bottom-sheet' : 'modal-content'}
+          ${isBottomSheet ? "modal-bottom-sheet" : "modal-content"}
           ${className}
         `}
       >
         {showCloseButton && title && (
-          <div className={`border-b border-border-color md:px-6 px-4 py-6 ${headerClassName}`}>
-            <div className='flex justify-between items-center'>
+          <div
+            className={`border-b border-border-color md:px-6 px-4 py-6 ${headerClassName}`}
+          >
+            <div className="flex justify-between items-center">
               <div>
-                <h2 className='text-white h1'>{title}</h2>
+                <h2 className="text-white h1">{title}</h2>
               </div>
               <div className="z-10">
                 <button
@@ -106,7 +124,13 @@ const Modal: React.FC<ModalProps> = ({
         )}
 
         {/* Content */}
-        <div className={`overflow-y-auto ${isBottomSheet ? 'max-h-[calc(90vh-60px)]' : 'max-h-[calc(90vh-60px)]'} modal-scroll`}>
+        <div
+          className={`overflow-y-auto ${
+            size === "full"
+              ? "h-[calc(100vh-80px)] md:max-h-[calc(90vh-60px)]"
+              : "max-h-[calc(90vh-60px)]"
+          } modal-scroll`}
+        >
           {children}
         </div>
       </div>
@@ -114,7 +138,7 @@ const Modal: React.FC<ModalProps> = ({
   );
 
   // Render modal using portal
-  return typeof window !== 'undefined'
+  return typeof window !== "undefined"
     ? createPortal(modalContent, document.body)
     : null;
 };
