@@ -250,8 +250,7 @@ export default function MobileSearchPage() {
   const showLocationUnavailableMessage = isLocationResolved && !effectiveLocation;
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-white flex flex-col">
-      {/* Top Bar */}
+<div className="min-h-screen w-full lg:w-[50%] max-w-[900px] mx-auto bg-[#0f0f0f] text-white flex flex-col">      {/* Top Bar */}
       <div className="p-4 pb-2 mt-2 flex flex-col">
         {showLocationUnavailableMessage && (
           <div className="mb-3 rounded-xl border border-[#333] bg-[#111] px-4 py-3 text-sm text-gray-300">
