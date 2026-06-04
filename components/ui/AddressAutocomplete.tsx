@@ -74,7 +74,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     setIsSearching(true);
     try {
       const res = await fetch(
-        `/api/geocode/search?q=${encodeURIComponent(query)}`
+        `/api/geocode/search?q=${encodeURIComponent(query)}`,
       );
       const data = await res.json();
 
@@ -141,7 +141,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         try {
           const { latitude, longitude } = position.coords;
           const res = await fetch(
-            `/api/geocode/reverse?lat=${latitude}&lon=${longitude}`
+            `/api/geocode/reverse?lat=${latitude}&lon=${longitude}`,
           );
           const data = await res.json();
 
@@ -151,7 +151,8 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             const normalizedCity = normalizeCity(loc.city);
             const apiLat = Number(loc.lat);
             const apiLon = Number(loc.lon);
-            const hasCoords = Number.isFinite(apiLat) && Number.isFinite(apiLon);
+            const hasCoords =
+              Number.isFinite(apiLat) && Number.isFinite(apiLon);
 
             onChange(loc.formattedAddress || loc.displayName);
             onLocationSelect({
@@ -179,7 +180,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           alert("Could not get your location. Please try again.");
         }
       },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
     );
   };
 
@@ -190,12 +191,12 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setActiveSuggestion((prev) =>
-        prev < suggestions.length - 1 ? prev + 1 : 0
+        prev < suggestions.length - 1 ? prev + 1 : 0,
       );
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveSuggestion((prev) =>
-        prev > 0 ? prev - 1 : suggestions.length - 1
+        prev > 0 ? prev - 1 : suggestions.length - 1,
       );
     } else if (e.key === "Enter" && activeSuggestion >= 0) {
       e.preventDefault();
@@ -241,9 +242,36 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   return (
     <div ref={wrapperRef} className="w-full relative">
       {label && (
-        <label className="block section-text secondary-text mb-1">
-          {label}
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="section-text secondary-text">{label}</label>
+
+          <button
+            type="button"
+            onClick={handleUseCurrentLocation}
+            disabled={disabled || isFetchingGPS}
+            className="
+        flex items-center gap-2
+        px-3 py-1.5
+        text-xs font-medium
+        rounded-md
+        gradient-button
+        disabled:opacity-50
+        disabled:cursor-not-allowed
+        
+      "
+          >
+            {isFetchingGPS ? (
+              <>
+                <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                Fetching...
+              </>
+            ) : (
+              <>
+                Current Location
+              </>
+            )}
+          </button>
+        </div>
       )}
 
       <div className="relative">
@@ -264,7 +292,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         />
 
         {/* Location picker button */}
-        <button
+        {/* <button
           type="button"
           onClick={handleUseCurrentLocation}
           disabled={disabled || isFetchingGPS}
@@ -311,7 +339,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
               />
             </svg>
           )}
-        </button>
+        </button> */}
 
         {/* Loading indicator */}
         {isSearching && (
@@ -380,7 +408,9 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                     {suggestion.displayName}
                   </span>
                   <span className="text-xs text-text-gray truncate mt-0.5">
-                    {[suggestion.city, suggestion.state].filter(Boolean).join(", ")}
+                    {[suggestion.city, suggestion.state]
+                      .filter(Boolean)
+                      .join(", ")}
                     {suggestion.postcode ? ` ${suggestion.postcode}` : ""}
                   </span>
                 </div>

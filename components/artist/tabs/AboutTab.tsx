@@ -12,7 +12,10 @@ import { Info } from "lucide-react";
 import { INDIAN_STATES } from "@/lib/constants";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
-import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-indian-cities";
+import {
+  canonicalizeCityValue,
+  useIndianCitiesByState,
+} from "@/hooks/use-indian-cities";
 import type { AboutDraft } from "./profileDraftTypes";
 
 interface AboutTabProps {
@@ -71,11 +74,14 @@ const AboutTab: React.FC<AboutTabProps> = ({
   });
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
-  const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(draft.state);
+  const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(
+    draft.state,
+  );
 
   const stateOptions = useMemo(() => {
     if (!draft.state) return INDIAN_STATES;
-    if (INDIAN_STATES.some((s) => s.value === draft.state)) return INDIAN_STATES;
+    if (INDIAN_STATES.some((s) => s.value === draft.state))
+      return INDIAN_STATES;
     return [{ value: draft.state, label: draft.state }, ...INDIAN_STATES];
   }, [draft.state]);
 
@@ -159,7 +165,11 @@ const AboutTab: React.FC<AboutTabProps> = ({
 
     const nextChips = [...achievementChips];
     items.forEach((item) => {
-      if (!nextChips.some((existing) => existing.toLowerCase() === item.toLowerCase())) {
+      if (
+        !nextChips.some(
+          (existing) => existing.toLowerCase() === item.toLowerCase(),
+        )
+      ) {
         nextChips.push(item);
       }
     });
@@ -172,7 +182,9 @@ const AboutTab: React.FC<AboutTabProps> = ({
     setAchievementInput("");
   };
 
-  const handleAchievementKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleAchievementKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
     if (e.key === "Enter") {
       e.preventDefault();
       addAchievementChips(achievementInput);
@@ -194,7 +206,9 @@ const AboutTab: React.FC<AboutTabProps> = ({
           const normalizedState = data.data.state
             ? String(data.data.state).toLowerCase().replace(/\s+/g, "-")
             : "";
-          const resolvedCity = String(data.data.city || data.data.district || "").trim();
+          const resolvedCity = String(
+            data.data.city || data.data.district || "",
+          ).trim();
 
           setDraft((prev) => ({
             ...prev,
@@ -228,10 +242,10 @@ const AboutTab: React.FC<AboutTabProps> = ({
           </Tooltip>
         </div>
       </div>
-
-
       {/* First Name and Last Name */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">       <Input
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {" "}
+        <Input
           label="First name*"
           value={draft.firstName}
           onChange={(e) => handleInputChange("firstName", e.target.value)}
@@ -244,7 +258,6 @@ const AboutTab: React.FC<AboutTabProps> = ({
           required
         />
       </div>
-
       {/* Date of Birth and Gender */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <DateInput
@@ -263,7 +276,6 @@ const AboutTab: React.FC<AboutTabProps> = ({
           required
         />
       </div>
-
       {/* Address */}
       <AddressAutocomplete
         label="Office/Home full address*"
@@ -289,14 +301,14 @@ const AboutTab: React.FC<AboutTabProps> = ({
                 ? loc.latitude
                 : null,
             longitude:
-              typeof loc.longitude === "number" && Number.isFinite(loc.longitude)
+              typeof loc.longitude === "number" &&
+              Number.isFinite(loc.longitude)
                 ? loc.longitude
                 : null,
           }));
         }}
         required
       />
-
       {/* PIN Code, State, City */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
@@ -343,7 +355,11 @@ const AboutTab: React.FC<AboutTabProps> = ({
           }
           disabled={isFetchingLocation || !draft.state || isFetchingCities}
           helperText={
-            !draft.state ? "Select state first" : isFetchingCities ? "Loading cities..." : undefined
+            !draft.state
+              ? "Select state first"
+              : isFetchingCities
+                ? "Loading cities..."
+                : undefined
           }
           required
         />
@@ -351,7 +367,6 @@ const AboutTab: React.FC<AboutTabProps> = ({
       {isFetchingLocation && (
         <p className="text-sm text-primary-pink -mt-2">Fetching location...</p>
       )}
-
       {/* Contact Number */}
       <div className="relative text-sm">
         <Input
@@ -366,7 +381,6 @@ const AboutTab: React.FC<AboutTabProps> = ({
           </Tooltip>
         </div>
       </div>
-
       {/* WhatsApp Number */}
       <div className="relative text-sm">
         <Input
@@ -381,7 +395,6 @@ const AboutTab: React.FC<AboutTabProps> = ({
           </Tooltip>
         </div>
       </div>
-
       {/* Email ID */}
       <div className="relative text-sm">
         <Input
@@ -396,8 +409,7 @@ const AboutTab: React.FC<AboutTabProps> = ({
           </Tooltip>
         </div>
       </div>
-
-            {/* Artist Category */}
+      {/* Artist Category */}
       <div className="relative text-sm">
         <Select
           label="Artist Category*"
@@ -417,17 +429,22 @@ const AboutTab: React.FC<AboutTabProps> = ({
           </Tooltip>
         </div>
       </div>
-
-      {/* Sub-Artist Type (tag-style multi-select) */}      <div className="relative text-sm">
-        <label className="block secondary-text text-white mb-1">Sub-Artist type*</label>
+      {/* Sub-Artist Type (tag-style multi-select) */}{" "}
+      <div className="relative text-sm">
+        <label className="block secondary-text text-white mb-1">
+          Sub-Artist type*
+        </label>
         <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap items-center gap-2 px-3 py-2">
           {selectedSubTypes.map((tag, idx) => (
-            <span key={tag + idx} className="inline-flex items-center gap-1 border border-border-color bg-background/80 text-sm px-2 py-1 rounded-full">
+            <span
+              key={tag + idx}
+              className="inline-flex items-center gap-1 border border-border-color bg-background/80 text-sm px-2 py-1 rounded-full"
+            >
               <span>{tag}</span>
               <button
                 type="button"
                 onClick={() => {
-                  const next = selectedSubTypes.filter(t => t !== tag);
+                  const next = selectedSubTypes.filter((t) => t !== tag);
                   setSelectedSubTypes(next);
                 }}
                 className="text-text-gray hover:text-white"
@@ -458,15 +475,15 @@ const AboutTab: React.FC<AboutTabProps> = ({
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
             onKeyDown={(e) => {
               if (isSubArtistDisabled) return;
-              if (e.key === 'Enter' || e.key === ',') {
+              if (e.key === "Enter" || e.key === ",") {
                 e.preventDefault();
-                const v = subTypeInput.trim().replace(/,$/, '');
+                const v = subTypeInput.trim().replace(/,$/, "");
                 if (v) {
                   addSubTypeTag(v);
                   createSubArtistTypeInDb(v);
                 }
-                setSubTypeInput('');
-              } else if (e.key === 'Backspace' && !subTypeInput) {
+                setSubTypeInput("");
+              } else if (e.key === "Backspace" && !subTypeInput) {
                 setSelectedSubTypes(selectedSubTypes.slice(0, -1));
               }
             }}
@@ -503,7 +520,9 @@ const AboutTab: React.FC<AboutTabProps> = ({
             {subArtistSuggestions
               .filter(
                 (s) =>
-                  s.toLowerCase().includes((subTypeInput || "").toLowerCase()) &&
+                  s
+                    .toLowerCase()
+                    .includes((subTypeInput || "").toLowerCase()) &&
                   !selectedSubTypes.some(
                     (t) => normalizeSubType(t) === normalizeSubType(s),
                   ),
@@ -540,7 +559,6 @@ const AboutTab: React.FC<AboutTabProps> = ({
           </div>
         )}
       </div>
-
       {/* Achievements and Years of Experience */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <div className="relative">
@@ -557,7 +575,9 @@ const AboutTab: React.FC<AboutTabProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const next = achievementChips.filter((_, idx) => idx !== index);
+                    const next = achievementChips.filter(
+                      (_, idx) => idx !== index,
+                    );
                     syncAchievementChips(next);
                   }}
                   className="text-text-gray hover:text-white"
@@ -600,7 +620,6 @@ const AboutTab: React.FC<AboutTabProps> = ({
           </div>
         </div>
       </div>
-
       {/* Short Bio */}
       <div className="relative">
         <Textarea
@@ -616,7 +635,6 @@ const AboutTab: React.FC<AboutTabProps> = ({
           </Tooltip>
         </div>
       </div>
-
       {/* Save Button */}
       <div className="fixed bottom-0 left-0 right-0 bg-card px-2 py-3 flex gap-3 items-center z-50 md:static md:mt-6 md:z-auto">
         <Button
@@ -629,7 +647,21 @@ const AboutTab: React.FC<AboutTabProps> = ({
         </Button>
         <Button
           variant="primary"
-          onClick={onSave}
+          onClick={async () => {
+            if (
+              draft.latitude === null ||
+              draft.longitude === null ||
+              !Number.isFinite(draft.latitude) ||
+              !Number.isFinite(draft.longitude)
+            ) {
+              alert(
+                "Please select an address from the dropdown suggestions or use current location.",
+              );
+              return;
+            }
+
+            await onSave();
+          }}
           disabled={isSaving}
           className="flex-1"
         >

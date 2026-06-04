@@ -18,7 +18,10 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { signInWithGoogleAsArtist } from "@/lib/auth";
 import { signIn, useSession } from "next-auth/react";
 import { INDIAN_STATES } from "@/lib/constants";
-import { canonicalizeCityValue, useIndianCitiesByState } from "@/hooks/use-indian-cities";
+import {
+  canonicalizeCityValue,
+  useIndianCitiesByState,
+} from "@/hooks/use-indian-cities";
 
 type ArtistSignUpStep = "join" | "otp" | "password" | "userInfo" | "terms";
 type ContactType = "phone" | "email";
@@ -53,7 +56,8 @@ function ArtistAuthContent() {
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [, setLocationFetched] = useState(false);
 
-  const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(state);
+  const { cityOptions, isFetching: isFetchingCities } =
+    useIndianCitiesByState(state);
 
   useEffect(() => {
     if (!city) return;
@@ -173,7 +177,9 @@ function ArtistAuthContent() {
               ? data.data.state.toLowerCase().replace(/\s+/g, "-")
               : "";
 
-            const resolvedCity = String(data.data.city || data.data.district || "").trim();
+            const resolvedCity = String(
+              data.data.city || data.data.district || "",
+            ).trim();
 
             setState(normalizedState);
             setCity(resolvedCity);
@@ -304,7 +310,9 @@ function ArtistAuthContent() {
     setStep(action.to);
   };
 
-  const requestNavigation = (action: Exclude<PendingNavigationAction, null>) => {
+  const requestNavigation = (
+    action: Exclude<PendingNavigationAction, null>,
+  ) => {
     if (!hasUnsavedProgress) {
       performNavigationAction(action);
       return;
@@ -496,11 +504,16 @@ function ArtistAuthContent() {
           await updateSession({
             update: {
               role: "artist",
-              artistProfile: convertedProfileId ? { id: convertedProfileId } : null,
+              artistProfile: convertedProfileId
+                ? { id: convertedProfileId }
+                : null,
             },
           } as any);
         } catch (sessionError) {
-          console.warn("Session role update failed after conversion:", sessionError);
+          console.warn(
+            "Session role update failed after conversion:",
+            sessionError,
+          );
         }
       }
 
@@ -526,7 +539,9 @@ function ArtistAuthContent() {
 
       if (usesExistingAccountFlow) {
         router.push(
-          isConvertFlow ? "/artist/profile-setup?convert=true" : "/artist/profile-setup",
+          isConvertFlow
+            ? "/artist/profile-setup?convert=true"
+            : "/artist/profile-setup",
         );
         return;
       }
@@ -572,9 +587,7 @@ function ArtistAuthContent() {
           console.log("Auto Sign In succeeded. Session cookie created.");
         }
       } else {
-        console.warn(
-          "⚠️ Missing contactIdentifier for auto Sign In.",
-        );
+        console.warn("⚠️ Missing contactIdentifier for auto Sign In.");
       }
 
       // ✅ Redirect to profile setup (session will now exist)
@@ -642,6 +655,14 @@ function ArtistAuthContent() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const maskPhone = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, "");
+
+    if (cleaned.length < 6) return cleaned;
+
+    return `${cleaned.slice(0, 3)}*****${cleaned.slice(-2)}`;
   };
 
   const handleChangeContact = () => {
@@ -947,9 +968,7 @@ function ArtistAuthContent() {
                 </button>
                 <div>
                   <p className="secondary-text text-text-gray">Step 1 of 3</p>
-                  <h2 className="btn1  text-white">
-                    Create Password
-                  </h2>
+                  <h2 className="btn1  text-white">Create Password</h2>
                 </div>
               </div>
             </div>
@@ -1031,9 +1050,19 @@ function ArtistAuthContent() {
             </div>
 
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                saveSignupDraft("terms");
+
+                if (!latitude || !longitude) {
+                  setError(
+                    "Please select an address from the dropdown suggestions or use current location.",
+                  );
+                  return;
+                }
+
+                setError(""); // Clear previous error
+
+                await saveSignupDraft("terms");
                 setStep("terms");
               }}
               className="space-y-4"
@@ -1104,12 +1133,14 @@ function ArtistAuthContent() {
                     if (loc.state) setState(loc.state);
                     if (loc.city) setCity(loc.city);
                     setLatitude(
-                      typeof loc.latitude === "number" && Number.isFinite(loc.latitude)
+                      typeof loc.latitude === "number" &&
+                        Number.isFinite(loc.latitude)
                         ? loc.latitude
                         : null,
                     );
                     setLongitude(
-                      typeof loc.longitude === "number" && Number.isFinite(loc.longitude)
+                      typeof loc.longitude === "number" &&
+                        Number.isFinite(loc.longitude)
                         ? loc.longitude
                         : null,
                     );
@@ -1119,14 +1150,16 @@ function ArtistAuthContent() {
                   disabled={isLoading}
                   variant="filled"
                 />
-                <div className="absolute top-0 right-0">
+                {/* <div className="absolute top-0 right-0">
                   <Tooltip content="Your work/office location will help us recommend you and show your profile to clients searching near your location. It will not be visible to users on your profile.">
                     <Info size={16} className="text-blue" />
                   </Tooltip>
-                </div>
+                </div> */}
               </div>
               <p className="mt-2 text-sm text-text-gray">
-                Your work/office location will help us recommend you and show your profile to clients searching near your location. It will not be visible to users on your profile.
+                Your work/office location will help us recommend you and show
+                your profile to clients searching near your location. It will
+                not be visible to users on your profile.
               </p>
 
               {/* PIN Code */}
@@ -1158,7 +1191,9 @@ function ArtistAuthContent() {
                   placeholder="Select"
                   value={state}
                   onChange={(value) => {
-                    const next = Array.isArray(value) ? (value[0] ?? "") : value;
+                    const next = Array.isArray(value)
+                      ? (value[0] ?? "")
+                      : value;
                     setState(next);
                     setCity("");
                     setLatitude(null);
@@ -1171,12 +1206,18 @@ function ArtistAuthContent() {
                 <Select
                   label="City*"
                   placeholder={
-                    !state ? "Select state first" : isFetchingCities ? "Loading cities..." : "Select"
+                    !state
+                      ? "Select state first"
+                      : isFetchingCities
+                        ? "Loading cities..."
+                        : "Select"
                   }
                   value={city}
                   onChange={(value) =>
                     (() => {
-                      const next = Array.isArray(value) ? (value[0] ?? "") : value;
+                      const next = Array.isArray(value)
+                        ? (value[0] ?? "")
+                        : value;
                       setCity(next);
                       setLatitude(null);
                       setLongitude(null);
@@ -1184,7 +1225,12 @@ function ArtistAuthContent() {
                   }
                   options={cityOptionsWithCurrent}
                   required
-                  disabled={isLoading || isFetchingLocation || !state || isFetchingCities}
+                  disabled={
+                    isLoading ||
+                    isFetchingLocation ||
+                    !state ||
+                    isFetchingCities
+                  }
                 />
               </div>
 

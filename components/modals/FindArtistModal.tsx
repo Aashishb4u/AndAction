@@ -596,7 +596,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
             <span className="secondary-grey-text">View result</span>
           </Button>
         </div>
-        <div className="flex whitespace-nowrap md:hidden gap-4 pt-4 sticky bottom-4 bg-background py-4 secondary-grey-text">
+        <div className="flex whitespace-nowrap md:hidden gap-4 pt-4 sticky bottom-6 bg-background py-4 secondary-grey-text">
           <Button
             variant="secondary"
             size="md"
