@@ -84,6 +84,7 @@ export default function ShortsPage() {
   );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [audioGateOpen, setAudioGateOpen] = useState<boolean>(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const queryClient = useQueryClient();
   const [shareModal, setShareModal] = useState<{
@@ -98,6 +99,10 @@ export default function ShortsPage() {
 
   const { data: session } = useSession();
   const router = useRouter();
+
+  const audioGateSeqRef = useRef<number>(0);
+  const mobileContainerRef = useRef<HTMLDivElement>(null);
+  const desktopContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 768);
@@ -168,14 +173,57 @@ export default function ShortsPage() {
     }
   }, []);
 
-  const mobileContainerRef = useRef<HTMLDivElement>(null);
-  const desktopContainerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
   const touchEndY = useRef<number>(0);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const lastScrollTime = useRef<number>(0);
   const velocityRef = useRef<number>(0);
   const lastTouchTime = useRef<number>(0);
+
+  const stopAllShortsPlayback = useCallback(() => {
+    const mobileContainer = mobileContainerRef.current;
+    const desktopContainer = desktopContainerRef.current;
+    
+    const container = isDesktop ? desktopContainer : mobileContainer;
+    if (!container) return;
+
+    const videos = Array.from(
+      container.querySelectorAll<HTMLVideoElement>("video"),
+    );
+    videos.forEach((video) => {
+      video.pause();
+      video.muted = true;
+    });
+
+    const iframes = Array.from(
+      container.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
+    );
+    iframes.forEach((iframe) => {
+      if (!iframe.contentWindow) return;
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+        "*",
+      );
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func: "mute", args: [] }),
+        "*",
+      );
+    });
+  }, [isDesktop]);
+
+  useEffect(() => {
+    setAudioGateOpen(false);
+    const seq = (audioGateSeqRef.current += 1);
+
+    const timer = window.setTimeout(() => {
+      if (audioGateSeqRef.current !== seq) return;
+      setAudioGateOpen(true);
+    }, 250);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [currentIndex]);
 
   // Load more videos when approaching the end (trigger 3 items before end)
   const loadMoreVideos = useCallback(() => {
@@ -205,6 +253,10 @@ export default function ShortsPage() {
 
       lastScrollTime.current = now;
 
+      audioGateSeqRef.current += 1;
+      setAudioGateOpen(false);
+      stopAllShortsPlayback();
+
       setCurrentIndex((prevIndex) => {
         const newIndex =
           direction === "down"
@@ -218,7 +270,7 @@ export default function ShortsPage() {
         return newIndex;
       });
     },
-    [groupedShorts.length, loadMoreVideos],
+    [groupedShorts.length, loadMoreVideos, stopAllShortsPlayback],
   );
 
   // Wheel (desktop)
@@ -353,7 +405,7 @@ export default function ShortsPage() {
   ]);
 
   const getVisibleVideos = useCallback(() => {
-    const bufferSize = 2;
+    const bufferSize = 1;
     const startIndex = Math.max(0, currentIndex - bufferSize);
     const endIndex = Math.min(
       groupedShorts.length - 1,
@@ -550,23 +602,27 @@ export default function ShortsPage() {
               height: "100%", // Ensure container takes full height of parent
             }}
           >
-            {visibleVideos.map((video) => (
-              <div
-                key={`${video.id}-${video.absoluteIndex}`}
-                className="absolute inset-0 w-full h-full"
-                style={{ top: `${video.absoluteIndex * 100}%` }}
-              >
-                <ShortsPlayer
-                  short={video}
-                  isActive={video.absoluteIndex === currentIndex && !isDesktop}
-                  shouldLoad={!isDesktop}
-                  onBookmark={handleBookmark}
-                  onShare={handleShare}
-                  soundEnabled={soundEnabled}
-                  setSoundEnabled={setSoundEnabled}
-                />
-              </div>
-            ))}
+            {visibleVideos.map((video) => {
+              const isActive = video.absoluteIndex === currentIndex && !isDesktop;
+              const isNext = video.absoluteIndex === currentIndex + 1;
+              return (
+                <div
+                  key={`${video.id}-${video.absoluteIndex}`}
+                  className="absolute inset-0 w-full h-full"
+                  style={{ top: `${video.absoluteIndex * 100}%` }}
+                >
+                  <ShortsPlayer
+                    short={video}
+                    isActive={isActive}
+                    shouldLoad={isActive || isNext}
+                    onBookmark={handleBookmark}
+                    onShare={handleShare}
+                    soundEnabled={isActive ? (audioGateOpen && soundEnabled) : false}
+                    setSoundEnabled={setSoundEnabled}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
         {/* Add bottom navigation bar for mobile */}
@@ -593,7 +649,10 @@ export default function ShortsPage() {
                 willChange: "transform",
               }}
             >
-              {visibleVideos.map((video) => (
+              {visibleVideos.map((video) => {
+              const isActive = video.absoluteIndex === currentIndex && isDesktop;
+              const isNext = video.absoluteIndex === currentIndex + 1;
+              return (
                 <div
                   key={`${video.id}-${video.absoluteIndex}`}
                   className="absolute inset-0 w-full h-full"
@@ -601,15 +660,16 @@ export default function ShortsPage() {
                 >
                   <ShortsPlayer
                     short={video}
-                    isActive={video.absoluteIndex === currentIndex && isDesktop}
-                    shouldLoad={isDesktop}
+                    isActive={isActive}
+                    shouldLoad={isActive || isNext}
                     onBookmark={handleBookmark}
                     onShare={handleShare}
-                    soundEnabled={soundEnabled}
+                    soundEnabled={isActive ? (audioGateOpen && soundEnabled) : false}
                     setSoundEnabled={setSoundEnabled}
                   />
                 </div>
-              ))}
+              );
+            })}
             </div>
           </div>
         </div>

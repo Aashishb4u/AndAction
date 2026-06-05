@@ -146,7 +146,7 @@ export default function ArtistDashboard() {
     profiles.length > 0
       ? profiles
       : session?.user?.artistProfile
-      ? [
+        ? [
           {
             id: session.user.artistProfile.id,
             profileImage: (session.user.artistProfile as any).profileImage ?? null,
@@ -157,7 +157,7 @@ export default function ArtistDashboard() {
             profileOrder: 0,
           },
         ]
-      : [];
+        : [];
   const mobileCarouselRef = useRef<HTMLDivElement | null>(null);
   const desktopCarouselRef = useRef<HTMLDivElement | null>(null);
   const mobileRafRef = useRef<number | null>(null);
@@ -321,9 +321,8 @@ export default function ArtistDashboard() {
   }
 
   const artist = session?.user?.artistProfile;
-  const fullName = `${session?.user?.firstName ?? ""} ${
-    session?.user?.lastName ?? ""
-  }`.trim();
+  const fullName = `${session?.user?.firstName ?? ""} ${session?.user?.lastName ?? ""
+    }`.trim();
 
   const formatPhoneForDisplay = (rawPhone?: string | null) => {
     const digits = String(rawPhone ?? "").replace(/\D/g, "");
@@ -353,9 +352,9 @@ export default function ArtistDashboard() {
     activeIndexForProgress >= profilesForUi.length
       ? 0
       : getArtistProfileProgress({
-          user: session?.user ?? null,
-          artistProfile: selectedArtistProfileForProgress,
-        }).percentage;
+        user: session?.user ?? null,
+        artistProfile: selectedArtistProfileForProgress,
+      }).percentage;
 
   /* ----------------------------------------------------
      PAGE JSX
@@ -406,11 +405,12 @@ export default function ArtistDashboard() {
                             <h2 className="truncate text-[20px] font-semibold leading-tight text-white">
                               {profile?.stageName || fullName}
                             </h2>
-                            <p className="mt-1 truncate text-base font-normal leading-6 text-white">
-                              {profileArtistType}
-                            </p>
+
                             <p className="mt-1 truncate text-base font-normal leading-6 text-text-gray">
                               {profileContact}
+                            </p>
+                            <p className="mt-1 truncate text-base font-normal leading-6 text-white">
+                              {profileArtistType}
                             </p>
                           </div>
 
@@ -463,9 +463,8 @@ export default function ArtistDashboard() {
                     type="button"
                     onClick={() => scrollToProfileCard(mobileCarouselRef, i)}
                     aria-label={`Go to profile card ${i + 1}`}
-                    className={`h-2 rounded-full transition-all ${
-                      isActive ? "w-10 bg-white/90" : "w-2 bg-white/25"
-                    }`}
+                    className={`h-2 rounded-full transition-all ${isActive ? "w-10 bg-white/90" : "w-2 bg-white/25"
+                      }`}
                   />
                 );
               })}
@@ -606,9 +605,8 @@ export default function ArtistDashboard() {
                     type="button"
                     onClick={() => scrollToProfileCard(desktopCarouselRef, i)}
                     aria-label={`Go to profile card ${i + 1}`}
-                    className={`h-2 rounded-full transition-all ${
-                      isActive ? "w-10 bg-white/90" : "w-2 bg-white/25"
-                    }`}
+                    className={`h-2 rounded-full transition-all ${isActive ? "w-10 bg-white/90" : "w-2 bg-white/25"
+                      }`}
                   />
                 );
               })}
