@@ -191,7 +191,7 @@ const OptimizedVideoPlayer: React.FC<VideoPlayerProps> = ({
               <iframe
                 ref={iframeRef}
                 className="absolute top-0 left-0 w-full h-full"
-                src={`https://www.youtube.com/embed/${ytId}?autoplay=1&controls=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3`}
+                src={`https://www.youtube.com/embed/${ytId}?autoplay=1&controls=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&nohistory=1`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 title={title}

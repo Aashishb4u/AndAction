@@ -378,15 +378,15 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       {shouldLoad &&
         (isYouTube ? (
           <iframe
-            id={`yt-${short.id}`}
-            className="absolute inset-0 w-full h-full"
-            loading={isActive ? "eager" : "lazy"}
-            src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
-              typeof window !== "undefined" ? window.location.origin : ""
-            }`}
-            onLoad={() => setYtReady(true)}
-            allow="autoplay; encrypted-media; fullscreen"
-          />
+                    id={`yt-${short.id}`}
+                    className="absolute inset-0 w-full h-full"
+                    loading={isActive ? "eager" : "lazy"}
+                    src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
+                      typeof window !== "undefined" ? window.location.origin : ""
+                    }&nohistory=1`}
+                    onLoad={() => setYtReady(true)}
+                    allow="autoplay; encrypted-media; fullscreen"
+                  />
         ) : (
           <video
             key={short.id}
