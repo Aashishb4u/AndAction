@@ -25,7 +25,6 @@ const YouTubeEmbed: React.FC<YouTubeEmbedProps> = ({
     modestbranding: '1', // Reduce YouTube branding
     playsinline: '1', // Play inline on mobile
     enablejsapi: '1', // Enable JavaScript API
-    nohistory: '1', // Don't add to browser history
   }).toString()}`;
 
   return (

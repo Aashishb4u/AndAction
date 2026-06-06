@@ -63,6 +63,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const [shouldPlayVideo, setShouldPlayVideo] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [loadVideoPlayer, setLoadVideoPlayer] = useState(false); // New: Lazy load video player
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -95,6 +96,9 @@ const VideoCard: React.FC<VideoCardProps> = ({
     enabled: enableMobileAutoplay,
     onPlayStateChange: (isPlaying) => {
       // Update video visibility when mobile autoplay triggers
+      if (isPlaying && !loadVideoPlayer) {
+        setLoadVideoPlayer(true);
+      }
       setShouldPlayVideo(isPlaying);
     },
   });
@@ -103,14 +107,20 @@ const VideoCard: React.FC<VideoCardProps> = ({
   useEffect(() => {
     if (isHovered) {
       hoverTimeoutRef.current = setTimeout(() => {
-        setShouldPlayVideo(true);
-        if (isYouTube && iframeRef.current) {
-          iframeRef.current.contentWindow?.postMessage(
-            '{"event":"command","func":"playVideo","args":""}',
-            "*",
-          );
-        } else if (videoRef.current) {
-          videoRef.current.play().catch(() => {});
+        // Load video player first if not already loaded
+        if (!loadVideoPlayer) {
+          setLoadVideoPlayer(true);
+        } else {
+          // If already loaded, play immediately
+          setShouldPlayVideo(true);
+          if (isYouTube && iframeRef.current) {
+            iframeRef.current.contentWindow?.postMessage(
+              '{"event":"command","func":"playVideo","args":""}',
+              "*",
+            );
+          } else if (videoRef.current) {
+            videoRef.current.play().catch(() => {});
+          }
         }
       }, 500); // 500ms debounce delay
     } else {
@@ -133,7 +143,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
         );
       }
 
-    if (videoRef.current) {
+      if (videoRef.current) {
         videoRef.current.pause();
         videoRef.current.currentTime = 0;
       }
@@ -144,27 +154,33 @@ const VideoCard: React.FC<VideoCardProps> = ({
         clearTimeout(hoverTimeoutRef.current);
       }
     };
-  }, [isHovered, isYouTube]);
+  }, [isHovered, isYouTube, loadVideoPlayer]);
 
+  // Play video once it's loaded (after being triggered by hover or mobile autoplay)
   useEffect(() => {
-    if (!shouldPlayVideo || !isVideoLoaded) return;
-    setTimeout(()=>{
-    if (isYouTube && iframeRef.current) {
-      iframeRef.current.contentWindow?.postMessage(
-        '{"event":"command","func":"playVideo","args":""}',
-        "*",
-      );
-      // Start ticking to track approximate YouTube current time
-      ytCurrentTimeRef.current = 0;
-      if (ytTickerRef.current) clearInterval(ytTickerRef.current);
-      ytTickerRef.current = setInterval(() => {
-        ytCurrentTimeRef.current += 1;
-      }, 1000);
-    } else if (!isYouTube && videoRef.current) {
-      videoRef.current.play().catch(() => {});
+    if (loadVideoPlayer && isVideoLoaded && (isHovered || shouldPlayVideo)) {
+      setTimeout(() => {
+        setShouldPlayVideo(true);
+        if (isYouTube && iframeRef.current) {
+          iframeRef.current.contentWindow?.postMessage(
+            '{"event":"command","func":"playVideo","args":""}',
+            "*",
+          );
+          // Start ticking to track approximate YouTube current time
+          ytCurrentTimeRef.current = 0;
+          if (ytTickerRef.current) clearInterval(ytTickerRef.current);
+          ytTickerRef.current = setInterval(() => {
+            ytCurrentTimeRef.current += 1;
+          }, 1000);
+        } else if (!isYouTube && videoRef.current) {
+          videoRef.current.play().catch(() => {});
+        }
+      }, 200);
+    } else if (!shouldPlayVideo || !isVideoLoaded) {
+      // If video should not play or not loaded, do nothing
+      return;
     }
-  },200);
-  }, [isVideoLoaded, shouldPlayVideo, isYouTube]);
+  }, [isVideoLoaded, shouldPlayVideo, isYouTube, loadVideoPlayer, isHovered]);
 
   useEffect(() => {
     if (!shouldPlayVideo) return;
@@ -253,24 +269,25 @@ const VideoCard: React.FC<VideoCardProps> = ({
         {/* Video overlay wrapper - sits exactly over thumbnail */}
         <div className="absolute inset-0 overflow-hidden">
 
-        {/* YouTube iframe */}
-        {isYouTube && youtubeVideoId && (
+        {/* YouTube iframe - only load when needed */}
+        {isYouTube && youtubeVideoId && loadVideoPlayer && (
           <div
             className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo ? "opacity-100" : "opacity-0"}`}
           >
             <iframe
               ref={iframeRef}
               className="w-full h-full object-cover"
-              src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0&nohistory=1`}
+              src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               onLoad={() => setIsVideoLoaded(true)}
+              loading="lazy"
             />
           </div>
         )}
 
-        {/* MP4 video */}
-        {!isYouTube && (
+        {/* MP4 video - only load when needed */}
+        {!isYouTube && loadVideoPlayer && (
           <div
             className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo && isVideoLoaded ? "opacity-100" : "opacity-0"}`}
           >

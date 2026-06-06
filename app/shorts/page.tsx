@@ -182,23 +182,14 @@ export default function ShortsPage() {
   const lastTouchTime = useRef<number>(0);
 
   const stopAllShortsPlayback = useCallback(() => {
-    const mobileContainer = mobileContainerRef.current;
-    const desktopContainer = desktopContainerRef.current;
-    
-    const container = isDesktop ? desktopContainer : mobileContainer;
-    if (!container) return;
-
-    const videos = Array.from(
-      container.querySelectorAll<HTMLVideoElement>("video"),
-    );
+    // Search entire document for any video/yt iframe to make sure nothing is missed
+    const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("video"));
     videos.forEach((video) => {
       video.pause();
       video.muted = true;
     });
 
-    const iframes = Array.from(
-      container.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
-    );
+    const iframes = Array.from(document.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'));
     iframes.forEach((iframe) => {
       if (!iframe.contentWindow) return;
       iframe.contentWindow.postMessage(
@@ -210,7 +201,7 @@ export default function ShortsPage() {
         "*",
       );
     });
-  }, [isDesktop]);
+  }, []);
 
   useEffect(() => {
     setAudioGateOpen(false);
@@ -625,7 +616,7 @@ export default function ShortsPage() {
                   <ShortsPlayer
                     short={video}
                     isActive={isActive}
-                    shouldLoad={isActive || isNext}
+                    shouldLoad={isActive}
                     onBookmark={handleBookmark}
                     onShare={handleShare}
                     soundEnabled={isActive ? (audioGateOpen && soundEnabled) : false}
