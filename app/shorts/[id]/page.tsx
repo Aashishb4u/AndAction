@@ -202,7 +202,7 @@ export default function ShortDetailsPage() {
                     {isYouTube && youtubeVideoId ? (
                       <iframe
                         className="w-full h-full"
-                        src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&controls=1`}
+                        src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&controls=1&nohistory=1`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                       />

@@ -261,7 +261,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
             <iframe
               ref={iframeRef}
               className="w-full h-full object-cover"
-              src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0`}
+              src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0&nohistory=1`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               onLoad={() => setIsVideoLoaded(true)}

@@ -103,6 +103,7 @@ export default function ShortsPage() {
   const audioGateSeqRef = useRef<number>(0);
   const mobileContainerRef = useRef<HTMLDivElement>(null);
   const desktopContainerRef = useRef<HTMLDivElement>(null);
+  const ignoreShortsSwipeRef = useRef<boolean>(false);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 768);
@@ -295,12 +296,18 @@ export default function ShortsPage() {
   // Touch events (mobile)
   const handleTouchStart = useCallback((e: TouchEvent) => {
     e.stopPropagation();
+    const target = e.target as HTMLElement | null;
+    ignoreShortsSwipeRef.current = Boolean(
+      target?.closest?.('[data-shorts-interactive="true"]'),
+    );
+    if (ignoreShortsSwipeRef.current) return;
     touchStartY.current = e.touches[0].clientY;
     lastTouchTime.current = Date.now();
     velocityRef.current = 0;
   }, []);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (ignoreShortsSwipeRef.current) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -316,8 +323,12 @@ export default function ShortsPage() {
 
   const handleTouchEnd = useCallback(
     (e: TouchEvent) => {
+      if (ignoreShortsSwipeRef.current) {
+        ignoreShortsSwipeRef.current = false;
+        return;
+      }
       e.stopPropagation();
-      touchEndY.current = e.changedTouches[0].clientY;
+      touchEndY.current = e.changedTouches[0]?.clientY ?? touchEndY.current;
       const deltaY = touchStartY.current - touchEndY.current;
       const now = Date.now();
       const duration = now - lastTouchTime.current;

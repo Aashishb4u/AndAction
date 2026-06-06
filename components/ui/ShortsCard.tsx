@@ -167,7 +167,7 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
               <iframe
                 ref={iframeRef}
                 className="w-full h-full object-cover"
-                src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}`}
+                src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=0&mute=1&loop=1&playlist=${youtubeVideoId}&nohistory=1`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 onLoad={() => setIsVideoLoaded(true)}
