@@ -350,20 +350,14 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   }, [shortsCurrentIndex, loadMoreProfileShorts]);
 
   const stopAllProfileShortsPlayback = useCallback(() => {
-    const container = shortsContainerRef.current;
-    if (!container) return;
-
-    const videos = Array.from(
-      container.querySelectorAll<HTMLVideoElement>("video"),
-    );
+    // Search entire document for any video/yt iframe to make sure nothing is missed
+    const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("video"));
     videos.forEach((video) => {
       video.pause();
       video.muted = true;
     });
 
-    const iframes = Array.from(
-      container.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
-    );
+    const iframes = Array.from(document.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'));
     iframes.forEach((iframe) => {
       if (!iframe.contentWindow) return;
       iframe.contentWindow.postMessage(

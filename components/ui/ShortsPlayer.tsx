@@ -101,12 +101,54 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
+  const nativeUnmuteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const ytUnmuteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const ytTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const youtubeId = extractYouTubeId(short.videoUrl);
   const isYouTube = Boolean(youtubeId);
   const effectiveSoundEnabled = isActive ? soundEnabled : false;
 
   const avatarSrc = buildArtishProfileUrl(short.avatar ?? "");
+
+  // Immediately pause/mute when not active OR when component unmounts
+  useEffect(() => {
+    const pauseAndMuteEverything = () => {
+      // Clear ALL timeouts
+      if (nativeUnmuteTimeoutRef.current) clearTimeout(nativeUnmuteTimeoutRef.current);
+      if (ytUnmuteTimeoutRef.current) clearTimeout(ytUnmuteTimeoutRef.current);
+      if (ytTimerRef.current) clearTimeout(ytTimerRef.current);
+      
+      // Pause native video
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.muted = true;
+      }
+      // Pause/mute YouTube iframe
+      if (isYouTube) {
+        const iframe = document.getElementById(`yt-${short.id}`) as HTMLIFrameElement | null;
+        if (iframe?.contentWindow) {
+          iframe.contentWindow.postMessage(
+            JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+            "*"
+          );
+          iframe.contentWindow.postMessage(
+            JSON.stringify({ event: "command", func: "mute", args: [] }),
+            "*"
+          );
+        }
+      }
+      setIsPlaying(false);
+    };
+
+    if (!isActive) {
+      pauseAndMuteEverything();
+    }
+
+    return () => {
+      pauseAndMuteEverything();
+    };
+  }, [isActive, isYouTube, short.id]);
 
   useEffect(() => {
     setIsVideoLoaded(false);
@@ -132,14 +174,23 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     const video = videoRef.current;
     if (!video) return;
 
+    // Clear any existing timeout
+    if (nativeUnmuteTimeoutRef.current) {
+      clearTimeout(nativeUnmuteTimeoutRef.current);
+      nativeUnmuteTimeoutRef.current = null;
+    }
+
     if (isActive && shouldLoad && isVideoLoaded) {
       if (video.paused) {
         video.muted = true;
         video
           .play()
           .then(() => {
-            setTimeout(() => {
-              video.muted = !effectiveSoundEnabled;
+            nativeUnmuteTimeoutRef.current = setTimeout(() => {
+              // Only unmute if still active
+              if (isActive) {
+                video.muted = !effectiveSoundEnabled;
+              }
             }, 50);
 
             setIsPlaying(true);
@@ -154,6 +205,13 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       video.muted = true;
       setIsPlaying(false);
     }
+
+    return () => {
+      if (nativeUnmuteTimeoutRef.current) {
+        clearTimeout(nativeUnmuteTimeoutRef.current);
+        nativeUnmuteTimeoutRef.current = null;
+      }
+    };
   }, [effectiveSoundEnabled, isActive, isVideoLoaded, isYouTube, shouldLoad]);
   useEffect(() => {
     if (isYouTube) return;
@@ -188,6 +246,16 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     ) as HTMLIFrameElement | null;
     if (!iframe?.contentWindow) return;
 
+    // Clear all existing YouTube timeouts
+    if (ytUnmuteTimeoutRef.current) {
+      clearTimeout(ytUnmuteTimeoutRef.current);
+      ytUnmuteTimeoutRef.current = null;
+    }
+    if (ytTimerRef.current) {
+      clearTimeout(ytTimerRef.current);
+      ytTimerRef.current = null;
+    }
+
     const sendCommand = (func: string) => {
       iframe.contentWindow?.postMessage(
         JSON.stringify({ event: "command", func, args: [] }),
@@ -199,8 +267,11 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       sendCommand("playVideo");
 
       if (soundEnabled) {
-        setTimeout(() => {
-          sendCommand("unMute");
+        ytUnmuteTimeoutRef.current = setTimeout(() => {
+          // Only unmute if still active
+          if (isActive) {
+            sendCommand("unMute");
+          }
         }, 700);
       } else {
         sendCommand("mute");
@@ -210,14 +281,23 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       sendCommand("mute");
     }
 
-    const timer = setTimeout(() => {
+    ytTimerRef.current = setTimeout(() => {
       sendCommand(isActive ? "playVideo" : "pauseVideo");
     }, 300);
 
     setIsPlaying(isActive);
     return () => {
-      clearTimeout(timer);
+      // Clear all timeouts in cleanup
+      if (ytUnmuteTimeoutRef.current) {
+        clearTimeout(ytUnmuteTimeoutRef.current);
+        ytUnmuteTimeoutRef.current = null;
+      }
+      if (ytTimerRef.current) {
+        clearTimeout(ytTimerRef.current);
+        ytTimerRef.current = null;
+      }
       sendCommand("pauseVideo");
+      sendCommand("mute");
     };
   }, [isActive, isYouTube, short.id, ytReady, soundEnabled]);
 
@@ -381,7 +461,8 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
                     id={`yt-${short.id}`}
                     className="absolute inset-0 w-full h-full"
                     loading={isActive ? "eager" : "lazy"}
-                    src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${isActive ? 1 : 0}&mute=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
+                    // Set autoplay to 0 when not active, mute always initially
+                    src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=0&mute=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
                       typeof window !== "undefined" ? window.location.origin : ""
                     }&nohistory=1`}
                     onLoad={() => setYtReady(true)}
