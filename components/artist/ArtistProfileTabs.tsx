@@ -103,8 +103,10 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
         performingMembers: performanceDraft.performingMembers,
         offStageMembers: performanceDraft.offStageMembers,
         soloChargesFrom: performanceDraft.soloChargesFrom,
+        soloChargesTo: performanceDraft.soloChargesTo,
         soloChargesDescription: performanceDraft.soloChargesDescription,
         chargesWithBacklineFrom: performanceDraft.chargesWithBacklineFrom,
+        chargesWithBacklineTo: performanceDraft.chargesWithBacklineTo,
         chargesWithBacklineDescription: performanceDraft.chargesWithBacklineDescription,
       };
 

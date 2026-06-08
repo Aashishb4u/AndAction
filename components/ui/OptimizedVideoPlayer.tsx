@@ -39,7 +39,7 @@ const OptimizedVideoPlayer: React.FC<VideoPlayerProps> = ({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(!autoplay); // Don't show spinner for autoplay
   const [hasError, setHasError] = useState(false);
-  const [playYouTube, setPlayYouTube] = useState(autoplay); // Only load iframe on click
+  const [playYouTube, setPlayYouTube] = useState(true); // Always load YouTube iframe immediately
 
   // Track video playback milestones
   const trackMilestone = useCallback(async (milestone: number, currentTime: number, duration: number) => {

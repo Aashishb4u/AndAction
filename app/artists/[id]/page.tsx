@@ -293,7 +293,7 @@ useEffect(() => {
   }
 
   const handleBack = () => {
-    goBackToArtists();
+    router.back();
   };
 
   const handleBookmark = async () => {

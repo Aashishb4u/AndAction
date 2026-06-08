@@ -32,8 +32,10 @@ export type PerformanceDraft = {
   performingMembers: string;
   offStageMembers: string;
   soloChargesFrom: string;
+  soloChargesTo: string;
   soloChargesDescription: string;
   chargesWithBacklineFrom: string;
+  chargesWithBacklineTo: string;
   chargesWithBacklineDescription: string;
 };
 
@@ -104,9 +106,11 @@ export function createPerformanceDraft(artist: Artist): PerformanceDraft {
     performingMembers: (artist as any).performingMembers || "",
     offStageMembers: (artist as any).offStageMembers || "",
     soloChargesFrom: (artist as any).soloChargesFrom?.toString() || "",
+    soloChargesTo: (artist as any).soloChargesTo?.toString() || "",
     soloChargesDescription: (artist as any).soloChargesDescription || "",
     chargesWithBacklineFrom:
       (artist as any).chargesWithBacklineFrom?.toString() || "",
+    chargesWithBacklineTo: (artist as any).chargesWithBacklineTo?.toString() || "",
     chargesWithBacklineDescription:
       (artist as any).chargesWithBacklineDescription || "",
   };

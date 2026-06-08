@@ -129,14 +129,10 @@ export default function VideoDetailsPage() {
     fetchData();
   }, [videoId]);
 
-  // Lazy load related content AFTER video player is ready (prevents blocking)
+  // Show related content immediately when video is ready (no delay)
   useEffect(() => {
     if (isVideoReady && videoData) {
-      // Delay rendering related content to prioritize video player
-      const timer = setTimeout(() => {
-        setShowRelated(true);
-      }, 500); // 500ms after video is ready
-      return () => clearTimeout(timer);
+      setShowRelated(true);
     }
   }, [isVideoReady, videoData]);
 
