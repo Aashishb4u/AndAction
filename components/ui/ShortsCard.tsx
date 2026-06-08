@@ -51,7 +51,6 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [shouldPlayVideo, setShouldPlayVideo] = useState(false);
-  const [loadVideoPlayer, setLoadVideoPlayer] = useState(false); // New: Lazy load video player
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -76,21 +75,15 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
   useEffect(() => {
     if (isHovered) {
       hoverTimeoutRef.current = setTimeout(() => {
-        // Load video player first if not already loaded
-        if (!loadVideoPlayer) {
-          setLoadVideoPlayer(true);
-        } else {
-          // If already loaded, play immediately
-          setShouldPlayVideo(true);
-          if (isYouTube && iframeRef.current) {
-            // Play YouTube video via postMessage
-            iframeRef.current.contentWindow?.postMessage(
-              '{"event":"command","func":"playVideo","args":""}',
-              "*",
-            );
-          } else if (videoRef.current) {
-            videoRef.current.play().catch(() => {});
-          }
+        setShouldPlayVideo(true);
+        if (isYouTube && iframeRef.current) {
+          // Play YouTube video via postMessage
+          iframeRef.current.contentWindow?.postMessage(
+            '{"event":"command","func":"playVideo","args":""}',
+            "*",
+          );
+        } else if (videoRef.current) {
+          videoRef.current.play().catch(() => {});
         }
       }, 500);
     } else {
@@ -120,24 +113,7 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
         clearTimeout(hoverTimeoutRef.current);
       }
     };
-  }, [isHovered, isYouTube, loadVideoPlayer]);
-
-  // Play video once it's loaded
-  useEffect(() => {
-    if (loadVideoPlayer && isVideoLoaded && isHovered) {
-      setTimeout(() => {
-        setShouldPlayVideo(true);
-        if (isYouTube && iframeRef.current) {
-          iframeRef.current.contentWindow?.postMessage(
-            '{"event":"command","func":"playVideo","args":""}',
-            "*",
-          );
-        } else if (videoRef.current) {
-          videoRef.current.play().catch(() => {});
-        }
-      }, 200);
-    }
-  }, [loadVideoPlayer, isVideoLoaded, isHovered, isYouTube]);
+  }, [isHovered, isYouTube]);
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -183,8 +159,8 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
             className="object-cover transition-transform duration-500 group-hover:scale-110"
           />
 
-          {/* YouTube iframe - only load when needed */}
-          {isYouTube && youtubeVideoId && loadVideoPlayer && (
+          {/* YouTube iframe */}
+          {isYouTube && youtubeVideoId && (
             <div
               className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo ? "opacity-100" : "opacity-0"}`}
             >
@@ -200,8 +176,8 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
             </div>
           )}
 
-          {/* MP4 video - only load when needed */}
-          {!isYouTube && loadVideoPlayer && (
+          {/* MP4 video */}
+          {!isYouTube && (
             <div
               className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo && isVideoLoaded ? "opacity-100" : "opacity-0"}`}
             >
@@ -225,7 +201,7 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
               onClick={handleDelete}
               className="absolute top-2 right-2 p-2 bg-card rounded-full text-red-500 hover:scale-110 z-10"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="size-4" />
             </button>
           )}
 
