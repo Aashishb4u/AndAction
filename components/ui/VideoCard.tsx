@@ -63,7 +63,6 @@ const VideoCard: React.FC<VideoCardProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const [shouldPlayVideo, setShouldPlayVideo] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const [loadVideoPlayer, setLoadVideoPlayer] = useState(false); // New: Lazy load video player
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -96,9 +95,6 @@ const VideoCard: React.FC<VideoCardProps> = ({
     enabled: enableMobileAutoplay,
     onPlayStateChange: (isPlaying) => {
       // Update video visibility when mobile autoplay triggers
-      if (isPlaying && !loadVideoPlayer) {
-        setLoadVideoPlayer(true);
-      }
       setShouldPlayVideo(isPlaying);
     },
   });
@@ -107,20 +103,14 @@ const VideoCard: React.FC<VideoCardProps> = ({
   useEffect(() => {
     if (isHovered) {
       hoverTimeoutRef.current = setTimeout(() => {
-        // Load video player first if not already loaded
-        if (!loadVideoPlayer) {
-          setLoadVideoPlayer(true);
-        } else {
-          // If already loaded, play immediately
-          setShouldPlayVideo(true);
-          if (isYouTube && iframeRef.current) {
-            iframeRef.current.contentWindow?.postMessage(
-              '{"event":"command","func":"playVideo","args":""}',
-              "*",
-            );
-          } else if (videoRef.current) {
-            videoRef.current.play().catch(() => {});
-          }
+        setShouldPlayVideo(true);
+        if (isYouTube && iframeRef.current) {
+          iframeRef.current.contentWindow?.postMessage(
+            '{"event":"command","func":"playVideo","args":""}',
+            "*",
+          );
+        } else if (videoRef.current) {
+          videoRef.current.play().catch(() => {});
         }
       }, 500); // 500ms debounce delay
     } else {
@@ -143,7 +133,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
         );
       }
 
-      if (videoRef.current) {
+    if (videoRef.current) {
         videoRef.current.pause();
         videoRef.current.currentTime = 0;
       }
@@ -154,33 +144,27 @@ const VideoCard: React.FC<VideoCardProps> = ({
         clearTimeout(hoverTimeoutRef.current);
       }
     };
-  }, [isHovered, isYouTube, loadVideoPlayer]);
+  }, [isHovered, isYouTube]);
 
-  // Play video once it's loaded (after being triggered by hover or mobile autoplay)
   useEffect(() => {
-    if (loadVideoPlayer && isVideoLoaded && (isHovered || shouldPlayVideo)) {
-      setTimeout(() => {
-        setShouldPlayVideo(true);
-        if (isYouTube && iframeRef.current) {
-          iframeRef.current.contentWindow?.postMessage(
-            '{"event":"command","func":"playVideo","args":""}',
-            "*",
-          );
-          // Start ticking to track approximate YouTube current time
-          ytCurrentTimeRef.current = 0;
-          if (ytTickerRef.current) clearInterval(ytTickerRef.current);
-          ytTickerRef.current = setInterval(() => {
-            ytCurrentTimeRef.current += 1;
-          }, 1000);
-        } else if (!isYouTube && videoRef.current) {
-          videoRef.current.play().catch(() => {});
-        }
-      }, 200);
-    } else if (!shouldPlayVideo || !isVideoLoaded) {
-      // If video should not play or not loaded, do nothing
-      return;
+    if (!shouldPlayVideo || !isVideoLoaded) return;
+    setTimeout(()=>{
+    if (isYouTube && iframeRef.current) {
+      iframeRef.current.contentWindow?.postMessage(
+        '{"event":"command","func":"playVideo","args":""}',
+        "*",
+      );
+      // Start ticking to track approximate YouTube current time
+      ytCurrentTimeRef.current = 0;
+      if (ytTickerRef.current) clearInterval(ytTickerRef.current);
+      ytTickerRef.current = setInterval(() => {
+        ytCurrentTimeRef.current += 1;
+      }, 1000);
+    } else if (!isYouTube && videoRef.current) {
+      videoRef.current.play().catch(() => {});
     }
-  }, [isVideoLoaded, shouldPlayVideo, isYouTube, loadVideoPlayer, isHovered]);
+  },200);
+  }, [isVideoLoaded, shouldPlayVideo, isYouTube]);
 
   useEffect(() => {
     if (!shouldPlayVideo) return;
@@ -269,8 +253,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
         {/* Video overlay wrapper - sits exactly over thumbnail */}
         <div className="absolute inset-0 overflow-hidden">
 
-        {/* YouTube iframe - only load when needed */}
-        {isYouTube && youtubeVideoId && loadVideoPlayer && (
+        {/* YouTube iframe */}
+        {isYouTube && youtubeVideoId && (
           <div
             className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo ? "opacity-100" : "opacity-0"}`}
           >
@@ -286,8 +270,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
           </div>
         )}
 
-        {/* MP4 video - only load when needed */}
-        {!isYouTube && loadVideoPlayer && (
+        {/* MP4 video */}
+        {!isYouTube && (
           <div
             className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo && isVideoLoaded ? "opacity-100" : "opacity-0"}`}
           >
@@ -328,7 +312,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
               className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
+                <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6-6 6s-2.69 6-6 6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
                 <text x="12" y="16" textAnchor="middle" fontSize="7" fill="currentColor" fontFamily="sans-serif">10</text>
               </svg>
             </button>
@@ -409,7 +393,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
                 </button>
 
                 {showMenu && (
-                  <div className="absolute top-full right-0 mt-2 w-40 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl border border-background-light z-50">
+                  <div className="absolute top-full right-0 mt-2 w-40 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl border border-background-light z-10">
                     <button
                       onClick={handleBookmark}
                       className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/50 transition-colors ${
