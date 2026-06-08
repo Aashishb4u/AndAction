@@ -490,23 +490,35 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-1">
           <label className="block text-sm font-medium text-white">
-            Solo charges starting from <span className="text-red-500 ml-1">*</span>
+            Solo charges <span className="text-red-500 ml-1">*</span>
           </label>
-          <Tooltip content="Starting amount you usually charge when performing solo">
+          <Tooltip content="Amount range you usually charge when performing solo">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        <Input
-          value={draft.soloChargesFrom}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (value === "" || /^[0-9]*$/.test(value)) {
-              handleInputChange("soloChargesFrom", value);
-            }
-          }}
-          placeholder="Starting from"
-          required
-        />
+        <div className="grid grid-cols-2 gap-6">
+          <Input
+            value={draft.soloChargesFrom}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("soloChargesFrom", value);
+              }
+            }}
+            placeholder="Starting from"
+            required
+          />
+          <Input
+            value={draft.soloChargesTo}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("soloChargesTo", value);
+              }
+            }}
+            placeholder="Up to"
+          />
+        </div>
         <textarea
           placeholder="What services do you include while charging solo"
           value={draft.soloChargesDescription}
@@ -520,22 +532,34 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-1">
           <label className="block text-sm font-medium text-white">
-            Charges with backing starting from
+            Charges with backing
           </label>
-          <Tooltip content="Starting amount including backline like sound, stage, and support setup">
+          <Tooltip content="Amount range including backline like sound, stage, and support setup">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        <Input
-          value={draft.chargesWithBacklineFrom}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (value === "" || /^[0-9]*$/.test(value)) {
-              handleInputChange("chargesWithBacklineFrom", value);
-            }
-          }}
-          placeholder="Starting from"
-        />
+        <div className="grid grid-cols-2 gap-6">
+          <Input
+            value={draft.chargesWithBacklineFrom}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("chargesWithBacklineFrom", value);
+              }
+            }}
+            placeholder="Starting from"
+          />
+          <Input
+            value={draft.chargesWithBacklineTo}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[0-9]*$/.test(value)) {
+                handleInputChange("chargesWithBacklineTo", value);
+              }
+            }}
+            placeholder="Up to"
+          />
+        </div>
         <textarea
           placeholder="Please include backline like sound system, stage, chorus, etc."
           value={draft.chargesWithBacklineDescription}

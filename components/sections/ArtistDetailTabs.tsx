@@ -105,25 +105,38 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   }, [searchParams]);
 
   useEffect(() => {
-  console.log("ArtistDetailTabs mounted", isMobile);
+    const handlePopState = () => {
+      const nextTab = new URLSearchParams(window.location.search).get("tab");
+      if (activeTab === "shorts" && nextTab !== "about") {
+        router.push(`${pathname}?tab=about`, { scroll: false });
+      }
+    };
 
-  return () => {
-    console.log("ArtistDetailTabs unmounted", isMobile);
-  };
-}, []);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [activeTab, pathname, router]);
 
   const handleTabChange = (tab: TabType) => {
-    setActiveTab(tab);
-    router.replace(`${pathname}?tab=${tab}`, { scroll: false });
+    if (tab === activeTab) return;
 
     if (tab === "shorts") {
+      if (activeTab !== "about") {
+        router.replace(`${pathname}?tab=about`, { scroll: false });
+      }
+      router.push(`${pathname}?tab=shorts`, { scroll: false });
+      setActiveTab(tab);
+
       requestAnimationFrame(() => {
         tabsHeaderRef.current?.scrollIntoView({
           block: "start",
           behavior: "smooth",
         });
       });
+      return;
     }
+
+    setActiveTab(tab);
+    router.replace(`${pathname}?tab=${tab}`, { scroll: false });
   };
 
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
@@ -795,11 +808,15 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     <div className="space-y-4 max-w-4xl">
       {(() => {
         const hasSoloCharges =
-          artist.soloChargesFrom !== undefined &&
-          artist.soloChargesFrom !== null &&
-          `${artist.soloChargesFrom}`.trim() !== "";
+          (artist.soloChargesFrom !== undefined &&
+            artist.soloChargesFrom !== null &&
+            `${artist.soloChargesFrom}`.trim() !== "") ||
+          ((artist as any).soloChargesTo !== undefined &&
+            (artist as any).soloChargesTo !== null &&
+            `${(artist as any).soloChargesTo}`.trim() !== "");
         const hasBacklineCharges =
-          Number(artist.chargesWithBacklineFrom) > 0;
+          Number(artist.chargesWithBacklineFrom) > 0 ||
+          Number((artist as any).chargesWithBacklineTo) > 0;
         const hasPricingSection =
           hasSoloCharges ||
           !!artist.soloChargesDescription?.trim() ||
@@ -855,7 +872,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                     <h3 className="text-text-gray mb-1">Solo Charges</h3>
                     {hasSoloCharges && (
                       <div className="text-white mb-1">
-                        Starting from ₹ {artist.soloChargesFrom}
+                        {artist.soloChargesFrom && artist.soloChargesTo
+                          ? `₹ ${artist.soloChargesFrom} - ₹ ${artist.soloChargesTo}`
+                          : artist.soloChargesFrom
+                            ? `Starting from ₹ ${artist.soloChargesFrom}`
+                            : `Up to ₹ ${artist.soloChargesTo}`}
                       </div>
                     )}
                     {artist.soloChargesDescription?.trim() ? (
@@ -869,7 +890,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                     <h3 className="text-text-gray mb-1">Charges with backline</h3>
                     {hasBacklineCharges && (
                       <div className="text-white mb-1">
-                        Starting from ₹ {artist.chargesWithBacklineFrom}
+                        {artist.chargesWithBacklineFrom && (artist as any).chargesWithBacklineTo
+                          ? `₹ ${artist.chargesWithBacklineFrom} - ₹ ${(artist as any).chargesWithBacklineTo}`
+                          : artist.chargesWithBacklineFrom
+                            ? `Starting from ₹ ${artist.chargesWithBacklineFrom}`
+                            : `Up to ₹ ${(artist as any).chargesWithBacklineTo}`}
                       </div>
                     )}
                     {artist.chargesWithBacklineDescription?.trim() ? (

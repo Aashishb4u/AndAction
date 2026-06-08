@@ -99,26 +99,19 @@ const VideoCard: React.FC<VideoCardProps> = ({
     },
   });
 
-  // Debounce hover to play video (desktop)
+  // Hover to play video (desktop) - no delay
   useEffect(() => {
     if (isHovered) {
-      hoverTimeoutRef.current = setTimeout(() => {
-        setShouldPlayVideo(true);
-        if (isYouTube && iframeRef.current) {
-          iframeRef.current.contentWindow?.postMessage(
-            '{"event":"command","func":"playVideo","args":""}',
-            "*",
-          );
-        } else if (videoRef.current) {
-          videoRef.current.play().catch(() => {});
-        }
-      }, 500); // 500ms debounce delay
-    } else {
-      // Clear timeout if hover ends before delay
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
+      setShouldPlayVideo(true);
+      if (isYouTube && iframeRef.current) {
+        iframeRef.current.contentWindow?.postMessage(
+          '{"event":"command","func":"playVideo","args":""}',
+          "*",
+        );
+      } else if (videoRef.current) {
+        videoRef.current.play().catch(() => {});
       }
+    } else {
       setShouldPlayVideo(false);
       setIsMuted(true);
       // Reset YouTube time tracker
@@ -133,17 +126,11 @@ const VideoCard: React.FC<VideoCardProps> = ({
         );
       }
 
-    if (videoRef.current) {
+      if (videoRef.current) {
         videoRef.current.pause();
         videoRef.current.currentTime = 0;
       }
     }
-
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
   }, [isHovered, isYouTube]);
 
   useEffect(() => {
@@ -265,7 +252,6 @@ const VideoCard: React.FC<VideoCardProps> = ({
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               onLoad={() => setIsVideoLoaded(true)}
-              loading="lazy"
             />
           </div>
         )}
@@ -281,7 +267,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
               loop
               muted
               playsInline
-              preload="metadata"
+              preload="auto"
               onLoadedData={() => setIsVideoLoaded(true)}
             >
               <source src={videoUrl} type="video/mp4" />

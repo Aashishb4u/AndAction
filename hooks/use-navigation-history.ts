@@ -67,13 +67,19 @@ export const useNavigationHistory = (options: NavigationHistoryOptions = {}) => 
       return;
     }
 
+    // If we're on an artist profile page, always go back to /artists even if history is long
+    if (pathname.startsWith('/artists/')) {
+      router.push('/artists');
+      return;
+    }
+
     if (window.history.length > minHistoryLength) {
       router.back();
       return;
     }
 
     router.push('/artists');
-  }, [router, getReturnPath, clearReturnPath, minHistoryLength]);
+  }, [router, pathname, getReturnPath, clearReturnPath, minHistoryLength]);
 
   return {
     setReturnPath,

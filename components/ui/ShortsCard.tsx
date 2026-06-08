@@ -74,23 +74,17 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
 
   useEffect(() => {
     if (isHovered) {
-      hoverTimeoutRef.current = setTimeout(() => {
-        setShouldPlayVideo(true);
-        if (isYouTube && iframeRef.current) {
-          // Play YouTube video via postMessage
-          iframeRef.current.contentWindow?.postMessage(
-            '{"event":"command","func":"playVideo","args":""}',
-            "*",
-          );
-        } else if (videoRef.current) {
-          videoRef.current.play().catch(() => {});
-        }
-      }, 500);
-    } else {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
+      setShouldPlayVideo(true);
+      if (isYouTube && iframeRef.current) {
+        // Play YouTube video via postMessage
+        iframeRef.current.contentWindow?.postMessage(
+          '{"event":"command","func":"playVideo","args":""}',
+          "*",
+        );
+      } else if (videoRef.current) {
+        videoRef.current.play().catch(() => {});
       }
+    } else {
       setShouldPlayVideo(false);
 
       // Stop YouTube video
@@ -107,12 +101,6 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
         videoRef.current.currentTime = 0;
       }
     }
-
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
   }, [isHovered, isYouTube]);
 
   const handleBookmark = (e: React.MouseEvent) => {
@@ -171,7 +159,6 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 onLoad={() => setIsVideoLoaded(true)}
-                loading="lazy"
               />
             </div>
           )}
@@ -186,7 +173,7 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
                 muted
                 loop
                 playsInline
-                preload="metadata"
+                preload="auto"
                 className="w-full h-full object-cover"
                 onLoadedData={() => setIsVideoLoaded(true)}
               >
