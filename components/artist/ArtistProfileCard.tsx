@@ -5,9 +5,14 @@ import Image from "next/image";
 import { ArrowLeft, Edit, Pencil, Plus } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { Artist } from "@/types";
-import { buildArtishProfileUrl } from '@/lib/utils';
+import { buildArtishProfileUrl } from "@/lib/utils";
 import Cropper, { Area } from "react-easy-crop";
 import { useQueryClient } from "@tanstack/react-query";
+
+const MAX_SOURCE_IMAGE_SIZE_BYTES = 50 * 1024 * 1024;
+const MAX_COMPRESSED_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_COMPRESSED_IMAGE_DIMENSION = 2400;
+const IMAGE_COMPRESSION_QUALITY_STEPS = [0.95, 0.92, 0.88, 0.84, 0.8];
 
 interface ArtistProfileCardProps {
   artist: any;
@@ -50,12 +55,9 @@ const getCroppedImg = async (
   );
 
   return new Promise((resolve) => {
-    canvas.toBlob(
-      (blob) => {
-        resolve(blob);
-      },
-      "image/png",
-    );
+    canvas.toBlob((blob) => {
+      resolve(blob);
+    }, "image/png");
   });
 };
 
@@ -84,6 +86,103 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
     setCroppedAreaPixels(croppedPixels);
   };
 
+  const canvasToBlob = (
+    canvas: HTMLCanvasElement,
+    type: string,
+    quality?: number,
+  ): Promise<Blob | null> =>
+    new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), type, quality);
+    });
+
+  const getFileNameWithExtension = (fileName: string, extension: string) => {
+    const baseName = fileName.replace(/\.[^/.]+$/, "") || "profile-photo";
+    return `${baseName}.${extension}`;
+  };
+
+  const compressImageBlob = async (
+    imageBlob: Blob,
+    fileName: string,
+  ): Promise<File | null> => {
+    if (imageBlob.size <= MAX_COMPRESSED_IMAGE_SIZE_BYTES) {
+      return new File([imageBlob], fileName, {
+        type: imageBlob.type || "image/png",
+      });
+    }
+
+    const imageUrl = URL.createObjectURL(imageBlob);
+
+    try {
+      const image = await createImage(imageUrl);
+      const originalWidth = image.naturalWidth || image.width;
+      const originalHeight = image.naturalHeight || image.height;
+      const largestDimension = Math.max(originalWidth, originalHeight);
+      const startingScale =
+        largestDimension > MAX_COMPRESSED_IMAGE_DIMENSION
+          ? MAX_COMPRESSED_IMAGE_DIMENSION / largestDimension
+          : 1;
+      const scaleSteps = [
+        startingScale,
+        startingScale * 0.9,
+        startingScale * 0.8,
+      ];
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+
+      let smallestCandidate: {
+        blob: Blob;
+        fileName: string;
+      } | null = null;
+
+      for (const scale of scaleSteps) {
+        const safeScale = Math.max(Math.min(scale, 1), 0.5);
+        canvas.width = Math.max(1, Math.round(originalWidth * safeScale));
+        canvas.height = Math.max(1, Math.round(originalHeight * safeScale));
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        for (const quality of IMAGE_COMPRESSION_QUALITY_STEPS) {
+          for (const [type, extension] of [
+            ["image/webp", "webp"],
+            ["image/jpeg", "jpg"],
+          ] as const) {
+            const candidateBlob = await canvasToBlob(canvas, type, quality);
+            if (!candidateBlob) continue;
+
+            const candidate = {
+              blob: candidateBlob,
+              fileName: getFileNameWithExtension(fileName, extension),
+            };
+
+            if (
+              !smallestCandidate ||
+              candidate.blob.size < smallestCandidate.blob.size
+            ) {
+              smallestCandidate = candidate;
+            }
+
+            if (candidateBlob.size <= MAX_COMPRESSED_IMAGE_SIZE_BYTES) {
+              return new File([candidateBlob], candidate.fileName, {
+                type,
+              });
+            }
+          }
+        }
+      }
+
+      if (!smallestCandidate) return null;
+
+      return new File([smallestCandidate.blob], smallestCandidate.fileName, {
+        type: smallestCandidate.blob.type || "image/jpeg",
+      });
+    } finally {
+      URL.revokeObjectURL(imageUrl);
+    }
+  };
+
   const handleProfilePhotoUpload = async (file: File) => {
     try {
       setUploading(true);
@@ -96,8 +195,13 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
         formData.append("artistProfileId", String(artist.id));
       }
       const shouldSyncUserAvatar =
-        artist?.profileOrder === 0 || artist?.profileOrder === undefined || artist?.profileOrder === null;
-      formData.append("syncUserAvatar", shouldSyncUserAvatar ? "true" : "false");
+        artist?.profileOrder === 0 ||
+        artist?.profileOrder === undefined ||
+        artist?.profileOrder === null;
+      formData.append(
+        "syncUserAvatar",
+        shouldSyncUserAvatar ? "true" : "false",
+      );
 
       const res = await fetch("/api/media/upload", {
         method: "POST",
@@ -115,7 +219,9 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 
       if (!res.ok) {
         if (res.status === 413) {
-          throw new Error("Image file is too large. Please upload a smaller image.");
+          throw new Error(
+            "Image file is too large. Please upload a smaller image.",
+          );
         }
         throw new Error(messageFromJson || "Failed to upload profile photo.");
       }
@@ -124,7 +230,9 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       setLocalImage(imageUrl);
       queryClient.invalidateQueries({ queryKey: ["videos"] });
 
-      setUploadMessage(messageFromJson || "Profile photo uploaded successfully.");
+      setUploadMessage(
+        messageFromJson || "Profile photo uploaded successfully.",
+      );
 
       setUploading(false);
     } catch (err) {
@@ -138,21 +246,37 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
     }
   };
 
+  // Handle file selection - opens crop modal
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    console.log("📸 File selected:", file);
 
+    setUploadError("");
+    setUploadMessage("");
+
+    if (file.size > MAX_SOURCE_IMAGE_SIZE_BYTES) {
+      setUploadError("Please upload an image smaller than 50 MB.");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    // Create URL for cropping
     const imageUrl = URL.createObjectURL(file);
     setImageToCrop(imageUrl);
     setShowCropModal(true);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
 
+    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
+  // Handle crop completion
   const handleCropSave = async () => {
     if (!imageToCrop || !croppedAreaPixels) return;
 
@@ -160,14 +284,32 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       const croppedBlob = await getCroppedImg(imageToCrop, croppedAreaPixels);
       if (!croppedBlob) return;
 
-      const croppedFile = new File([croppedBlob], "cropped-profile.png", {
-        type: "image/png",
-      });
+      const compressedFile = await compressImageBlob(
+        croppedBlob,
+        "cropped-profile.png",
+      );
+      if (!compressedFile) {
+        setUploadError(
+          "Unable to optimize this image. Please try another one.",
+        );
+        return;
+      }
+
+      if (compressedFile.size > MAX_COMPRESSED_IMAGE_SIZE_BYTES) {
+        setUploadError(
+          "This image could not be reduced below 5 MB without noticeably affecting quality. Please crop tighter or choose a smaller image.",
+        );
+        return;
+      }
 
       setShowCropModal(false);
+      if (imageToCrop.startsWith("blob:")) {
+        URL.revokeObjectURL(imageToCrop);
+      }
       setImageToCrop(null);
 
-      await handleProfilePhotoUpload(croppedFile);
+      // Upload the cropped and optimized image
+      await handleProfilePhotoUpload(compressedFile);
     } catch (error) {
       console.error("Crop failed:", error);
     }
@@ -193,7 +335,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
     : [];
   const categoryTags = Array.from(new Set(categoryParts.filter(Boolean)));
   const hasLongCategory =
-    categoryTags.some((tag) => tag.length > 16) ||
+    categoryTags.some((tag: any) => tag.length > 16) ||
     (artist.category?.length ?? 0) > 18;
 
   return (
@@ -210,7 +352,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
       {/* Full Background Image */}
       <div className="absolute inset-0">
         <Image
-          src={buildArtishProfileUrl(localImage || artist.image || '')}
+          src={buildArtishProfileUrl(localImage || artist.image || "")}
           alt={artist.name}
           fill
           unoptimized
@@ -246,8 +388,12 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
             {uploadMessage && (
               <p className="text-green-400 text-sm">{uploadMessage}</p>
             )}
-            {uploadError && <p className="text-red-400 text-sm">{uploadError}</p>}
-            <h2 className="t1-heading text-white mb-2 drop-shadow-lg">{artist.name}</h2>
+            {uploadError && (
+              <p className="text-red-400 text-sm">{uploadError}</p>
+            )}
+            <h2 className="t1-heading text-white mb-2 drop-shadow-lg">
+              {artist.name}
+            </h2>
 
             <div className="flex w-full flex-wrap items-center gap-3">
               <div
@@ -255,7 +401,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
                   hasLongCategory ? "w-full flex-none" : "flex-1"
                 }`}
               >
-                {categoryTags.map((tag, index) => (
+                {categoryTags.map((tag: any, index) => (
                   <span
                     key={index}
                     className={`px-4 md:py-2 py-1.5 rounded-full btn2 backdrop-blur-sm ${
@@ -349,7 +495,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
                 onClick={handleCropSave}
                 className="flex-1"
               >
-                Apply
+                Apply 123
               </Button>
             </div>
           </div>

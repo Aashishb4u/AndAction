@@ -67,9 +67,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   const [showStatesDropdown, setShowStatesDropdown] = useState(false);
 
   const handleInputChange = (field: string, value: string | string[]) => {
+    const normalizedValue = Array.isArray(value)
+      ? Array.from(new Set(value.filter(Boolean)))
+      : value;
     setDraft((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: normalizedValue,
     } as PerformanceDraft));
   };
 
@@ -165,7 +168,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
         <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-12">
           {draft.performingLanguages.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {draft.performingLanguages.map((val) => {
+              {Array.from(new Set(draft.performingLanguages)).map((val) => {
                 const label =
                   performingLanguageOptions.find((opt) => opt.value === val)
                     ?.label || val;
@@ -256,7 +259,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
         <div className="w-full px-4 py-3 bg-card border border-border-color rounded-lg mb-2 min-h-12">
           {draft.eventTypes.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {draft.eventTypes.map((val) => {
+              {Array.from(new Set(draft.eventTypes)).map((val) => {
                 const label =
                   eventTypeOptions.find((opt) => opt.value === val)?.label || val;
                 return (
@@ -346,7 +349,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
               </div>
             ) : (
               <div className="flex flex-wrap gap-1.5">
-                {draft.performingStates.map((val) => {
+                {Array.from(new Set(draft.performingStates)).map((val) => {
                   const label =
                     INDIAN_STATES.find((opt) => opt.value === val)?.label || val;
                   return (

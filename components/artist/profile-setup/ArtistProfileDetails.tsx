@@ -13,6 +13,11 @@ import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { useSubArtistTypes } from "@/hooks/use-sub-artist-types";
 import { useQueryClient } from "@tanstack/react-query";
 
+const MAX_SOURCE_IMAGE_SIZE_BYTES = 50 * 1024 * 1024;
+const MAX_COMPRESSED_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_COMPRESSED_IMAGE_DIMENSION = 2400;
+const IMAGE_COMPRESSION_QUALITY_STEPS = [0.95, 0.92, 0.88, 0.84, 0.8];
+
 interface ArtistProfileDetailsProps {
   data: ArtistProfileSetupData;
   onNext: () => void;
@@ -32,6 +37,101 @@ const createImage = (url: string): Promise<HTMLImageElement> =>
     image.crossOrigin = "anonymous";
     image.src = url;
   });
+
+const canvasToBlob = (
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality?: number,
+): Promise<Blob | null> =>
+  new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), type, quality);
+  });
+
+const getFileNameWithExtension = (fileName: string, extension: string) => {
+  const baseName = fileName.replace(/\.[^/.]+$/, "") || "profile-photo";
+  return `${baseName}.${extension}`;
+};
+
+const compressImageBlob = async (
+  imageBlob: Blob,
+  fileName: string,
+): Promise<File | null> => {
+  if (imageBlob.size <= MAX_COMPRESSED_IMAGE_SIZE_BYTES) {
+    return new File([imageBlob], fileName, {
+      type: imageBlob.type || "image/png",
+    });
+  }
+
+  const imageUrl = URL.createObjectURL(imageBlob);
+
+  try {
+    const image = await createImage(imageUrl);
+    const originalWidth = image.naturalWidth || image.width;
+    const originalHeight = image.naturalHeight || image.height;
+    const largestDimension = Math.max(originalWidth, originalHeight);
+    const startingScale =
+      largestDimension > MAX_COMPRESSED_IMAGE_DIMENSION
+        ? MAX_COMPRESSED_IMAGE_DIMENSION / largestDimension
+        : 1;
+    const scaleSteps = [startingScale, startingScale * 0.9, startingScale * 0.8];
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    let smallestCandidate:
+      | {
+          blob: Blob;
+          fileName: string;
+        }
+      | null = null;
+
+    for (const scale of scaleSteps) {
+      const safeScale = Math.max(Math.min(scale, 1), 0.5);
+      canvas.width = Math.max(1, Math.round(originalWidth * safeScale));
+      canvas.height = Math.max(1, Math.round(originalHeight * safeScale));
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      for (const quality of IMAGE_COMPRESSION_QUALITY_STEPS) {
+        for (const [type, extension] of [
+          ["image/webp", "webp"],
+          ["image/jpeg", "jpg"],
+        ] as const) {
+          const candidateBlob = await canvasToBlob(canvas, type, quality);
+          if (!candidateBlob) continue;
+
+          const candidate = {
+            blob: candidateBlob,
+            fileName: getFileNameWithExtension(fileName, extension),
+          };
+
+          if (
+            !smallestCandidate ||
+            candidate.blob.size < smallestCandidate.blob.size
+          ) {
+            smallestCandidate = candidate;
+          }
+
+          if (candidateBlob.size <= MAX_COMPRESSED_IMAGE_SIZE_BYTES) {
+            return new File([candidateBlob], candidate.fileName, {
+              type,
+            });
+          }
+        }
+      }
+    }
+
+    if (!smallestCandidate) return null;
+
+    return new File([smallestCandidate.blob], smallestCandidate.fileName, {
+      type: smallestCandidate.blob.type || "image/jpeg",
+    });
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+};
 
 const getCroppedImg = async (
   imageSrc: string,
@@ -399,6 +499,17 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
     if (!file) return;
     console.log("📸 File selected:", file);
 
+    setUploadError("");
+    setUploadMessage("");
+
+    if (file.size > MAX_SOURCE_IMAGE_SIZE_BYTES) {
+      setUploadError("Please upload an image smaller than 50 MB.");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
     // Create URL for cropping
     const imageUrl = URL.createObjectURL(file);
     setImageToCrop(imageUrl);
@@ -420,16 +531,30 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       const croppedBlob = await getCroppedImg(imageToCrop, croppedAreaPixels);
       if (!croppedBlob) return;
 
-      // Convert blob to file
-      const croppedFile = new File([croppedBlob], "cropped-profile.png", {
-        type: "image/png",
-      });
+      const compressedFile = await compressImageBlob(
+        croppedBlob,
+        "cropped-profile.png",
+      );
+      if (!compressedFile) {
+        setUploadError("Unable to optimize this image. Please try another one.");
+        return;
+      }
+
+      if (compressedFile.size > MAX_COMPRESSED_IMAGE_SIZE_BYTES) {
+        setUploadError(
+          "This image could not be reduced below 5 MB without noticeably affecting quality. Please crop tighter or choose a smaller image.",
+        );
+        return;
+      }
 
       setShowCropModal(false);
+      if (imageToCrop.startsWith("blob:")) {
+        URL.revokeObjectURL(imageToCrop);
+      }
       setImageToCrop(null);
 
-      // Upload the cropped image
-      handleProfilePhotoUpload(croppedFile);
+      // Upload the cropped and optimized image
+      await handleProfilePhotoUpload(compressedFile);
     } catch (error) {
       console.error("Crop failed:", error);
     }
@@ -438,6 +563,9 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
   // Cancel cropping
   const handleCropCancel = () => {
     setShowCropModal(false);
+    if (imageToCrop?.startsWith("blob:")) {
+      URL.revokeObjectURL(imageToCrop);
+    }
     setImageToCrop(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -791,7 +919,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                       }}
                       className="w-full text-left px-3 py-2 hover:bg-background-light transition-colors text-white text-sm border-b border-border-color"
                     >
-                      Add "{subTypeInput.trim()}"
+                      Add {subTypeInput.trim()}
                     </button>
                   )}
                   
