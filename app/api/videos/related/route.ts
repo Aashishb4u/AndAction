@@ -94,12 +94,12 @@ export async function GET(req: NextRequest) {
     const [relatedVideos, relatedVideosCount, shortsVideos, shortsCount] = await Promise.all([
       prisma.video.findMany({
         where: { ...baseWhere, isShort: false },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
         skip: (videosPage - 1) * videosLimit,
         take: videosLimit,
         select: {
           id: true, title: true, url: true, thumbnailUrl: true,
-          duration: true, views: true, createdAt: true, isShort: true,
+          duration: true, views: true, createdAt: true, publishedAt: true, isShort: true,
           artist: {
             select: {
               id: true,
@@ -115,12 +115,12 @@ export async function GET(req: NextRequest) {
       prisma.video.count({ where: { ...baseWhere, isShort: false } }),
       prisma.video.findMany({
         where: { ...baseWhere, isShort: true },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
         skip: (shortsPage - 1) * shortsLimit,
         take: shortsLimit,
         select: {
           id: true, title: true, url: true, thumbnailUrl: true,
-          duration: true, views: true, createdAt: true, isShort: true,
+          duration: true, views: true, createdAt: true, publishedAt: true, isShort: true,
           artist: {
             select: {
               id: true,

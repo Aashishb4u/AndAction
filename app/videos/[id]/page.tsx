@@ -85,39 +85,55 @@ export default function VideoDetailsPage() {
         });
 
         // RELATED VIDEOS (processed but not rendered yet)
-        setRelatedVideos(
-          json.data.related.map((rv: any) => {
-            const relatedArtistProfile = rv.artist ?? rv.user?.artists?.[0] ?? null;
-            return {
-              id: rv.id,
-              title: rv.title,
-              creator:
-                relatedArtistProfile?.stageName ||
-                getArtishName(rv.user.name, rv.user.firstName, rv.user.lastName),
-              thumbnail: rv.thumbnailUrl,
-              videoUrl: rv.url,
-              isBookmarked: rv.isBookmarked,
-              bookmarkId: rv.bookmarkId,
-              creatorImage: relatedArtistProfile?.profileImage || undefined,
-              artistId: relatedArtistProfile?.id || "",
-              artistType: relatedArtistProfile?.artistType || "",
-            };
-          }),
+        const processedRelatedVideos = json.data.related.map((rv: any) => {
+          const relatedArtistProfile = rv.artist ?? rv.user?.artists?.[0] ?? null;
+          return {
+            id: rv.id,
+            title: rv.title,
+            creator:
+              relatedArtistProfile?.stageName ||
+              getArtishName(rv.user.name, rv.user.firstName, rv.user.lastName),
+            thumbnail: rv.thumbnailUrl,
+            videoUrl: rv.url,
+            isBookmarked: rv.isBookmarked,
+            bookmarkId: rv.bookmarkId,
+            creatorImage: relatedArtistProfile?.profileImage || undefined,
+            artistId: relatedArtistProfile?.id || "",
+            artistType: relatedArtistProfile?.artistType || "",
+            publishedAt: rv.publishedAt,
+            createdAt: rv.createdAt,
+          };
+        });
+
+        // Sort related videos from newest to oldest
+        const getVideoDate = (v: any) => v.publishedAt || v.createdAt;
+        processedRelatedVideos.sort((a: any, b: any) => 
+          new Date(getVideoDate(b)).getTime() - new Date(getVideoDate(a)).getTime()
         );
+
+        setRelatedVideos(processedRelatedVideos);
         setHasMoreVideos(json.data.videosPagination?.hasNextPage || false);
 
         // SHORTS (processed but not rendered yet)
-        setShorts(
-          json.data.shorts.map((sv: any) => ({
-            id: sv.id,
-            title: sv.title,
-            creator: getArtishName(sv.user.name, sv.user.firstName, sv.user.lastName),
-            thumbnail: sv.thumbnailUrl,
-            videoUrl: sv.url,
-            isBookmarked: sv.isBookmarked,
-            bookmarkId: sv.bookmarkId,
-          })),
+        const processedShorts = json.data.shorts.map((sv: any) => ({
+          id: sv.id,
+          title: sv.title,
+          creator: getArtishName(sv.user.name, sv.user.firstName, sv.user.lastName),
+          thumbnail: sv.thumbnailUrl,
+          videoUrl: sv.url,
+          isBookmarked: sv.isBookmarked,
+          bookmarkId: sv.bookmarkId,
+          publishedAt: sv.publishedAt,
+          createdAt: sv.createdAt,
+        }));
+
+        // Sort shorts from newest to oldest
+        const getShortDate = (s: any) => s.publishedAt || s.createdAt;
+        processedShorts.sort((a: any, b: any) => 
+          new Date(getShortDate(b)).getTime() - new Date(getShortDate(a)).getTime()
         );
+
+        setShorts(processedShorts);
         setHasMoreShorts(json.data.shortsPagination?.hasNextPage || false);
       } catch (error) {
         console.error("Error fetching video details:", error);
@@ -241,7 +257,7 @@ export default function VideoDetailsPage() {
       );
       const json = await res.json();
       if (json.success && json.data?.related) {
-        const newVideos = json.data.related.map((rv: any) => {
+        const processedNewVideos = json.data.related.map((rv: any) => {
           const relatedArtistProfile = rv.artist ?? rv.user?.artists?.[0] ?? null;
           return {
             id: rv.id,
@@ -255,9 +271,18 @@ export default function VideoDetailsPage() {
             bookmarkId: rv.bookmarkId,
             artistId: relatedArtistProfile?.id || "",
             artistType: relatedArtistProfile?.artistType || "",
+            publishedAt: rv.publishedAt,
+            createdAt: rv.createdAt,
           };
         });
-        setRelatedVideos((prev) => [...prev, ...newVideos]);
+
+        // Sort new videos before adding (just in case)
+        const getVideoDate = (v: any) => v.publishedAt || v.createdAt;
+        processedNewVideos.sort((a: any, b: any) => 
+          new Date(getVideoDate(b)).getTime() - new Date(getVideoDate(a)).getTime()
+        );
+
+        setRelatedVideos((prev) => [...prev, ...processedNewVideos]);
         setVideosPage(nextPage);
         setHasMoreVideos(json.data.videosPagination?.hasNextPage || false);
       }
@@ -279,7 +304,7 @@ export default function VideoDetailsPage() {
       );
       const json = await res.json();
       if (json.success && json.data?.shorts) {
-        const newShorts = json.data.shorts.map((sv: any) => ({
+        const processedNewShorts = json.data.shorts.map((sv: any) => ({
           id: sv.id,
           title: sv.title,
           creator: getArtishName(sv.user.name, sv.user.firstName, sv.user.lastName),
@@ -287,8 +312,17 @@ export default function VideoDetailsPage() {
           videoUrl: sv.url,
           isBookmarked: sv.isBookmarked,
           bookmarkId: sv.bookmarkId,
+          publishedAt: sv.publishedAt,
+          createdAt: sv.createdAt,
         }));
-        setShorts((prev) => [...prev, ...newShorts]);
+
+        // Sort new shorts before adding (just in case)
+        const getShortDate = (s: any) => s.publishedAt || s.createdAt;
+        processedNewShorts.sort((a: any, b: any) => 
+          new Date(getShortDate(b)).getTime() - new Date(getShortDate(a)).getTime()
+        );
+
+        setShorts((prev) => [...prev, ...processedNewShorts]);
         setShortsPage(nextPage);
         setHasMoreShorts(json.data.shortsPagination?.hasNextPage || false);
       }

@@ -109,7 +109,7 @@ export default function VideosPage() {
       }),
     ) || [];
 
-  // Group videos by artist (all videos from one artist together)
+  // Group videos by artist (all videos from one artist together) and sort by newest first
   const groupedVideos = useMemo(() => {
     if (!allVideos.length) return [];
 
@@ -122,7 +122,7 @@ export default function VideosPage() {
       return acc;
     }, {} as Record<string, typeof allVideos>);
 
-    // Flatten back to array, maintaining artist grouping
+    // Flatten back to array, maintaining artist grouping, and sort each artist's videos from newest to oldest
     // Get unique artist IDs in order of first appearance
     const artistOrder: string[] = [];
     allVideos.forEach(video => {
@@ -131,8 +131,15 @@ export default function VideosPage() {
       }
     });
 
-    // Return videos grouped by artist
-    return artistOrder.flatMap((artistId) => videosByArtist[artistId]);
+    // Helper to get the correct date for sorting
+    const getVideoDate = (v: any) => v.publishedAt || v.createdAt;
+
+    // Return videos grouped by artist, sorted newest first within each artist
+    return artistOrder.flatMap((artistId) => 
+      [...videosByArtist[artistId]].sort((a, b) => 
+        new Date(getVideoDate(b)).getTime() - new Date(getVideoDate(a)).getTime()
+      )
+    );
   }, [allVideos]);
 
   // Infinite scroll: auto-fetch when sentinel enters viewport
