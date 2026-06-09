@@ -116,6 +116,34 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     return () => window.removeEventListener("popstate", handlePopState);
   }, [activeTab, pathname, router]);
 
+  const scrollTabsHeaderToTop = useCallback(() => {
+    const el = tabsHeaderRef.current;
+    const behavior: ScrollBehavior = isMobile ? "auto" : "smooth";
+
+    if (!el) {
+      window.scrollTo({ top: 0, behavior });
+      return;
+    }
+
+    const y = el.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top: Math.max(0, y), behavior });
+
+    try {
+      el.scrollIntoView({ block: "start", behavior });
+    } catch {
+      window.scrollTo({ top: Math.max(0, y), behavior });
+    }
+  }, [isMobile]);
+
+  const scheduleTabsHeaderScroll = useCallback(() => {
+    scrollTabsHeaderToTop();
+    requestAnimationFrame(() => {
+      scrollTabsHeaderToTop();
+      requestAnimationFrame(() => scrollTabsHeaderToTop());
+    });
+    setTimeout(() => scrollTabsHeaderToTop(), 50);
+  }, [scrollTabsHeaderToTop]);
+
   const handleTabChange = (tab: TabType) => {
     if (tab === activeTab) return;
 
@@ -126,12 +154,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       router.push(`${pathname}?tab=shorts`, { scroll: false });
       setActiveTab(tab);
 
-      requestAnimationFrame(() => {
-        tabsHeaderRef.current?.scrollIntoView({
-          block: "start",
-          behavior: "smooth",
-        });
-      });
+      scheduleTabsHeaderScroll();
       return;
     }
 
