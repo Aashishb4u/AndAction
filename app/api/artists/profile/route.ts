@@ -97,13 +97,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Update user coordinates if geocoded
-    if (geocodeData.latitude && geocodeData.longitude) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: geocodeData,
-      });
-    }
+    // Update user coordinates and country code
+    const userUpdateData: any = {
+      ...geocodeData,
+      countryCode: '+91',
+    };
+    await prisma.user.update({
+      where: { id: userId },
+      data: userUpdateData,
+    });
 
     const parsedYearsOfExperience = parseYearsOfExperienceBucket(yearsOfExperience);
     if (yearsOfExperience !== undefined && yearsOfExperience !== null && String(yearsOfExperience).trim() !== "" && parsedYearsOfExperience === null) {
@@ -340,20 +342,22 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     }
 
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        ...(firstName !== undefined && { firstName }),
-        ...(lastName !== undefined && { lastName }),
-        ...(gender && { gender }),
-        ...(dob && { dob: new Date(dob) }),
-        ...(address !== undefined && { address }),
-        ...(pinCode !== undefined && { zip: pinCode }),
-        ...(city !== undefined && { city }),
-        ...(state !== undefined && { state }),
-        ...phoneUpdateData,
-        ...geocodeData, // Add geocoded coordinates if available
-      },
-    });
+            where: { id: userId },
+            data: {
+                ...(firstName !== undefined && { firstName }),
+                ...(lastName !== undefined && { lastName }),
+                ...(gender && { gender }),
+                ...(dob && { dob: new Date(dob) }),
+                ...(address !== undefined && { address }),
+                ...(pinCode !== undefined && { zip: pinCode }),
+                ...(city !== undefined && { city }),
+                ...(state !== undefined && { state }),
+                ...phoneUpdateData,
+                // Save default country code +91 if not already set
+                countryCode: '+91',
+                ...geocodeData, // Add geocoded coordinates if available
+            },
+        });
     const targetArtist = artistProfileId
       ? await prisma.artist.findFirst({
           where: { id: artistProfileId, userId },
