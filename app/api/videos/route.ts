@@ -154,10 +154,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         categoryCondition = Prisma.sql`AND (${Prisma.join(conditions, " OR ")})`;
       }
 
-      // Round-robin by artist: rank each artist's videos using MD5(id||seed),
+      // Round-robin by artist: rank each artist's videos by newest first,
       // then interleave one video per artist per round so every artist appears
       // on page 1 regardless of how many videos they have.
-      // Artist order within each round is also randomised by MD5(userId||seed).
+      // Artist order within each round is randomised by MD5(userId||seed).
       const hasSeed = seed !== null && !isNaN(seed) && seed >= -1 && seed <= 1;
       // Fall back to a server-side random seed so requests without a seed still
       // get consistent intra-request pagination (same query, same OFFSET).
@@ -170,7 +170,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
               v.id,
               ROW_NUMBER() OVER (
                 PARTITION BY v."userId"
-                ORDER BY MD5(v.id || ${effectiveSeedStr})
+                ORDER BY v."publishedAt" DESC, v."createdAt" DESC
               ) AS video_rank,
               MD5(v."userId" || ${effectiveSeedStr}) AS artist_sort_key
             FROM "videos" v
