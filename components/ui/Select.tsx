@@ -102,9 +102,9 @@ const Select: React.FC<SelectProps> = ({
               {placeholder}
             </option>
           )}
-          {options.map((option) => (
+          {options.map((option, index) => (
             <option
-              key={option.value}
+              key={`${option.value}-${index}`}
               value={option.value}
               disabled={option.disabled}
               className="bg-[#1B1B1B] text-white"
