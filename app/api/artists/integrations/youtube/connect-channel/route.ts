@@ -155,6 +155,13 @@ export async function POST(request: NextRequest) {
     // Auto-sync videos after connecting using internal function
     try {
       console.log("Auto-syncing videos after channel connection...");
+      // Delete existing YouTube videos first to ensure we start fresh with latest top videos
+      await prisma.video.deleteMany({
+        where: {
+          artistId: artist.id,
+          source: "youtube",
+        },
+      });
       const syncResult = await syncYouTubeVideosInternal(
         artist.id,
         session.user.id,
