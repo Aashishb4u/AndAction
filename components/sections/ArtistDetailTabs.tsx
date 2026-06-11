@@ -104,17 +104,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     setActiveTab(valid);
   }, [searchParams]);
 
-  useEffect(() => {
-    const handlePopState = () => {
-      const nextTab = new URLSearchParams(window.location.search).get("tab");
-      if (activeTab === "shorts" && nextTab !== "about") {
-        router.push(`${pathname}?tab=about`, { scroll: false });
-      }
-    };
 
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [activeTab, pathname, router]);
 
   const scrollTabsHeaderToTop = useCallback(() => {
     const el = tabsHeaderRef.current;
@@ -838,13 +828,14 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             (artist as any).soloChargesTo !== null &&
             `${(artist as any).soloChargesTo}`.trim() !== "");
         const hasBacklineCharges =
-          Number(artist.chargesWithBacklineFrom) > 0 ||
-          Number((artist as any).chargesWithBacklineTo) > 0;
+          (artist.chargesWithBacklineFrom !== undefined &&
+            artist.chargesWithBacklineFrom !== null &&
+            Number(artist.chargesWithBacklineFrom) > 0) ||
+          ((artist as any).chargesWithBacklineTo !== undefined &&
+            (artist as any).chargesWithBacklineTo !== null &&
+            Number((artist as any).chargesWithBacklineTo) > 0);
         const hasPricingSection =
-          hasSoloCharges ||
-          !!artist.soloChargesDescription?.trim() ||
-          hasBacklineCharges ||
-          !!artist.chargesWithBacklineDescription?.trim();
+          true; // Always show pricing section to display "Price on request" when needed
 
         const hasDuration =
           !!artist.performingDurationFrom || !!artist.performingDurationTo;
@@ -890,23 +881,23 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 className="md:bg-background bg-card border rounded-lg p-4"
                 style={{ borderColor: "#232323" }}
               >
-                {(hasSoloCharges || !!artist.soloChargesDescription?.trim()) && (
-                  <div className={hasBacklineCharges || !!artist.chargesWithBacklineDescription?.trim() ? "mb-6" : ""}>
-                    <h3 className="text-text-gray mb-1">Solo Charges</h3>
-                    {hasSoloCharges && (
-                      <div className="text-white mb-1">
-                        {artist.soloChargesFrom && artist.soloChargesTo
-                          ? `₹ ${artist.soloChargesFrom} - ₹ ${artist.soloChargesTo}`
-                          : artist.soloChargesFrom
-                            ? `Starting from ₹ ${artist.soloChargesFrom}`
-                            : `Up to ₹ ${artist.soloChargesTo}`}
-                      </div>
-                    )}
-                    {artist.soloChargesDescription?.trim() ? (
-                      <p className="footnote">{artist.soloChargesDescription.trim()}</p>
-                    ) : null}
-                  </div>
-                )}
+                <div className={hasBacklineCharges || !!artist.chargesWithBacklineDescription?.trim() ? "mb-6" : ""}>
+                  <h3 className="text-text-gray mb-1">Solo Charges</h3>
+                  {hasSoloCharges ? (
+                    <div className="text-white mb-1">
+                      {artist.soloChargesFrom && artist.soloChargesTo
+                        ? `₹ ${artist.soloChargesFrom} - ₹ ${artist.soloChargesTo}`
+                        : artist.soloChargesFrom
+                          ? `Starting from ₹ ${artist.soloChargesFrom}`
+                          : `Up to ₹ ${artist.soloChargesTo}`}
+                    </div>
+                  ) : (
+                    <div className="text-white mb-1">Price on request</div>
+                  )}
+                  {artist.soloChargesDescription?.trim() ? (
+                    <p className="footnote">{artist.soloChargesDescription.trim()}</p>
+                  ) : null}
+                </div>
 
                 {(hasBacklineCharges || !!artist.chargesWithBacklineDescription?.trim()) && (
                   <div>
@@ -927,7 +918,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 )}
               </div>
             )}
-
+            <p className="text-text-gray mb-4">Artist prices shown are starting rates and may vary based on your event requirements, date, location, season, availability, and other booking factors. Contact Artist for final pricing</p>
             {hasCorePerformanceSection && (
               <div
                 className="md:bg-background bg-card border rounded-lg p-4"

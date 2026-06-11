@@ -120,10 +120,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         : {}),
     };
 
+    // If we're filtering by a specific artist (artistId or artistProfileId),
+    // we don't want random ordering regardless of the random parameter
+    const isArtistSpecific = !!artistId || !!artistProfileId;
+    const useRandom = random && !isArtistSpecific;
+
     let videos: any[];
     let totalCount: number;
 
-    if (random) {
+    if (useRandom) {
       // Build SQL fragments for ORDER BY RANDOM() via raw query
       const typeCondition =
         type === "shorts"

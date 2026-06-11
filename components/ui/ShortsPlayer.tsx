@@ -8,6 +8,7 @@ import Play from "@/components/icons/play";
 import Pause from "@/components/icons/pause";
 import Link from "next/link";
 import { buildArtishProfileUrl } from "@/lib/utils";
+import { useNavigationHistory } from "@/hooks/use-navigation-history";
 
 const SoundOnIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -93,6 +94,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   soundEnabled,
   setSoundEnabled,
 }) => {
+  const { setReturnPath } = useNavigationHistory();
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -514,6 +516,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
             href={`/artists/${short.creatorId}`}
             className="pointer-events-auto"
             data-shorts-interactive="true"
+            onClick={() => setReturnPath()}
           >
             <div className="flex items-center gap-3 mb-4 cursor-pointer">
               <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
