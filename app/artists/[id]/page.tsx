@@ -85,7 +85,7 @@ export default function ArtistDetailPage() {
   const { id: artistId } = useParams();
   const { data: session } = useSession();
   const { categories } = useArtistCategories();
-  const { goBackToArtists } = useNavigationHistory({ fallbackPath: '/artists' });
+  const { goBackToArtists, goBack } = useNavigationHistory({ fallbackPath: '/artists' });
   const [artist, setArtist] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
@@ -293,7 +293,7 @@ useEffect(() => {
   }
 
   const handleBack = () => {
-    router.back();
+    goBack();
   };
 
   const handleBookmark = async () => {
