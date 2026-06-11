@@ -918,7 +918,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                 )}
               </div>
             )}
-            <p className="text-text-gray mb-4">Artist prices shown are starting rates and may vary based on your event requirements, date, location, season, availability, and other booking factors. Contact Artist for final pricing</p>
+            <p className="text-text-gray secondary-text mb-4 italic">"Artist prices shown are starting rates and may vary based on your event requirements, date, location, season, availability, and other booking factors. Contact Artist for final pricing."</p>
             {hasCorePerformanceSection && (
               <div
                 className="md:bg-background bg-card border rounded-lg p-4"
