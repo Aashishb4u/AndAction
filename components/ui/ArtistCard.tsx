@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { buildArtishProfileUrl } from "@/lib/utils";
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
+import ArtistCardSkeleton from "@/components/ui/ArtistCardSkeleton";
 
 interface ArtistCardProps {
   id: string;
@@ -24,12 +25,18 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   className = "",
 }) => {
   const router = useRouter();
-  const { setReturnPath } = useNavigationHistory();
+  const { setReturnPath, setReturnTarget } = useNavigationHistory();
   const [isHovered, setIsHovered] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+
+  useEffect(() => {
+    setIsImageLoading(true);
+  }, [thumbnail]);
 
   const handleClick = () => {
     if (typeof window !== "undefined") {
       setReturnPath(window.location.pathname + window.location.search);
+      setReturnTarget(id);
     }
     router.push(`/artists/${id}`);
   };
@@ -37,9 +44,17 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   return (
     <div
       key={id}
-      className={`relative flex-shrink-0  w-[150px] h-[225px] md:w-[190px] md:h-[300px] rounded-lg overflow-hidden cursor-pointer bg-text-light-gray/10 transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 ${className}`}
+      id={`artist-card-${id}`}
+      data-artist-id={id}
+      className={`relative flex-shrink-0  w-[150px] h-[237px] md:w-[190px] md:h-[300px] rounded-lg overflow-hidden cursor-pointer bg-text-light-gray/10 transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 ${className}`}
       onClick={handleClick}
     >
+      {isImageLoading && (
+        <div className="absolute inset-0 z-10 pointer-events-none">
+          <ArtistCardSkeleton />
+        </div>
+      )}
+
       {/* Background Image */}
       <div className="absolute inset-0 transition-opacity duration-300 select-none">
         <Image
@@ -50,6 +65,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
           sizes="230px"
           priority={false}
           unoptimized
+          onLoad={() => setIsImageLoading(false)}
+          onError={() => setIsImageLoading(false)}
         />
       </div>
 

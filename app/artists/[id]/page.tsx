@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SiteLayout from "@/components/layout/SiteLayout";
@@ -85,7 +85,8 @@ export default function ArtistDetailPage() {
   const { id: artistId } = useParams();
   const { data: session } = useSession();
   const { categories } = useArtistCategories();
-  const { goBackToArtists, goBack } = useNavigationHistory({ fallbackPath: '/artists' });
+  const { disableSmoothScrollTemporarily, goBackInstant, goBackToArtists } =
+    useNavigationHistory({ fallbackPath: "/artists" });
   const [artist, setArtist] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
@@ -114,19 +115,27 @@ export default function ArtistDetailPage() {
   };
 
 
-useEffect(() => {
-  const checkViewport = () => {
-    setIsMobileView(window.innerWidth < 1024);
-  };
+  useEffect(() => {
+    const checkViewport = () => {
+      setIsMobileView(window.innerWidth < 1024);
+    };
 
-  checkViewport();
+    checkViewport();
 
-  window.addEventListener("resize", checkViewport);
+    window.addEventListener("resize", checkViewport);
 
-  return () => {
-    window.removeEventListener("resize", checkViewport);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("resize", checkViewport);
+    };
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("popstate", disableSmoothScrollTemporarily);
+
+    return () => {
+      window.removeEventListener("popstate", disableSmoothScrollTemporarily);
+    };
+  }, [disableSmoothScrollTemporarily]);
 
   useEffect(() => {
     if (!artistId) return;
@@ -293,7 +302,7 @@ useEffect(() => {
   }
 
   const handleBack = () => {
-    goBack();
+    goBackInstant();
   };
 
   const handleBookmark = async () => {

@@ -1,12 +1,5 @@
 "use client";
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  Suspense,
-  useCallback,
-  useMemo,
-} from "react";
+import { useState, useEffect, useRef, Suspense, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SiteLayout from "@/components/layout/SiteLayout";
@@ -162,7 +155,13 @@ function ArtistsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
-  const { goBack } = useNavigationHistory({ fallbackPath: '/' });
+  const {
+    goBack,
+    getReturnPath,
+    getReturnTarget,
+    clearReturnTarget,
+    disableSmoothScrollTemporarily,
+  } = useNavigationHistory({ fallbackPath: "/" });
 
   const pageLocation = useMemo(() => {
     const latFromUrl = parseFloat(searchParams.get("lat") || "");
@@ -232,6 +231,8 @@ function ArtistsPageContent() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pageRef = useRef(1);
   const inFlightPageRef = useRef<number | null>(null);
+  const restoreTargetAttemptedRef = useRef(false);
+  const restoreTargetFetchInFlightRef = useRef(false);
 
   const artistsWithCategoryLabels = useMemo(
     () =>
@@ -246,6 +247,8 @@ function ArtistsPageContent() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      restoreTargetAttemptedRef.current = false;
+      restoreTargetFetchInFlightRef.current = false;
       setPage(1);
       pageRef.current = 1;
       inFlightPageRef.current = null;
@@ -420,6 +423,58 @@ function ArtistsPageContent() {
       observer.unobserve(target);
     };
   }, [fetchMoreArtists, hasMore, loading, isFetchingMore]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || loading) return;
+
+    const returnTarget = getReturnTarget();
+    if (!returnTarget || restoreTargetAttemptedRef.current) return;
+
+    const storedReturnPath = getReturnPath();
+    const currentPath = window.location.pathname + window.location.search;
+    if (storedReturnPath !== currentPath) return;
+
+    const target = document.getElementById(`artist-card-${returnTarget}`);
+    if (target) {
+      const headerOffset = isMobile
+        ? (isMobileFiltersFixed ? mobileFiltersHeight : 0)
+        : (headerRef.current?.offsetHeight ?? 0);
+      const targetTop =
+        window.scrollY + target.getBoundingClientRect().top - headerOffset - 24;
+
+      restoreTargetAttemptedRef.current = true;
+      clearReturnTarget();
+      disableSmoothScrollTemporarily();
+      window.scrollTo({ top: Math.max(0, targetTop), behavior: "auto" });
+      return;
+    }
+
+    if (hasMore && !isFetchingMore && !restoreTargetFetchInFlightRef.current) {
+      restoreTargetFetchInFlightRef.current = true;
+      fetchMoreArtists().finally(() => {
+        restoreTargetFetchInFlightRef.current = false;
+      });
+      return;
+    }
+
+    if (!hasMore && !isFetchingMore) {
+      restoreTargetAttemptedRef.current = true;
+      clearReturnTarget();
+    }
+  }, [
+    loading,
+    artists,
+    hasMore,
+    isFetchingMore,
+    isMobile,
+    isMobileFiltersFixed,
+    mobileFiltersHeight,
+    fetchMoreArtists,
+    getReturnPath,
+    getReturnTarget,
+    clearReturnTarget,
+    disableSmoothScrollTemporarily,
+  ]);
 
   // Fallback for mobile where IntersectionObserver can miss bottom triggers.
   useEffect(() => {

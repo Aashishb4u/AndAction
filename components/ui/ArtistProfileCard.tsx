@@ -22,7 +22,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   className = "",
 }) => {
   const router = useRouter();
-  const { setReturnPath } = useNavigationHistory();
+  const { setReturnPath, setReturnTarget } = useNavigationHistory();
   const formatPrice = (price: number) => {
     return `₹ ${price.toLocaleString()}`;
   };
@@ -30,6 +30,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   const handleClick = () => {
     if (typeof window !== "undefined") {
       setReturnPath(window.location.pathname + window.location.search);
+      setReturnTarget(artist.id);
     }
     router.push(`/artists/${artist.id}`);
   };
@@ -58,13 +59,15 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
     // Mobile list layout
     return (
       <div
+        id={`artist-card-${artist.id}`}
+        data-artist-id={artist.id}
         className={`md:bg-card relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer ${className}`}
         onClick={handleClick}
       >
         <div className="flex py-4 gap-4 items-start">
           {/* Artist Image */}
           <div
-            className="relative w-[100px] h-[140px] rounded-lg overflow-hidden flex-shrink-0"
+            className="relative w-[100px] h-[158px] rounded-lg overflow-hidden flex-shrink-0"
             style={{ backgroundColor: "#111" }}
           >
             <Image
@@ -136,6 +139,8 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
   // Desktop grid layout
   return (
     <div
+      id={`artist-card-${artist.id}`}
+      data-artist-id={artist.id}
       className={`relative w-[260px] h-[410px] rounded-2xl overflow-hidden artist-card-hover artist-card-animate group cursor-pointer ${className}`}
       onClick={handleClick}
     >

@@ -5,6 +5,7 @@ import ArtistSection from "./ArtistSection";
 import ArtistSectionSkeleton from "./ArtistSectionSkeleton";
 import { useArtistsByCategoryValues } from "@/hooks/use-artists";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
+import { useNavigationHistory } from "@/hooks/use-navigation-history";
 
 interface ArtistsProps {
   location: { lat: number; lng: number } | null;
@@ -16,6 +17,12 @@ const CATEGORIES_PER_LOAD = 5;
 
 export default function Artists({ location, canFetch = true }: ArtistsProps) {
   const { categories, isLoading: isCategoriesLoading } = useArtistCategories();
+  const {
+    getReturnPath,
+    getReturnTarget,
+    clearReturnTarget,
+    disableSmoothScrollTemporarily,
+  } = useNavigationHistory();
   const categoryValues = useMemo(
     () => categories.map((category) => category.value),
     [categories],
@@ -73,6 +80,8 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
 
   // Observer ref for infinite scroll
   const observerRef = useRef<HTMLDivElement | null>(null);
+  const restoreTargetAttemptedRef = useRef(false);
+  const restoreTargetLoadInFlightRef = useRef(false);
 
   // Get visible categories based on current count
   const visibleCategories = categoriesWithArtists.slice(
@@ -122,14 +131,67 @@ export default function Artists({ location, canFetch = true }: ArtistsProps) {
   // Reset visible category count when data changes
   useEffect(() => {
     if (!shouldShowLoading) {
+      restoreTargetAttemptedRef.current = false;
+      restoreTargetLoadInFlightRef.current = false;
       setVisibleCategoryCount(CATEGORIES_PER_LOAD);
     }
   }, [shouldShowLoading]);
 
   useEffect(() => {
+    restoreTargetAttemptedRef.current = false;
+    restoreTargetLoadInFlightRef.current = false;
     setVisibleCategoryCount(CATEGORIES_PER_LOAD);
     setLoadingMore(false);
   }, [locationQueryKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || shouldShowLoading) return;
+
+    const returnTarget = getReturnTarget();
+    if (!returnTarget || restoreTargetAttemptedRef.current) return;
+
+    const storedReturnPath = getReturnPath();
+    const currentPath = window.location.pathname + window.location.search;
+    if (storedReturnPath !== currentPath) return;
+
+    const target = document.getElementById(`artist-card-${returnTarget}`);
+    if (target) {
+      restoreTargetAttemptedRef.current = true;
+      clearReturnTarget();
+      disableSmoothScrollTemporarily();
+
+      target.scrollIntoView({
+        behavior: "auto",
+        block: "center",
+        inline: "center",
+      });
+      return;
+    }
+
+    if (hasMoreToLoad && !loadingMore && !restoreTargetLoadInFlightRef.current) {
+      restoreTargetLoadInFlightRef.current = true;
+      loadMoreCategories();
+      window.setTimeout(() => {
+        restoreTargetLoadInFlightRef.current = false;
+      }, 350);
+      return;
+    }
+
+    if (!hasMoreToLoad && !loadingMore) {
+      restoreTargetAttemptedRef.current = true;
+      clearReturnTarget();
+    }
+  }, [
+    shouldShowLoading,
+    visibleCategories,
+    hasMoreToLoad,
+    loadingMore,
+    loadMoreCategories,
+    getReturnPath,
+    getReturnTarget,
+    clearReturnTarget,
+    disableSmoothScrollTemporarily,
+  ]);
 
   return (
     <section className="relative w-full pt-6 pb-20 md:pb-8 overflow-hidden">
