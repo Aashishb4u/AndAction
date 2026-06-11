@@ -530,7 +530,7 @@ export default function ArtistDashboard() {
 
                 return (
                   <div key={profile.id} className="w-full shrink-0 snap-start">
-                    <div className="relative aspect-[4/5]">
+                    <div className="relative aspect-[19/30]">
                       <Image
                         src={buildArtishProfileUrl(profile?.profileImage || "")}
                         alt={profile?.stageName || fullName || "Artist"}
@@ -574,7 +574,7 @@ export default function ArtistDashboard() {
               })}
 
               <div className="w-full shrink-0 snap-start">
-                <div className="relative aspect-[4/5] bg-gradient-to-b from-[#1A1A1A] to-[#101010]">
+                <div className="relative aspect-[19/30] bg-gradient-to-b from-[#1A1A1A] to-[#101010]">
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                   <div className="relative flex h-full flex-col items-center justify-center px-6 text-center text-white">
                     <h2 className="text-2xl font-semibold">Add New Profile</h2>
