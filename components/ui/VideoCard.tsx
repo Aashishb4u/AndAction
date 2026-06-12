@@ -65,11 +65,11 @@ const VideoCard: React.FC<VideoCardProps> = ({
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Tracks approximate current time for YouTube (updated every second while playing)
   const ytCurrentTimeRef = useRef(0);
   const ytTickerRef = useRef<NodeJS.Timeout | null>(null);
-
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Helper to check if URL is YouTube
   const isYouTubeUrl = (url: string) => {
     return url.includes("youtube.com") || url.includes("youtu.be");
@@ -98,6 +98,10 @@ const VideoCard: React.FC<VideoCardProps> = ({
       setShouldPlayVideo(isPlaying);
     },
   });
+
+  useEffect(() => {
+  console.log("Video", id, "shouldPlayVideo =", shouldPlayVideo);
+  }, [shouldPlayVideo]);
 
   // Hover to play video (desktop) - no delay
   useEffect(() => {
@@ -184,13 +188,19 @@ const VideoCard: React.FC<VideoCardProps> = ({
   };
 
   const handleMouseEnter = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
     setIsHovered(true);
-  };
+  }, 400);
+};
 
   const handleMouseLeave = () => {
-    setIsHovered(false);
-    setShowMenu(false);
-  };
+  if (hoverTimeoutRef.current) {
+    clearTimeout(hoverTimeoutRef.current);
+  }
+
+  setIsHovered(false);
+  setShowMenu(false);
+};
 
   const handleMenuToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -241,8 +251,16 @@ const VideoCard: React.FC<VideoCardProps> = ({
         <div className="absolute inset-0 overflow-hidden">
 
         {/* YouTube iframe */}
-        {isYouTube && youtubeVideoId && (
-          <div
+
+        {isYouTube && youtubeVideoId && shouldPlayVideo && ( 
+          <>
+          {console.log(
+  "Render iframe",
+  id,
+  shouldPlayVideo,
+  isHovered
+)}
+   <div
             className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo ? "opacity-100" : "opacity-0"}`}
           >
             <iframe
@@ -254,6 +272,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
               onLoad={() => setIsVideoLoaded(true)}
             />
           </div>
+          </>         
+       
         )}
 
         {/* MP4 video */}

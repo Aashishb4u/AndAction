@@ -73,6 +73,14 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
   const youtubeVideoId = isYouTube ? getYouTubeVideoId(videoUrl) : null;
 
   useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  useEffect(() => {
     if (isHovered) {
       setShouldPlayVideo(true);
       if (isYouTube && iframeRef.current) {
@@ -124,10 +132,16 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
   };
 
   const handleMouseEnter = () => {
-    setIsHovered(true);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(true);
+    }, 400);
   };
 
   const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
     setIsHovered(false);
     setShowMenu(false);
   };
@@ -148,8 +162,7 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
           />
 
           {/* YouTube iframe */}
-          {isYouTube && youtubeVideoId && (
-            <div
+            {isYouTube && youtubeVideoId && shouldPlayVideo && (            <div
               className={`absolute inset-0 transition-opacity duration-500 ${shouldPlayVideo ? "opacity-100" : "opacity-0"}`}
             >
               <iframe
