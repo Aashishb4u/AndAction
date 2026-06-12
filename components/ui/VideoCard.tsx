@@ -190,7 +190,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   const handleMouseEnter = () => {
     hoverTimeoutRef.current = setTimeout(() => {
     setIsHovered(true);
-  }, 400);
+  }, 150);
 };
 
   const handleMouseLeave = () => {

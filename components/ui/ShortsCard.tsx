@@ -79,7 +79,7 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
       }
     };
   }, []);
-  
+
   useEffect(() => {
     if (isHovered) {
       setShouldPlayVideo(true);
@@ -134,7 +134,7 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
   const handleMouseEnter = () => {
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(true);
-    }, 400);
+    }, 150);
   };
 
   const handleMouseLeave = () => {
