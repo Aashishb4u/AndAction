@@ -92,7 +92,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log(`[CRON] Found ${allArtists.length} artists with YouTube channel`);
+    console.log(
+      `[CRON] Found ${allArtists.length} artists with YouTube channel`,
+    );
 
     // Match Instagram behavior: process an artist only once in ~7 days
     const sixDaysAgo = new Date();
@@ -208,7 +210,12 @@ async function syncArtistYoutubeRollingWindow(params: {
   userId: string;
   youtubeChannelId: string;
   hasOAuthToken: boolean;
-}): Promise<{ recentCount: number; newVideoCount: number; deleted: number; inserted: number }> {
+}): Promise<{
+  recentCount: number;
+  newVideoCount: number;
+  deleted: number;
+  inserted: number;
+}> {
   const { artistId, userId, youtubeChannelId, hasOAuthToken } = params;
 
   const artistProfiles = await prisma.artist.count({ where: { userId } });
@@ -281,7 +288,9 @@ async function syncArtistYoutubeRollingWindow(params: {
       .filter((id): id is string => Boolean(id)),
   );
 
-  const newVideos = detailedVideos.filter((video) => !existingSet.has(video.id));
+  const newVideos = detailedVideos.filter(
+    (video) => !existingSet.has(video.id),
+  );
   const newCount = newVideos.length;
 
   if (newCount === 0) {
@@ -298,10 +307,7 @@ async function syncArtistYoutubeRollingWindow(params: {
       artistId,
       source: "youtube",
     },
-    orderBy: [
-      { publishedAt: "asc" },
-      { createdAt: "asc" },
-    ],
+    orderBy: [{ publishedAt: "asc" }, { createdAt: "asc" }],
     take: newCount,
     select: {
       id: true,
@@ -355,24 +361,64 @@ async function syncArtistYoutubeRollingWindow(params: {
   };
 }
 
+// async function buildYouTubeAuth(
+//   artistId: string,
+//   hasOAuthToken: boolean,
+// ): Promise<{ headers: Record<string, string>; apiKeyParam: string }> {
+//   if (hasOAuthToken) {
+//     const token = await getValidYouTubeToken(artistId);
+
+//     if (!token) {
+//       throw new Error("Failed to get valid YouTube token");
+//     }
+
+//     return {
+//       headers: { Authorization: `Bearer ${token}` },
+//       apiKeyParam: "",
+//     };
+//   }
+
+//   const apiKey = process.env.YOUTUBE_API_KEY;
+//   if (!apiKey) {
+//     throw new Error("YOUTUBE_API_KEY is missing");
+//   }
+
+//   return {
+//     headers: {},
+//     apiKeyParam: `&key=${apiKey}`,
+//   };
+// }
+
 async function buildYouTubeAuth(
   artistId: string,
   hasOAuthToken: boolean,
 ): Promise<{ headers: Record<string, string>; apiKeyParam: string }> {
   if (hasOAuthToken) {
-    const token = await getValidYouTubeToken(artistId);
+    try {
+      const token = await getValidYouTubeToken(artistId);
 
-    if (!token) {
-      throw new Error("Failed to get valid YouTube token");
+      if (token) {
+        return {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          apiKeyParam: "",
+        };
+      }
+
+      console.warn(
+        `[YouTube] No valid OAuth token for artist ${artistId}, falling back to API key`,
+      );
+    } catch (error) {
+      console.warn(
+        `[YouTube] OAuth failed for artist ${artistId}, falling back to API key`,
+        error,
+      );
     }
-
-    return {
-      headers: { Authorization: `Bearer ${token}` },
-      apiKeyParam: "",
-    };
   }
 
   const apiKey = process.env.YOUTUBE_API_KEY;
+
   if (!apiKey) {
     throw new Error("YOUTUBE_API_KEY is missing");
   }
@@ -411,8 +457,7 @@ async function fetchRecentPlaylistItems(
 
   do {
     const pageTokenParam = nextPageToken ? `&pageToken=${nextPageToken}` : "";
-    const playlistUrl =
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50${pageTokenParam}${apiKeyParam}`;
+    const playlistUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50${pageTokenParam}${apiKeyParam}`;
 
     const response = await fetch(playlistUrl, { headers });
 
@@ -462,8 +507,7 @@ async function hydrateVideoDetails(
     const chunk = uniqueIds.slice(i, i + 50);
     const ids = chunk.join(",");
 
-    const detailsUrl =
-      `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${ids}${apiKeyParam}`;
+    const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${ids}${apiKeyParam}`;
 
     const response = await fetch(detailsUrl, { headers });
 
@@ -491,7 +535,8 @@ async function hydrateVideoDetails(
         playlistItem?.snippet.thumbnails.medium?.url ||
         playlistItem?.snippet.thumbnails.default?.url ||
         "",
-      publishedAt: playlistItem?.snippet.publishedAt || new Date().toISOString(),
+      publishedAt:
+        playlistItem?.snippet.publishedAt || new Date().toISOString(),
       durationIso: details?.contentDetails?.duration || "PT0S",
       viewCount: parseInt(details?.statistics?.viewCount || "0", 10),
     };
@@ -541,7 +586,10 @@ async function updateCronJobRecord(
   id: string,
   status: "completed" | "failed",
   error: string | null = null,
-  metadata: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | undefined = undefined,
+  metadata:
+    | Prisma.InputJsonValue
+    | Prisma.NullableJsonNullValueInput
+    | undefined = undefined,
 ): Promise<void> {
   await prisma.cronJob.update({
     where: { id },
