@@ -183,13 +183,17 @@ export default function ShortsPage() {
 
   const stopAllShortsPlayback = useCallback(() => {
     // Search entire document for any video/yt iframe to make sure nothing is missed
-    const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("video"));
+    const videos = Array.from(
+      document.querySelectorAll<HTMLVideoElement>("video"),
+    );
     videos.forEach((video) => {
       video.pause();
       video.muted = true;
     });
 
-    const iframes = Array.from(document.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'));
+    const iframes = Array.from(
+      document.querySelectorAll<HTMLIFrameElement>('iframe[id^="yt-"]'),
+    );
     iframes.forEach((iframe) => {
       if (!iframe.contentWindow) return;
       iframe.contentWindow.postMessage(
@@ -407,7 +411,7 @@ export default function ShortsPage() {
   ]);
 
   const getVisibleVideos = useCallback(() => {
-    const bufferSize = 1;
+    const bufferSize = 3;
     const startIndex = Math.max(0, currentIndex - bufferSize);
     const endIndex = Math.min(
       groupedShorts.length - 1,
@@ -605,18 +609,35 @@ export default function ShortsPage() {
             }}
           >
             {visibleVideos.map((video) => {
-              const isActive = video.absoluteIndex === currentIndex && !isDesktop;
-              const isNext = video.absoluteIndex === currentIndex + 1;
+              const isActive =
+                video.absoluteIndex === currentIndex && !isDesktop;
+              const distance = Math.abs(video.absoluteIndex - currentIndex);
+
+              const preloadYouTubePlayer = distance <= 2;
+
+              const shouldLoad = distance <= 1;
               return (
                 <div
                   key={`${video.id}-${video.absoluteIndex}`}
                   className="absolute inset-0 w-full h-full"
                   style={{ top: `${video.absoluteIndex * 100}%` }}
                 >
-                  <ShortsPlayer
+                  {/* <ShortsPlayer
                     short={video}
                     isActive={isActive}
                     shouldLoad={isActive}
+                    onBookmark={handleBookmark}
+                    onShare={handleShare}
+                    soundEnabled={
+                      isActive ? audioGateOpen && soundEnabled : false
+                    }
+                    setSoundEnabled={setSoundEnabled}
+                  /> */}
+                  <ShortsPlayer
+                    short={video}
+                    isActive={isActive}
+                    shouldLoad={shouldLoad}
+                    preloadYouTubePlayer={preloadYouTubePlayer}
                     onBookmark={handleBookmark}
                     onShare={handleShare}
                     soundEnabled={isActive ? (audioGateOpen && soundEnabled) : false}
@@ -652,26 +673,30 @@ export default function ShortsPage() {
               }}
             >
               {visibleVideos.map((video) => {
-              const isActive = video.absoluteIndex === currentIndex && isDesktop;
-              const isNext = video.absoluteIndex === currentIndex + 1;
-              return (
-                <div
-                  key={`${video.id}-${video.absoluteIndex}`}
-                  className="absolute inset-0 w-full h-full"
-                  style={{ top: `${video.absoluteIndex * 100}%` }}
-                >
-                  <ShortsPlayer
-                    short={video}
-                    isActive={isActive}
-                    shouldLoad={isActive || isNext}
-                    onBookmark={handleBookmark}
-                    onShare={handleShare}
-                    soundEnabled={isActive ? (audioGateOpen && soundEnabled) : false}
-                    setSoundEnabled={setSoundEnabled}
-                  />
-                </div>
-              );
-            })}
+                const isActive =
+                  video.absoluteIndex === currentIndex && isDesktop;
+                const isNext = video.absoluteIndex === currentIndex + 1;
+                return (
+                  <div
+                    key={`${video.id}-${video.absoluteIndex}`}
+                    className="absolute inset-0 w-full h-full"
+                    style={{ top: `${video.absoluteIndex * 100}%` }}
+                  >
+                    <ShortsPlayer
+                      preloadYouTubePlayer={true}
+                      short={video}
+                      isActive={isActive}
+                      shouldLoad={isActive || isNext}
+                      onBookmark={handleBookmark}
+                      onShare={handleShare}
+                      soundEnabled={
+                        isActive ? audioGateOpen && soundEnabled : false
+                      }
+                      setSoundEnabled={setSoundEnabled}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -47,6 +47,7 @@ interface ShortsPlayerProps {
   short: Short;
   isActive: boolean;
   shouldLoad?: boolean;
+  preloadYouTubePlayer?: boolean;
   onBookmark: (id: string) => void;
   onShare: (id: string) => void;
   soundEnabled: boolean;
@@ -93,6 +94,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   onShare,
   soundEnabled,
   setSoundEnabled,
+  preloadYouTubePlayer = false,
 }) => {
   const { setReturnPath } = useNavigationHistory();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -117,10 +119,11 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   useEffect(() => {
     const pauseAndMuteEverything = () => {
       // Clear ALL timeouts
-      if (nativeUnmuteTimeoutRef.current) clearTimeout(nativeUnmuteTimeoutRef.current);
+      if (nativeUnmuteTimeoutRef.current)
+        clearTimeout(nativeUnmuteTimeoutRef.current);
       if (ytUnmuteTimeoutRef.current) clearTimeout(ytUnmuteTimeoutRef.current);
       if (ytTimerRef.current) clearTimeout(ytTimerRef.current);
-      
+
       // Pause native video
       if (videoRef.current) {
         videoRef.current.pause();
@@ -128,15 +131,17 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       }
       // Pause/mute YouTube iframe
       if (isYouTube) {
-        const iframe = document.getElementById(`yt-${short.id}`) as HTMLIFrameElement | null;
+        const iframe = document.getElementById(
+          `yt-${short.id}`,
+        ) as HTMLIFrameElement | null;
         if (iframe?.contentWindow) {
           iframe.contentWindow.postMessage(
             JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
-            "*"
+            "*",
           );
           iframe.contentWindow.postMessage(
             JSON.stringify({ event: "command", func: "mute", args: [] }),
-            "*"
+            "*",
           );
         }
       }
@@ -457,31 +462,31 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
         className="absolute inset-0 object-cover"
       />
 
-      {shouldLoad &&
-        (isYouTube ? (
-          <iframe
-                    id={`yt-${short.id}`}
-                    className="absolute inset-0 w-full h-full"
-                    loading={isActive ? "eager" : "lazy"}
-                    // Set autoplay to 0 when not active, mute always initially
-                    src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=0&mute=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
-                      typeof window !== "undefined" ? window.location.origin : ""
-                    }&nohistory=1`}
-                    onLoad={() => setYtReady(true)}
-                    allow="autoplay; encrypted-media; fullscreen"
-                  />
-        ) : (
-          <video
-            key={short.id}
-            ref={videoRef}
-            src={short.videoUrl}
-            preload={isActive ? "auto" : "metadata"}
-            playsInline
-            muted={!isActive || !soundEnabled}
-            onLoadedData={() => setIsVideoLoaded(true)}
-            onCanPlay={() => setIsVideoLoaded(true)}
-          />
-        ))}
+      {isYouTube
+        ? (shouldLoad || preloadYouTubePlayer) && (
+            <iframe
+              id={`yt-${short.id}`}
+              className="absolute inset-0 w-full h-full"
+              loading={isActive ? "eager" : "lazy"}
+              src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=0&mute=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
+                typeof window !== "undefined" ? window.location.origin : ""
+              }&nohistory=1`}
+              onLoad={() => setYtReady(true)}
+              allow="autoplay; encrypted-media; fullscreen"
+            />
+          )
+        : shouldLoad && (
+            <video
+              key={short.id}
+              ref={videoRef}
+              src={short.videoUrl}
+              preload={isActive ? "auto" : "metadata"}
+              playsInline
+              muted={!isActive || !soundEnabled}
+              onLoadedData={() => setIsVideoLoaded(true)}
+              onCanPlay={() => setIsVideoLoaded(true)}
+            />
+          )}
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
 
