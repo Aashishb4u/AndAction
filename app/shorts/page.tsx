@@ -410,6 +410,8 @@ export default function ShortsPage() {
     handleKeyDown,
   ]);
 
+  // reel - watching - -1 1 +1 +2
+
   const getVisibleVideos = useCallback(() => {
     const bufferSize = 3;
     const startIndex = Math.max(0, currentIndex - bufferSize);
@@ -587,42 +589,45 @@ export default function ShortsPage() {
         ))}
       </div>
 
-      {/* MOBILE */}
-      <div className="md:hidden">
-        <div
-          ref={mobileContainerRef}
-          className="fixed left-0 right-0 bg-black overflow-hidden shorts-scrollbar-hide"
-          style={{
-            top: 0,
-            bottom: "4rem", // Leave space for bottom bar
-            zIndex: 0,
-            paddingTop: "4.5rem", // Add top padding for category header
-          }}
-        >
-          <div
-            className="relative h-full"
-            style={{
-              transform: `translateY(-${currentIndex * 100}%)`,
-              transition: "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
-              willChange: "transform",
-              height: "100%", // Ensure container takes full height of parent
-            }}
-          >
-            {visibleVideos.map((video) => {
-              const isActive =
-                video.absoluteIndex === currentIndex && !isDesktop;
-              const distance = Math.abs(video.absoluteIndex - currentIndex);
+      {!isDesktop ? (
+        <>
+          {/* MOBILE */}
+          <div>
+            <div
+              ref={mobileContainerRef}
+              className="fixed left-0 right-0 bg-black overflow-hidden shorts-scrollbar-hide"
+              style={{
+                top: 0,
+                bottom: "4rem", // Leave space for bottom bar
+                zIndex: 0,
+                paddingTop: "4.5rem", // Add top padding for category header
+              }}
+            >
+              <div
+                className="relative h-full"
+                style={{
+                  transform: `translateY(-${currentIndex * 100}%)`,
+                  transition:
+                    "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
+                  willChange: "transform",
+                  height: "100%", // Ensure container takes full height of parent
+                }}
+              >
+                {visibleVideos.map((video) => {
+                  const isActive =
+                    video.absoluteIndex === currentIndex && !isDesktop;
+                  const distance = Math.abs(video.absoluteIndex - currentIndex);
 
-              const preloadYouTubePlayer = distance <= 2;
+                  const preloadYouTubePlayer = distance <= 2;
 
-              const shouldLoad = distance <= 1;
-              return (
-                <div
-                  key={`${video.id}-${video.absoluteIndex}`}
-                  className="absolute inset-0 w-full h-full"
-                  style={{ top: `${video.absoluteIndex * 100}%` }}
-                >
-                  {/* <ShortsPlayer
+                  const shouldLoad = distance <= 1;
+                  return (
+                    <div
+                      key={`${video.id}-${video.absoluteIndex}`}
+                      className="absolute inset-0 w-full h-full"
+                      style={{ top: `${video.absoluteIndex * 100}%` }}
+                    >
+                      {/* <ShortsPlayer
                     short={video}
                     isActive={isActive}
                     shouldLoad={isActive}
@@ -633,74 +638,81 @@ export default function ShortsPage() {
                     }
                     setSoundEnabled={setSoundEnabled}
                   /> */}
-                  <ShortsPlayer
-                    short={video}
-                    isActive={isActive}
-                    shouldLoad={shouldLoad}
-                    preloadYouTubePlayer={preloadYouTubePlayer}
-                    onBookmark={handleBookmark}
-                    onShare={handleShare}
-                    soundEnabled={isActive ? (audioGateOpen && soundEnabled) : false}
-                    setSoundEnabled={setSoundEnabled}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        {/* Add bottom navigation bar for mobile */}
-        <div className="fixed bottom-0 left-0 w-full z-10">
-          {/* Import and use your MobileBottomBar component here */}
-          {/* If you use <MobileBottomBar /> elsewhere, import it at the top */}
-          {/* <MobileBottomBar /> */}
-        </div>
-      </div>
-
-      {/* DESKTOP */}
-      <div className="hidden md:block pt-4 min-h-screen bg-black">
-        <div className="max-w-md mx-auto">
-          <div
-            ref={desktopContainerRef}
-            className="relative bg-black overflow-hidden shorts-scrollbar-hide"
-            style={{ height: "calc(100vh - 6rem)", zIndex: 0 }}
-          >
-            <div
-              className="relative h-full pt-16 pb-16" // Add top and bottom padding to prevent overlap
-              style={{
-                transform: `translateY(-${currentIndex * 100}%)`,
-                transition: "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
-                willChange: "transform",
-              }}
-            >
-              {visibleVideos.map((video) => {
-                const isActive =
-                  video.absoluteIndex === currentIndex && isDesktop;
-                const isNext = video.absoluteIndex === currentIndex + 1;
-                return (
-                  <div
-                    key={`${video.id}-${video.absoluteIndex}`}
-                    className="absolute inset-0 w-full h-full"
-                    style={{ top: `${video.absoluteIndex * 100}%` }}
-                  >
-                    <ShortsPlayer
-                      preloadYouTubePlayer={true}
-                      short={video}
-                      isActive={isActive}
-                      shouldLoad={isActive || isNext}
-                      onBookmark={handleBookmark}
-                      onShare={handleShare}
-                      soundEnabled={
-                        isActive ? audioGateOpen && soundEnabled : false
-                      }
-                      setSoundEnabled={setSoundEnabled}
-                    />
-                  </div>
-                );
-              })}
+                      <ShortsPlayer
+                        short={video}
+                        isActive={isActive}
+                        shouldLoad={shouldLoad}
+                        preloadYouTubePlayer={preloadYouTubePlayer}
+                        onBookmark={handleBookmark}
+                        onShare={handleShare}
+                        soundEnabled={
+                          isActive ? audioGateOpen && soundEnabled : false
+                        }
+                        setSoundEnabled={setSoundEnabled}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Add bottom navigation bar for mobile */}
+            <div className="fixed bottom-0 left-0 w-full z-10">
+              {/* Import and use your MobileBottomBar component here */}
+              {/* If you use <MobileBottomBar /> elsewhere, import it at the top */}
+              {/* <MobileBottomBar /> */}
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      ) : (
+        <>
+          {/* DESKTOP */}
+          <div className="pt-4 min-h-screen bg-black">
+            <div className="max-w-md mx-auto">
+              <div
+                ref={desktopContainerRef}
+                className="relative bg-black overflow-hidden shorts-scrollbar-hide"
+                style={{ height: "calc(100vh - 6rem)", zIndex: 0 }}
+              >
+                <div
+                  className="relative h-full pt-16 pb-16" // Add top and bottom padding to prevent overlap
+                  style={{
+                    transform: `translateY(-${currentIndex * 100}%)`,
+                    transition:
+                      "transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)",
+                    willChange: "transform",
+                  }}
+                >
+                  {visibleVideos.map((video) => {
+                    const isActive =
+                      video.absoluteIndex === currentIndex && isDesktop;
+                    const isNext = video.absoluteIndex === currentIndex + 1;
+                    return (
+                      <div
+                        key={`${video.id}-${video.absoluteIndex}`}
+                        className="absolute inset-0 w-full h-full"
+                        style={{ top: `${video.absoluteIndex * 100}%` }}
+                      >
+                        <ShortsPlayer
+                          preloadYouTubePlayer={true}
+                          short={video}
+                          isActive={isActive}
+                          shouldLoad={isActive || isNext}
+                          onBookmark={handleBookmark}
+                          onShare={handleShare}
+                          soundEnabled={
+                            isActive ? audioGateOpen && soundEnabled : false
+                          }
+                          setSoundEnabled={setSoundEnabled}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Share Modal */}
       {shareModal.isOpen && (

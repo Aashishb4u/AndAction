@@ -274,7 +274,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
     clearYouTubeRetryTimeouts();
 
     if (isActive) {
-      queueYouTubeCommand("playVideo", [0, 250, 750]);
+      sendYouTubeCommand("playVideo");
 
       if (soundEnabled) {
         ytUnmuteTimeoutRef.current = setTimeout(() => {
@@ -450,9 +450,9 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
               }&nohistory=1`}
               onLoad={() => {
                 setYtReady(true);
-                if (isActive) {
-                  queueYouTubeCommand("playVideo", [100, 400, 1000]);
-                }
+                // if (isActive) {
+                //   queueYouTubeCommand("playVideo", [100, 400, 1000]);
+                // }
               }}
               allow="autoplay; encrypted-media; fullscreen"
             />
