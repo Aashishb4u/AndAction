@@ -273,7 +273,7 @@ export default function MobileSearchPage() {
             type="text"
             value={search}
             onChange={handleSearch}
-            placeholder="Search any artist..."
+            placeholder="Search by prayer meet, mata ki chowki, sufi singer like this"
             className="w-full rounded-full border border-[#333] bg-[#181818] pl-12 pr-12 py-3 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#333] text-base shadow-sm"
             style={{ boxShadow: "none" }}
           />

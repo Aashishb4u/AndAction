@@ -23,7 +23,10 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
 }) => {
   const router = useRouter();
   const { setReturnPath, setReturnTarget } = useNavigationHistory();
-  const formatPrice = (price: number) => {
+  const formatPriceOrRequest = (price: number | null | undefined) => {
+    if (price == null || price === 0) {
+      return "Price on request";
+    }
     return `₹ ${price.toLocaleString()}`;
   };
 
@@ -117,7 +120,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
                 width={16}
                 height={16}
               />
-              <span>Starting price - {formatPrice(artist.startingPrice)}</span>
+              <span>Starting price - {formatPriceOrRequest(artist.startingPrice)}</span>
             </div>
 
             <div className="flex items-center gap-1.5 mb-1 secondary-text text-text-gray">
@@ -220,7 +223,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
                 </g>
               </svg>
               <span className="secondary-text">
-                Starting price - {formatPrice(artist.startingPrice)}
+                Starting price - {formatPriceOrRequest(artist.startingPrice)}
               </span>
             </div>
 

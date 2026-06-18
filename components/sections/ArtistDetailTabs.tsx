@@ -144,7 +144,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       router.push(`${pathname}?tab=shorts`, { scroll: false });
       setActiveTab(tab);
 
-      scheduleTabsHeaderScroll();
+      if (isMobile) {
+        scheduleTabsHeaderScroll();
+      }
       return;
     }
 
@@ -570,7 +572,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     const wrapper = shortsTabWrapperRef.current;
     if (!wrapper) return;
 
-    if (activeTab === "shorts") {
+    if (activeTab === "shorts" && isMobile) {
       const prevOverflow = document.body.style.overflow;
       const prevTouchAction = document.body.style.touchAction;
       document.body.style.overflow = "hidden";
@@ -585,7 +587,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         wrapper.style.touchAction = "";
       };
     }
-  }, [activeTab]);
+  }, [activeTab, isMobile]);
 
   useEffect(() => {
     if (activeTab !== "shorts") return;
@@ -886,10 +888,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                   {hasSoloCharges ? (
                     <div className="text-white mb-1">
                       {artist.soloChargesFrom && artist.soloChargesTo
-                        ? `₹ ${artist.soloChargesFrom} - ₹ ${artist.soloChargesTo}`
+                        ? `₹${artist.soloChargesFrom} - ₹${artist.soloChargesTo}`
                         : artist.soloChargesFrom
-                          ? `Starting from ₹ ${artist.soloChargesFrom}`
-                          : `Up to ₹ ${artist.soloChargesTo}`}
+                          ? `Starting from ₹${artist.soloChargesFrom}`
+                          : `Up to ₹${artist.soloChargesTo}`}
                     </div>
                   ) : (
                     <div className="text-white mb-1">Price on request</div>
@@ -905,9 +907,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                     {hasBacklineCharges && (
                       <div className="text-white mb-1">
                         {artist.chargesWithBacklineFrom && (artist as any).chargesWithBacklineTo
-                          ? `₹ ${artist.chargesWithBacklineFrom} - ₹ ${(artist as any).chargesWithBacklineTo}`
+                          ? `₹${artist.chargesWithBacklineFrom} - ₹${(artist as any).chargesWithBacklineTo}`
                           : artist.chargesWithBacklineFrom
-                            ? `Starting from ₹ ${artist.chargesWithBacklineFrom}`
+                            ? `Starting from ₹${artist.chargesWithBacklineFrom}`
                             : `Up to ₹ ${(artist as any).chargesWithBacklineTo}`}
                       </div>
                     )}

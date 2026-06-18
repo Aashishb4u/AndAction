@@ -271,350 +271,354 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       className="md:max-w-2xl border-none bg-background h-[90vh] md:!h-auto md:!max-h-[90vh]"
       headerClassName="md:px-4 md:py-3 px-2 py-3 text-left"
     >
-      <div className="md:px-8 px-4 md:pb-8 pb-4 md:pt-4 pt-4 md:space-y-6 space-y-4">
-        {/* Artist Category */}
-        <div>
-          <label className="secondary-text  block mb-1">Artist Category</label>
-          <Select
-            placeholder="Select category"
-            options={categories}
-            value={formData.artistCategory}
-            onChange={(value) => {
-              handleInputChange("artistCategory", value);
-              handleInputChange("subCategory", []);
-              setSubInput("");
-              setShowSubSuggestions(false);
-            }}
-            required
-          />
-        </div>
-
-        {/* Sub-Category (multi-tag with searchable suggestions) */}
-        <div className="relative">
-          <label className="secondary-text block mb-1">Sub-Category</label>
-          <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap items-center gap-2 px-3 py-2">
-            {(formData.subCategory || []).map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-1 border border-border-color bg-background/80 text-sm px-2 py-1 rounded-full">
-                <span className="text-white">{tag}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = formData.subCategory.filter((t) => t !== tag);
-                    handleInputChange("subCategory", next);
-                  }}
-                  className="text-text-gray hover:text-white"
-                  aria-label={`Remove ${tag}`}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            <input
-              type="text"
-              placeholder={
-                isSubCategoryDisabled
-                  ? "Select category first"
-                  : formData.subCategory.length === 0
-                    ? "Type to search sub-category"
-                    : ""
-              }
-              value={subInput}
-              onChange={(e) => {
-                if (isSubCategoryDisabled) return;
-                setSubInput(e.target.value);
-                setShowSubSuggestions(true);
+      <div className="flex flex-col h-full">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto md:px-8 px-4 md:pt-4 pt-4 md:pb-4 pb-4 md:space-y-6 space-y-4">
+          {/* Artist Category */}
+          <div>
+            <label className="secondary-text  block mb-1">Artist Category</label>
+            <Select
+              placeholder="Select category"
+              options={categories}
+              value={formData.artistCategory}
+              onChange={(value) => {
+                handleInputChange("artistCategory", value);
+                handleInputChange("subCategory", []);
+                setSubInput("");
+                setShowSubSuggestions(false);
               }}
-              disabled={isSubCategoryDisabled}
-              onFocus={() => {
-                if (isSubCategoryDisabled) return;
-                setShowSubSuggestions(true);
-              }}
-              onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
-              onKeyDown={(e) => {
-                if (isSubCategoryDisabled) return;
-                if (e.key === "Enter" || e.key === ",") {
-                  e.preventDefault();
-                  const v = subInput.trim().replace(/,$/, "");
-                  if (v && !formData.subCategory.includes(v)) {
-                    handleInputChange("subCategory", [...formData.subCategory, v]);
-                  }
-                  setSubInput("");
-                } else if (e.key === "Backspace" && !subInput && formData.subCategory.length > 0) {
-                  handleInputChange("subCategory", formData.subCategory.slice(0, -1));
-                }
-              }}
-              className="flex-1 min-w-[80px] bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-gray-400"
+              required
             />
           </div>
 
-          {showSubSuggestions && !isSubCategoryDisabled && (
-            <div className="absolute z-40 left-0 right-0 mt-1 bg-background border border-border-color rounded-lg max-h-48 overflow-auto">
-              {/* Always show typed text as first suggestion if not empty */}
-              {subInput.trim() && (
-                <button
-                  key="typed-input"
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => {
-                    handleInputChange("subCategory", [...formData.subCategory, subInput.trim()]);
-                    setSubInput("");
-                    // Keep dropdown open so newly added item appears in suggestions
-                  }}
-                  className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white text-sm border-b border-border-color"
-                >
-                  Add "{subInput.trim()}"
-                </button>
-              )}
-              
-              {/* Show existing suggestions */}
-              {subArtistSuggestions
-                .filter((s) =>
-                  s.toLowerCase().includes((subInput || "").toLowerCase()) &&
-                  !formData.subCategory.includes(s)
-                )
-                .map((s) => (
+          {/* Sub-Category (multi-tag with searchable suggestions) */}
+          <div className="relative">
+            <label className="secondary-text block mb-1">Sub-Category</label>
+            <div className="w-full bg-card border border-border-color rounded-lg text-white flex flex-wrap items-center gap-2 px-3 py-2">
+              {(formData.subCategory || []).map((tag) => (
+                <span key={tag} className="inline-flex items-center gap-1 border border-border-color bg-background/80 text-sm px-2 py-1 rounded-full">
+                  <span className="text-white">{tag}</span>
                   <button
-                    key={s}
+                    type="button"
+                    onClick={() => {
+                      const next = formData.subCategory.filter((t) => t !== tag);
+                      handleInputChange("subCategory", next);
+                    }}
+                    className="text-text-gray hover:text-white"
+                    aria-label={`Remove ${tag}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              <input
+                type="text"
+                placeholder={
+                  isSubCategoryDisabled
+                    ? "Select category first"
+                    : formData.subCategory.length === 0
+                      ? "Type to search sub-category"
+                      : ""
+                }
+                value={subInput}
+                onChange={(e) => {
+                  if (isSubCategoryDisabled) return;
+                  setSubInput(e.target.value);
+                  setShowSubSuggestions(true);
+                }}
+                disabled={isSubCategoryDisabled}
+                onFocus={() => {
+                  if (isSubCategoryDisabled) return;
+                  setShowSubSuggestions(true);
+                }}
+                onBlur={() => setTimeout(() => setShowSubSuggestions(false), 150)}
+                onKeyDown={(e) => {
+                  if (isSubCategoryDisabled) return;
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    const v = subInput.trim().replace(/,$/, "");
+                    if (v && !formData.subCategory.includes(v)) {
+                      handleInputChange("subCategory", [...formData.subCategory, v]);
+                    }
+                    setSubInput("");
+                  } else if (e.key === "Backspace" && !subInput && formData.subCategory.length > 0) {
+                    handleInputChange("subCategory", formData.subCategory.slice(0, -1));
+                  }
+                }}
+                className="flex-1 min-w-[80px] bg-transparent focus:outline-none px-2 py-1 text-sm placeholder-gray-400"
+              />
+            </div>
+
+            {showSubSuggestions && !isSubCategoryDisabled && (
+              <div className="absolute z-40 left-0 right-0 mt-1 bg-background border border-border-color rounded-lg max-h-48 overflow-auto">
+                {/* Always show typed text as first suggestion if not empty */}
+                {subInput.trim() && (
+                  <button
+                    key="typed-input"
                     type="button"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
-                      handleInputChange("subCategory", [...formData.subCategory, s]);
+                      handleInputChange("subCategory", [...formData.subCategory, subInput.trim()]);
                       setSubInput("");
-                      // Keep dropdown open for continuous selection
+                      // Keep dropdown open so newly added item appears in suggestions
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white text-sm"
+                    className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white text-sm border-b border-border-color"
                   >
-                    {s}
+                    Add "{subInput.trim()}"
                   </button>
-                ))}
-                
-              {/* Show no suggestions only if no input and no matches */}
-              {!subInput.trim() && subArtistSuggestions.filter((s) =>
-                !formData.subCategory.includes(s)
-              ).length === 0 && (
-                  <div className="px-3 py-2 text-gray-400">No suggestions</div>
                 )}
-            </div>
-          )}
-        </div>
-
-        {/* Artist Gender and Budget - Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="secondary-text  block mb-1">Artist gender</label>
-            <Select
-              placeholder="Select gender"
-              options={genderOptions}
-              value={formData.artistGender}
-              onChange={(value) => handleInputChange("artistGender", value)}
-            />
-          </div>
-
-          <div>
-            <label className="secondary-text  block mb-1">Budget</label>
-            <Select
-              placeholder="Select budget"
-              options={budgetOptions}
-              value={formData.budget}
-              onChange={(value) => handleInputChange("budget", value)}
-            />
-          </div>
-        </div>
-
-        {/* Event State and Event Date - Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="secondary-text  block mb-1">Event State</label>
-            <Select
-              placeholder="Select state"
-              options={stateOptions}
-              value={formData.eventState}
-              onChange={handleEventStateChange}
-            />
-          </div>
-          <div>
-            <label className="secondary-text  block mb-1">Event date</label>
-            <DateInput
-              placeholder="DD/MM/YYYY"
-              value={formData.eventDate || null}
-              onChange={(value) => handleInputChange("eventDate", value)}
-              minDate={new Date()}
-            />
-          </div>
-        </div>
-
-        {/* Event Type and Artist State - Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="secondary-text  block mb-1">Event type</label>
-            <Select
-              placeholder="Select event type"
-              options={eventTypeOptions}
-              value={formData.eventType}
-              onChange={(value) => handleInputChange("eventType", value)}
-            />
-          </div>
-          <div>
-            <label className="secondary-text  block mb-1">Artist state</label>
-            <Select
-              placeholder="Select state"
-              options={stateOptions}
-              value={formData.locationState}
-              onChange={handleLocationStateChange}
-            />
-          </div>
-        </div>
-
-        {/* Performing Language */}
-        <div className="relative">
-          <label className="secondary-text  block mb-1">Performing language</label>
-
-          <button
-            type="button"
-            onClick={() => setShowLanguagesDropdown(!showLanguagesDropdown)}
-            className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
-          >
-            <div className="flex-1 flex flex-wrap gap-2 items-center">
-              {(formData.performingLanguage || []).length === 0 ? (
-                <span className="text-text-gray">Select languages</span>
-              ) : (formData.performingLanguage || []).length === languageOptions.length ? (
-                <span className="text-white">All Languages</span>
-              ) : (
-                (formData.performingLanguage || []).map((val) => {
-                  const label = languageOptions.find((l) => l.value === val)?.label || val;
-                  return (
-                    <span key={val} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
-                      <span className="text-white">{label}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); toggleLanguageSelection(val); }}
-                        className="text-text-gray hover:text-white"
-                        aria-label={`Remove ${label}`}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  );
-                })
-              )}
-            </div>
-            <svg
-              className={`w-6 h-6 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {showLanguagesDropdown && (
-            <>
-              {/* Backdrop */}
-              <div
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99998]"
-                onClick={() => setShowLanguagesDropdown(false)}
-              />
-
-              {/* Full-screen language picker */}
-              <div className="fixed inset-0 md:inset-auto md:absolute md:left-0 md:right-0 md:mt-1 z-[99999] flex flex-col bg-background md:bg-card md:border md:border-border-color md:rounded-lg md:shadow-lg md:max-h-80">
-                {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-border-color">
-                  <h3 className="text-white font-semibold text-lg">Select Languages</h3>
-                  <button
-                    type="button"
-                    onClick={() => setShowLanguagesDropdown(false)}
-                    className="p-1 text-text-gray hover:text-white transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Scrollable list */}
-                <div className="flex-1 overflow-y-auto">
-                  <label className="flex items-center gap-3 px-5 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
-                    <input
-                      type="checkbox"
-                      checked={(formData.performingLanguage || []).length === languageOptions.length}
-                      onChange={toggleAllLanguages}
-                      className="w-5 h-5 accent-primary-pink rounded"
-                    />
-                    <span className="text-white font-medium">All Languages</span>
-                  </label>
-
-                  {languageOptions.map((language) => (
-                    <label
-                      key={language.value}
-                      className="flex items-center gap-3 px-5 py-3 hover:bg-background-light cursor-pointer"
+                
+                {/* Show existing suggestions */}
+                {subArtistSuggestions
+                  .filter((s) =>
+                    s.toLowerCase().includes((subInput || "").toLowerCase()) &&
+                    !formData.subCategory.includes(s)
+                  )
+                  .map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        handleInputChange("subCategory", [...formData.subCategory, s]);
+                        setSubInput("");
+                        // Keep dropdown open for continuous selection
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-[#222] transition-colors text-white text-sm"
                     >
+                      {s}
+                    </button>
+                  ))}
+                
+                {/* Show no suggestions only if no input and no matches */}
+                {!subInput.trim() && subArtistSuggestions.filter((s) =>
+                  !formData.subCategory.includes(s)
+                ).length === 0 && (
+                    <div className="px-3 py-2 text-gray-400">No suggestions</div>
+                  )}
+              </div>
+            )}
+          </div>
+
+          {/* Artist Gender and Budget - Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="secondary-text  block mb-1">Artist gender</label>
+              <Select
+                placeholder="Select gender"
+                options={genderOptions}
+                value={formData.artistGender}
+                onChange={(value) => handleInputChange("artistGender", value)}
+              />
+            </div>
+
+            <div>
+              <label className="secondary-text  block mb-1">Budget</label>
+              <Select
+                placeholder="Select budget"
+                options={budgetOptions}
+                value={formData.budget}
+                onChange={(value) => handleInputChange("budget", value)}
+              />
+            </div>
+          </div>
+
+          {/* Event State and Event Date - Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="secondary-text  block mb-1">Event State</label>
+              <Select
+                placeholder="Select state"
+                options={stateOptions}
+                value={formData.eventState}
+                onChange={handleEventStateChange}
+              />
+            </div>
+            <div>
+              <label className="secondary-text  block mb-1">Event date</label>
+              <DateInput
+                placeholder="DD/MM/YYYY"
+                value={formData.eventDate || null}
+                onChange={(value) => handleInputChange("eventDate", value)}
+                minDate={new Date()}
+              />
+            </div>
+          </div>
+
+          {/* Event Type and Artist State - Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="secondary-text  block mb-1">Event type</label>
+              <Select
+                placeholder="Select event type"
+                options={eventTypeOptions}
+                value={formData.eventType}
+                onChange={(value) => handleInputChange("eventType", value)}
+              />
+            </div>
+            <div>
+              <label className="secondary-text  block mb-1">Artist state</label>
+              <Select
+                placeholder="Select state"
+                options={stateOptions}
+                value={formData.locationState}
+                onChange={handleLocationStateChange}
+              />
+            </div>
+          </div>
+
+          {/* Performing Language */}
+          <div className="relative">
+            <label className="secondary-text  block mb-1">Performing language</label>
+
+            <button
+              type="button"
+              onClick={() => setShowLanguagesDropdown(!showLanguagesDropdown)}
+              className="w-full px-4 py-3 bg-card border border-border-color rounded-lg text-left flex items-center justify-between"
+            >
+              <div className="flex-1 flex flex-wrap gap-2 items-center">
+                {(formData.performingLanguage || []).length === 0 ? (
+                  <span className="text-text-gray">Select languages</span>
+                ) : (formData.performingLanguage || []).length === languageOptions.length ? (
+                  <span className="text-white">All Languages</span>
+                ) : (
+                  (formData.performingLanguage || []).map((val) => {
+                    const label = languageOptions.find((l) => l.value === val)?.label || val;
+                    return (
+                      <span key={val} className="inline-flex items-center gap-2 border border-border-color text-sm px-3 py-1 rounded-full">
+                        <span className="text-white">{label}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); toggleLanguageSelection(val); }}
+                          className="text-text-gray hover:text-white"
+                          aria-label={`Remove ${label}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })
+                )}
+              </div>
+              <svg
+                className={`w-6 h-6 text-text-gray transition-transform ${showLanguagesDropdown ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showLanguagesDropdown && (
+              <>
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99998]"
+                  onClick={() => setShowLanguagesDropdown(false)}
+                />
+
+                {/* Full-screen language picker */}
+                <div className="fixed inset-0 md:inset-auto md:absolute md:left-0 md:right-0 md:mt-1 z-[99999] flex flex-col bg-background md:bg-card md:border md:border-border-color md:rounded-lg md:shadow-lg md:max-h-80">
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-border-color">
+                    <h3 className="text-white font-semibold text-lg">Select Languages</h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowLanguagesDropdown(false)}
+                      className="p-1 text-text-gray hover:text-white transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Scrollable list */}
+                  <div className="flex-1 overflow-y-auto">
+                    <label className="flex items-center gap-3 px-5 py-3 hover:bg-background-light cursor-pointer border-b border-border-color">
                       <input
                         type="checkbox"
-                        checked={(formData.performingLanguage || []).includes(language.value)}
-                        onChange={() => toggleLanguageSelection(language.value)}
+                        checked={(formData.performingLanguage || []).length === languageOptions.length}
+                        onChange={toggleAllLanguages}
                         className="w-5 h-5 accent-primary-pink rounded"
                       />
-                      <span className="text-white">{language.label}</span>
+                      <span className="text-white font-medium">All Languages</span>
                     </label>
-                  ))}
-                </div>
 
-                {/* Done button */}
-                <div className="px-5 py-4 border-t border-border-color">
-                  <button
-                    type="button"
-                    onClick={() => setShowLanguagesDropdown(false)}
-                    className="w-full py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-lg"
-                  >
-                    Done {(formData.performingLanguage || []).length > 0 && `(${(formData.performingLanguage || []).length})`}
-                  </button>
+                    {languageOptions.map((language) => (
+                      <label
+                        key={language.value}
+                        className="flex items-center gap-3 px-5 py-3 hover:bg-background-light cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={(formData.performingLanguage || []).includes(language.value)}
+                          onChange={() => toggleLanguageSelection(language.value)}
+                          className="w-5 h-5 accent-primary-pink rounded"
+                        />
+                        <span className="text-white">{language.label}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {/* Done button */}
+                  <div className="px-5 py-4 border-t border-border-color">
+                    <button
+                      type="button"
+                      onClick={() => setShowLanguagesDropdown(false)}
+                      className="w-full py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-lg"
+                    >
+                      Done {(formData.performingLanguage || []).length > 0 && `(${(formData.performingLanguage || []).length})`}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="hidden md:flex gap-4 pt-4 sticky bottom-4 bg-background py-4 secondary-grey-text">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={handleReset}
-            className="md:flex-1 px-8 py-3 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0"
-          >
-            <span className="secondary-grey-text">Reset</span>
-          </Button>
+        {/* Fixed Action Buttons at Bottom */}
+        <div className="border-t border-border-color bg-background md:px-8 px-4 md:pb-8 pb-4 pt-4">
+          <div className="hidden md:flex gap-4 secondary-grey-text">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handleReset}
+              className="md:flex-1 px-8 py-3 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0"
+            >
+              <span className="secondary-grey-text">Reset</span>
+            </Button>
 
-          <Button
-            variant="primary"
-            // size="md"
-            onClick={handleViewResults}
-            disabled={!isFormValid}
-            className="md:flex-1 px-8 py-3"
-          >
-            <span className="secondary-grey-text">View result</span>
-          </Button>
-        </div>
-        <div className="flex whitespace-nowrap md:hidden gap-4 pt-4 sticky bottom-6 bg-background py-4 secondary-grey-text">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={handleReset}
-            className="flex-1 px-8 py-3 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0"
-          >
-            <span className="secondary-grey-text">Reset</span>
-          </Button>
+            <Button
+              variant="primary"
+              onClick={handleViewResults}
+              disabled={!isFormValid}
+              className="md:flex-1 px-8 py-3"
+            >
+              <span className="secondary-grey-text">View result</span>
+            </Button>
+          </div>
+          <div className="flex gap-4 md:hidden secondary-grey-text">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handleReset}
+              className="flex-1 px-8 py-3 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0"
+            >
+              <span className="secondary-grey-text">Reset</span>
+            </Button>
 
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleViewResults}
-            disabled={!isFormValid}
-            className="flex-1 px-8 py-3"
-          >
-            <span className="secondary-grey-text">View result</span>
-          </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleViewResults}
+              disabled={!isFormValid}
+              className="flex-1 px-8 py-3"
+            >
+              <span className="secondary-grey-text">View result</span>
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>

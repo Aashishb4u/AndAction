@@ -41,7 +41,10 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
   const router = useRouter();
 
 
-  const formatPrice = (price: number) => {
+  const formatPriceOrRequest = (price: number | null | undefined) => {
+    if (price == null || price === 0) {
+      return "Price on request";
+    }
     return `₹ ${price.toLocaleString()}`;
   };
 
@@ -160,7 +163,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
             </p>
             <div className="flex items-center justify-between">
               <p className="secondary-text font-normal text-text-gray mb-1">Starting Price</p>
-              <p>{formatPrice(artist.startingPrice)}</p>
+              <p>{formatPriceOrRequest(artist.startingPrice)}</p>
             </div>
           </div>
         </div>
@@ -269,7 +272,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
 
             <div className="mb-3 flex justify-between items-center gap-3">
               <p className="text-text-gray secondary-text">Starting Price</p>
-              <p>{formatPrice(artist.startingPrice)}</p>
+              <p>{formatPriceOrRequest(artist.startingPrice)}</p>
             </div>
 
             {/* Action Buttons */}
