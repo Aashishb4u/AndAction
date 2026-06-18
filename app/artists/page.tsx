@@ -661,7 +661,7 @@ function ArtistsPageContent() {
                     type="text"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    placeholder="Search artists by name or bio..."
+                    placeholder="Search by prayer meet, mata ki chowki, sufi singer like this"
                     className="w-full pl-10 pr-4 py-2 bg-card border border-border-color rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary-pink focus:ring-1 focus:ring-primary-pink transition-colors"
                   />
                   {searchInput && (

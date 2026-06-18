@@ -179,7 +179,12 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   }, [activeDropdown]);
 
   const getFilterLabel = (filterKey: string, value: string) => {
-    if (!value) return filterKey.charAt(0).toUpperCase() + filterKey.slice(1);
+    if (!value) {
+      if (filterKey === "location") {
+        return "Artist Location";
+      }
+      return filterKey.charAt(0).toUpperCase() + filterKey.slice(1);
+    }
 
     const optionsMap: { [key: string]: FilterOption[] } = {
       category: categoryOptions,

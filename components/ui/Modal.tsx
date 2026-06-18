@@ -125,11 +125,11 @@ const Modal: React.FC<ModalProps> = ({
 
         {/* Content */}
         <div
-          className={`overflow-y-auto ${
+          className={`${
             size === "full"
               ? "h-[calc(100vh-80px)] md:max-h-[calc(90vh-60px)]"
               : "max-h-[calc(90vh-60px)]"
-          } modal-scroll`}
+          } ${size !== "full" ? "overflow-y-auto" : ""} modal-scroll`}
         >
           {children}
         </div>
