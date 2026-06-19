@@ -1149,6 +1149,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
           {visibleProfileShorts.map((short: any) => {
             const isActive = short.absoluteIndex === shortsCurrentIndex;
             const isNext = short.absoluteIndex === shortsCurrentIndex + 1;
+            const isYouTubeShort =
+              typeof short.videoUrl === "string" &&
+              /(?:youtube\.com|youtu\.be)/i.test(short.videoUrl);
 
             return (
               <div
@@ -1161,9 +1164,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               >
                 <div
                   className={`relative overflow-hidden ${
-                    isMobile
+                    isMobile || isYouTubeShort
                       ? "w-full h-full"
-                      : "h-full aspect-9/16 max-w-full rounded-2xl"
+                      : "h-full aspect-9/16 max-w-full"
                   }`}
                 >
                   <ShortsPlayer
