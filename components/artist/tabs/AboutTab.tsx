@@ -63,15 +63,8 @@ const AboutTab: React.FC<AboutTabProps> = ({
 
   const [subTypeInput, setSubTypeInput] = useState<string>("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const achievementChips = draft.achievements;
   const [achievementInput, setAchievementInput] = useState("");
-  const [achievementChips, setAchievementChips] = useState<string[]>(() => {
-    return draft.achievements
-      ? draft.achievements
-          .split(/[,\n]+/)
-          .map((item) => item.trim())
-          .filter(Boolean)
-      : [];
-  });
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(
@@ -137,22 +130,8 @@ const AboutTab: React.FC<AboutTabProps> = ({
     );
   };
 
-  useEffect(() => {
-    const chips = draft.achievements
-      ? draft.achievements
-          .split(/[,\n]+/)
-          .map((item) => item.trim())
-          .filter(Boolean)
-      : [];
-    setAchievementChips(chips);
-  }, [draft.achievements]);
-
   const syncAchievementChips = (chips: string[]) => {
-    setAchievementChips(chips);
-    setDraft((prev) => ({
-      ...prev,
-      achievements: chips.join(", "),
-    }));
+    setDraft((prev) => ({ ...prev, achievements: chips }));
   };
 
   const addAchievementChips = (value: string) => {

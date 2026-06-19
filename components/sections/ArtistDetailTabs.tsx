@@ -825,17 +825,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         const hasSoloCharges =
           (artist.soloChargesFrom !== undefined &&
             artist.soloChargesFrom !== null &&
-            `${artist.soloChargesFrom}`.trim() !== "") ||
-          ((artist as any).soloChargesTo !== undefined &&
-            (artist as any).soloChargesTo !== null &&
-            `${(artist as any).soloChargesTo}`.trim() !== "");
+            `${artist.soloChargesFrom}`.trim() !== "");
         const hasBacklineCharges =
           (artist.chargesWithBacklineFrom !== undefined &&
             artist.chargesWithBacklineFrom !== null &&
-            Number(artist.chargesWithBacklineFrom) > 0) ||
-          ((artist as any).chargesWithBacklineTo !== undefined &&
-            (artist as any).chargesWithBacklineTo !== null &&
-            Number((artist as any).chargesWithBacklineTo) > 0);
+            Number(artist.chargesWithBacklineFrom) > 0);
         const hasPricingSection =
           true; // Always show pricing section to display "Price on request" when needed
 
@@ -887,11 +881,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                   <h3 className="text-text-gray mb-1">Solo Charges</h3>
                   {hasSoloCharges ? (
                     <div className="text-white mb-1">
-                      {artist.soloChargesFrom && artist.soloChargesTo
-                        ? `₹${artist.soloChargesFrom} - ₹${artist.soloChargesTo}`
-                        : artist.soloChargesFrom
-                          ? `Starting from ₹${artist.soloChargesFrom}`
-                          : `Up to ₹${artist.soloChargesTo}`}
+                      {artist.soloChargesFrom
+                        ? `₹${artist.soloChargesFrom}`
+                        : `Price on request`}
                     </div>
                   ) : (
                     <div className="text-white mb-1">Price on request</div>
@@ -906,11 +898,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                     <h3 className="text-text-gray mb-1">Charges with backline</h3>
                     {hasBacklineCharges && (
                       <div className="text-white mb-1">
-                        {artist.chargesWithBacklineFrom && (artist as any).chargesWithBacklineTo
-                          ? `₹${artist.chargesWithBacklineFrom} - ₹${(artist as any).chargesWithBacklineTo}`
-                          : artist.chargesWithBacklineFrom
-                            ? `Starting from ₹${artist.chargesWithBacklineFrom}`
-                            : `Up to ₹ ${(artist as any).chargesWithBacklineTo}`}
+                        {artist.chargesWithBacklineFrom
+                          ? `₹${artist.chargesWithBacklineFrom}`
+                          : `Price on request`}
                       </div>
                     )}
                     {artist.chargesWithBacklineDescription?.trim() ? (

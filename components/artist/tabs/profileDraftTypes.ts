@@ -17,7 +17,7 @@ export type AboutDraft = {
   contactNumber: string;
   whatsappNumber: string;
   email: string;
-  achievements: string;
+  achievements: string[];
   yearsOfExperience: string;
   shortBio: string;
   subArtistTypes: string[];
@@ -60,6 +60,14 @@ export function createAboutDraft(artist: Artist): AboutDraft {
         .filter(Boolean)
     : [];
 
+  const rawAchievements = (extendedArtist?.achievements as string | string[] | undefined) || "";
+  const achievements = Array.isArray(rawAchievements)
+    ? rawAchievements
+    : rawAchievements
+        .split(/[,\n]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
   return {
     stageName: artist.name || "",
     artistType: normalizeArtistCategoryValue(rawArtistType),
@@ -87,9 +95,7 @@ export function createAboutDraft(artist: Artist): AboutDraft {
       extendedArtist.phone ||
       "",
     email: extendedArtist.contactEmail || extendedArtist.email || "",
-    achievements: Array.isArray(artist.achievements)
-      ? artist.achievements.join(", ")
-      : artist.achievements || "",
+    achievements,
     yearsOfExperience: artist.yearsOfExperience?.toString() || "4",
     shortBio: artist.bio || "",
     subArtistTypes,

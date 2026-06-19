@@ -90,7 +90,7 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
         whatsappNumber: aboutDraft.whatsappNumber,
         contactEmail: aboutDraft.email,
         shortBio: aboutDraft.shortBio,
-        achievements: aboutDraft.achievements,
+        achievements: aboutDraft.achievements.join(","),
         yearsOfExperience: aboutDraft.yearsOfExperience,
         subArtistType: aboutDraft.subArtistTypes.join(","),
 
@@ -183,12 +183,21 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`py-4 px-6 md:px-8 font-medium text-base whitespace-nowrap transition-all duration-200 ${activeTab === tab.id
-                  ? "border-primary-pink border-b-3 text-white"
+              className={`py-4 px-6 md:px-8 font-medium text-base whitespace-nowrap transition-all duration-200 relative ${
+                activeTab === tab.id
+                  ? "text-white"
                   : "border-b-2 border-transparent text-text-gray hover:text-white hover:border-[#404040]"
-                }`}
+              }`}
             >
               {tab.label}
+              {activeTab === tab.id && (
+                <span 
+                  className="absolute bottom-0 left-0 right-0 h-0.5"
+                  style={{
+                    background: "var(--gradient-primary)"
+                  }}
+                />
+              )}
             </button>
           ))}
         </nav>
