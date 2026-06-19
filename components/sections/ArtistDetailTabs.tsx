@@ -1153,19 +1153,29 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             return (
               <div
                 key={`${short.id}-${short.absoluteIndex}`}
-                className="absolute inset-0 w-full h-full"
+                className={`absolute inset-0 w-full h-full ${
+                  isMobile ? "" : "flex items-center justify-center px-4 py-4"
+                }`}
                 data-short-id={short.id}
                 style={{ top: `${short.absoluteIndex * 100}%` }}
               >
-                <ShortsPlayer
-                  short={short}
-                  isActive={isActive}
-                  shouldLoad={isActive || isNext}
-                  onBookmark={handleProfileShortBookmark}
-                  onShare={handleProfileShortShare}
-                  soundEnabled={isActive ? (shortsAudioGateOpen && shortsSoundEnabled) : false}
-                  setSoundEnabled={setShortsSoundEnabled}
-                />
+                <div
+                  className={`relative overflow-hidden ${
+                    isMobile
+                      ? "w-full h-full"
+                      : "h-full aspect-9/16 max-w-full rounded-2xl"
+                  }`}
+                >
+                  <ShortsPlayer
+                    short={short}
+                    isActive={isActive}
+                    shouldLoad={isActive || isNext}
+                    onBookmark={handleProfileShortBookmark}
+                    onShare={handleProfileShortShare}
+                    soundEnabled={isActive ? (shortsAudioGateOpen && shortsSoundEnabled) : false}
+                    setSoundEnabled={setShortsSoundEnabled}
+                  />
+                </div>
               </div>
             );
           })}

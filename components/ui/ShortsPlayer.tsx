@@ -429,13 +429,16 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full bg-black overflow-hidden">
-      <Image
-        src={short.thumbnail}
-        alt={short.title}
-        fill
-        className="absolute inset-0 object-cover"
-      />
+    <div className="relative w-full aspect-video aspect-ratio-16-9 h-full bg-black overflow-hidden">
+      {!isYouTube && !isPlaying && short.thumbnail ? (
+        <Image
+          src={short.thumbnail}
+          alt={short.title}
+          fill
+          unoptimized
+          className="absolute inset-0 object-cover bg-black"
+        />
+      ) : null}
 
       {isYouTube
         ? (shouldLoad || preloadYouTubePlayer) && (
@@ -462,11 +465,27 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
               key={short.id}
               ref={videoRef}
               src={short.videoUrl}
+              className="absolute inset-0 h-full w-full object-cover bg-black"
               preload={isActive ? "auto" : "metadata"}
+              autoPlay={isActive}
+              loop
               playsInline
               muted={!isActive || !soundEnabled}
+              poster={short.thumbnail || undefined}
               onLoadedData={() => setIsVideoLoaded(true)}
-              onCanPlay={() => setIsVideoLoaded(true)}
+              onCanPlay={(e) => {
+                setIsVideoLoaded(true);
+
+                if (isActive) {
+                  e.currentTarget.play().catch(() => {});
+                }
+              }}
+              onPlaying={() => {
+                setIsVideoLoaded(true);
+                setIsPlaying(true);
+              }}
+              onPause={() => setIsPlaying(false)}
+              onWaiting={() => setIsPlaying(false)}
             />
           )}
 
@@ -498,14 +517,14 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
       />
 
       <div className="absolute inset-0 flex z-20 pointer-events-none">
-        <div className="flex-1 flex flex-col justify-end p-4 pb-8">
+        <div className="flex-1 flex flex-col justify-end p-3 pb-8">
           <Link
             href={`/artists/${short.creatorId}`}
             className="pointer-events-auto"
             data-shorts-interactive="true"
             onClick={() => setReturnPath()}
           >
-            <div className="flex items-center gap-3 mb-4 cursor-pointer">
+            <div className="flex items-center gap-3 cursor-pointer w-[80%]">
               <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
                 <Image
                   src={avatarSrc}
@@ -536,7 +555,7 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
         </div>
 
         <div
-          className="absolute right-4 bottom-16 z-30 flex flex-col items-center space-y-4 pointer-events-auto"
+          className="absolute right-4 bottom-20 z-30 flex flex-col items-center space-y-4 pointer-events-auto"
           data-shorts-interactive="true"
         >
           <button
