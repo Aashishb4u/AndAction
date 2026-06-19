@@ -337,7 +337,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       const exists = prev.some((item) => item.toLowerCase() === normalizedValue);
       if (exists) return prev;
       const next = [...prev, v];
-      const csv = next.join(", ");
+      const csv = next.join(",");
       setFormData((current) => ({
         ...current,
         achievements: csv,
@@ -997,7 +997,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                         onClick={() => {
                           const next = selectedAchievements.filter((t) => t !== tag);
                           setSelectedAchievements(next);
-                          const csv = next.length ? next.join(", ") : "";
+                          const csv = next.length ? next.join(",") : "";
                           setFormData((prev) => ({
                             ...prev,
                             achievements: csv,
@@ -1027,7 +1027,7 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
                       } else if (e.key === "Backspace" && !achievementInput) {
                         const next = selectedAchievements.slice(0, -1);
                         setSelectedAchievements(next);
-                        const csv = next.length ? next.join(", ") : "";
+                        const csv = next.length ? next.join(",") : "";
                         setFormData((prev) => ({
                           ...prev,
                           achievements: csv,

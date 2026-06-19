@@ -45,7 +45,7 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
     if (price == null || price === 0) {
       return "Price on request";
     }
-    return `₹ ${price.toLocaleString()}`;
+    return `₹${price.toLocaleString()}`;
   };
 
   const handleRequestBooking = () => {

@@ -495,11 +495,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
           <label className="block text-sm font-medium text-white">
             Solo charges <span className="text-red-500 ml-1">*</span>
           </label>
-          <Tooltip content="Amount range you usually charge when performing solo">
+          <Tooltip content="Amount you usually charge when performing solo">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="w-full">
           <Input
             value={draft.soloChargesFrom}
             onChange={(e) => {
@@ -508,18 +508,8 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
                 handleInputChange("soloChargesFrom", value);
               }
             }}
-            placeholder="Starting from"
+            placeholder="Enter amount"
             required
-          />
-          <Input
-            value={draft.soloChargesTo}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "" || /^[0-9]*$/.test(value)) {
-                handleInputChange("soloChargesTo", value);
-              }
-            }}
-            placeholder="Up to"
           />
         </div>
         <textarea
@@ -537,11 +527,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
           <label className="block text-sm font-medium text-white">
             Charges with backing
           </label>
-          <Tooltip content="Amount range including backline like sound, stage, and support setup">
+          <Tooltip content="Amount including backline like sound, stage, and support setup">
             <Info size={16} className="text-blue" />
           </Tooltip>
         </div>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="w-full">
           <Input
             value={draft.chargesWithBacklineFrom}
             onChange={(e) => {
@@ -550,17 +540,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
                 handleInputChange("chargesWithBacklineFrom", value);
               }
             }}
-            placeholder="Starting from"
-          />
-          <Input
-            value={draft.chargesWithBacklineTo}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "" || /^[0-9]*$/.test(value)) {
-                handleInputChange("chargesWithBacklineTo", value);
-              }
-            }}
-            placeholder="Up to"
+            placeholder="Enter amount"
           />
         </div>
         <textarea
