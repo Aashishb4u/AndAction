@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getValidYouTubeToken } from "@/app/actions/youtube/youtube";
+import { detectYouTubeShortIds } from "@/lib/youtube-content-classification";
 import type { Prisma } from "@prisma/client";
 
 interface YouTubeChannelResponse {
@@ -328,21 +329,32 @@ async function syncArtistYoutubeRollingWindow(params: {
     deletedCount = deleteResult.count;
   }
 
+  const shortIds = await detectYouTubeShortIds(
+    newVideos.map((video) => ({
+      id: video.id,
+      title: video.title,
+      description: video.description,
+    }))
+  );
+
   const insertData = newVideos.map((video) => {
     const durationSeconds = parseDurationToSeconds(video.durationIso);
+    const isShort = shortIds.has(video.id);
     return {
       youtubeVideoId: video.id,
       userId,
       artistId,
       title: video.title,
       description: video.description,
-      url: `https://www.youtube.com/watch?v=${video.id}`,
+      url: isShort
+        ? `https://www.youtube.com/shorts/${video.id}`
+        : `https://www.youtube.com/watch?v=${video.id}`,
       thumbnailUrl: video.thumbnailUrl,
       duration: durationSeconds,
       durationFormatted: formatDuration(video.durationIso),
       views: video.viewCount,
       publishedAt: new Date(video.publishedAt),
-      isShort: durationSeconds <= 60,
+      isShort,
       source: "youtube",
       isApproved: true,
     };

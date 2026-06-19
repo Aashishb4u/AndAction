@@ -4,19 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { getValidYouTubeToken } from "@/app/actions/youtube/youtube";
-
-interface YouTubeVideoData {
-  id: string;
-  title: string;
-  description: string;
-  thumbnail: string;
-  videoUrl: string;
-  publishedAt: string;
-  duration: string;
-  durationSeconds: number;
-  viewCount: string;
-  isShort: boolean;
-}
+import { detectYouTubeShortIds } from "@/lib/youtube-content-classification";
 
 interface SyncResult {
   success: boolean;
@@ -59,11 +47,22 @@ interface YouTubeVideoDetailsResponse {
   }>;
 }
 
+interface YouTubeVideoDetail {
+  id: string;
+  contentDetails: {
+    duration: string;
+  };
+  statistics: {
+    viewCount: string;
+  };
+}
+
 const YT_MAX_VIDEOS = 25;
 const YT_MAX_SHORTS = 25;
-const YT_SHORT_MAX_SECONDS = 180;
+// const IG_MAX_REELS = 25;
 const YT_PLAYLIST_PAGE_SIZE = 50;
 const YT_MAX_PLAYLIST_PAGES = 6;
+// const YT_MAX_PLAYLIST_PAGES = 2;
 
 function parseDurationToSeconds(isoDuration: string): number {
   const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
@@ -235,7 +234,11 @@ export async function syncYouTubeVideosInternal(
       new Set(videoItems.map((item) => item.snippet.resourceId.videoId))
     );
 
-    const videoDetailsMap = new Map<string, YouTubeVideoDetailsResponse["items"][number]>();
+    const playlistItemMap = new Map(
+      videoItems.map((item) => [item.snippet.resourceId.videoId, item])
+    );
+
+    const videoDetailsMap = new Map<string, YouTubeVideoDetail>();
     for (let i = 0; i < uniqueVideoIds.length; i += 50) {
       const batchIds = uniqueVideoIds.slice(i, i + 50).join(",");
       const videoDetailsUrl = useOAuth
@@ -248,11 +251,26 @@ export async function syncYouTubeVideosInternal(
       }
     }
 
+    const shortIds = await detectYouTubeShortIds(
+      uniqueVideoIds.map((videoId) => {
+        const playlistItem = playlistItemMap.get(videoId);
+
+        return {
+          id: videoId,
+          title: playlistItem?.snippet.title,
+          description: playlistItem?.snippet.description,
+        };
+      })
+    );
+
+    // Process and sync videos
     // Process and sync videos
     let synced = 0;
-    let skipped = 0;
+    // let skipped = 0;
     let importedVideos = 0;
     let importedShorts = 0;
+
+    const videosToCreate = [];
 
     for (const item of videoItems) {
       if (importedVideos >= YT_MAX_VIDEOS && importedShorts >= YT_MAX_SHORTS) break;
@@ -260,108 +278,151 @@ export async function syncYouTubeVideosInternal(
       const details = videoDetailsMap.get(videoId);
       const duration = details?.contentDetails?.duration || "PT0S";
       const durationSeconds = parseDurationToSeconds(duration);
-      const isShort =
-        durationSeconds <= YT_SHORT_MAX_SECONDS ||
-        /(^|\s)#shorts(\s|$)/i.test(
-          `${item.snippet.title || ""} ${item.snippet.description || ""}`
-        );
+      const isShort = shortIds.has(videoId);
+      const videoUrl = isShort
+        ? `https://www.youtube.com/shorts/${videoId}`
+        : `https://www.youtube.com/watch?v=${videoId}`;
       if (isShort && importedShorts >= YT_MAX_SHORTS) continue;
       if (!isShort && importedVideos >= YT_MAX_VIDEOS) continue;
 
       // Check if video already exists
-      const existingVideo = await prisma.video.findUnique({
-        where: {
-          youtubeVideoId_userId: {
-            youtubeVideoId: videoId,
-            userId: userId,
-          }
-        },
-      });
+      // const existingVideo = await prisma.video.findUnique({
+      //   where: {
+      //     youtubeVideoId_userId: {
+      //       youtubeVideoId: videoId,
+      //       userId: userId,
+      //     }
+      //   },
+      // });
 
-      if (existingVideo) {
-        // Update existing video
-        await prisma.video.update({
-          where: {
-            youtubeVideoId_userId: {
-              youtubeVideoId: videoId,
-              userId: userId
-            }
-          },
-          data: {
-            artistId,
-            title: item.snippet.title,
-            description: item.snippet.description,
-            thumbnailUrl:
-              item.snippet.thumbnails.high?.url ||
-              item.snippet.thumbnails.medium?.url ||
-              item.snippet.thumbnails.default?.url,
-            views: parseInt(details?.statistics?.viewCount || "0"),
-            isApproved: true,
-            updatedAt: new Date(),
-          },
-        });
-        skipped++;
-      } else {
-        // Create new video
-        await prisma.video.create({
-          data: {
-            youtubeVideoId: videoId,
-            userId: userId,
-            artistId,
-            title: item.snippet.title,
-            description: item.snippet.description,
-            url: `https://www.youtube.com/watch?v=${videoId}`,
-            thumbnailUrl:
-              item.snippet.thumbnails.high?.url ||
-              item.snippet.thumbnails.medium?.url ||
-              item.snippet.thumbnails.default?.url,
-            duration: durationSeconds,
-            durationFormatted: formatDuration(duration),
-            views: parseInt(details?.statistics?.viewCount || "0"),
-            publishedAt: new Date(item.snippet.publishedAt),
-            isShort,
-            source: "youtube",
-            isApproved: true,
-          },
-        });
-        synced++;
-      }
+      // if (existingVideo) {
+      //   // Update existing video
+      //   await prisma.video.update({
+      //     where: {
+      //       youtubeVideoId_userId: {
+      //         youtubeVideoId: videoId,
+      //         userId: userId
+      //       }
+      //     },
+      //     data: {
+      //       artistId,
+      //       title: item.snippet.title,
+      //       description: item.snippet.description,
+      //       url: videoUrl,
+      //       thumbnailUrl:
+      //         item.snippet.thumbnails.high?.url ||
+      //         item.snippet.thumbnails.medium?.url ||
+      //         item.snippet.thumbnails.default?.url,
+      //       duration: durationSeconds,
+      //       durationFormatted: formatDuration(duration),
+      //       views: parseInt(details?.statistics?.viewCount || "0"),
+      //       publishedAt: new Date(item.snippet.publishedAt),
+      //       isShort,
+      //       isApproved: true,
+      //       updatedAt: new Date(),
+      //     },
+      //   });
+      //   skipped++;
+      // } else {
+      //   // Create new video
+      //   await prisma.video.create({
+      //     data: {
+      //       youtubeVideoId: videoId,
+      //       userId: userId,
+      //       artistId,
+      //       title: item.snippet.title,
+      //       description: item.snippet.description,
+      //       url: videoUrl,
+      //       thumbnailUrl:
+      //         item.snippet.thumbnails.high?.url ||
+      //         item.snippet.thumbnails.medium?.url ||
+      //         item.snippet.thumbnails.default?.url,
+      //       duration: durationSeconds,
+      //       durationFormatted: formatDuration(duration),
+      //       views: parseInt(details?.statistics?.viewCount || "0"),
+      //       publishedAt: new Date(item.snippet.publishedAt),
+      //       isShort,
+      //       source: "youtube",
+      //       isApproved: true,
+      //     },
+      //   });
+      //   synced++;
+      // }
 
-      if (isShort) importedShorts++;
+
+      videosToCreate.push({
+      youtubeVideoId: videoId,
+      userId,
+      artistId,
+      title: item.snippet.title,
+      description: item.snippet.description,
+      url: videoUrl,
+      thumbnailUrl:
+        item.snippet.thumbnails.high?.url ||
+        item.snippet.thumbnails.medium?.url ||
+        item.snippet.thumbnails.default?.url,
+      duration: durationSeconds,
+      durationFormatted: formatDuration(duration),
+      views: parseInt(details?.statistics?.viewCount || "0"),
+      publishedAt: new Date(item.snippet.publishedAt),
+      isShort,
+      source: "youtube",
+      isApproved: true,
+    });
+
+    synced++;
+
+    if (isShort) importedShorts++;
       else importedVideos++;
     }
 
-    const extraVideoIds = await prisma.video.findMany({
-      where: { artistId, source: "youtube", isShort: false },
-      orderBy: { publishedAt: "desc" },
-      skip: YT_MAX_VIDEOS,
-      select: { id: true },
-    });
-    if (extraVideoIds.length > 0) {
-      await prisma.video.deleteMany({
-        where: { id: { in: extraVideoIds.map((v) => v.id) } },
-      });
-    }
+    // await prisma.video.createMany({
+    //   data: videosToCreate,
+    //   skipDuplicates: true,
+    // }); 
 
-    const extraShortIds = await prisma.video.findMany({
-      where: { artistId, source: "youtube", isShort: true },
-      orderBy: { publishedAt: "desc" },
-      skip: YT_MAX_SHORTS,
-      select: { id: true },
-    });
-    if (extraShortIds.length > 0) {
-      await prisma.video.deleteMany({
-        where: { id: { in: extraShortIds.map((v) => v.id) } },
-      });
-    }
+    await prisma.$transaction([
+  prisma.video.deleteMany({
+    where: {
+      artistId,
+      source: "youtube",
+    },
+  }),
+  prisma.video.createMany({
+    data: videosToCreate,
+  }),
+]);
+
+    // const extraVideoIds = await prisma.video.findMany({
+    //   where: { artistId, source: "youtube", isShort: false },
+    //   orderBy: { publishedAt: "desc" },
+    //   skip: YT_MAX_VIDEOS,
+    //   select: { id: true },
+    // });
+    // if (extraVideoIds.length > 0) {
+    //   await prisma.video.deleteMany({
+    //     where: { id: { in: extraVideoIds.map((v) => v.id) } },
+    //   });
+    // }
+
+    // const extraShortIds = await prisma.video.findMany({
+    //   where: { artistId, source: "youtube", isShort: true },
+    //   orderBy: { publishedAt: "desc" },
+    //   skip: YT_MAX_SHORTS,
+    //   select: { id: true },
+    // });
+    // if (extraShortIds.length > 0) {
+    //   await prisma.video.deleteMany({
+    //     where: { id: { in: extraShortIds.map((v) => v.id) } },
+    //   });
+    // }
 
     revalidatePath("/artist/profile");
 
     return {
       success: true,
-      message: `Sync complete! ${synced} new items added, ${skipped} updated.`,
-      synced,
-      skipped,
+      message: `Sync complete! ${synced} items synced.`,      synced,
+      // skipped,
       total: importedVideos + importedShorts,
       importedVideos,
       importedShorts,
@@ -397,30 +458,87 @@ export async function getSyncedVideos(
       return { success: false, message: "Artist profile not found", data: null };
     }
 
-    const isShort =
-      type === "shorts" ? true : type === "videos" ? false : undefined;
+    const videoSelect = {
+      id: true,
+      youtubeVideoId: true,
+      title: true,
+      description: true,
+      url: true,
+      thumbnailUrl: true,
+      duration: true,
+      durationFormatted: true,
+      views: true,
+      publishedAt: true,
+      isShort: true,
+      source: true,
+    } as const;
+
+    // if (type === "shorts") {
+    //   const [youtubeShorts, instagramReels] = await Promise.all([
+    //     prisma.video.findMany({
+    //       where: {
+    //         artistId: artist.id,
+    //         isShort: true,
+    //         source: "youtube",
+    //       },
+    //       take: YT_MAX_SHORTS,
+    //       orderBy: { publishedAt: "desc" },
+    //       select: videoSelect,
+    //     }),
+    //     prisma.video.findMany({
+    //       where: {
+    //         artistId: artist.id,
+    //         isShort: true,
+    //         source: "instagram",
+    //       },
+    //       take: IG_MAX_REELS,
+    //       orderBy: { publishedAt: "desc" },
+    //       select: videoSelect,
+    //     }),
+    //   ]);
+
+    //   const shorts = [...youtubeShorts, ...instagramReels].sort(
+    //     (a, b) =>
+    //       new Date(b.publishedAt ?? 0).getTime() -
+    //       new Date(a.publishedAt ?? 0).getTime()
+    //   );
+
+    //   return { success: true, data: shorts };
+    // }
+
+    if (type === "shorts") {
+  const shorts = await prisma.video.findMany({
+    where: {
+      artistId: artist.id,
+      isShort: true,
+      source: "youtube",
+    },
+    take: YT_MAX_SHORTS,
+    orderBy: { publishedAt: "desc" },
+    select: videoSelect,
+  });
+
+  return { success: true, data: shorts };
+}
+
+    const isShort = type === "videos" ? false : undefined;
 
     const videos = await prisma.video.findMany({
+      // where: {
+      //   artistId: artist.id,
+      //   isShort,
+      // },
       where: {
         artistId: artist.id,
         isShort,
+        source: "youtube",
       },
-      take: type === "videos" || type === "shorts" ? 25 : 50,
+      take: type === "videos"
+        ? YT_MAX_VIDEOS
+        : YT_MAX_VIDEOS + YT_MAX_SHORTS,
+      // take: type === "videos" ? YT_MAX_VIDEOS : YT_MAX_VIDEOS + YT_MAX_SHORTS + IG_MAX_REELS,
       orderBy: { publishedAt: "desc" },
-      select: {
-        id: true,
-        youtubeVideoId: true,
-        title: true,
-        description: true,
-        url: true,
-        thumbnailUrl: true,
-        duration: true,
-        durationFormatted: true,
-        views: true,
-        publishedAt: true,
-        isShort: true,
-        source: true,
-      },
+      select: videoSelect,
     });
 
     return { success: true, data: videos };

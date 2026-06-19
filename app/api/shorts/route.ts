@@ -2,8 +2,8 @@
  * app/api/shorts/route.ts
  *
  * Handles the retrieval of the short-form video feed (shorts).
- * This endpoint filters the 'Video' model by duration (<= 60 seconds)
- * and implements pagination for performant delivery.
+ * This endpoint relies on the stored `isShort` classification instead of duration
+ * so YouTube Shorts remain shorts even when their runtime changes.
  *
  * Priority: GET /api/shorts
  */
@@ -15,8 +15,6 @@ import { ApiErrors, successResponse } from "@/lib/api-response";
 // --- Configuration ---
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
-const SHORT_VIDEO_MAX_DURATION_SECONDS = 60; // Define a short video as 60 seconds or less
-
 export async function GET(request: NextRequest): Promise<NextResponse<any>> {
   try {
     const url = new URL(request.url);
@@ -34,10 +32,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
 
     const offset = (page - 1) * limit;
 
-    // Base filtering condition: approved and short duration
+    // Base filtering condition: approved content explicitly classified as a short
     const whereClause = {
       isApproved: true,
-      duration: { lte: SHORT_VIDEO_MAX_DURATION_SECONDS }, // Filter for shorts (<= 60s)
+      isShort: true,
     };
 
     // 2. Fetch Short Videos

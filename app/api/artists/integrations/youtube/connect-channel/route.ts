@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { syncYouTubeVideosInternal } from "@/app/actions/youtube/sync-videos";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
@@ -54,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Clean the input: remove @ symbol if present
-    let cleanedInput = channelInput.trim().replace(/^@/, "");
+    const cleanedInput = channelInput.trim().replace(/^@/, "");
     const originalInputWithAt = `@${cleanedInput}`.toLowerCase();
 
     // Try to find channel by ID first (Channel IDs start with UC)
@@ -152,27 +151,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Auto-sync videos after connecting using internal function
-    try {
-      console.log("Auto-syncing videos after channel connection...");
-      // Delete existing YouTube videos first to ensure we start fresh with latest top videos
-      await prisma.video.deleteMany({
-        where: {
-          artistId: artist.id,
-          source: "youtube",
-        },
-      });
-      const syncResult = await syncYouTubeVideosInternal(
-        artist.id,
-        session.user.id,
-        channel.id,
-        null // No OAuth token for manual connection
-      );
-      console.log("Auto-sync result:", syncResult);
-    } catch (syncError) {
-      console.error("Error auto-syncing videos:", syncError);
-      // Don't fail the connection if sync fails - it can be done manually
-    }
+    // Clear existing YouTube rows so the follow-up sync can rebuild content
+    // for the newly connected channel without blocking the connect response.
+    await prisma.video.deleteMany({
+      where: {
+        artistId: artist.id,
+        source: "youtube",
+      },
+    });
 
     return NextResponse.json({
       success: true,

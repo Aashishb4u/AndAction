@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { videoKeys } from "@/hooks/use-youtube-videos";
+import { syncYouTubeVideos } from "@/app/actions/youtube/sync-videos";
 
 interface IntegrationStatus {
   youtube: {
@@ -168,7 +169,7 @@ export function useYouTubeConnectByChannel(artistProfileId?: string | null) {
   return useMutation({
     mutationFn: (channelInput: string) =>
       connectYouTubeByChannel({ channelInput, artistProfileId }),
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
       // Update the integration status in cache
       queryClient.setQueryData(
         integrationKeys.status(artistProfileId),
@@ -194,12 +195,38 @@ export function useYouTubeConnectByChannel(artistProfileId?: string | null) {
         }
       );
       toast.success(`YouTube channel "${data.channelName}" connected successfully`);
+      toast.info("Syncing YouTube videos in the background...");
 
       clearYouTubeVideoCache(queryClient, artistProfileId);
       queryClient.invalidateQueries({
         queryKey: videoKeys.all,
         refetchType: "active",
       });
+      queryClient.invalidateQueries({
+        queryKey: integrationKeys.status(artistProfileId),
+      });
+
+      void (async () => {
+        try {
+          const result = await syncYouTubeVideos(artistProfileId);
+
+          if (!result.success) {
+            toast.error(result.message || "Failed to sync YouTube videos");
+            return;
+          }
+
+          queryClient.invalidateQueries({
+            queryKey: videoKeys.all,
+            refetchType: "active",
+          });
+          toast.success(
+            `YouTube sync complete: ${result.importedVideos ?? 0} videos, ${result.importedShorts ?? 0} shorts`
+          );
+        } catch (error) {
+          console.error("Background YouTube sync failed:", error);
+          toast.error("Connected, but YouTube sync failed. Please try syncing again.");
+        }
+      })();
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to connect YouTube channel");

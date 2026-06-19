@@ -31,6 +31,8 @@ interface InstagramMediaResponse {
   };
 }
 
+const INSTAGRAM_MAX_REELS = 25;
+
 function removeEmojis(text: string) {
   return text.replace(/[\p{Extended_Pictographic}]/gu, "");
 }
@@ -92,9 +94,12 @@ export async function syncInstagramReels(
     }
 
     // Filter VIDEO and REEL types - all Instagram videos are treated as reels/shorts
-    const reels = mediaData.data.filter(
-      (item) => item.media_type === "VIDEO" || item.media_type === "REEL"
-    );
+    const reels = mediaData.data
+      .filter((item) => item.media_type === "VIDEO" || item.media_type === "REEL")
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
 
     if (reels.length === 0) {
       return {
@@ -105,73 +110,120 @@ export async function syncInstagramReels(
       };
     }
 
-    // Get existing reel URLs to avoid duplicates
-    const existingReels = await prisma.video.findMany({
-      where: { artistId: artist.id, source: "instagram", isShort: true },
-      select: { instagramReelId: true },
-    });
+    // // Get existing reel URLs to avoid duplicates
+    // const existingReels = await prisma.video.findMany({
+    //   where: { artistId: artist.id, source: "instagram", isShort: true },
+    //   select: { instagramReelId: true },
+    // });
 
-    const existingUrls = new Set(existingReels.map((v) => v.instagramReelId));
+    // const existingUrls = new Set(existingReels.map((v) => v.instagramReelId));
 
-    // Prepare reels for database
-    const reelsToSync = reels.map((item) => ({
-      instagramReelId: item.id,
-      title: item.caption?.slice(0, 100) || "Instagram Reel",
-      description: item.caption || "",
-      thumbnail: item.thumbnail_url || item.media_url || "",
-      videoUrl: item.media_url || "",
-      publishedAt: item.timestamp,
-    }));
+    // // Prepare reels for database
+    // const reelsToSync = reels.map((item) => ({
+    //   instagramReelId: item.id,
+    //   title: item.caption?.slice(0, 100) || "Instagram Reel",
+    //   description: item.caption || "",
+    //   thumbnail: item.thumbnail_url || item.media_url || "",
+    //   videoUrl: item.media_url || "",
+    //   publishedAt: item.timestamp,
+    // }));
 
-    console.log(
-      `Total reels fetched: ${reels.length}, Reels to sync: ${reelsToSync.length}`
-    );
-    console.log(`Existing URLs: ${JSON.stringify(Array.from(existingUrls))}`);
+    // console.log(
+    //   `Total reels fetched: ${reels.length}, Reels to sync: ${reelsToSync.length}`
+    // );
+    // console.log(`Existing URLs: ${JSON.stringify(Array.from(existingUrls))}`);
 
-    // Filter out already synced reels
-    const newReels = reelsToSync.filter(
-      (reel) => !existingUrls.has(reel.instagramReelId)
-    );
+    // // Filter out already synced reels
+    // const newReels = reelsToSync.filter(
+    //   (reel) => !existingUrls.has(reel.instagramReelId)
+    // );
 
-    if (newReels.length === 0) {
-      return {
-        success: true,
-        message: "All reels already synced",
-        synced: 0,
-        skipped: reels.length,
-        total: reels.length,
-      };
-    }
+    // if (newReels.length === 0) {
+    //   return {
+    //     success: true,
+    //     message: "All reels already synced",
+    //     synced: 0,
+    //     skipped: reels.length,
+    //     total: reels.length,
+    //   };
+    // }
 
-    // Insert new reels
-    await prisma.video.createMany({
-      data: newReels.map((reel) => ({
-        userId: session.user.id,
-        artistId: artist.id,
-        title: removeEmojis(reel.description), // removeEmojis(reel.title),
-        description: removeEmojis(reel.description),
-        url: reel.videoUrl,
-        thumbnailUrl: reel.thumbnail,
-        duration: 0,
-        durationFormatted: "0:00",
-        views: 0,
-        publishedAt: new Date(reel.publishedAt),
-        isShort: true,
-        source: "instagram",
-        isApproved: true,
-        instagramReelId: reel.instagramReelId,
-      })),
-      skipDuplicates: true,
-    });
+    // // Insert new reels
+    // await prisma.video.createMany({
+    //   data: newReels.map((reel) => ({
+    //     userId: session.user.id,
+    //     artistId: artist.id,
+    //     title: removeEmojis(reel.description), // removeEmojis(reel.title),
+    //     description: removeEmojis(reel.description),
+    //     url: reel.videoUrl,
+    //     thumbnailUrl: reel.thumbnail,
+    //     duration: 0,
+    //     durationFormatted: "0:00",
+    //     views: 0,
+    //     publishedAt: new Date(reel.publishedAt),
+    //     isShort: true,
+    //     source: "instagram",
+    //     isApproved: true,
+    //     instagramReelId: reel.instagramReelId,
+    //   })),
+    //   skipDuplicates: true,
+    // });
 
+    // const extraReelIds = await prisma.video.findMany({
+    //   where: { artistId: artist.id, source: "instagram", isShort: true },
+    //   orderBy: { publishedAt: "desc" },
+    //   skip: INSTAGRAM_MAX_REELS,
+    //   select: { id: true },
+    // });
+
+    // if (extraReelIds.length > 0) {
+    //   await prisma.video.deleteMany({
+    //     where: { id: { in: extraReelIds.map((reel) => reel.id) } },
+    //   });
+    // }
+
+
+    const reelsToCreate = reels
+  .slice(0, INSTAGRAM_MAX_REELS)
+  .map((item) => ({
+    userId: session.user.id,
+    artistId: artist.id,
+    title: removeEmojis(item.description || item.caption || ""),
+    description: removeEmojis(item.caption || ""),
+    url: item.media_url || "",
+    thumbnailUrl: item.thumbnail_url || item.media_url || "",
+    duration: 0,
+    durationFormatted: "0:00",
+    views: 0,
+    publishedAt: new Date(item.timestamp),
+    isShort: true,
+    source: "instagram",
+    isApproved: true,
+    instagramReelId: item.id,
+  }));
+
+await prisma.$transaction([
+  prisma.video.deleteMany({
+    where: {
+      artistId: artist.id,
+      source: "instagram",
+    },
+  }),
+  prisma.video.createMany({
+    data: reelsToCreate,
+  }),
+]);
     revalidatePath("/artist/profile");
 
     return {
       success: true,
-      message: `Successfully synced ${newReels.length} reel(s)`,
-      synced: newReels.length,
-      skipped: reels.length - newReels.length,
-      total: reels.length,
+      // message: `Successfully synced ${newReels.length} reel(s)`,
+      // synced: newReels.length,
+      // skipped: reels.length - newReels.length,
+      // total: reels.length,
+      message: `Successfully synced ${reelsToCreate.length} reel(s)`,
+      synced: reelsToCreate.length,
+      total: reelsToCreate.length,
     };
   } catch (error) {
     console.error("Error syncing Instagram reels:", error);
