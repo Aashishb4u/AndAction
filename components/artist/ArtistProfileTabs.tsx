@@ -90,7 +90,7 @@ const ArtistProfileTabs: React.FC<ArtistProfileTabsProps> = ({
         whatsappNumber: aboutDraft.whatsappNumber,
         contactEmail: aboutDraft.email,
         shortBio: aboutDraft.shortBio,
-        achievements: aboutDraft.achievements ? aboutDraft.achievements.join(',') : '',
+        achievements: aboutDraft.achievements || "",
         yearsOfExperience: aboutDraft.yearsOfExperience,
         subArtistType: aboutDraft.subArtistTypes ? aboutDraft.subArtistTypes.join(',') : '',
 

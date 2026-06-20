@@ -207,16 +207,16 @@ const ShortsCard: React.FC<ShortsCardProps> = ({
 
           {/* Menu */}
           {!showDeleteButton && (
-            <div className="absolute top-3 right-3">
+            <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
                   setShowMenu(!showMenu);
                 }}
-                className="p-2 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white opacity-100 transition md:opacity-0 md:group-hover:opacity-100"
               >
-                <MoreVertical className="w-4 h-4" />
+                <MoreVertical className="h-5 w-5" />
               </button>
 
               {showMenu && (

@@ -234,7 +234,7 @@ export default function BookmarksPage() {
 
           {/* VIDEOS */}
           {activeTab === "Videos" && !loading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 px-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 p-4">
               {videoBookmarks.length > 0 ? (
                 videoBookmarks.map((v) => (
                   <VideoCard
@@ -265,7 +265,7 @@ export default function BookmarksPage() {
 
           {/* SHORTS */}
           {activeTab === "Shorts" && !loading && (
-            <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 px-4">
+            <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 p-4">
               {shortBookmarks.length > 0 ? (
                 shortBookmarks.map((s) => (
                   <ShortsCard

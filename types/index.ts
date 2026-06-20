@@ -128,7 +128,7 @@ export interface ArtistProfile {
   bio?: string;
   yearsOfExperience?: number;
   subArtistTypes?: string[];
-  achievements?: string[];
+  achievements?: string | string[];
   phone?: string;
   whatsapp?: string;
   videos?: ArtistVideo[];
