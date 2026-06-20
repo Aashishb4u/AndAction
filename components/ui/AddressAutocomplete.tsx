@@ -419,6 +419,11 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           ))}
         </div>
       )}
+      
+      {/* Hint text */}
+      <p className="mt-2 text-sm text-text-gray">
+        If you don't find your exact location in the dropdown, try to add street name and nearby landmark with area name. If still it doesn't appear then write and select only city and state name.
+      </p>
     </div>
   );
 };

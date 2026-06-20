@@ -63,8 +63,6 @@ const AboutTab: React.FC<AboutTabProps> = ({
 
   const [subTypeInput, setSubTypeInput] = useState<string>("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const achievementChips = draft.achievements;
-  const [achievementInput, setAchievementInput] = useState("");
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   const { cityOptions, isFetching: isFetchingCities } = useIndianCitiesByState(
@@ -128,47 +126,6 @@ const AboutTab: React.FC<AboutTabProps> = ({
         ? selectedSubTypes
         : [v, ...selectedSubTypes],
     );
-  };
-
-  const syncAchievementChips = (chips: string[]) => {
-    setDraft((prev) => ({ ...prev, achievements: chips }));
-  };
-
-  const addAchievementChips = (value: string) => {
-    const items = value
-      .split(/\r?\n/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-
-    if (!items.length) return;
-
-    const nextChips = [...achievementChips];
-    items.forEach((item) => {
-      if (
-        !nextChips.some(
-          (existing) => existing.toLowerCase() === item.toLowerCase(),
-        )
-      ) {
-        nextChips.push(item);
-      }
-    });
-
-    syncAchievementChips(nextChips);
-  };
-
-  const handleAchievementBlur = () => {
-    addAchievementChips(achievementInput);
-    setAchievementInput("");
-  };
-
-  const handleAchievementKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addAchievementChips(achievementInput);
-      setAchievementInput("");
-    }
   };
 
   useEffect(() => {
@@ -541,47 +498,20 @@ const AboutTab: React.FC<AboutTabProps> = ({
       {/* Achievements and Years of Experience */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <div className="relative">
-          <label className="block secondary-text text-white mb-1">
-            Achievements / Awards
-          </label>
-          <div className="w-full bg-card border border-border-color rounded-lg p-3 text-white flex flex-wrap gap-2 min-h-[2rem]">
-            {achievementChips.map((tag, index) => (
-              <span
-                key={`${tag}-${index}`}
-                className="inline-flex items-center gap-2 bg-background px-3 py-1.5 rounded-full text-sm"
-              >
-                <span>{tag}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = achievementChips.filter(
-                      (_, idx) => idx !== index,
-                    );
-                    syncAchievementChips(next);
-                  }}
-                  className="text-text-gray hover:text-white"
-                  aria-label={`Remove ${tag}`}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            <input
-              className="flex-1 min-w-[10rem] bg-transparent text-white placeholder-text-gray outline-none border-none text-sm"
-              placeholder="Press Enter to add a new achievement"
-              value={achievementInput}
-              onChange={(e) => setAchievementInput(e.target.value)}
-              onKeyDown={handleAchievementKeyDown}
-              onBlur={handleAchievementBlur}
-            />
-          </div>
+          <Textarea
+            label="Achievements / Awards"
+            value={draft.achievements}
+            onChange={(e) => handleInputChange("achievements", e.target.value)}
+            placeholder="Write achievements or awards separated by comma or new line"
+            rows={4}
+          />
           <div className="absolute top-0 right-0">
-            <Tooltip content="List notable achievements or awards. Press Enter to add each item as a separate entry.">
+            <Tooltip content="Write achievements or awards in plain text. You can separate items with commas or new lines.">
               <Info size={16} className="text-blue" />
             </Tooltip>
           </div>
           <p className="mt-2 text-sm text-text-gray">
-            Press Enter to add each achievement or award as a separate item.
+            Separate each achievement or award with a comma or a new line.
           </p>
         </div>
         <div className="relative">

@@ -94,6 +94,23 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     return "0-1";
   };
 
+  const parseAchievementItems = (value: unknown): string[] => {
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => String(item).trim())
+        .filter((item) => item && item.toLowerCase() !== "n/a");
+    }
+
+    if (typeof value !== "string") {
+      return [];
+    }
+
+    return value
+      .split(/[,\n]+/)
+      .map((item) => item.trim())
+      .filter((item) => item && item.toLowerCase() !== "n/a");
+  };
+
   // Keep tab in sync when browser back/forward changes URL
   useEffect(() => {
     const t = searchParams.get("tab") as TabType | null;
@@ -792,10 +809,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
       })()}
 
       {/* Achievements: filter out empty / N/A values */}
-      {Array.isArray(artist.achievements) &&
-        artist.achievements.filter(
-          (a: string) => a && a.trim() && a.toLowerCase() !== "n/a",
-        ).length > 0 && (
+      {parseAchievementItems(artist.achievements).length > 0 && (
           <div
             className="p-4 md:bg-background bg-card border rounded-xl"
             style={{ borderColor: "#232323" }}
@@ -804,15 +818,13 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               Achievements / Awards
             </h3>
             <div className="space-y-2">
-              {artist.achievements
-                .filter(
-                  (a: string) => a && a.trim() && a.toLowerCase() !== "n/a",
-                )
-                .map((achievement: string, index: number) => (
+              {parseAchievementItems(artist.achievements).map(
+                (achievement: string, index: number) => (
                   <p key={index} className="text-sm text-white leading-6">
                     {achievement}
                   </p>
-                ))}
+                ),
+              )}
             </div>
           </div>
         )}
@@ -882,7 +894,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                   {hasSoloCharges ? (
                     <div className="text-white mb-1">
                       {artist.soloChargesFrom
-                        ? `₹${artist.soloChargesFrom}`
+                        ? `Starting from ₹${Number(artist.soloChargesFrom).toLocaleString()}`
                         : `Price on request`}
                     </div>
                   ) : (
@@ -899,7 +911,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                     {hasBacklineCharges && (
                       <div className="text-white mb-1">
                         {artist.chargesWithBacklineFrom
-                          ? `₹${artist.chargesWithBacklineFrom}`
+                          ? `Starting from ₹${Number(artist.chargesWithBacklineFrom).toLocaleString()}`
                           : `Price on request`}
                       </div>
                     )}

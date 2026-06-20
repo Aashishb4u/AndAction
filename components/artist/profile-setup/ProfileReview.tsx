@@ -283,11 +283,22 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                   <span className="text-text-gray secondary-text">
                     Achievements / Awards
                   </span>
-                    <div>
-                      <p className="text-white text-base">
-                        {achievementsList.length ? achievementsList.join(", ") : String(data.achievements || "N/A")}
-                      </p>
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    {achievementsList.length ? (
+                      achievementsList.map((achievement, index) => (
+                        <Button
+                          key={`${achievement}-${index}`}
+                          variant="secondary"
+                          size="xs"
+                          className="px-2 py-1 !font-normal text-white text-xs"
+                        >
+                          {achievement}
+                        </Button>
+                      ))
+                    ) : (
+                      <p className="text-white text-base">N/A</p>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="text-text-gray secondary-text">
@@ -507,7 +518,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                 <div>
                   <p className="text-text-gray text-sm mb-1">Solo Charges</p>
                   <p className="text-white font-medium text-lg">
-                    Starting from ₹ {data.soloCharges || "N/A"}
+                    Starting from ₹ {data.soloCharges ? Number(data.soloCharges).toLocaleString() : "N/A"}
                   </p>
                   {data.soloDescription && data.soloDescription.trim() && (
                     <p className="text-twhite text-xs mt-1">{data.soloDescription}</p>
@@ -519,7 +530,7 @@ const ProfileReview: React.FC<ProfileReviewProps> = ({
                     Charges with backline
                   </p>
                   <p className="text-white font-medium text-lg">
-                    Starting from ₹ {data.backingCharges || "N/A"}
+                    Starting from ₹ {data.backingCharges ? Number(data.backingCharges).toLocaleString() : "N/A"}
                   </p>
                   {data.backingDescription && data.backingDescription.trim() && (
                     <p className="text-white text-xs mt-1">{data.backingDescription}</p>

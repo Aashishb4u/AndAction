@@ -30,6 +30,21 @@ const parseYearsOfExperienceBucket = (input: unknown): number | null => {
   return null;
 };
 
+const serializeTextListField = (input: unknown): string => {
+  if (Array.isArray(input)) {
+    return input
+      .map((item) => String(item).trim())
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  if (input === null || input === undefined) {
+    return "";
+  }
+
+  return String(input).trim();
+};
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json();
@@ -122,7 +137,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       stageName,
       artistType,
       subArtistType,
-      achievements: achievements ? achievements.join(',') : '',
+      achievements: serializeTextListField(achievements),
       yearsOfExperience: parsedYearsOfExperience,
       shortBio,
       performingLanguage: performingLanguages ? performingLanguages.join(',') : '',
