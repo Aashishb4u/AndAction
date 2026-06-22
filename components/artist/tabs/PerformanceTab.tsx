@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Select from "@/components/ui/Select";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -60,6 +60,35 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   onSave,
   onReset,
 }) => {
+  const [preferenceEventTypes, setPreferenceEventTypes] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const preferenceEventTypeLabelMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const opt of preferenceEventTypes) {
+      if (!opt?.value) continue;
+      map[opt.value] = opt.label;
+    }
+    return map;
+  }, [preferenceEventTypes]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/preferences/artist-profile");
+        const json = await res.json();
+        const options = json?.data?.preferences?.eventTypes;
+        if (!cancelled && Array.isArray(options)) {
+          setPreferenceEventTypes(options);
+        }
+      } catch {
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Dropdown visibility states
   const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
@@ -261,7 +290,9 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
             <div className="flex flex-wrap gap-1.5">
               {Array.from(new Set(draft.eventTypes)).map((val) => {
                 const label =
-                  eventTypeOptions.find((opt) => opt.value === val)?.label || val;
+                  preferenceEventTypeLabelMap[val] ??
+                  eventTypeOptions.find((opt) => opt.value === val)?.label ??
+                  val;
                 return (
                   <span key={val} className={chipClassName}>
                     {label}

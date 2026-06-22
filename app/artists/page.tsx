@@ -16,6 +16,12 @@ import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
 
 const DEFAULT_LIMIT = 12;
+const ROTATING_SEARCH_SUGGESTIONS = [
+  "prayer meet",
+  "mata ki chowki",
+  "sufi singer",
+] as const;
+const ROTATING_SEARCH_INTERVAL_MS = 2000;
 
 interface LocationParams {
   lat: number;
@@ -217,6 +223,7 @@ function ArtistsPageContent() {
   const [filters, setFilters] = useState<Filters>(getInitialFilters);
   const [query, setQuery] = useState(searchParams.get("search") || "");
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
+  const [searchPlaceholderIndex, setSearchPlaceholderIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileFiltersFixed, setIsMobileFiltersFixed] = useState(false);
@@ -618,6 +625,20 @@ function ArtistsPageContent() {
     }
   };
 
+  useEffect(() => {
+    if (searchInput.trim()) return;
+
+    const intervalId = window.setInterval(() => {
+      setSearchPlaceholderIndex((prev) =>
+        (prev + 1) % ROTATING_SEARCH_SUGGESTIONS.length
+      );
+    }, ROTATING_SEARCH_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [searchInput]);
+
   return (
     <div data-page="artists">
       <SiteLayout showPreloader={false} hideNavbar={false} hideBottomBar={true} className="lg:pt-20">
@@ -661,7 +682,7 @@ function ArtistsPageContent() {
                     type="text"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    placeholder="Search by prayer meet, mata ki chowki, sufi singer like this"
+                    placeholder={`Search by ${ROTATING_SEARCH_SUGGESTIONS[searchPlaceholderIndex]}`}
                     className="w-full pl-10 pr-4 py-2 bg-card border border-border-color rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary-pink focus:ring-1 focus:ring-primary-pink transition-colors"
                   />
                   {searchInput && (

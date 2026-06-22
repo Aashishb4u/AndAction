@@ -71,14 +71,15 @@ const mockVideoUrl =
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
 function normalizeArtistTypeRequest(type: string): string {
-  const normalized = type.trim().toLowerCase();
+  const trimmed = type.trim();
+  const normalized = trimmed.toLowerCase();
 
   const typeMap: Record<string, string> = {
     band: "live-band",
     spiritual: "spiritual-singer",
   };
 
-  return typeMap[normalized] || normalized;
+  return typeMap[normalized] || trimmed;
 }
 
 export const artistKeys = {

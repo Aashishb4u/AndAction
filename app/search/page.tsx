@@ -28,6 +28,13 @@ type LocationParams = {
   lng: number;
 };
 
+const ROTATING_SEARCH_SUGGESTIONS = [
+  "prayer meet",
+  "mata ki chowki",
+  "sufi singer",
+] as const;
+const ROTATING_SEARCH_INTERVAL_MS = 2000;
+
 type SearchArtist = {
   id: string;
   name: string;
@@ -101,6 +108,7 @@ export default function MobileSearchPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [searchPlaceholderIndex, setSearchPlaceholderIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const {
     location: providerLocation,
@@ -232,6 +240,20 @@ export default function MobileSearchPage() {
     };
   }, [search]);
 
+  useEffect(() => {
+    if (search.trim()) return;
+
+    const intervalId = window.setInterval(() => {
+      setSearchPlaceholderIndex((prev) =>
+        (prev + 1) % ROTATING_SEARCH_SUGGESTIONS.length
+      );
+    }, ROTATING_SEARCH_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [search]);
+
   // Filter artists by debounced search and selected category
   const filteredArtists = useMemo(() => {
     return artists.filter((artist) => {
@@ -273,7 +295,7 @@ export default function MobileSearchPage() {
             type="text"
             value={search}
             onChange={handleSearch}
-            placeholder="Search by prayer meet, mata ki chowki, sufi singer like this"
+            placeholder={`Search by ${ROTATING_SEARCH_SUGGESTIONS[searchPlaceholderIndex]}`}
             className="w-full rounded-full border border-[#333] bg-[#181818] pl-12 pr-12 py-3 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#333] text-base shadow-sm"
             style={{ boxShadow: "none" }}
           />

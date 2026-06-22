@@ -42,6 +42,17 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const [isBioExpanded, setIsBioExpanded] = useState(false);
   const [showBioMoreButton, setShowBioMoreButton] = useState(false);
   const bioRef = useRef<HTMLParagraphElement>(null);
+  const [preferenceEventTypes, setPreferenceEventTypes] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const preferenceEventTypeLabelMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const opt of preferenceEventTypes) {
+      if (!opt?.value) continue;
+      map[opt.value] = opt.label;
+    }
+    return map;
+  }, [preferenceEventTypes]);
 
   // Paginated video state
   const [artistVideos, setArtistVideos] = useState<any[]>([]);
@@ -75,6 +86,24 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const lastScrollTime = useRef<number>(0);
   const ignoreShortsSwipeRef = useRef<boolean>(false);
   const shortsAudioGateSeqRef = useRef<number>(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/preferences/artist-profile");
+        const json = await res.json();
+        const options = json?.data?.preferences?.eventTypes;
+        if (!cancelled && Array.isArray(options)) {
+          setPreferenceEventTypes(options);
+        }
+      } catch {
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const formatExperienceLabel = (value: unknown): string | null => {
     if (value === null || value === undefined) return null;
@@ -861,9 +890,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
         const eventTypes = artist.performingEventType
           ? artist.performingEventType
-            .split(",")
-            .map((e: string) => e.trim())
-            .filter((e: string) => e)
+              .split(",")
+              .map((e: string) => e.trim())
+              .filter((e: string) => e)
           : [];
 
         const states = formatDisplayLabels(artist.performingStates);
@@ -1005,7 +1034,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                       key={index}
                       className="bg-background px-3 py-1.5 border border-border-color text-white rounded-full secondary-grey-text font-medium"
                     >
-                      {eventType}
+                      {preferenceEventTypeLabelMap[eventType] ?? eventType}
                     </span>
                   ))}
                 </div>
