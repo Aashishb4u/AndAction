@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import YouTubeConnectModal from "@/components/modals/YouTubeConnectModal";
+import InstagramConnectModal from "@/components/modals/InstagramConnectModal";
 import { Artist } from "@/types";
 import {
   Youtube,
@@ -16,7 +17,7 @@ import {
   useIntegrationStatus,
   useYouTubeConnectByChannel,
   useYouTubeDisconnect,
-  useInstagramConnect,
+  useInstagramConnectByUsername,
   useInstagramDisconnect,
 } from "@/hooks/use-integrations";
 
@@ -31,16 +32,15 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
     "youtube",
   );
   const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
+  const [instagramModalOpen, setInstagramModalOpen] = useState(false);
 
   const { data: integrationStatus, isLoading: isLoadingStatus } =
     useIntegrationStatus(artistProfileId);
 
   const youtubeConnectByChannelMutation = useYouTubeConnectByChannel(artistProfileId);
   const youtubeDisconnectMutation = useYouTubeDisconnect(artistProfileId);
-  const instagramConnectMutation = useInstagramConnect({
-    returnUrl: `/artist/profile?tab=integrations&profileId=${artistProfileId}`,
-    artistProfileId,
-  });
+  const instagramConnectMutation =
+    useInstagramConnectByUsername(artistProfileId);
   const instagramDisconnectMutation = useInstagramDisconnect(artistProfileId);
 
   const handleYouTubeConnect = () => {
@@ -58,7 +58,12 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
   };
 
   const handleInstagramConnect = () => {
-    instagramConnectMutation.mutate();
+    setInstagramModalOpen(true);
+  };
+
+  const handleInstagramConnectConfirm = async (username: string) => {
+    await instagramConnectMutation.mutateAsync(username);
+    setInstagramModalOpen(false);
   };
 
   const handleInstagramDisconnect = () => {
@@ -468,7 +473,7 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
         } account?${
           disconnectType === "youtube"
             ? " Your synced YouTube videos and shorts will be removed from your profile."
-            : " Your synced content will remain on your profile."
+            : " Your synced Instagram reels and posts will be removed from your profile."
         }`}
         confirmText="Disconnect"
         cancelText="Cancel"
@@ -486,6 +491,13 @@ const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ artist }) => {
         isOpen={youtubeModalOpen}
         onClose={() => setYoutubeModalOpen(false)}
         onConnect={handleYouTubeConnectConfirm}
+      />
+
+      {/* Instagram Connect Modal */}
+      <InstagramConnectModal
+        isOpen={instagramModalOpen}
+        onClose={() => setInstagramModalOpen(false)}
+        onConnect={handleInstagramConnectConfirm}
       />
     </div>
   );

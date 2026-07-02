@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getValidInstagramToken } from "@/app/actions/instagram/instagram";
+import { fetchInstagramAccountByUsername } from "@/lib/instagram-discovery";
 
 interface InstagramMediaResponse {
   data?: Array<{
@@ -43,19 +44,16 @@ export async function GET(request: NextRequest) {
 
     console.log("[CRON] Starting Instagram URL refresh job...");
 
-    // Get all artists with Instagram connected
+    // Get all artists with Instagram connected — either via OAuth
+    // (instagramAccessToken set) or via Business Discovery (instagramUsername set).
     const allArtists = await prisma.artist.findMany({
-      where: {
-        AND: [
-          { instagramId: { not: null } },
-          { instagramAccessToken: { not: null } },
-        ],
-      },
+      where: { instagramId: { not: null } },
       select: {
         id: true,
         userId: true,
         instagramId: true,
         instagramAccessToken: true,
+        instagramUsername: true,
       },
     });
 
@@ -111,6 +109,8 @@ export async function GET(request: NextRequest) {
         const result = await refreshArtistInstagramVideos(
           artist.id,
           artist.userId,
+          artist.instagramAccessToken,
+          artist.instagramUsername,
         );
         totalArtistsProcessed++;
         totalVideosUpdated += result.videosUpdated;
@@ -169,6 +169,8 @@ export async function GET(request: NextRequest) {
 async function refreshArtistInstagramVideos(
   artistId: string,
   userId: string,
+  accessToken: string | null,
+  username: string | null,
 ): Promise<{ videosUpdated: number }> {
   const artistProfiles = await prisma.artist.count({ where: { userId } });
   if (artistProfiles === 1) {
@@ -178,29 +180,43 @@ async function refreshArtistInstagramVideos(
     });
   }
 
-  const accessToken = await getValidInstagramToken(artistId);
+  let mediaData: InstagramMediaResponse;
 
-  if (!accessToken) {
+  if (accessToken) {
+    // OAuth-connected account: refresh via the user's own media endpoint.
+    const validToken = await getValidInstagramToken(artistId);
+
+    if (!validToken) {
+      throw new Error(
+        `Failed to get valid Instagram token for artist ${artistId}`,
+      );
+    }
+
+    // Fetch all current media from Instagram (only 1 API call!)
+    const response = await fetch(
+      `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&access_token=${validToken}`,
+    );
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(
+        `[CRON] Failed to fetch Instagram media for artist ${artistId}:`,
+        errorData,
+      );
+      throw new Error("Failed to fetch Instagram media");
+    }
+
+    mediaData = await response.json();
+  } else if (username) {
+    // Business Discovery account (connected by username, no OAuth token):
+    // refresh via the shared app token.
+    const account = await fetchInstagramAccountByUsername(username);
+    mediaData = { data: account?.media?.data || [] };
+  } else {
     throw new Error(
-      `Failed to get valid Instagram token for artist ${artistId}`,
+      `Artist ${artistId} has no Instagram access token or username`,
     );
   }
-
-  // Fetch all current media from Instagram (only 1 API call!)
-  const response = await fetch(
-    `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&access_token=${accessToken}`,
-  );
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error(
-      `[CRON] Failed to fetch Instagram media for artist ${artistId}:`,
-      errorData,
-    );
-    throw new Error("Failed to fetch Instagram media");
-  }
-
-  const mediaData: InstagramMediaResponse = await response.json();
 
   if (!mediaData.data || mediaData.data.length === 0) {
     console.log(`[CRON] No media found for artist ${artistId}`);

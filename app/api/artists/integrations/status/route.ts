@@ -60,7 +60,9 @@ export async function GET(request: NextRequest) {
         connectedAt: artist.youtubeConnectedAt?.toISOString() || null,
       },
       instagram: {
-        connected: !!(artist.instagramAccessToken && artist.instagramId),
+        // Connected if an Instagram account is linked (via Business Discovery
+        // by username, or the legacy OAuth flow).
+        connected: !!artist.instagramId,
         username: artist.instagramUsername || null,
         connectedAt: artist.instagramConnectedAt?.toISOString() || null,
       },

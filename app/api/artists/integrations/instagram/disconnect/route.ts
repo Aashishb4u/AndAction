@@ -31,23 +31,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!artist.instagramAccessToken) {
+    // Connected via Business Discovery (username only) or legacy OAuth (token).
+    if (!artist.instagramId) {
       return NextResponse.json(
         { success: false, message: "Instagram is not connected" },
         { status: 400 }
       );
     }
 
-    await prisma.artist.update({
-      where: { id: artist.id },
-      data: {
-        instagramAccessToken: null,
-        instagramTokenExpiry: null,
-        instagramId: null,
-        instagramUsername: null,
-        instagramConnectedAt: null,
-      },
-    });
+    await prisma.$transaction([
+      // Remove synced Instagram content from the profile (reels + posts),
+      // mirroring how connect refreshes and how YouTube disconnect cleans up.
+      prisma.video.deleteMany({
+        where: {
+          artistId: artist.id,
+          source: "instagram",
+        },
+      }),
+      prisma.artist.update({
+        where: { id: artist.id },
+        data: {
+          instagramAccessToken: null,
+          instagramTokenExpiry: null,
+          instagramId: null,
+          instagramUsername: null,
+          instagramConnectedAt: null,
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,

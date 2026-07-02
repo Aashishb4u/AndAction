@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { videoKeys } from "@/hooks/use-youtube-videos";
+import { instagramVideoKeys } from "@/hooks/use-instagram-videos";
 
 interface IntegrationStatus {
   youtube: {
@@ -123,6 +124,55 @@ async function getInstagramAuthUrl(input: {
     throw new Error(data.message || "Failed to get authorization URL");
   }
   return data.authUrl;
+}
+
+export interface InstagramAccountPreview {
+  instagramId: string;
+  username: string;
+  name?: string;
+  profilePictureUrl?: string;
+  biography?: string;
+  website?: string;
+  followersCount?: string;
+  followsCount?: string;
+  mediaCount?: number;
+}
+
+export async function previewInstagramAccount(
+  username: string,
+): Promise<InstagramAccountPreview> {
+  const response = await fetch(
+    "/api/artists/integrations/instagram/preview-account",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    },
+  );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch Instagram account");
+  }
+  return data.data;
+}
+
+async function connectInstagramByUsername(input: {
+  username: string;
+  artistProfileId?: string | null;
+}): Promise<{ instagramId: string; username: string; synced: number }> {
+  const response = await fetch(
+    "/api/artists/integrations/instagram/connect-account",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to connect Instagram account");
+  }
+  return data.data;
 }
 
 async function disconnectInstagram(artistProfileId?: string | null): Promise<void> {
@@ -253,6 +303,52 @@ export function useInstagramConnect(
   });
 }
 
+export function useInstagramConnectByUsername(artistProfileId?: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (username: string) =>
+      connectInstagramByUsername({ username, artistProfileId }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(
+        integrationKeys.status(artistProfileId),
+        (oldData: IntegrationStatus | undefined) => {
+          if (!oldData) {
+            return {
+              youtube: { connected: false },
+              instagram: {
+                connected: true,
+                username: data.username,
+              },
+            };
+          }
+          return {
+            ...oldData,
+            instagram: {
+              connected: true,
+              username: data.username,
+            },
+          };
+        },
+      );
+      toast.success(`Instagram account "@${data.username}" connected successfully`);
+
+      // Refresh both tabs: reels (Shorts) and posts (Videos) were synced on connect.
+      queryClient.invalidateQueries({
+        queryKey: videoKeys.all,
+        refetchType: "active",
+      });
+      queryClient.invalidateQueries({
+        queryKey: instagramVideoKeys.all,
+        refetchType: "active",
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to connect Instagram account");
+    },
+  });
+}
+
 export function useInstagramDisconnect(artistProfileId?: string | null) {
   const queryClient = useQueryClient();
 
@@ -271,6 +367,16 @@ export function useInstagramDisconnect(artistProfileId?: string | null) {
         }
       );
       toast.success("Instagram account disconnected successfully");
+
+      // Synced reels + posts were removed on disconnect; refresh both tabs.
+      queryClient.invalidateQueries({
+        queryKey: videoKeys.all,
+        refetchType: "active",
+      });
+      queryClient.invalidateQueries({
+        queryKey: instagramVideoKeys.all,
+        refetchType: "active",
+      });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to disconnect Instagram");

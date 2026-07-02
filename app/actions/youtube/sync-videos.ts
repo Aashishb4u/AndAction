@@ -405,7 +405,6 @@ export async function getSyncedVideos(
         artistId: artist.id,
         isShort,
       },
-      take: type === "videos" || type === "shorts" ? 25 : 50,
       orderBy: { publishedAt: "desc" },
       select: {
         id: true,

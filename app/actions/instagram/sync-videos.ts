@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { getValidInstagramToken } from "@/app/actions/instagram/instagram";
+import { fetchInstagramAccountByUsername } from "@/lib/instagram-discovery";
 
 interface SyncResult {
   success: boolean;
@@ -32,7 +33,13 @@ interface InstagramMediaResponse {
 }
 
 function removeEmojis(text: string) {
-  return text.replace(/[\p{Extended_Pictographic}]/gu, "");
+  if (!text) return "";
+
+  return text
+    .replace(/[\p{Extended_Pictographic}]/gu, "") // Remove emojis
+    .replace(/\p{Cc}/gu, "") // Remove control chars / null bytes
+    .replace(/\p{Cs}/gu, "") // Remove lone/unpaired surrogates
+    .trim();
 }
 
 export async function syncInstagramReels(
@@ -48,44 +55,65 @@ export async function syncInstagramReels(
     const artist = artistProfileId
       ? await prisma.artist.findFirst({
           where: { id: artistProfileId, userId: session.user.id },
-          select: { id: true, instagramId: true, instagramAccessToken: true },
+          select: {
+            id: true,
+            instagramId: true,
+            instagramAccessToken: true,
+            instagramUsername: true,
+          },
         })
       : await prisma.artist.findFirst({
           where: { userId: session.user.id },
           orderBy: { profileOrder: "asc" },
-          select: { id: true, instagramId: true, instagramAccessToken: true },
+          select: {
+            id: true,
+            instagramId: true,
+            instagramAccessToken: true,
+            instagramUsername: true,
+          },
         });
 
     if (!artist) {
       return { success: false, message: "Artist profile not found" };
     }
 
-    if (!artist.instagramId || !artist.instagramAccessToken) {
+    if (!artist.instagramId) {
       return { success: false, message: "Instagram not connected" };
     }
 
-    // Get valid access token
-    const accessToken = await getValidInstagramToken(artist.id);
+    let mediaData: InstagramMediaResponse;
 
-    if (!accessToken) {
-      return {
-        success: false,
-        message: "Failed to get valid Instagram token. Please reconnect.",
-      };
+    if (artist.instagramAccessToken) {
+      // OAuth-connected account: fetch via the user's own media endpoint.
+      const accessToken = await getValidInstagramToken(artist.id);
+
+      if (!accessToken) {
+        return {
+          success: false,
+          message: "Failed to get valid Instagram token. Please reconnect.",
+        };
+      }
+
+      const mediaResponse = await fetch(
+        `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&access_token=${accessToken}`
+      );
+
+      if (!mediaResponse.ok) {
+        const errorData = await mediaResponse.text();
+        console.error("Failed to fetch Instagram media:", errorData);
+        return { success: false, message: "Failed to fetch Instagram media" };
+      }
+
+      mediaData = await mediaResponse.json();
+    } else if (artist.instagramUsername) {
+      // Business Discovery account (connected by username, no OAuth token).
+      const account = await fetchInstagramAccountByUsername(
+        artist.instagramUsername
+      );
+      mediaData = { data: account?.media?.data || [] };
+    } else {
+      return { success: false, message: "Instagram not connected" };
     }
-
-    // Fetch user's media
-    const mediaResponse = await fetch(
-      `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&access_token=${accessToken}`
-    );
-
-    if (!mediaResponse.ok) {
-      const errorData = await mediaResponse.text();
-      console.error("Failed to fetch Instagram media:", errorData);
-      return { success: false, message: "Failed to fetch Instagram media" };
-    }
-
-    const mediaData: InstagramMediaResponse = await mediaResponse.json();
 
     if (!mediaData.data || mediaData.data.length === 0) {
       return { success: true, message: "No reels found", synced: 0, total: 0 };
@@ -150,8 +178,8 @@ export async function syncInstagramReels(
         artistId: artist.id,
         title: removeEmojis(reel.description), // removeEmojis(reel.title),
         description: removeEmojis(reel.description),
-        url: reel.videoUrl,
-        thumbnailUrl: reel.thumbnail,
+        url: removeEmojis(reel.videoUrl),
+        thumbnailUrl: removeEmojis(reel.thumbnail),
         duration: 0,
         durationFormatted: "0:00",
         views: 0,
