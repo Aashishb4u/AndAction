@@ -3,12 +3,13 @@
 import React, { useState } from "react";
 import Button from "@/components/ui/Button";
 import YouTubeConnectModal from "@/components/modals/YouTubeConnectModal";
+import InstagramConnectModal from "@/components/modals/InstagramConnectModal";
 import Image from "next/image";
 import { Loader2, CheckCircle, Youtube, Instagram } from "lucide-react";
 import {
   useIntegrationStatus,
   useYouTubeConnectByChannel,
-  useInstagramConnect,
+  useInstagramConnectByUsername,
   useInstagramDisconnect,
 } from "@/hooks/use-integrations";
 
@@ -20,16 +21,16 @@ interface VideosSocialMediaProps {
 
 const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
   onNext,
-  onSkip,
   onBack,
 }) => {
   const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
+  const [instagramModalOpen, setInstagramModalOpen] = useState(false);
 
   const { data: integrationStatus, isLoading: isLoadingStatus } =
     useIntegrationStatus();
   const connectYouTubeByChannelMutation = useYouTubeConnectByChannel();
 
-  const instagramConnectMutation = useInstagramConnect();
+  const instagramConnectMutation = useInstagramConnectByUsername();
   const instagramDisconnectMutation = useInstagramDisconnect();
 
   const youtubeConnected = integrationStatus?.youtube.connected ?? false;
@@ -47,7 +48,12 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
   };
 
   const connectInstagram = () => {
-    instagramConnectMutation.mutate();
+    setInstagramModalOpen(true);
+  };
+
+  const handleInstagramConnectConfirm = async (username: string) => {
+    await instagramConnectMutation.mutateAsync(username);
+    setInstagramModalOpen(false);
   };
 
   const disconnectInstagram = () => {
@@ -249,6 +255,11 @@ const VideosSocialMedia: React.FC<VideosSocialMediaProps> = ({
         isOpen={youtubeModalOpen}
         onClose={() => setYoutubeModalOpen(false)}
         onConnect={handleYouTubeConnectConfirm}
+      />
+      <InstagramConnectModal
+        isOpen={instagramModalOpen}
+        onClose={() => setInstagramModalOpen(false)}
+        onConnect={handleInstagramConnectConfirm}
       />
     </div>
   );

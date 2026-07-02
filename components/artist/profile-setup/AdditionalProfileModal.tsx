@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import Modal from "@/components/ui/Modal";
 import ArtistProfileDetails from "@/components/artist/profile-setup/ArtistProfileDetails";
@@ -9,10 +9,11 @@ import ContactPricingDetails from "@/components/artist/profile-setup/ContactPric
 import ProfileReview from "@/components/artist/profile-setup/ProfileReview";
 import Button from "@/components/ui/Button";
 import YouTubeConnectModal from "@/components/modals/YouTubeConnectModal";
+import InstagramConnectModal from "@/components/modals/InstagramConnectModal";
 import { CheckCircle, Loader2 } from "lucide-react";
 import {
   useIntegrationStatus,
-  useInstagramConnect,
+  useInstagramConnectByUsername,
   useInstagramDisconnect,
   useYouTubeConnectByChannel,
 } from "@/hooks/use-integrations";
@@ -66,6 +67,7 @@ function IntegrationsStep(props: {
   const { artistProfileId, onNext, onSkip, onBack } = props;
 
   const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
+  const [instagramModalOpen, setInstagramModalOpen] = useState(false);
 
   const { data: integrationStatus, isLoading: isLoadingStatus } =
     useIntegrationStatus(artistProfileId);
@@ -73,10 +75,8 @@ function IntegrationsStep(props: {
   const youtubeConnectByChannelMutation =
     useYouTubeConnectByChannel(artistProfileId);
 
-  const instagramConnectMutation = useInstagramConnect({
-    returnUrl: `/artist/profile?tab=integrations&profileId=${artistProfileId}`,
-    artistProfileId,
-  });
+  const instagramConnectMutation =
+    useInstagramConnectByUsername(artistProfileId);
   const instagramDisconnectMutation = useInstagramDisconnect(artistProfileId);
 
   const youtubeConnected = integrationStatus?.youtube.connected ?? false;
@@ -96,7 +96,12 @@ function IntegrationsStep(props: {
   };
 
   const connectInstagram = () => {
-    instagramConnectMutation.mutate();
+    setInstagramModalOpen(true);
+  };
+
+  const handleInstagramConnectConfirm = async (username: string) => {
+    await instagramConnectMutation.mutateAsync(username);
+    setInstagramModalOpen(false);
   };
 
   const disconnectInstagram = () => {
@@ -262,6 +267,11 @@ function IntegrationsStep(props: {
         isOpen={youtubeModalOpen}
         onClose={() => setYoutubeModalOpen(false)}
         onConnect={handleYouTubeConnectConfirm}
+      />
+      <InstagramConnectModal
+        isOpen={instagramModalOpen}
+        onClose={() => setInstagramModalOpen(false)}
+        onConnect={handleInstagramConnectConfirm}
       />
     </div>
   );

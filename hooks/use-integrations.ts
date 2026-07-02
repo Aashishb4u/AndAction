@@ -104,28 +104,6 @@ async function connectYouTubeByChannel(
   return data.data;
 }
 
-async function getInstagramAuthUrl(input: {
-  returnUrl?: string;
-  artistProfileId?: string | null;
-}): Promise<string> {
-  const url = new URL(
-    "/api/artists/integrations/instagram/auth-url",
-    window.location.origin
-  );
-  if (input.returnUrl) {
-    url.searchParams.set("returnUrl", input.returnUrl);
-  }
-  if (input.artistProfileId) {
-    url.searchParams.set("artistProfileId", input.artistProfileId);
-  }
-  const response = await fetch(url.toString());
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to get authorization URL");
-  }
-  return data.authUrl;
-}
-
 export interface InstagramAccountPreview {
   instagramId: string;
   username: string;
@@ -284,21 +262,6 @@ export function useYouTubeDisconnect(artistProfileId?: string | null) {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to disconnect YouTube");
-    },
-  });
-}
-
-export function useInstagramConnect(
-  input?: { returnUrl?: string; artistProfileId?: string | null },
-) {
-  return useMutation({
-    mutationFn: () => getInstagramAuthUrl(input ?? {}),
-    onSuccess: (authUrl) => {
-      // Redirect to Instagram OAuth
-      window.location.href = authUrl;
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to connect Instagram");
     },
   });
 }

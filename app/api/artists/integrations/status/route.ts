@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
             instagramId: true,
             instagramUsername: true,
             instagramConnectedAt: true,
-            instagramAccessToken: true,
           },
         })
       : await prisma.artist.findFirst({
@@ -39,7 +38,6 @@ export async function GET(request: NextRequest) {
             instagramId: true,
             instagramUsername: true,
             instagramConnectedAt: true,
-            instagramAccessToken: true,
           },
         });
 
@@ -60,9 +58,7 @@ export async function GET(request: NextRequest) {
         connectedAt: artist.youtubeConnectedAt?.toISOString() || null,
       },
       instagram: {
-        // Connected if an Instagram account is linked (via Business Discovery
-        // by username, or the legacy OAuth flow).
-        connected: !!artist.instagramId,
+        connected: !!artist.instagramUsername,
         username: artist.instagramUsername || null,
         connectedAt: artist.instagramConnectedAt?.toISOString() || null,
       },

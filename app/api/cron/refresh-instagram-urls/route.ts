@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getValidInstagramToken } from "@/app/actions/instagram/instagram";
 import { fetchInstagramAccountByUsername } from "@/lib/instagram-discovery";
+
+const INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS = Number(
+  process.env.INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS || 24,
+);
 
 interface InstagramMediaResponse {
   data?: Array<{
@@ -13,12 +16,6 @@ interface InstagramMediaResponse {
     permalink: string;
     timestamp: string;
   }>;
-  paging?: {
-    cursors: {
-      after?: string;
-    };
-    next?: string;
-  };
 }
 
 export async function GET(request: NextRequest) {
@@ -44,15 +41,15 @@ export async function GET(request: NextRequest) {
 
     console.log("[CRON] Starting Instagram URL refresh job...");
 
-    // Get all artists with Instagram connected — either via OAuth
-    // (instagramAccessToken set) or via Business Discovery (instagramUsername set).
+    // Get all artists connected through username-based Business Discovery.
     const allArtists = await prisma.artist.findMany({
-      where: { instagramId: { not: null } },
+      where: {
+        instagramId: { not: null },
+        instagramUsername: { not: null },
+      },
       select: {
         id: true,
         userId: true,
-        instagramId: true,
-        instagramAccessToken: true,
         instagramUsername: true,
       },
     });
@@ -61,9 +58,10 @@ export async function GET(request: NextRequest) {
       `[CRON] Found ${allArtists.length} total artists with Instagram connected`,
     );
 
-    // Filter artists by priority: only process if last video update was 6+ days ago
-    const sixDaysAgo = new Date();
-    sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
+    // Refresh cached Instagram media URLs frequently because direct media URLs expire.
+    const refreshCutoff = new Date(
+      Date.now() - INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS * 60 * 60 * 1000,
+    );
 
     const artists = [];
     let skippedCount = 0;
@@ -83,8 +81,9 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      // If no videos exist OR last update was 6+ days ago, process this artist
-      if (!mostRecentVideo || mostRecentVideo.updatedAt < sixDaysAgo) {
+      // If no videos exist OR last update is older than our refresh window,
+      // process this artist again to refresh stale media URLs.
+      if (!mostRecentVideo || mostRecentVideo.updatedAt < refreshCutoff) {
         artists.push(artist);
       } else {
         skippedCount++;
@@ -109,7 +108,6 @@ export async function GET(request: NextRequest) {
         const result = await refreshArtistInstagramVideos(
           artist.id,
           artist.userId,
-          artist.instagramAccessToken,
           artist.instagramUsername,
         );
         totalArtistsProcessed++;
@@ -169,7 +167,6 @@ export async function GET(request: NextRequest) {
 async function refreshArtistInstagramVideos(
   artistId: string,
   userId: string,
-  accessToken: string | null,
   username: string | null,
 ): Promise<{ videosUpdated: number }> {
   const artistProfiles = await prisma.artist.count({ where: { userId } });
@@ -182,40 +179,12 @@ async function refreshArtistInstagramVideos(
 
   let mediaData: InstagramMediaResponse;
 
-  if (accessToken) {
-    // OAuth-connected account: refresh via the user's own media endpoint.
-    const validToken = await getValidInstagramToken(artistId);
-
-    if (!validToken) {
-      throw new Error(
-        `Failed to get valid Instagram token for artist ${artistId}`,
-      );
-    }
-
-    // Fetch all current media from Instagram (only 1 API call!)
-    const response = await fetch(
-      `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&access_token=${validToken}`,
-    );
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error(
-        `[CRON] Failed to fetch Instagram media for artist ${artistId}:`,
-        errorData,
-      );
-      throw new Error("Failed to fetch Instagram media");
-    }
-
-    mediaData = await response.json();
-  } else if (username) {
-    // Business Discovery account (connected by username, no OAuth token):
-    // refresh via the shared app token.
+  if (username) {
+    // Refresh via the shared Business Discovery token.
     const account = await fetchInstagramAccountByUsername(username);
     mediaData = { data: account?.media?.data || [] };
   } else {
-    throw new Error(
-      `Artist ${artistId} has no Instagram access token or username`,
-    );
+    throw new Error(`Artist ${artistId} has no Instagram username`);
   }
 
   if (!mediaData.data || mediaData.data.length === 0) {

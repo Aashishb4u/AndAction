@@ -3,7 +3,6 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { getValidInstagramToken } from "@/app/actions/instagram/instagram";
 import { fetchInstagramAccountByUsername } from "@/lib/instagram-discovery";
 
 interface SyncResult {
@@ -58,7 +57,6 @@ export async function syncInstagramReels(
           select: {
             id: true,
             instagramId: true,
-            instagramAccessToken: true,
             instagramUsername: true,
           },
         })
@@ -68,7 +66,6 @@ export async function syncInstagramReels(
           select: {
             id: true,
             instagramId: true,
-            instagramAccessToken: true,
             instagramUsername: true,
           },
         });
@@ -83,32 +80,9 @@ export async function syncInstagramReels(
 
     let mediaData: InstagramMediaResponse;
 
-    if (artist.instagramAccessToken) {
-      // OAuth-connected account: fetch via the user's own media endpoint.
-      const accessToken = await getValidInstagramToken(artist.id);
-
-      if (!accessToken) {
-        return {
-          success: false,
-          message: "Failed to get valid Instagram token. Please reconnect.",
-        };
-      }
-
-      const mediaResponse = await fetch(
-        `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&access_token=${accessToken}`
-      );
-
-      if (!mediaResponse.ok) {
-        const errorData = await mediaResponse.text();
-        console.error("Failed to fetch Instagram media:", errorData);
-        return { success: false, message: "Failed to fetch Instagram media" };
-      }
-
-      mediaData = await mediaResponse.json();
-    } else if (artist.instagramUsername) {
-      // Business Discovery account (connected by username, no OAuth token).
+    if (artist.instagramUsername) {
       const account = await fetchInstagramAccountByUsername(
-        artist.instagramUsername
+        artist.instagramUsername,
       );
       mediaData = { data: account?.media?.data || [] };
     } else {
