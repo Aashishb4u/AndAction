@@ -333,14 +333,15 @@ export function useInstagramConnectByUsername(artistProfileId?: string | null) {
       );
       toast.success(`Instagram account "@${data.username}" connected successfully`);
 
-      // Refresh both tabs: reels (Shorts) and posts (Videos) were synced on connect.
+      // Refresh both tabs (Shorts + Videos). Use refetchType "all" so even the
+      // currently-unmounted tab refetches immediately — no page refresh needed.
       queryClient.invalidateQueries({
         queryKey: videoKeys.all,
-        refetchType: "active",
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: instagramVideoKeys.all,
-        refetchType: "active",
+        refetchType: "all",
       });
     },
     onError: (error: Error) => {
@@ -368,14 +369,15 @@ export function useInstagramDisconnect(artistProfileId?: string | null) {
       );
       toast.success("Instagram account disconnected successfully");
 
-      // Synced reels + posts were removed on disconnect; refresh both tabs.
+      // Synced reels + posts were removed on disconnect; refresh both tabs
+      // immediately (mounted or not) so they clear without a page refresh.
       queryClient.invalidateQueries({
         queryKey: videoKeys.all,
-        refetchType: "active",
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: instagramVideoKeys.all,
-        refetchType: "active",
+        refetchType: "all",
       });
     },
     onError: (error: Error) => {
