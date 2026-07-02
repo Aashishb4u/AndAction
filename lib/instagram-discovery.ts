@@ -8,9 +8,14 @@
  * Docs: https://developers.facebook.com/docs/instagram-api/guides/business-discovery
  */
 
-const GRAPH_VERSION = process.env.INSTAGRAM_GRAPH_VERSION || "v24.0";
-const IG_BUSINESS_ACCOUNT_ID = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
-const IG_GRAPH_ACCESS_TOKEN = process.env.INSTAGRAM_GRAPH_ACCESS_TOKEN;
+import {
+  getInstagramDiscoveryAccessToken,
+  getInstagramDiscoveryConfig,
+  isInstagramDiscoveryConfigured,
+  refreshInstagramDiscoveryAccessToken,
+} from "@/lib/instagram-discovery-config";
+
+export { isInstagramDiscoveryConfigured } from "@/lib/instagram-discovery-config";
 
 export interface InstagramDiscoveryMedia {
   id: string;
@@ -38,8 +43,49 @@ export interface InstagramDiscoveryAccount {
   };
 }
 
-export function isInstagramDiscoveryConfigured(): boolean {
-  return !!(IG_BUSINESS_ACCOUNT_ID && IG_GRAPH_ACCESS_TOKEN);
+function isTokenError(responseStatus: number, data: any) {
+  const message = data?.error?.message || "";
+  const code = data?.error?.code;
+  const subcode = data?.error?.error_subcode;
+
+  return (
+    responseStatus === 401 ||
+    code === 190 ||
+    subcode === 463 ||
+    subcode === 467 ||
+    /Invalid OAuth|session has expired|Error validating access token/i.test(
+      message,
+    )
+  );
+}
+
+async function requestInstagramBusinessDiscovery(
+  username: string,
+  mediaLimit: number,
+  accessToken: string,
+) {
+  const config = await getInstagramDiscoveryConfig();
+
+  if (!config?.businessAccountId) {
+    throw new Error("Instagram Business Discovery is not configured");
+  }
+
+  const fields =
+    `business_discovery.username(${username})` +
+    `{id,username,name,profile_picture_url,biography,website,` +
+    `followers_count,follows_count,media_count,` +
+    `media.limit(${mediaLimit})` +
+    `{id,caption,permalink,thumbnail_url,media_type,media_url,media_product_type,timestamp}}`;
+
+  const url =
+    `https://graph.facebook.com/${config.graphVersion}/${config.businessAccountId}` +
+    `?fields=${encodeURIComponent(fields)}` +
+    `&access_token=${accessToken}`;
+
+  const response = await fetch(url);
+  const data = await response.json();
+
+  return { response, data };
 }
 
 /**
@@ -50,27 +96,37 @@ export async function fetchInstagramAccountByUsername(
   username: string,
   mediaLimit = 50,
 ): Promise<InstagramDiscoveryAccount | null> {
-  if (!isInstagramDiscoveryConfigured()) {
+  if (!(await isInstagramDiscoveryConfigured())) {
     throw new Error("Instagram Business Discovery is not configured");
   }
 
   const cleaned = username.trim().replace(/^@/, "");
   if (!cleaned) return null;
 
-  const fields =
-    `business_discovery.username(${cleaned})` +
-    `{id,username,name,profile_picture_url,biography,website,` +
-    `followers_count,follows_count,media_count,` +
-    `media.limit(${mediaLimit})` +
-    `{id,caption,permalink,thumbnail_url,media_type,media_url,media_product_type,timestamp}}`;
+  let accessToken = await getInstagramDiscoveryAccessToken({
+    refreshIfNeeded: true,
+  });
 
-  const url =
-    `https://graph.facebook.com/${GRAPH_VERSION}/${IG_BUSINESS_ACCOUNT_ID}` +
-    `?fields=${encodeURIComponent(fields)}` +
-    `&access_token=${IG_GRAPH_ACCESS_TOKEN}`;
+  if (!accessToken) {
+    throw new Error("Instagram Business Discovery access token is missing");
+  }
 
-  const response = await fetch(url);
-  const data = await response.json();
+  let { response, data } = await requestInstagramBusinessDiscovery(
+    cleaned,
+    mediaLimit,
+    accessToken,
+  );
+
+  if (isTokenError(response.status, data)) {
+    const refreshed = await refreshInstagramDiscoveryAccessToken({ force: true });
+    accessToken = refreshed.accessToken;
+
+    ({ response, data } = await requestInstagramBusinessDiscovery(
+      cleaned,
+      mediaLimit,
+      accessToken,
+    ));
+  }
 
   if (!response.ok || data.error) {
     // Business discovery returns error code 24 when the username isn't found /
