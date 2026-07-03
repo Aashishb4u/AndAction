@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
       ? await prisma.artist.findFirst({
           where: { id: artistProfileId, userId: session.user.id },
           select: {
+            id: true,
             youtubeChannelId: true,
             youtubeChannelName: true,
             youtubeConnectedAt: true,
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
           where: { userId: session.user.id },
           orderBy: { profileOrder: "asc" },
           select: {
+            id: true,
             youtubeChannelId: true,
             youtubeChannelName: true,
             youtubeConnectedAt: true,
@@ -48,6 +50,31 @@ export async function GET(request: NextRequest) {
         { success: false, message: "Artist profile not found" },
         { status: 404 }
       );
+    }
+
+    // Backfill a missing YouTube channel name (older connections may have saved
+    // only the channel ID). Fetch it once from the public API and persist it.
+    if (
+      artist.youtubeChannelId &&
+      !artist.youtubeChannelName &&
+      process.env.YOUTUBE_API_KEY
+    ) {
+      try {
+        const ytRes = await fetch(
+          `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${artist.youtubeChannelId}&key=${process.env.YOUTUBE_API_KEY}`
+        );
+        const ytData = await ytRes.json();
+        const channelName = ytData?.items?.[0]?.snippet?.title;
+        if (channelName) {
+          await prisma.artist.update({
+            where: { id: artist.id },
+            data: { youtubeChannelName: channelName },
+          });
+          artist.youtubeChannelName = channelName;
+        }
+      } catch (e) {
+        console.error("Failed to backfill YouTube channel name:", e);
+      }
     }
 
     // Return integration status (without exposing tokens)
