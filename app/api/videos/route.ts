@@ -217,13 +217,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         videos = [];
       }
     } else {
+      // On artist detail pages, keep Instagram shorts ahead of YouTube shorts
+      // so the first pages prioritise the fresher Instagram content.
+      const shortsOrderBy =
+        type === "shorts" && isArtistSpecific
+          ? [{ source: "asc" as const }, { publishedAt: "desc" as const }, { createdAt: "desc" as const }]
+          : [{ publishedAt: "desc" as const }, { createdAt: "desc" as const }];
+
       // Default: newest-first ordering
       const [fetched, count] = await Promise.all([
         prisma.video.findMany({
           where,
           skip: offset,
           take: limit,
-          orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+          orderBy: shortsOrderBy,
           select: videoSelect as any,
         }),
         prisma.video.count({ where }),
