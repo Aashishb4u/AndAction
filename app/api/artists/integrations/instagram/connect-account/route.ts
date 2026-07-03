@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isInstagramDiscoveryConfigured()) {
+    if (!(await isInstagramDiscoveryConfigured())) {
       return NextResponse.json(
         { success: false, message: "Instagram integration is not configured" },
         { status: 500 },

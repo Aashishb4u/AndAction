@@ -236,6 +236,22 @@ model CronJob {
   @@map("cron_jobs")
 }
 
+model InstagramDiscoveryConfig {
+  id                String   @id
+  appId             String?
+  appSecret         String?
+  graphVersion      String?
+  businessAccountId String?
+  accessToken       String?
+  tokenExpiresAt    DateTime?
+  lastRefreshedAt   DateTime?
+  lastError         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("instagram_discovery_configs")
+}
+
 model admins {
   id             BigInt    @id @default(autoincrement())
   name           String    @db.VarChar(255)
