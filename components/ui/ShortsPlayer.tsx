@@ -113,11 +113,6 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   const youtubeId = extractYouTubeId(short.videoUrl);
   const isYouTube = Boolean(youtubeId);
   const effectiveSoundEnabled = isActive ? soundEnabled : false;
-  const youtubeEmbedSrc = youtubeId
-    ? `https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=0&mute=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
-        typeof window !== "undefined" ? window.location.origin : ""
-      }&nohistory=1`
-    : null;
 
   const avatarSrc = buildArtishProfileUrl(short.avatar ?? "");
 
@@ -440,19 +435,22 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
           src={short.thumbnail}
           alt={short.title}
           fill
-          data-src={"instagram thumbnail"}
           unoptimized
           className="absolute inset-0 object-cover bg-black"
         />
       ) : null}
+
       {isYouTube
         ? (shouldLoad || preloadYouTubePlayer) && (
             <iframe
               id={`yt-${short.id}`}
               className="absolute inset-0 w-full h-full"
               loading={isActive ? "eager" : "lazy"}
-              src={youtubeEmbedSrc ?? undefined}
-              tabIndex={-1}
+              src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${
+                isActive ? 1 : 0
+              }&mute=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
+                typeof window !== "undefined" ? window.location.origin : ""
+              }&nohistory=1`}
               onLoad={() => {
                 setYtReady(true);
                 // if (isActive) {
@@ -467,7 +465,6 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
               key={short.id}
               ref={videoRef}
               src={short.videoUrl}
-              data-src={"instagram video"}
               className="absolute inset-0 h-full w-full object-cover bg-black"
               preload={isActive ? "auto" : "metadata"}
               autoPlay={isActive}

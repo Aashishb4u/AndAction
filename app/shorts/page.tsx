@@ -555,6 +555,7 @@ export default function ShortsPage() {
   ];
 
   const visibleVideos = getVisibleVideos();
+  console.log("visibleVideos  ====> ", visibleVideos);
 
   return (
     <SiteLayout showPreloader={false} hideNavbarOnMobile={true}>
@@ -627,7 +628,7 @@ export default function ShortsPage() {
                       className="absolute inset-0 w-full h-full"
                       style={{ top: `${video.absoluteIndex * 100}%` }}
                     >
-                      {/* <ShortsPlayer
+                  {/* <ShortsPlayer
                     short={video}
                     isActive={isActive}
                     shouldLoad={isActive}
