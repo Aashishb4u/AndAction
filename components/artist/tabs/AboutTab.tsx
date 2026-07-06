@@ -556,7 +556,21 @@ const AboutTab: React.FC<AboutTabProps> = ({
         </Button>
         <Button
           variant="primary"
-          onClick={onSave}
+           onClick={async () => {
+            if (
+              draft.latitude === null ||
+              draft.longitude === null ||
+              !Number.isFinite(draft.latitude) ||
+              !Number.isFinite(draft.longitude)
+            ) {
+              alert(
+                "Please select an address from the dropdown suggestions or use current location.",
+              );
+              return;
+            }
+
+            await onSave();
+          }}
           disabled={isSaving}
           className="flex-1"
         >
