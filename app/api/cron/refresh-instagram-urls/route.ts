@@ -1,9 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchInstagramAccountByUsername } from "@/lib/instagram-discovery";
+import type { Prisma } from "@prisma/client";
 
 const INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS = Number(
-  process.env.INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS || 24,
+  process.env.INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS || 22,
+);
+const INSTAGRAM_REFRESH_BATCH_SIZE = Number(
+  process.env.INSTAGRAM_REFRESH_BATCH_SIZE || 10,
+);
+const INSTAGRAM_REFRESH_ARTIST_DELAY_MS = Number(
+  process.env.INSTAGRAM_REFRESH_ARTIST_DELAY_MS || 1000,
+);
+const INSTAGRAM_REFRESH_BATCH_DELAY_MS = Number(
+  process.env.INSTAGRAM_REFRESH_BATCH_DELAY_MS || 2000,
+);
+const INSTAGRAM_REFRESH_RETRY_DELAY_MS = Number(
+  process.env.INSTAGRAM_REFRESH_RETRY_DELAY_MS || 5 * 60 * 1000,
+);
+const INSTAGRAM_REFRESH_MAX_RETRY_ROUNDS = Number(
+  process.env.INSTAGRAM_REFRESH_MAX_RETRY_ROUNDS || 1,
 );
 
 interface InstagramMediaResponse {
@@ -16,6 +32,24 @@ interface InstagramMediaResponse {
     permalink: string;
     timestamp: string;
   }>;
+}
+
+interface InstagramRefreshArtist {
+  id: string;
+  userId: string;
+  instagramUsername: string | null;
+  latestInstagramVideoUpdatedAt: Date | null;
+}
+
+interface ArtistBatchProcessingResult {
+  artistsProcessed: number;
+  artistAttempts: number;
+  videosUpdated: number;
+  errors: number;
+  errorMessages: string[];
+  retryRoundsExecuted: number;
+  batchesProcessed: number;
+  failedArtists: InstagramRefreshArtist[];
 }
 
 export async function GET(request: NextRequest) {
@@ -51,6 +85,18 @@ export async function GET(request: NextRequest) {
         id: true,
         userId: true,
         instagramUsername: true,
+        videos: {
+          where: {
+            source: "instagram",
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+          take: 1,
+          select: {
+            updatedAt: true,
+          },
+        },
       },
     });
 
@@ -63,75 +109,71 @@ export async function GET(request: NextRequest) {
       Date.now() - INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS * 60 * 60 * 1000,
     );
 
-    const artists = [];
+    const artists: InstagramRefreshArtist[] = [];
     let skippedCount = 0;
 
     for (const artist of allArtists) {
-      // Get the most recent video update for this artist
-      const mostRecentVideo = await prisma.video.findFirst({
-        where: {
-          artistId: artist.id,
-          source: "instagram",
-        },
-        orderBy: {
-          updatedAt: "desc",
-        },
-        select: {
-          updatedAt: true,
-        },
-      });
+      const latestInstagramVideoUpdatedAt =
+        artist.videos[0]?.updatedAt ?? null;
 
       // If no videos exist OR last update is older than our refresh window,
       // process this artist again to refresh stale media URLs.
-      if (!mostRecentVideo || mostRecentVideo.updatedAt < refreshCutoff) {
-        artists.push(artist);
+      if (
+        !latestInstagramVideoUpdatedAt ||
+        latestInstagramVideoUpdatedAt < refreshCutoff
+      ) {
+        artists.push({
+          id: artist.id,
+          userId: artist.userId,
+          instagramUsername: artist.instagramUsername,
+          latestInstagramVideoUpdatedAt,
+        });
       } else {
         skippedCount++;
         console.log(
-          `[CRON] Skipping artist ${artist.id}: last updated ${Math.floor((Date.now() - mostRecentVideo.updatedAt.getTime()) / (1000 * 60 * 60 * 24))} days ago`,
+          `[CRON] Skipping artist ${artist.id}: last updated ${Math.floor((Date.now() - latestInstagramVideoUpdatedAt.getTime()) / (1000 * 60 * 60))} hours ago`,
         );
       }
     }
 
-    console.log(
-      `[CRON] Processing ${artists.length} artists (skipped ${skippedCount} recently updated)`,
+    artists.sort(compareArtistsByRefreshPriority);
+
+    const totalBatches = Math.ceil(
+      artists.length / Math.max(INSTAGRAM_REFRESH_BATCH_SIZE, 1),
     );
 
-    let totalArtistsProcessed = 0;
-    let totalVideosUpdated = 0;
-    let totalErrors = 0;
-    const errors: string[] = [];
+    console.log(
+      `[CRON] Processing ${artists.length} eligible artists in ${totalBatches} batches (skipped ${skippedCount} recently updated)`,
+    );
 
-    // Process each artist
-    for (const artist of artists) {
-      try {
-        const result = await refreshArtistInstagramVideos(
-          artist.id,
-          artist.userId,
-          artist.instagramUsername,
-        );
-        totalArtistsProcessed++;
-        totalVideosUpdated += result.videosUpdated;
-
-        console.log(
-          `[CRON] Artist ${artist.id}: Updated ${result.videosUpdated} videos`,
-        );
-      } catch (error) {
-        totalErrors++;
-        const errorMsg = `Artist ${artist.id}: ${error instanceof Error ? error.message : "Unknown error"}`;
-        errors.push(errorMsg);
-        console.error(`[CRON] Error processing artist ${artist.id}:`, error);
-      }
-    }
+    const result = await processArtistsInBatches({
+      artists,
+      batchSize: INSTAGRAM_REFRESH_BATCH_SIZE,
+      perArtistDelayMs: INSTAGRAM_REFRESH_ARTIST_DELAY_MS,
+      batchDelayMs: INSTAGRAM_REFRESH_BATCH_DELAY_MS,
+      retryDelayMs: INSTAGRAM_REFRESH_RETRY_DELAY_MS,
+      maxRetryRounds: INSTAGRAM_REFRESH_MAX_RETRY_ROUNDS,
+    });
 
     const metadata = {
       totalArtists: allArtists.length,
       artistsEligible: artists.length,
       artistsSkipped: skippedCount,
-      artistsProcessed: totalArtistsProcessed,
-      videosUpdated: totalVideosUpdated,
-      errors: totalErrors,
-      errorMessages: errors,
+      batchSize: Math.max(INSTAGRAM_REFRESH_BATCH_SIZE, 1),
+      batchesPlanned: totalBatches,
+      batchesProcessed: result.batchesProcessed,
+      perArtistDelayMs: INSTAGRAM_REFRESH_ARTIST_DELAY_MS,
+      perBatchDelayMs: INSTAGRAM_REFRESH_BATCH_DELAY_MS,
+      retryDelayMs: INSTAGRAM_REFRESH_RETRY_DELAY_MS,
+      maxRetryRounds: INSTAGRAM_REFRESH_MAX_RETRY_ROUNDS,
+      retryRoundsExecuted: result.retryRoundsExecuted,
+      artistAttempts: result.artistAttempts,
+      artistsProcessed: result.artistsProcessed,
+      videosUpdated: result.videosUpdated,
+      errors: result.errors,
+      failedArtistsAfterRetries: result.failedArtists.length,
+      failedArtistIds: result.failedArtists.map((artist) => artist.id),
+      errorMessages: result.errorMessages,
     };
 
     await updateCronJobRecord(cronJobId, "completed", null, metadata);
@@ -284,6 +326,181 @@ async function refreshArtistInstagramVideos(
   return { videosUpdated };
 }
 
+async function processArtistsInBatches(params: {
+  artists: InstagramRefreshArtist[];
+  batchSize: number;
+  perArtistDelayMs: number;
+  batchDelayMs: number;
+  retryDelayMs: number;
+  maxRetryRounds: number;
+}): Promise<ArtistBatchProcessingResult> {
+  const {
+    artists,
+    batchSize,
+    perArtistDelayMs,
+    batchDelayMs,
+    retryDelayMs,
+    maxRetryRounds,
+  } = params;
+
+  const safeBatchSize = Math.max(batchSize, 1);
+  let pendingArtists = [...artists];
+  let artistsProcessed = 0;
+  let artistAttempts = 0;
+  let videosUpdated = 0;
+  let errors = 0;
+  let retryRoundsExecuted = 0;
+  let batchesProcessed = 0;
+  const errorMessages: string[] = [];
+
+  for (
+    let attemptNumber = 0;
+    pendingArtists.length > 0 && attemptNumber <= maxRetryRounds;
+    attemptNumber++
+  ) {
+    const isRetryRound = attemptNumber > 0;
+    const failedArtistsForNextAttempt: InstagramRefreshArtist[] = [];
+    const batches = chunkArray(pendingArtists, safeBatchSize);
+
+    if (isRetryRound) {
+      retryRoundsExecuted++;
+
+      if (retryDelayMs > 0) {
+        console.log(
+          `[CRON] Waiting ${retryDelayMs}ms before retry round ${retryRoundsExecuted} for ${pendingArtists.length} failed artists`,
+        );
+        await sleep(retryDelayMs);
+      }
+    }
+
+    console.log(
+      `[CRON] Starting ${isRetryRound ? `retry round ${retryRoundsExecuted}` : "initial pass"} with ${pendingArtists.length} artists across ${batches.length} batches`,
+    );
+
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      const batch = batches[batchIndex];
+      batchesProcessed++;
+
+      if (batchIndex > 0 && batchDelayMs > 0) {
+        console.log(
+          `[CRON] Waiting ${batchDelayMs}ms before batch ${batchIndex + 1}/${batches.length} on attempt ${attemptNumber + 1}`,
+        );
+        await sleep(batchDelayMs);
+      }
+
+      console.log(
+        `[CRON] Processing batch ${batchIndex + 1}/${batches.length} on attempt ${attemptNumber + 1} (${batch.length} artists)`,
+      );
+
+      for (let artistIndex = 0; artistIndex < batch.length; artistIndex++) {
+        const artist = batch[artistIndex];
+
+        if (artistIndex > 0 && perArtistDelayMs > 0) {
+          console.log(
+            `[CRON] Waiting ${perArtistDelayMs}ms before next artist in batch ${batchIndex + 1}/${batches.length}`,
+          );
+          await sleep(perArtistDelayMs);
+        }
+
+        artistAttempts++;
+
+        try {
+          const result = await refreshArtistInstagramVideos(
+            artist.id,
+            artist.userId,
+            artist.instagramUsername,
+          );
+
+          artistsProcessed++;
+          videosUpdated += result.videosUpdated;
+
+          console.log(
+            `[CRON] Artist ${artist.id}: updated ${result.videosUpdated} videos on attempt ${attemptNumber + 1}`,
+          );
+        } catch (error) {
+          errors++;
+
+          const message =
+            error instanceof Error ? error.message : "Unknown error";
+          errorMessages.push(
+            `Attempt ${attemptNumber + 1}, batch ${batchIndex + 1}, artist ${artist.id}: ${message}`,
+          );
+          failedArtistsForNextAttempt.push(artist);
+
+          console.error(
+            `[CRON] Error processing artist ${artist.id} on attempt ${attemptNumber + 1}:`,
+            error,
+          );
+        }
+      }
+    }
+
+    pendingArtists = failedArtistsForNextAttempt;
+  }
+
+  if (pendingArtists.length > 0) {
+    console.warn(
+      `[CRON] ${pendingArtists.length} artists still failed after ${maxRetryRounds} retry rounds`,
+    );
+  }
+
+  return {
+    artistsProcessed,
+    artistAttempts,
+    videosUpdated,
+    errors,
+    errorMessages,
+    retryRoundsExecuted,
+    batchesProcessed,
+    failedArtists: pendingArtists,
+  };
+}
+
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const result: T[][] = [];
+
+  for (let index = 0; index < items.length; index += size) {
+    result.push(items.slice(index, index + size));
+  }
+
+  return result;
+}
+
+function compareArtistsByRefreshPriority(
+  a: InstagramRefreshArtist,
+  b: InstagramRefreshArtist,
+): number {
+  if (!a.latestInstagramVideoUpdatedAt && !b.latestInstagramVideoUpdatedAt) {
+    return a.id.localeCompare(b.id);
+  }
+
+  if (!a.latestInstagramVideoUpdatedAt) {
+    return -1;
+  }
+
+  if (!b.latestInstagramVideoUpdatedAt) {
+    return 1;
+  }
+
+  const timeDifference =
+    a.latestInstagramVideoUpdatedAt.getTime() -
+    b.latestInstagramVideoUpdatedAt.getTime();
+
+  if (timeDifference !== 0) {
+    return timeDifference;
+  }
+
+  return a.id.localeCompare(b.id);
+}
+
+async function sleep(ms: number): Promise<void> {
+  if (ms <= 0) {
+    return;
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Remove emojis and sanitize text for database storage
  */
@@ -318,7 +535,10 @@ async function updateCronJobRecord(
   id: string,
   status: "completed" | "failed",
   error: string | null = null,
-  metadata: any = null,
+  metadata:
+    | Prisma.InputJsonValue
+    | Prisma.NullableJsonNullValueInput
+    | undefined = undefined,
 ): Promise<void> {
   await prisma.cronJob.update({
     where: { id },

@@ -6,10 +6,10 @@ const cron = require("node-cron");
 require("dotenv").config({ path: path.resolve(__dirname, "..", ".env") });
 
 const CRON_SECRET = process.env.CRON_SECRET;
-const APP_URL = (
-  process.env.CRON_APP_URL ||
-  "http://127.0.0.1:3000"
-).replace(/\/+$/, "");
+const APP_URL = (process.env.CRON_APP_URL || "http://127.0.0.1:3000").replace(
+  /\/+$/,
+  "",
+);
 const CRON_TIMEZONE = process.env.CRON_TIMEZONE || "Asia/Kolkata";
 const REQUEST_TIMEOUT_MS = Number(process.env.CRON_REQUEST_TIMEOUT_MS || 60000);
 const RUN_ON_STARTUP = process.env.CRON_RUN_ON_STARTUP === "true";
@@ -18,7 +18,7 @@ const JOBS = [
   {
     name: "Instagram URL Refresh",
     slug: "refresh-instagram-urls",
-    schedule: "0 0 * * *",
+    schedule: "0 6 * * *",
     endpoint: "/api/cron/refresh-instagram-urls",
   },
   {
@@ -35,7 +35,9 @@ if (!CRON_SECRET) {
 }
 
 if (typeof fetch !== "function") {
-  console.error("❌ Global fetch is unavailable. Run this script with Node.js 18+.");
+  console.error(
+    "❌ Global fetch is unavailable. Run this script with Node.js 18+.",
+  );
   process.exit(1);
 }
 
@@ -87,7 +89,10 @@ async function runJob(job) {
     }
   } catch (error) {
     const message =
-      error && typeof error === "object" && "name" in error && error.name === "AbortError"
+      error &&
+      typeof error === "object" &&
+      "name" in error &&
+      error.name === "AbortError"
         ? `Request timed out after ${REQUEST_TIMEOUT_MS}ms`
         : error.message;
     console.error(`❌ Error running ${job.slug}:`, message);
@@ -105,7 +110,9 @@ JOBS.forEach((job) => {
 });
 
 if (RUN_ON_STARTUP) {
-  console.log("▶️ CRON_RUN_ON_STARTUP=true, running all jobs once at startup...");
+  console.log(
+    "▶️ CRON_RUN_ON_STARTUP=true, running all jobs once at startup...",
+  );
   JOBS.forEach((job) => {
     runJob(job).catch((error) => {
       console.error(`❌ Startup run failed for ${job.slug}:`, error.message);
@@ -115,7 +122,9 @@ if (RUN_ON_STARTUP) {
 
 console.log("\n📅 Scheduled Jobs:");
 JOBS.forEach((job) => {
-  console.log(`  - ${job.name}: ${job.schedule} (${CRON_TIMEZONE}) -> ${job.endpoint}`);
+  console.log(
+    `  - ${job.name}: ${job.schedule} (${CRON_TIMEZONE}) -> ${job.endpoint}`,
+  );
 });
 console.log("\n✨ Waiting for scheduled tasks...\n");
 
