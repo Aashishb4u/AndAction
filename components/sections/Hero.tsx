@@ -72,7 +72,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
               onClick={handleFindArtist}
               className="px-8 py-3 w-full max-w-96 shadow-2xl hover:shadow-pink-500/25 transform hover:scale-105 transition-all duration-300 btn1-responsive"
             >
-              Find your Artist
+              Find Your Artist
             </Button>
           </div>
         </div>

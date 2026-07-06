@@ -15,7 +15,7 @@ import {
 import Image from "next/image";
 import { signIn, getSession } from "next-auth/react";
 import OTPInput from "@/components/ui/OTPInput";
-import { maskPhone } from "@/lib/utils";
+import { maskPhone, validatePhoneNumber } from "@/lib/utils";
 
 type SignInMethod = "phone" | "email";
 type SignInStep = "input" | "otp" | "password";
@@ -89,15 +89,9 @@ function SignInContent() {
 
     const trimmedPhone = phoneNumber.trim();
 
-    if (!trimmedPhone) {
-      setInputError("Phone number is required");
-      return;
-    }
-
-    // Validate phone number (10 digits for India)
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(trimmedPhone)) {
-      setInputError("Please enter a valid 10-digit phone number");
+    const phoneError = validatePhoneNumber(trimmedPhone, countryCode);
+    if (phoneError) {
+      setInputError(phoneError);
       return;
     }
 

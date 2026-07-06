@@ -10,7 +10,7 @@ import Checkbox from "@/components/ui/Checkbox";
 import PhoneInput from "@/components/ui/PhoneInput";
 import OTPInput from "@/components/ui/OTPInput";
 import { signUp, getRedirectUrl, signInWithGoogle, signInWithFacebook } from "@/lib/auth";
-import { maskPhone } from "@/lib/utils";
+import { maskPhone, validatePhoneNumber } from "@/lib/utils";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { INDIAN_STATES } from "@/lib/constants";
@@ -195,10 +195,15 @@ function SignUpContent() {
       if (contactType === "phone") {
         const cleanedPhoneNumber = phone.replace(/\D/g, "");
         const countryCodeToSend = countryCode.trim();
-        if (!countryCodeToSend || !cleanedPhoneNumber) {
-          throw new Error(
-            "Please enter a valid phone number and select a country code.",
-          );
+        if (!countryCodeToSend) {
+          throw new Error("Please select a country code.");
+        }
+        const phoneError = validatePhoneNumber(
+          cleanedPhoneNumber,
+          countryCodeToSend,
+        );
+        if (phoneError) {
+          throw new Error(phoneError);
         }
         console.log(
           `Sending OTP to: ${countryCodeToSend}${cleanedPhoneNumber}`,

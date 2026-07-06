@@ -96,7 +96,7 @@ const Modal: React.FC<ModalProps> = ({
                 ? "max-h-screen rounded-t-2xl md:rounded-2xl"
                 : "max-h-screen rounded-2xl"
           }
-          overflow-hidden
+          overflow-hidden flex flex-col
           bg-background border border-border-color shadow-2xl
           ${isBottomSheet ? "modal-bottom-sheet" : "modal-content"}
           ${className}
@@ -104,7 +104,7 @@ const Modal: React.FC<ModalProps> = ({
       >
         {showCloseButton && title && (
           <div
-            className={`border-b border-border-color md:px-6 px-4 py-6 ${headerClassName}`}
+            className={`shrink-0 border-b border-border-color md:px-6 px-4 py-6 ${headerClassName}`}
           >
             <div className="flex justify-between items-center">
               <div>
@@ -123,13 +123,11 @@ const Modal: React.FC<ModalProps> = ({
           </div>
         )}
 
-        {/* Content */}
+        {/* Content — fills the remaining height so sticky footers stay visible */}
         <div
-          className={`${
-            size === "full"
-              ? "h-[calc(100vh-80px)] md:max-h-[calc(90vh-60px)]"
-              : "max-h-[calc(90vh-60px)]"
-          } ${size !== "full" ? "overflow-y-auto" : ""} modal-scroll`}
+          className={`flex-1 min-h-0 ${
+            size !== "full" ? "overflow-y-auto" : ""
+          } modal-scroll`}
         >
           {children}
         </div>

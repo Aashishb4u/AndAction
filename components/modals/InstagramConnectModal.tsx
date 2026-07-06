@@ -139,7 +139,7 @@ const InstagramConnectModal: React.FC<InstagramConnectModalProps> = ({
                 placeholder="e.g., @username"
                 value={usernameInput}
                 onChange={(e) => {
-                  setUsernameInput(e.target.value);
+                  setUsernameInput(e.target.value.toLowerCase());
                   setError("");
                 }}
                 onKeyDown={(e) => {
@@ -149,7 +149,11 @@ const InstagramConnectModal: React.FC<InstagramConnectModalProps> = ({
                 }}
                 disabled={isLoading}
                 variant="filled"
-                className="w-full"
+                className="w-full lowercase"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                inputMode="text"
               />
               {error && (
                 <div className="flex items-start gap-2 text-red-400 text-sm">
