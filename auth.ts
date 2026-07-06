@@ -53,6 +53,8 @@ interface ExtendedUser {
   state?: string | null;
   address?: string | null;
   zip?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   gender?: string | null;
   dob?: string | null;
   isAccountVerified?: boolean;
@@ -180,6 +182,8 @@ export const {
             state: user.state ?? null,
             address: user.address ?? null,
             zip: user.zip ?? null,
+            latitude: user.latitude ?? null,
+            longitude: user.longitude ?? null,
             gender: user.gender ?? null,
             dob: user.dob ? user.dob.toISOString() : null,
             isAccountVerified: !!user.isAccountVerified,
@@ -254,6 +258,8 @@ export const {
       user.state = (token.state as string) ?? null;
       user.address = (token.address as string) ?? null;
       user.zip = (token.zip as string) ?? null;
+      user.latitude = (token.latitude as number) ?? null;
+      user.longitude = (token.longitude as number) ?? null;
       user.gender = (token.gender as string) ?? null;
       user.dob = (token.dob as string) ?? null;
       user.isAccountVerified = !!token.isAccountVerified;
@@ -287,6 +293,8 @@ export const {
         token.state = u.state;
         token.address = u.address;
         token.zip = u.zip;
+        token.latitude = u.latitude;
+        token.longitude = u.longitude;
         token.gender = u.gender;
         token.dob = u.dob;
         token.isAccountVerified = u.isAccountVerified;
@@ -314,6 +322,8 @@ export const {
           "state",
           "address",
           "zip",
+          "latitude",
+          "longitude",
           "gender",
           "dob",
           "isAccountVerified",
@@ -349,6 +359,7 @@ export const {
             return null;
           }
 
+          
           if (dbUser) {
             token.role = dbUser.role;
             token.firstName = dbUser.firstName;
@@ -362,6 +373,8 @@ export const {
             token.address = dbUser.address;
             token.zip = dbUser.zip;
             token.gender = dbUser.gender;
+            token.latitude = dbUser.latitude;
+            token.longitude = dbUser.longitude;
             token.dob = dbUser.dob ? dbUser.dob.toISOString() : null;
             token.isAccountVerified = dbUser.isAccountVerified;
             token.isArtistVerified = dbUser.isArtistVerified;

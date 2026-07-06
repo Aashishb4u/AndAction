@@ -163,7 +163,19 @@ function ArtistProfileContent() {
     );
   }
 
-  const artistProfile = selectedArtistProfile ?? primaryArtistProfile;
+  const artistProfile: any = {
+    ...(selectedArtistProfile ?? primaryArtistProfile),
+    latitude:
+      selectedArtistProfile?.user?.latitude ??
+      (primaryArtistProfile as any)?.latitude ??
+      user?.latitude ??
+      null,
+    longitude:
+      selectedArtistProfile?.user?.longitude ??
+      (primaryArtistProfile as any)?.longitude ??
+      user?.longitude ??
+      null,
+  };
 
   const artistData = {
     id: artistProfile.id || user.id || "",
@@ -175,7 +187,9 @@ function ArtistProfileContent() {
     duration: "2-4 hours",
     startingPrice: 25000,
     languages: artistProfile.performingLanguage
-      ? artistProfile.performingLanguage.split(",").map((lang) => lang.trim())
+      ? artistProfile.performingLanguage
+          .split(",")
+          .map((lang: string) => lang.trim())
       : [],
     image: artistProfile.profileImage || "/avatars/default.jpg",
     isBookmarked: false,
@@ -184,10 +198,10 @@ function ArtistProfileContent() {
     bio: artistProfile.shortBio || "",
     yearsOfExperience: artistProfile.yearsOfExperience || 0,
     subArtistTypes: artistProfile.subArtistType
-      ? artistProfile.subArtistType.split(",").map((s) => s.trim())
+      ? artistProfile.subArtistType.split(",").map((s: string) => s.trim())
       : [],
     achievements: artistProfile.achievements
-      ? artistProfile.achievements.split(",").map((a) => a.trim())
+      ? artistProfile.achievements.split(",").map((a: string) => a.trim())
       : [],
     phone: artistProfile.contactNumber || "",
     whatsapp: artistProfile.whatsappNumber || artistProfile.contactNumber || "",
@@ -208,8 +222,8 @@ function ArtistProfileContent() {
     pinCode: user.zip || "",
     state: user.state || "",
     city: user.city || "",
-    latitude: (user as any).latitude ?? null,
-    longitude: (user as any).longitude ?? null,
+    latitude: artistProfile.latitude ?? null,
+    longitude: artistProfile.longitude ?? null,
     subArtistType: artistProfile.subArtistType || "",
     shortBio: artistProfile.shortBio || "",
     performingLanguage: artistProfile.performingLanguage || "",

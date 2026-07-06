@@ -16,6 +16,21 @@ export async function GET(
 
     const profile = await prisma.artist.findFirst({
       where: { id, userId: session.user.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            image: true,
+            phoneNumber: true,
+            latitude: true,
+            longitude: true,
+          },
+        },
+      },
     });
 
     if (!profile) return ApiErrors.notFound("Artist profile not found.");
@@ -26,4 +41,3 @@ export async function GET(
     return ApiErrors.internalError("Failed to fetch artist profile.");
   }
 }
-
