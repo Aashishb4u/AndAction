@@ -360,6 +360,19 @@ const ArtistProfileDetails: React.FC<ArtistProfileDetailsProps> = ({
       const localPreviewUrl = URL.createObjectURL(file);
       setPreview(localPreviewUrl);
 
+      // Brand-new profile: it hasn't been created yet, so there's nothing to
+      // attach the image to. Keep the selected file + preview and let the
+      // save/create flow upload it. Avoids a misleading "Failed to upload"
+      // error and prevents uploading the same file twice.
+      if (!artistProfileId) {
+        const pendingData = { profilePhoto: file, avatarUrl: localPreviewUrl };
+        setFormData((prev) => ({ ...prev, ...pendingData }));
+        onUpdateData(pendingData);
+        setUploadMessage("Profile photo selected.");
+        setUploading(false);
+        return;
+      }
+
       const formDataUpload = new FormData();
       formDataUpload.append("file", file);
       if (artistProfileId) {

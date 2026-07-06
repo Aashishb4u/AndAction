@@ -556,7 +556,7 @@ const AboutTab: React.FC<AboutTabProps> = ({
         </Button>
         <Button
           variant="primary"
-          onClick={async () => {
+           onClick={async () => {
             if (
               draft.latitude === null ||
               draft.longitude === null ||

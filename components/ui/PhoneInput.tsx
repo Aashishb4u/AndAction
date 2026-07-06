@@ -60,9 +60,20 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // Max number of digits allowed per country (India = 10; others fall back to 15).
+  const maxDigits = selectedCountry.dialCode === '+91' ? 10 : 15;
+
   const handleCountrySelect = (country: Country) => {
     setSelectedCountry(country);
     setIsDropdownOpen(false);
+
+    // Trim the current value to the newly selected country's digit limit.
+    const nextMax = country.dialCode === '+91' ? 10 : 15;
+    const trimmed = value.replace(/\D/g, '').slice(0, nextMax);
+    if (trimmed !== value) {
+      onChange(trimmed);
+    }
+
     if (onCountryChange) {
       onCountryChange(country);
     }
@@ -126,16 +137,24 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
           {/* Phone Number Input */}
           <input
             type="tel"
+            inputMode="numeric"
             placeholder={placeholder}
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+              // Only allow digits; cap length to the selected country's max.
+              const digitsOnly = e.target.value
+                .replace(/\D/g, "")
+                .slice(0, maxDigits);
+              onChange(digitsOnly);
+            }}
+            maxLength={maxDigits}
             disabled={disabled}
             required={required}
             className="flex-1 bg-transparent border-none outline-none text-white placeholder-text-gray autofill-fix pl-0 rounded-none"
             id={inputId}
             name={name ?? inputId}
             autoComplete={autoComplete}
-            
+
           />
         </div>
 

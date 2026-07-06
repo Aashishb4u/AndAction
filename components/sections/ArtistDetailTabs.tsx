@@ -1172,7 +1172,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     return (
       <div
         ref={shortsContainerRef}
-        className="relative w-full bg-black overflow-hidden rounded-2xl"
+        className="relative w-full bg-black overflow-hidden"
         style={{
           height: isMobile ? "calc(100dvh - 8.5rem)" : "calc(100vh - 14rem)",
           overscrollBehavior: "contain",

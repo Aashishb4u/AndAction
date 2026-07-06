@@ -52,28 +52,29 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     }
 
     if (mimeType.startsWith("image/")) {
-      if (!artistProfileId) {
-        return ApiErrors.badRequest("artistProfileId is required for image uploads.");
-      }
-
       const key = buildImageKey({ userId, artistProfileId, extension: fileExtension });
       const fileUrl = await uploadToVPS({ buffer, key, mimeType });
 
-      const existingArtist = await prisma.artist.findFirst({
-        where: { id: artistProfileId, userId },
-        select: { id: true, profileImage: true },
-      });
+      // If an artist profile is provided, attach the image to it now.
+      // Otherwise (e.g. creating a brand-new profile that doesn't exist yet),
+      // just return the uploaded URL so the caller can persist it on save.
+      if (artistProfileId) {
+        const existingArtist = await prisma.artist.findFirst({
+          where: { id: artistProfileId, userId },
+          select: { id: true, profileImage: true },
+        });
 
-      if (!existingArtist) return ApiErrors.notFound("Artist profile not found.");
+        if (!existingArtist) return ApiErrors.notFound("Artist profile not found.");
 
-      if (existingArtist.profileImage && existingArtist.profileImage !== fileUrl) {
-        await deleteFromVPS(existingArtist.profileImage).catch(() => {});
+        if (existingArtist.profileImage && existingArtist.profileImage !== fileUrl) {
+          await deleteFromVPS(existingArtist.profileImage).catch(() => {});
+        }
+
+        await prisma.artist.update({
+          where: { id: existingArtist.id },
+          data: { profileImage: fileUrl },
+        });
       }
-
-      await prisma.artist.update({
-        where: { id: existingArtist.id },
-        data: { profileImage: fileUrl },
-      });
 
       return successResponse(
         { imageUrl: fileUrl },

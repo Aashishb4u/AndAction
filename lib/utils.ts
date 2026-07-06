@@ -179,3 +179,40 @@ export function maskPhone(phone: string): string {
   const middle = "*".repeat(middleLength);
   return `${first}${middle}${last}`;
 }
+
+/**
+ * Validate a phone number for the given country dial code.
+ * Returns an error message string when invalid, or null when valid.
+ *
+ * India (+91) mobiles must be exactly 10 digits and start with 6-9.
+ * Other countries fall back to a general 7-15 digit check.
+ * Obviously fake numbers (all-zero / all-same-digit) are always rejected.
+ */
+export function validatePhoneNumber(
+  phone: string,
+  dialCode: string = "+91",
+): string | null {
+  const digits = (phone || "").replace(/\D/g, "");
+
+  if (!digits) {
+    return "Phone number is required";
+  }
+
+  // Reject all-zero or repeated-single-digit numbers (e.g. 0000000000, 9999999999).
+  if (/^(\d)\1*$/.test(digits)) {
+    return "Please enter a valid phone number";
+  }
+
+  if (dialCode === "+91") {
+    if (!/^[6-9]\d{9}$/.test(digits)) {
+      return "Please enter a valid 10-digit mobile number";
+    }
+    return null;
+  }
+
+  if (digits.length < 7 || digits.length > 15) {
+    return "Please enter a valid phone number";
+  }
+
+  return null;
+}

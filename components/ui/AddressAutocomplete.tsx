@@ -228,7 +228,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   }, []);
 
   const baseClasses = `
-    w-full md:px-4 px-3 py-3 pr-12 placeholder-text-gray
+    w-full md:px-4 px-3 py-3 placeholder-text-gray
     border rounded-lg transition-all duration-200
     focus:outline-none focus:ring-0 focus:border-primary-pink
     disabled:opacity-50 disabled:cursor-not-allowed
@@ -291,7 +291,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           autoComplete="off"
         />
 
-        {/* Location picker button */}
+         {/* Location picker button */}
         {/* <button
           type="button"
           onClick={handleUseCurrentLocation}
@@ -343,7 +343,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
         {/* Loading indicator */}
         {isSearching && (
-          <div className="absolute right-10 top-1/2 -translate-y-1/2">
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <div className="w-4 h-4 border-2 border-primary-pink border-t-transparent rounded-full animate-spin" />
           </div>
         )}

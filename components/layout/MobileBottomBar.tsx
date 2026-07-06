@@ -31,10 +31,24 @@ const MobileBottomBar = () => {
   };
 
   useEffect(() => {
+    // The browser restores the previous scroll position on refresh, which
+    // fires a scroll event right after mount with a large positive delta.
+    // Reacting to it would momentarily hide the bar (the "flicker on refresh"
+    // bug), so we stay dormant until the restore has settled, then re-baseline.
+    let ready = false;
+
     const updateVisibility = () => {
+      tickingRef.current = false;
       const currentScrollY = window.scrollY;
-      const lastScrollY = lastScrollYRef.current;
-      const delta = currentScrollY - lastScrollY;
+
+      if (!ready) {
+        // Keep the baseline in sync with the scroll-restore jump so it is
+        // never counted as a user scroll once we go live.
+        lastScrollYRef.current = currentScrollY;
+        return;
+      }
+
+      const delta = currentScrollY - lastScrollYRef.current;
 
       if (currentScrollY < 40) {
         if (!isVisibleRef.current) {
@@ -42,7 +56,6 @@ const MobileBottomBar = () => {
           setIsVisible(true);
         }
         lastScrollYRef.current = currentScrollY;
-        tickingRef.current = false;
         return;
       }
 
@@ -54,8 +67,6 @@ const MobileBottomBar = () => {
         }
         lastScrollYRef.current = currentScrollY;
       }
-
-      tickingRef.current = false;
     };
 
     const handleScroll = () => {
@@ -68,8 +79,17 @@ const MobileBottomBar = () => {
     isVisibleRef.current = true;
     setIsVisible(true);
 
+    // Let the browser finish restoring scroll position before reacting.
+    const readyTimer = window.setTimeout(() => {
+      lastScrollYRef.current = window.scrollY;
+      ready = true;
+    }, 300);
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.clearTimeout(readyTimer);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   const bottomBarItems: BottomBarItem[] = [

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Artist } from "@/types";
 import ShortsCard from "@/components/ui/ShortsCard";
 import Button from "@/components/ui/Button";
@@ -20,6 +20,7 @@ import {
   useSyncInstagramReels,
   useDeleteInstagramReel,
 } from "@/hooks/use-instagram-videos";
+import { useIntegrationStatus } from "@/hooks/use-integrations";
 
 interface ShortsTabProps {
   artist: Artist;
@@ -46,8 +47,31 @@ const ShortsTab: React.FC<ShortsTabProps> = ({ artist }) => {
   const deleteMutation = useDeleteVideo();
   const deleteInstagramMutation = useDeleteInstagramReel();
 
+  const { data: integrationStatus } = useIntegrationStatus((artist as any)?.id);
+
   const isSyncing =
     syncYouTubeMutation.isPending || syncInstagramMutation.isPending;
+
+  // Auto-sync shorts when opening this tab with a connected account and no
+  // shorts yet, so reels/shorts appear without a manual "Sync" click.
+  const autoSyncedRef = useRef(false);
+  useEffect(() => {
+    if (autoSyncedRef.current || isLoading) return;
+    if ((shortsData?.length ?? 0) !== 0) return;
+
+    const youtubeConnected = integrationStatus?.youtube?.connected;
+    const instagramConnected = integrationStatus?.instagram?.connected;
+    if (!youtubeConnected && !instagramConnected) return;
+
+    autoSyncedRef.current = true;
+    if (youtubeConnected && !syncYouTubeMutation.isPending) {
+      syncYouTubeMutation.mutate();
+    }
+    if (instagramConnected && !syncInstagramMutation.isPending) {
+      syncInstagramMutation.mutate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [integrationStatus, isLoading, shortsData]);
 
   const shorts =
     shortsData?.map((v) => ({

@@ -29,9 +29,10 @@ type LocationParams = {
 };
 
 const ROTATING_SEARCH_SUGGESTIONS = [
-  "prayer meet",
-  "mata ki chowki",
-  "sufi singer",
+  "artist name",
+  "category",
+  "event category",
+  "sub category",
 ] as const;
 const ROTATING_SEARCH_INTERVAL_MS = 2000;
 

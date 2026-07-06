@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
@@ -79,6 +79,35 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       isActive = false;
     };
   }, [isOpen, preferences]);
+
+  // Keep the latest onClose without re-running the history effect on every render
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Close the bottom sheet on browser/device back instead of leaving the site.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Add a history entry so the back button has something to pop.
+    window.history.pushState({ findArtistModal: true }, "");
+
+    const handlePopState = () => {
+      onCloseRef.current();
+    };
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      // If the sheet was closed via the UI (X / backdrop / View results) rather
+      // than the back button, remove the history entry we added so it doesn't
+      // pile up and the next back press works normally.
+      if (window.history.state?.findArtistModal) {
+        window.history.back();
+      }
+    };
+  }, [isOpen]);
 
   // Sub-category multi-tag UI state
   const [subInput, setSubInput] = useState<string>("");
