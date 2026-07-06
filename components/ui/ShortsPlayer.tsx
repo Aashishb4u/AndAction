@@ -429,164 +429,166 @@ const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
   };
 
   return (
-    <div className="relative w-full aspect-video aspect-ratio-16-9 h-full bg-black overflow-hidden">
-      {!isYouTube && !isPlaying && short.thumbnail ? (
-        <Image
-          src={short.thumbnail}
-          alt={short.title}
-          fill
-          unoptimized
-          className="absolute inset-0 object-cover bg-black"
-        />
-      ) : null}
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black">
+      <div className="relative h-full aspect-9/16 max-w-full overflow-hidden bg-black">
+        {!isYouTube && !isPlaying && short.thumbnail ? (
+          <Image
+            src={short.thumbnail}
+            alt={short.title}
+            fill
+            unoptimized
+            className="absolute inset-0 object-cover bg-black"
+          />
+        ) : null}
 
-      {isYouTube
-        ? (shouldLoad || preloadYouTubePlayer) && (
-            <iframe
-              id={`yt-${short.id}`}
-              className="absolute inset-0 w-full h-full"
-              loading={isActive ? "eager" : "lazy"}
-              src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${
-                isActive ? 1 : 0
-              }&mute=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
-                typeof window !== "undefined" ? window.location.origin : ""
-              }&nohistory=1`}
-              onLoad={() => {
-                setYtReady(true);
-                // if (isActive) {
-                //   queueYouTubeCommand("playVideo", [100, 400, 1000]);
-                // }
-              }}
-              allow="autoplay; encrypted-media; fullscreen"
-            />
-          )
-        : shouldLoad && (
-            <video
-              key={short.id}
-              ref={videoRef}
-              src={short.videoUrl}
-              className="absolute inset-0 h-full w-full object-cover bg-black"
-              preload={isActive ? "auto" : "metadata"}
-              autoPlay={isActive}
-              loop
-              playsInline
-              muted={!isActive || !soundEnabled}
-              poster={short.thumbnail || undefined}
-              onLoadedData={() => setIsVideoLoaded(true)}
-              onCanPlay={(e) => {
-                setIsVideoLoaded(true);
+        {isYouTube
+          ? (shouldLoad || preloadYouTubePlayer) && (
+              <iframe
+                id={`yt-${short.id}`}
+                className="absolute inset-0 w-full h-full"
+                loading={isActive ? "eager" : "lazy"}
+                src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&autoplay=${
+                  isActive ? 1 : 0
+                }&mute=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}&origin=${
+                  typeof window !== "undefined" ? window.location.origin : ""
+                }&nohistory=1`}
+                onLoad={() => {
+                  setYtReady(true);
+                  // if (isActive) {
+                  //   queueYouTubeCommand("playVideo", [100, 400, 1000]);
+                  // }
+                }}
+                allow="autoplay; encrypted-media; fullscreen"
+              />
+            )
+          : shouldLoad && (
+              <video
+                key={short.id}
+                ref={videoRef}
+                src={short.videoUrl}
+                className="absolute inset-0 h-full w-full object-cover bg-black"
+                preload={isActive ? "auto" : "metadata"}
+                autoPlay={isActive}
+                loop
+                playsInline
+                muted={!isActive || !soundEnabled}
+                poster={short.thumbnail || undefined}
+                onLoadedData={() => setIsVideoLoaded(true)}
+                onCanPlay={(e) => {
+                  setIsVideoLoaded(true);
 
-                if (isActive) {
-                  e.currentTarget.play().catch(() => {});
-                }
-              }}
-              onPlaying={() => {
-                setIsVideoLoaded(true);
-                setIsPlaying(true);
-              }}
-              onPause={() => setIsPlaying(false)}
-              onWaiting={() => setIsPlaying(false)}
-            />
-          )}
-
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
-
-      {showControls && !isYouTube && (
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="bg-black/50 rounded-full p-4">
-            {isPlaying ? (
-              <Pause className="w-12 h-12 text-white" />
-            ) : (
-              <Play className="w-12 h-12 text-white" />
+                  if (isActive) {
+                    e.currentTarget.play().catch(() => {});
+                  }
+                }}
+                onPlaying={() => {
+                  setIsVideoLoaded(true);
+                  setIsPlaying(true);
+                }}
+                onPause={() => setIsPlaying(false)}
+                onWaiting={() => setIsPlaying(false)}
+              />
             )}
-          </div>
-        </div>
-      )}
 
-      {!isYouTube && (
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-          <div className="h-full bg-white" style={{ width: `${progress}%` }} />
-        </div>
-      )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
 
-      <div
-        className="absolute inset-0 z-10"
-        onClick={handleVideoClick}
-        onMouseEnter={() => setShowControls(true)}
-        onMouseLeave={() => setShowControls(false)}
-      />
-
-      <div className="absolute inset-0 flex z-20 pointer-events-none">
-        <div className="flex-1 flex flex-col justify-end p-3 pb-8">
-          <Link
-            href={`/artists/${short.creatorId}`}
-            className="pointer-events-auto"
-            data-shorts-interactive="true"
-            onClick={() => setReturnPath()}
-          >
-            <div className="flex items-center gap-3 cursor-pointer w-[80%]">
-              <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
-                <Image
-                  src={avatarSrc}
-                  alt={short.creator}
-                  width={40}
-                  height={40}
-                  unoptimized
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="min-w-0">
-                <div className="text-white font-semibold leading-tight line-clamp-1">
-                  {short.creator}
-                </div>
-                {short.title ? (
-                  <div className="text-white/80 text-sm leading-snug line-clamp-1">
-                    {short.title}
-                  </div>
-                ) : null}
-                {short.category ? (
-                  <div className="text-white/70 text-xs leading-snug line-clamp-1">
-                    {short.category}
-                  </div>
-                ) : null}
-              </div>
+        {showControls && !isYouTube && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <div className="bg-black/50 rounded-full p-4">
+              {isPlaying ? (
+                <Pause className="w-12 h-12 text-white" />
+              ) : (
+                <Play className="w-12 h-12 text-white" />
+              )}
             </div>
-          </Link>
-        </div>
+          </div>
+        )}
+
+        {!isYouTube && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+            <div className="h-full bg-white" style={{ width: `${progress}%` }} />
+          </div>
+        )}
 
         <div
-          className="absolute right-4 bottom-20 z-30 flex flex-col items-center space-y-4 pointer-events-auto"
-          data-shorts-interactive="true"
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onShare(short.id);
-            }}
-            className="p-3 rounded-full bg-black/30 text-white"
-          >
-            <Share className="w-6 h-6" />
-          </button>
+          className="absolute inset-0 z-10"
+          onClick={handleVideoClick}
+          onMouseEnter={() => setShowControls(true)}
+          onMouseLeave={() => setShowControls(false)}
+        />
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onBookmark(short.id);
-            }}
-            className="p-3 rounded-full bg-black/30 text-white"
-          >
-            <Bookmark className="w-6 h-6" active={short.isBookmarked} />
-          </button>
+        <div className="absolute inset-0 flex z-20 pointer-events-none">
+          <div className="flex-1 flex flex-col justify-end p-3 pb-8">
+            <Link
+              href={`/artists/${short.creatorId}`}
+              className="pointer-events-auto"
+              data-shorts-interactive="true"
+              onClick={() => setReturnPath()}
+            >
+              <div className="flex items-center gap-3 cursor-pointer w-[80%]">
+                <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
+                  <Image
+                    src={avatarSrc}
+                    alt={short.creator}
+                    width={40}
+                    height={40}
+                    unoptimized
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-white font-semibold leading-tight line-clamp-1">
+                    {short.creator}
+                  </div>
+                  {short.title ? (
+                    <div className="text-white/80 text-sm leading-snug line-clamp-1">
+                      {short.title}
+                    </div>
+                  ) : null}
+                  {short.category ? (
+                    <div className="text-white/70 text-xs leading-snug line-clamp-1">
+                      {short.category}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </Link>
+          </div>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleSoundToggle();
-            }}
-            className="p-3 rounded-full bg-black/30 text-white"
+          <div
+            className="absolute right-4 bottom-20 z-30 flex flex-col items-center space-y-4 pointer-events-auto"
+            data-shorts-interactive="true"
           >
-            {soundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
-          </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onShare(short.id);
+              }}
+              className="p-3 rounded-full bg-black/30 text-white"
+            >
+              <Share className="w-6 h-6" />
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onBookmark(short.id);
+              }}
+              className="p-3 rounded-full bg-black/30 text-white"
+            >
+              <Bookmark className="w-6 h-6" active={short.isBookmarked} />
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSoundToggle();
+              }}
+              className="p-3 rounded-full bg-black/30 text-white"
+            >
+              {soundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
+            </button>
+          </div>
         </div>
       </div>
     </div>
