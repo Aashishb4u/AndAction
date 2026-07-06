@@ -181,24 +181,51 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   }, [scrollTabsHeaderToTop]);
 
   const handleTabChange = (tab: TabType) => {
-    if (tab === activeTab) return;
+    if (tab === activeTab) {
+      if (tab === "shorts" && isMobile) {
+        scheduleTabsHeaderScroll();
+      }
+      return;
+    }
 
     if (tab === "shorts") {
-      if (activeTab !== "about") {
-        router.replace(`${pathname}?tab=about`, { scroll: false });
-      }
-      router.push(`${pathname}?tab=shorts`, { scroll: false });
-      setActiveTab(tab);
-
       if (isMobile) {
         scheduleTabsHeaderScroll();
       }
+
+      const activateShorts = () => {
+        if (activeTab !== "about") {
+          router.replace(`${pathname}?tab=about`, { scroll: false });
+        }
+        router.push(`${pathname}?tab=shorts`, { scroll: false });
+        setActiveTab(tab);
+      };
+
+      if (isMobile) {
+        window.setTimeout(activateShorts, 80);
+      } else {
+        activateShorts();
+      }
+
       return;
     }
 
     setActiveTab(tab);
     router.replace(`${pathname}?tab=${tab}`, { scroll: false });
   };
+
+  useEffect(() => {
+    if (!isMobile || activeTab !== "shorts") return;
+
+    scheduleTabsHeaderScroll();
+    const timer = window.setTimeout(() => {
+      scheduleTabsHeaderScroll();
+    }, 120);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [activeTab, isMobile, scheduleTabsHeaderScroll]);
 
   const toggleBookmark = async ({ id, bookmarkId, isBookmarked }: any) => {
     try {
@@ -621,12 +648,15 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     if (activeTab === "shorts" && isMobile) {
       const prevOverflow = document.body.style.overflow;
       const prevTouchAction = document.body.style.touchAction;
-      document.body.style.overflow = "hidden";
-      document.body.style.touchAction = "none";
-      wrapper.style.overscrollBehavior = "none";
-      wrapper.style.touchAction = "none";
+      const timer = window.setTimeout(() => {
+        document.body.style.overflow = "hidden";
+        document.body.style.touchAction = "none";
+        wrapper.style.overscrollBehavior = "none";
+        wrapper.style.touchAction = "none";
+      }, 140);
 
       return () => {
+        window.clearTimeout(timer);
         document.body.style.overflow = prevOverflow;
         document.body.style.touchAction = prevTouchAction;
         wrapper.style.overscrollBehavior = "";
@@ -1174,7 +1204,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         ref={shortsContainerRef}
         className="relative w-full bg-black overflow-hidden"
         style={{
-          height: isMobile ? "calc(100dvh - 8.5rem)" : "calc(100vh - 14rem)",
+          height: isMobile ? "calc(100vh - 8.5rem)" : "calc(100vh - 14rem)",
           overscrollBehavior: "contain",
           touchAction: "none",
         }}

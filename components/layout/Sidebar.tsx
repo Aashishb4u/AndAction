@@ -203,8 +203,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         style={{
           width: "min(90vw, 22rem)",
           maxWidth: 400,
-          height: "100dvh",
-          maxHeight: "100dvh",
+          height: "100vh",
+          maxHeight: "100vh",
           overflowY: "auto",
         }}
       >

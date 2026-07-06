@@ -339,7 +339,7 @@ const ArtistProfileCard: React.FC<ArtistProfileCardProps> = ({
     (artist.category?.length ?? 0) > 18;
 
   return (
-    <div className="relative md:rounded-2xl overflow-hidden h-[85vh] lg:h-[500px]">
+    <div className="relative aspect-19/30 overflow-hidden md:rounded-2xl">
       {/* hidden file input */}
       <input
         type="file"
