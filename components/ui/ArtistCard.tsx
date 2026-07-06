@@ -27,11 +27,11 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   const router = useRouter();
   const { setReturnPath, setReturnTarget } = useNavigationHistory();
   const [isHovered, setIsHovered] = useState(false);
-  // const [isImageLoading, setIsImageLoading] = useState(true);
+  const [isImageLoading, setIsImageLoading] = useState(true);
 
-  // useEffect(() => {
-  //   setIsImageLoading(true);
-  // }, [thumbnail]);
+  useEffect(() => {
+    setIsImageLoading(true);
+  }, [thumbnail]);
 
   const handleClick = () => {
     if (typeof window !== "undefined") {
@@ -49,14 +49,18 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
       className={`relative flex-shrink-0  w-[150px] h-[237px] md:w-[190px] md:h-[300px] rounded-lg overflow-hidden cursor-pointer bg-text-light-gray/10 transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 ${className}`}
       onClick={handleClick}
     >
-      {/* {isImageLoading && (
+      {isImageLoading && (
         <div className="absolute inset-0 z-10 pointer-events-none">
           <ArtistCardSkeleton />
         </div>
-      )} */}
+      )}
 
       {/* Background Image */}
-      <div className="absolute inset-0 transition-opacity duration-300 select-none">
+      <div
+        className={`absolute inset-0 transition-opacity duration-300 select-none ${
+          isImageLoading ? "opacity-0" : "opacity-100"
+        }`}
+      >
         <Image
           src={buildArtishProfileUrl(thumbnail)}
           alt={name}
@@ -65,8 +69,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
           sizes="230px"
           priority={false}
           unoptimized
-          // onLoad={() => setIsImageLoading(false)}
-          // onError={() => setIsImageLoading(false)}
+          onLoad={() => setIsImageLoading(false)}
+          onError={() => setIsImageLoading(false)}
         />
       </div>
 

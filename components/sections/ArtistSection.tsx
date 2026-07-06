@@ -1,11 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ArtistCard from '@/components/ui/ArtistCard';
 import Modal from '@/components/ui/Modal';
-import ArtistCardSkeleton from '@/components/ui/ArtistCardSkeleton';
-import { buildArtishProfileUrl } from '@/lib/utils';
 
 interface Artist {
   id: string;
@@ -39,73 +37,10 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
   const [showNoArtistModal, setShowNoArtistModal] = useState(false);
   const router = useRouter();
 
-  const hasMore = artists.length > MAX_VISIBLE;
   const visibleArtists = useMemo(
     () => artists.slice(0, MAX_VISIBLE),
     [artists],
   );
-
-  const [areThumbnailsReady, setAreThumbnailsReady] = useState(true);
-
-  useEffect(() => {
-    if (artists.length === 0) {
-      setAreThumbnailsReady(true);
-      return;
-    }
-
-    setAreThumbnailsReady(false);
-
-    let cancelled = false;
-
-    const urls = visibleArtists
-      .map((artist) => buildArtishProfileUrl(artist.thumbnail))
-      .filter((url) => typeof url === 'string' && url.trim().length > 0);
-
-    if (urls.length === 0) {
-      setAreThumbnailsReady(true);
-      return;
-    }
-
-    const preload = async () => {
-      await Promise.allSettled(
-        urls.map(
-          (url) =>
-            new Promise<void>((resolve) => {
-              const img = new window.Image();
-              img.onload = () => resolve();
-              img.onerror = () => resolve();
-              img.src = url;
-            }),
-        ),
-      );
-
-      if (!cancelled) setAreThumbnailsReady(true);
-    };
-
-    preload();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [artists.length, visibleArtists]);
-
-  const scrollLeft = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        left: -320,
-        behavior: 'smooth',
-      });
-    }
-  };
-
-  const scrollRight = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        left: 320,
-        behavior: 'smooth',
-      });
-    }
-  };
 
   const getTypeParam = () => {
     if (categoryValue) {
@@ -262,28 +197,16 @@ const ArtistSection: React.FC<ArtistSectionProps> = ({
               document.addEventListener('mouseup', handleMouseUp);
             }}
           >
-            {!areThumbnailsReady ? (
-              <>
-                {visibleArtists.map((artist) => (
-                  <ArtistCardSkeleton key={`skeleton-${artist.id}`} />
-                ))}
-              </>
-            ) : (
-              <>
-                {visibleArtists.map((artist) => (
-                  <ArtistCard
-                    key={artist.id}
-                    id={artist.id}
-                    name={artist.name}
-                    location={artist.location}
-                    thumbnail={artist.thumbnail}
-                    videoUrl={artist.videoUrl}
-                  />
-                ))}
-
-
-              </>
-            )}
+            {visibleArtists.map((artist) => (
+              <ArtistCard
+                key={artist.id}
+                id={artist.id}
+                name={artist.name}
+                location={artist.location}
+                thumbnail={artist.thumbnail}
+                videoUrl={artist.videoUrl}
+              />
+            ))}
           </div>
         </div>
       )}
