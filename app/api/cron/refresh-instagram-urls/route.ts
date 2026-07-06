@@ -173,6 +173,7 @@ export async function GET(request: NextRequest) {
       errors: result.errors,
       failedArtistsAfterRetries: result.failedArtists.length,
       failedArtistIds: result.failedArtists.map((artist) => artist.id),
+      failedArtistInstagramUserNames: result.failedArtists.map((artist) => artist.instagramUsername),
       errorMessages: result.errorMessages,
     };
 
