@@ -231,6 +231,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
         type === "shorts"
           ? Prisma.sql`CASE WHEN v."source" = 'instagram' THEN 0 ELSE 1 END AS source_priority,`
           : Prisma.empty;
+      const randomFeedOrderBy =
+        type === "shorts"
+          ? Prisma.sql`source_priority, video_rank, artist_sort_key, id DESC`
+          : Prisma.sql`video_rank, artist_sort_key, id DESC`;
       const perArtistOrder =
         type === "shorts"
           ? Prisma.sql`CASE WHEN v."source" = 'instagram' THEN 0 ELSE 1 END, v."publishedAt" DESC, v."createdAt" DESC, v."id" DESC`
@@ -345,7 +349,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
               )
               SELECT id
               FROM artist_ranked
-              ORDER BY source_priority, video_rank, artist_sort_key, id DESC
+              ORDER BY ${randomFeedOrderBy}
               LIMIT ${limit} OFFSET ${offset}
             `,
         locationAwareShortsFeed
