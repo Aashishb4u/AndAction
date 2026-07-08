@@ -10,16 +10,16 @@ export type MapProvider = "google" | "ola";
  * Which map provider to use, controlled by the MAP_CONFIG env flag.
  * MAP_CONFIG=google -> Google Maps, otherwise defaults to Ola Maps.
  */
-export function getMapProvider(): MapProvider {
+export function getMapProvider(provider?: MapProvider): MapProvider {
   const cfg = String(process.env.MAP_CONFIG || "ola").trim().toLowerCase();
-  return cfg === "google" ? "google" : "ola";
+  return provider || (cfg === "google" ? "google" : "ola");
 }
 
 /**
  * API key for the currently selected map provider.
  */
-export function getMapApiKey(): string {
-  return getMapProvider() === "google"
+export function getMapApiKey(provider?: MapProvider): string {
+  return getMapProvider(provider) === "google"
     ? String(process.env.GOOGLE_MAPS_API_KEY || "").trim()
     : String(process.env.OLA_MAPS_API_KEY || "").trim();
 }
@@ -44,8 +44,9 @@ export async function fetchGeocode(opts: {
   address?: string;
   latlng?: string;
 }): Promise<GeocodeFetchResult> {
-  const provider = getMapProvider();
-  const apiKey = getMapApiKey();
+  // const provider = getMapProvider();
+  const provider = "ola"; // using OLA for current location.
+  const apiKey = getMapApiKey(provider);
   if (!apiKey) {
     return {
       results: [],
@@ -57,23 +58,15 @@ export async function fetchGeocode(opts: {
   let url = "";
   let headers: Record<string, string> = {};
 
-  if (provider === "google") {
-    const param = opts.latlng
-      ? `latlng=${encodeURIComponent(opts.latlng)}`
-      : `address=${encodeURIComponent(opts.address || "")}`;
-    url = `https://maps.googleapis.com/maps/api/geocode/json?${param}&key=${encodeURIComponent(
-      apiKey,
-    )}`;
-  } else {
-    url = opts.latlng
-      ? `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${encodeURIComponent(
-          opts.latlng,
-        )}`
-      : `https://api.olamaps.io/places/v1/geocode?address=${encodeURIComponent(
-          opts.address || "",
-        )}`;
-    headers = { "X-API-Key": apiKey };
-  }
+  console.log(opts, "---------------");
+  url = opts.latlng
+    ? `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${encodeURIComponent(
+        opts.latlng,
+      )}`
+    : `https://api.olamaps.io/places/v1/geocode?address=${encodeURIComponent(
+        opts.address || "",
+      )}`;
+  headers = { "X-API-Key": apiKey };
 
   const response = await fetch(url, { headers });
   const data = await response.json().catch(() => null);
@@ -114,10 +107,8 @@ export async function fetchGeocodeResults(opts: {
  * Multi-suggestion search for autocomplete UIs.
  *
  * Ola's geocode endpoint already returns several candidates, so we reuse it.
- * Google's Geocoding API only returns the single best match, so for Google we
- * use Places Autocomplete to get the candidate list and Place Details to fill
- * each one's coordinates/address_components. Both paths return items in the
- * same address_components/geometry shape, so callers parse them identically.
+ * For Google, keep the search path to a single Autocomplete call and defer the
+ * richer Place Details lookup until the user selects a suggestion.
  */
 export async function fetchGeocodeSuggestions(
   query: string,
@@ -137,7 +128,6 @@ export async function fetchGeocodeSuggestions(
     return fetchGeocode({ address: query });
   }
 
-  // 1) Places Autocomplete -> candidate list
   const acUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
     query,
   )}&components=country:in&key=${encodeURIComponent(apiKey)}`;
@@ -148,7 +138,6 @@ export async function fetchGeocodeSuggestions(
   const predictions = Array.isArray(acData?.predictions)
     ? acData.predictions
     : [];
-
   if (predictions.length === 0) {
     if (acError || (acStatus && acStatus !== "OK" && acStatus !== "ZERO_RESULTS")) {
       console.warn(
@@ -158,27 +147,60 @@ export async function fetchGeocodeSuggestions(
     return { results: [], status: acStatus, error: acError };
   }
 
-  const placeIds: string[] = predictions
-    .slice(0, limit)
-    .map((p: any) => String(p?.place_id || ""))
-    .filter(Boolean);
+  return { results: predictions.slice(0, limit), status: acStatus ?? "OK", error: acError };
+}
 
-  // 2) Place Details -> coordinates + address_components (same shape as geocode)
-  const detailResults = await Promise.all(
-    placeIds.map(async (pid) => {
-      const dUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
-        pid,
-      )}&fields=formatted_address,name,geometry,address_components&key=${encodeURIComponent(
-        apiKey,
-      )}`;
-      const dResp = await fetch(dUrl);
-      const dData = await dResp.json().catch(() => null);
-      return dData?.result ?? null;
-    }),
-  );
+export async function fetchPlaceDetails(placeId: string): Promise<GeocodeFetchResult> {
+  const provider = getMapProvider();
+  const apiKey = getMapApiKey();
+  const normalizedPlaceId = String(placeId || "").trim();
 
-  const results = detailResults.filter(Boolean);
-  return { results, status: "OK" };
+  if (!apiKey) {
+    return {
+      results: [],
+      status: "NOT_CONFIGURED",
+      error: `${provider} map API key is not set`,
+    };
+  }
+
+  if (!normalizedPlaceId) {
+    return {
+      results: [],
+      status: "INVALID_REQUEST",
+      error: "placeId is required",
+    };
+  }
+
+  if (provider !== "google") {
+    return {
+      results: [],
+      status: "UNSUPPORTED_PROVIDER",
+      error: "Place details lookup is only available for Google Maps",
+    };
+  }
+
+  const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
+    normalizedPlaceId,
+  )}&fields=formatted_address,name,geometry,address_components&key=${encodeURIComponent(
+    apiKey,
+  )}`;
+  const response = await fetch(detailsUrl);
+  const data = await response.json().catch(() => null);
+  const status: string | undefined = data?.status;
+  const error: string | undefined = data?.error_message;
+  const result = data?.result ?? null;
+
+  if (!result && (error || (status && status !== "OK" && status !== "ZERO_RESULTS"))) {
+    console.warn(
+      `[geocode:google:details] status=${status ?? "?"} error=${error ?? "?"}`,
+    );
+  }
+
+  return {
+    results: result ? [result] : [],
+    status,
+    error,
+  };
 }
 
 /**
