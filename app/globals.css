@@ -2,8 +2,11 @@
 .sidebar-responsive {
   width: min(90vw, 22rem);
   max-width: 400px;
+  /* vh fallback first, then dvh so mobile browser chrome doesn't cut off / block scroll */
   height: 100vh;
+  height: 100dvh;
   max-height: 100vh;
+  max-height: 100dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
 }

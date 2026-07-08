@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import { getMapApiKey, fetchGeocode } from "@/lib/geocoding";
 
 /**
  * GET /api/geocode/pincode?pin=<pincode>
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const apiKey = process.env.OLA_MAPS_API_KEY;
+    const apiKey = getMapApiKey();
     if (!apiKey) {
       return errorResponse(
         "Location service is not configured",
@@ -33,20 +34,9 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const url = `https://api.olamaps.io/places/v1/geocode?address=${encodeURIComponent(
-      `${pincode}, India`
-    )}`;
-
-    const response = await fetch(url, {
-      headers: {
-        "X-API-Key": apiKey,
-      },
+    const { results: geocodingResults, status, error } = await fetchGeocode({
+      address: `${pincode}, India`,
     });
-
-    const data = await response.json().catch(() => null);
-    const geocodingResults = Array.isArray(data?.geocodingResults)
-      ? data.geocodingResults
-      : [];
 
     if (geocodingResults.length > 0) {
       const item = geocodingResults[0];
@@ -93,6 +83,14 @@ export async function GET(req: NextRequest) {
         },
         "Location fetched successfully",
         200
+      );
+    }
+
+    if (error || (status && status !== "OK" && status !== "ZERO_RESULTS")) {
+      return errorResponse(
+        error || `Location provider error (${status})`,
+        status || "GEOCODE_PROVIDER_ERROR",
+        502
       );
     }
 

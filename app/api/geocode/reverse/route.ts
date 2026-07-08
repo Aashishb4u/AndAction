@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import { getMapApiKey, fetchGeocode } from "@/lib/geocoding";
 
 type AddressComponent = {
   long_name?: unknown;
@@ -104,7 +105,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const apiKey = process.env.OLA_MAPS_API_KEY;
+    const apiKey = getMapApiKey();
     if (!apiKey) {
       return errorResponse(
         "Location service is not configured",
@@ -113,24 +114,18 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const url = `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${encodeURIComponent(
-      `${lat},${lon}`
-    )}`;
-
-    const response = await fetch(url, {
-      headers: {
-        "X-API-Key": apiKey,
-      },
+    const { results, status, error } = await fetchGeocode({
+      latlng: `${lat},${lon}`,
     });
 
-    const data = await response.json().catch(() => null);
-    const results = Array.isArray(data?.results)
-      ? data.results
-      : Array.isArray(data?.geocodingResults)
-        ? data.geocodingResults
-        : [];
-
     if (results.length === 0) {
+      if (error || (status && status !== "OK" && status !== "ZERO_RESULTS")) {
+        return errorResponse(
+          error || `Location provider error (${status})`,
+          status || "GEOCODE_PROVIDER_ERROR",
+          502
+        );
+      }
       return errorResponse(
         "Could not find address for this location",
         "NOT_FOUND",

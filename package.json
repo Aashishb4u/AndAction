@@ -18,6 +18,7 @@
     "db:seed:geocode": "tsx prisma/seed-geocode.ts",
     "db:migrate:shorts": "tsx prisma/migrate-shorts-from-backup.ts",
     "db:reset": "prisma migrate reset",
+    "test:geocode": "tsx scripts/test-geocode.ts",
     "postinstall": "npx prisma generate",
     "cron:jobs": "pm2 start scripts/cron-jobs.js --name andaction-cron"
 

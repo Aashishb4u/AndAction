@@ -4,6 +4,183 @@ interface GeocodeResult {
   formattedAddress?: string;
 }
 
+export type MapProvider = "google" | "ola";
+
+/**
+ * Which map provider to use, controlled by the MAP_CONFIG env flag.
+ * MAP_CONFIG=google -> Google Maps, otherwise defaults to Ola Maps.
+ */
+export function getMapProvider(): MapProvider {
+  const cfg = String(process.env.MAP_CONFIG || "ola").trim().toLowerCase();
+  return cfg === "google" ? "google" : "ola";
+}
+
+/**
+ * API key for the currently selected map provider.
+ */
+export function getMapApiKey(): string {
+  return getMapProvider() === "google"
+    ? String(process.env.GOOGLE_MAPS_API_KEY || "").trim()
+    : String(process.env.OLA_MAPS_API_KEY || "").trim();
+}
+
+export interface GeocodeFetchResult {
+  results: any[];
+  /** Provider status, e.g. Google's "OK" | "REQUEST_DENIED" | "ZERO_RESULTS". */
+  status?: string;
+  /** Human-readable provider error, e.g. Google's error_message. */
+  error?: string;
+}
+
+/**
+ * Fetch geocoding results from the active map provider, along with the raw
+ * provider status/error so callers can surface real failures (bad key, quota,
+ * referer restriction) instead of masking them as "no results".
+ * Both Ola Maps and Google Maps return the same address_components/geometry
+ * shape, so callers can parse `results` identically.
+ * Pass `address` for forward geocoding or `latlng` ("lat,lng") for reverse.
+ */
+export async function fetchGeocode(opts: {
+  address?: string;
+  latlng?: string;
+}): Promise<GeocodeFetchResult> {
+  const provider = getMapProvider();
+  const apiKey = getMapApiKey();
+  if (!apiKey) {
+    return {
+      results: [],
+      status: "NOT_CONFIGURED",
+      error: `${provider} map API key is not set`,
+    };
+  }
+
+  let url = "";
+  let headers: Record<string, string> = {};
+
+  if (provider === "google") {
+    const param = opts.latlng
+      ? `latlng=${encodeURIComponent(opts.latlng)}`
+      : `address=${encodeURIComponent(opts.address || "")}`;
+    url = `https://maps.googleapis.com/maps/api/geocode/json?${param}&key=${encodeURIComponent(
+      apiKey,
+    )}`;
+  } else {
+    url = opts.latlng
+      ? `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${encodeURIComponent(
+          opts.latlng,
+        )}`
+      : `https://api.olamaps.io/places/v1/geocode?address=${encodeURIComponent(
+          opts.address || "",
+        )}`;
+    headers = { "X-API-Key": apiKey };
+  }
+
+  const response = await fetch(url, { headers });
+  const data = await response.json().catch(() => null);
+
+  const results = Array.isArray(data?.results)
+    ? data.results
+    : Array.isArray(data?.geocodingResults)
+      ? data.geocodingResults
+      : [];
+
+  const status: string | undefined = data?.status;
+  const error: string | undefined = data?.error_message ?? data?.message;
+
+  if (
+    results.length === 0 &&
+    (error || (status && status !== "OK" && status !== "ZERO_RESULTS"))
+  ) {
+    console.warn(
+      `[geocode:${provider}] status=${status ?? "?"} error=${error ?? "?"}`,
+    );
+  }
+
+  return { results, status, error };
+}
+
+/**
+ * Convenience wrapper that returns only the results array.
+ */
+export async function fetchGeocodeResults(opts: {
+  address?: string;
+  latlng?: string;
+}): Promise<any[]> {
+  const { results } = await fetchGeocode(opts);
+  return results;
+}
+
+/**
+ * Multi-suggestion search for autocomplete UIs.
+ *
+ * Ola's geocode endpoint already returns several candidates, so we reuse it.
+ * Google's Geocoding API only returns the single best match, so for Google we
+ * use Places Autocomplete to get the candidate list and Place Details to fill
+ * each one's coordinates/address_components. Both paths return items in the
+ * same address_components/geometry shape, so callers parse them identically.
+ */
+export async function fetchGeocodeSuggestions(
+  query: string,
+  limit = 6,
+): Promise<GeocodeFetchResult> {
+  const provider = getMapProvider();
+  const apiKey = getMapApiKey();
+  if (!apiKey) {
+    return {
+      results: [],
+      status: "NOT_CONFIGURED",
+      error: `${provider} map API key is not set`,
+    };
+  }
+
+  if (provider !== "google") {
+    return fetchGeocode({ address: query });
+  }
+
+  // 1) Places Autocomplete -> candidate list
+  const acUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+    query,
+  )}&components=country:in&key=${encodeURIComponent(apiKey)}`;
+  const acResp = await fetch(acUrl);
+  const acData = await acResp.json().catch(() => null);
+  const acStatus: string | undefined = acData?.status;
+  const acError: string | undefined = acData?.error_message;
+  const predictions = Array.isArray(acData?.predictions)
+    ? acData.predictions
+    : [];
+
+  if (predictions.length === 0) {
+    if (acError || (acStatus && acStatus !== "OK" && acStatus !== "ZERO_RESULTS")) {
+      console.warn(
+        `[geocode:google:autocomplete] status=${acStatus ?? "?"} error=${acError ?? "?"}`,
+      );
+    }
+    return { results: [], status: acStatus, error: acError };
+  }
+
+  const placeIds: string[] = predictions
+    .slice(0, limit)
+    .map((p: any) => String(p?.place_id || ""))
+    .filter(Boolean);
+
+  // 2) Place Details -> coordinates + address_components (same shape as geocode)
+  const detailResults = await Promise.all(
+    placeIds.map(async (pid) => {
+      const dUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
+        pid,
+      )}&fields=formatted_address,name,geometry,address_components&key=${encodeURIComponent(
+        apiKey,
+      )}`;
+      const dResp = await fetch(dUrl);
+      const dData = await dResp.json().catch(() => null);
+      return dData?.result ?? null;
+    }),
+  );
+
+  const results = detailResults.filter(Boolean);
+  return { results, status: "OK" };
+}
+
 /**
  * Geocode a free-form address/query using Ola Maps Geocoding API.
  * This is intentionally NOT backed by any static city coordinate table.
@@ -15,24 +192,13 @@ export async function geocodeQuery(query: string): Promise<GeocodeResult | null>
   }
 
   try {
-    const apiKey = process.env.OLA_MAPS_API_KEY;
+    const apiKey = getMapApiKey();
     if (!apiKey) {
-      console.warn("OLA_MAPS_API_KEY not set, skipping external geocoding");
+      console.warn("Map API key not set, skipping external geocoding");
       return null;
     }
 
-    const url = `https://api.olamaps.io/places/v1/geocode?address=${encodeURIComponent(normalizedQuery)}`;
-
-    const response = await fetch(url, {
-      headers: {
-        "X-API-Key": apiKey,
-      },
-    });
-
-    const data = await response.json().catch(() => null);
-    const geocodingResults = Array.isArray(data?.geocodingResults)
-      ? data.geocodingResults
-      : [];
+    const geocodingResults = await fetchGeocodeResults({ address: normalizedQuery });
 
     if (geocodingResults.length > 0) {
       const first = geocodingResults[0];
