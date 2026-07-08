@@ -1,10 +1,14 @@
 import { NextRequest } from "next/server";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { getMapApiKey, fetchGeocodeSuggestions } from "@/lib/geocoding";
+import {
+  getMapApiKey,
+  getMapProvider,
+  fetchGeocodeSuggestions,
+} from "@/lib/geocoding";
 
 /**
  * GET /api/geocode/search?q=<query>
- * Search for addresses in India using Ola Maps
+ * Search for addresses in India using the active map provider
  * Returns structured location suggestions for autocomplete
  */
 export async function GET(req: NextRequest) {
@@ -25,6 +29,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const provider = getMapProvider();
     const { results: geocodingResults, status, error } =
       await fetchGeocodeSuggestions(query);
 
@@ -40,6 +45,35 @@ export async function GET(req: NextRequest) {
     }
 
     const results = geocodingResults.slice(0, 6).map((item: any) => {
+      if (provider === "google") {
+        const displayName = String(item?.description ?? "").trim();
+        const shortAddress = String(
+          item?.structured_formatting?.secondary_text ?? displayName,
+        ).trim();
+        const terms = Array.isArray(item?.terms)
+          ? item.terms
+              .map((term: any) => String(term?.value ?? "").trim())
+              .filter(Boolean)
+          : [];
+        const nonCountryTerms = terms.filter(
+          (term: string) => term.toLowerCase() !== "india",
+        );
+        const state = nonCountryTerms.at(-1) ?? "";
+        const city = nonCountryTerms.at(-2) ?? "";
+        const postcodeMatch = displayName.match(/\b\d{6}\b/);
+
+        return {
+          displayName,
+          shortAddress: shortAddress || displayName,
+          city,
+          state,
+          postcode: postcodeMatch?.[0] ?? "",
+          lat: "",
+          lon: "",
+          placeId: String(item?.place_id ?? ""),
+        };
+      }
+
       const formattedAddress = String(
         item?.formatted_address ?? item?.name ?? ""
       );
@@ -81,6 +115,7 @@ export async function GET(req: NextRequest) {
         postcode,
         lat: lat != null ? String(lat) : "",
         lon: lon != null ? String(lon) : "",
+        placeId: "",
       };
     });
 

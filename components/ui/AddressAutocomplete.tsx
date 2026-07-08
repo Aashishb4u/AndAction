@@ -11,6 +11,7 @@ interface LocationSuggestion {
   postcode: string;
   lat: string;
   lon: string;
+  placeId?: string;
 }
 
 interface AddressAutocompleteProps {
@@ -45,6 +46,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isResolvingSelection, setIsResolvingSelection] = useState(false);
   const [isFetchingGPS, setIsFetchingGPS] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -106,26 +108,50 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   };
 
   // Select a suggestion
-  const handleSelect = (suggestion: LocationSuggestion) => {
-    const normalizedState = normalizeState(suggestion.state);
-    const normalizedCity = normalizeCity(suggestion.city);
-    const lat = Number(suggestion.lat);
-    const lon = Number(suggestion.lon);
-    const hasCoords = Number.isFinite(lat) && Number.isFinite(lon);
+  const handleSelect = async (suggestion: LocationSuggestion) => {
+    try {
+      setIsResolvingSelection(true);
 
-    onChange(suggestion.displayName || suggestion.shortAddress);
-    onLocationSelect({
-      address: suggestion.displayName || suggestion.shortAddress,
-      city: normalizedCity,
-      state: normalizedState,
-      pinCode: suggestion.postcode || "",
-      latitude: hasCoords ? lat : null,
-      longitude: hasCoords ? lon : null,
-      source: "search",
-    });
+      let selected = suggestion;
+      if (suggestion.placeId) {
+        const res = await fetch(
+          `/api/geocode/details?placeId=${encodeURIComponent(suggestion.placeId)}`,
+        );
+        const data = await res.json();
 
-    setIsOpen(false);
-    setSuggestions([]);
+        if (data.success && data.data) {
+          selected = {
+            ...selected,
+            ...data.data,
+            placeId: suggestion.placeId,
+          };
+        }
+      }
+
+      const normalizedState = normalizeState(selected.state);
+      const normalizedCity = normalizeCity(selected.city);
+      const lat = Number(selected.lat);
+      const lon = Number(selected.lon);
+      const hasCoords = Number.isFinite(lat) && Number.isFinite(lon);
+
+      onChange(selected.displayName || selected.shortAddress);
+      onLocationSelect({
+        address: selected.displayName || selected.shortAddress,
+        city: normalizedCity,
+        state: normalizedState,
+        pinCode: selected.postcode || "",
+        latitude: hasCoords ? lat : null,
+        longitude: hasCoords ? lon : null,
+        source: "search",
+      });
+
+      setIsOpen(false);
+      setSuggestions([]);
+    } catch (err) {
+      console.error("Address detail lookup error:", err);
+    } finally {
+      setIsResolvingSelection(false);
+    }
   };
 
   // Use current GPS location
@@ -287,7 +313,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             if (suggestions.length > 0) setIsOpen(true);
           }}
           required={required}
-          disabled={disabled || isFetchingGPS}
+          disabled={disabled || isFetchingGPS || isResolvingSelection}
           autoComplete="off"
         />
 
@@ -295,7 +321,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         {/* <button
           type="button"
           onClick={handleUseCurrentLocation}
-          disabled={disabled || isFetchingGPS}
+          disabled={disabled || isFetchingGPS || isResolvingSelection}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-text-gray hover:text-primary-pink transition-colors disabled:opacity-50"
           title="Use current location"
         >
@@ -342,7 +368,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         </button> */}
 
         {/* Loading indicator */}
-        {isSearching && (
+        {(isSearching || isResolvingSelection) && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <div className="w-4 h-4 border-2 border-primary-pink border-t-transparent rounded-full animate-spin" />
           </div>
@@ -375,7 +401,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
           {suggestions.map((suggestion, index) => (
             <button
-              key={`${suggestion.lat}-${suggestion.lon}-${index}`}
+              key={suggestion.placeId || `${suggestion.lat}-${suggestion.lon}-${index}`}
               type="button"
               onClick={() => handleSelect(suggestion)}
               className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${
@@ -408,10 +434,14 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                     {suggestion.displayName}
                   </span>
                   <span className="text-xs text-text-gray truncate mt-0.5">
-                    {[suggestion.city, suggestion.state]
+                    {[
+                      [suggestion.city, suggestion.state]
+                        .filter(Boolean)
+                        .join(", "),
+                      suggestion.postcode,
+                    ]
                       .filter(Boolean)
-                      .join(", ")}
-                    {suggestion.postcode ? ` ${suggestion.postcode}` : ""}
+                      .join(" ") || suggestion.shortAddress}
                   </span>
                 </div>
               </div>
