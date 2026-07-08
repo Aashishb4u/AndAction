@@ -4,13 +4,13 @@ import PageLayout from "@/components/layout/PageLayout";
 import { Shield, Eye, Lock, Users, Mail, Phone } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy - ANDACTION | Your Data Protection & Privacy Rights",
+  title: "Privacy Policy - AndAction | Your Data Protection & Privacy Rights",
   description:
-    "Learn how ANDACTION protects your personal information, data collection practices, cookie usage, and your privacy rights. Updated privacy policy for transparent data handling.",
+    "Learn how AndAction protects your personal information, data collection practices, cookie usage, and your privacy rights. Updated privacy policy for transparent data handling.",
   keywords:
-    "privacy policy, data protection, ANDACTION privacy, personal information, cookies, user rights, data security",
+    "privacy policy, data protection, AndAction privacy, personal information, cookies, user rights, data security",
   openGraph: {
-    title: "Privacy Policy - ANDACTION",
+    title: "Privacy Policy - AndAction",
     description:
       "Your privacy matters to us. Learn how we protect and handle your personal information.",
     type: "website",
@@ -122,17 +122,17 @@ const PrivacyPage = () => {
         {/* Introduction */}
         <section>
           <p className="text-text-light-gray leading-relaxed mb-6">
-            ANDACTION is a brand owned and operated by MINDFUL TECH INNOVATIONS
+            AndAction is a brand owned and operated by MINDFUL TECH INNOVATIONS
             (OPC) PVT LTD, a registered company under the laws of India.
           </p>
           <p className="text-text-light-gray leading-relaxed mb-6">
-            At ANDACTION, we are committed to protecting your privacy and
+            At AndAction, we are committed to protecting your privacy and
             ensuring the security of your personal information. This Privacy
             Policy explains how we collect, use, disclose, and safeguard your
             information when you use our platform and services.
           </p>
           <p className="text-text-light-gray leading-relaxed">
-            By using ANDACTION, you agree to the collection and use of
+            By using AndAction, you agree to the collection and use of
             information in accordance with this policy. We encourage you to read
             this policy carefully and contact us if you have any questions.
           </p>
@@ -192,7 +192,7 @@ const PrivacyPage = () => {
           </h2>
           <div className="bg-gradient-to-r from-primary-orange/10 to-primary-pink/10 rounded-xl p-6 border border-primary-pink/20">
             <p className="text-text-light-gray mb-4">
-              As a user of ANDACTION, you have the right to:
+              As a user of AndAction, you have the right to:
             </p>
             <ul className="space-y-2">
               {userRights.map((right, index) => (
@@ -219,11 +219,11 @@ const PrivacyPage = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
-              href="mailto:official@andaction.in"
+              href="mailto:official@AndAction.in"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
             >
               <Mail className="w-4 h-4" />
-              <span>official@andaction.in</span>
+              <span>official@AndAction.in</span>
             </a>
             <a
               href="tel:+918595114889"

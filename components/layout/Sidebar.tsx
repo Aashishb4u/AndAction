@@ -96,6 +96,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       isActive: pathname === "/terms",
     },
     {
+      label: "Disclaimer",
+      href: "/disclaimer",
+      isActive: pathname === "/disclaimer",
+    },
+    {
       label: "Privacy Policy",
       href: "/privacy",
       isActive: pathname === "/privacy",
@@ -195,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-screen max-h-screen w-80 max-w-full sm:w-96 bg-background border-l border-background-light z-99999 transform ${
+        className={`fixed top-0 right-0 w-80 max-w-full sm:w-96 bg-background border-l border-background-light z-99999 transform ${
           mounted ? "transition-transform duration-300 ease-in-out" : ""
         } ${
           isOpen ? "translate-x-0" : "translate-x-full"
@@ -203,8 +208,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         style={{
           width: "min(90vw, 22rem)",
           maxWidth: 400,
-          height: "100vh",
-          maxHeight: "100vh",
           overflowY: "auto",
         }}
       >
