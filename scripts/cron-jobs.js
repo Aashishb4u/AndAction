@@ -18,7 +18,13 @@ const JOBS = [
   {
     name: "Instagram URL Refresh",
     slug: "refresh-instagram-urls",
-    schedule: "0 6 * * *",
+    schedule: "0 9 * * *",
+    endpoint: "/api/cron/refresh-instagram-urls",
+  }, 
+  {
+    name: "Instagram URL Refresh",
+    slug: "refresh-instagram-urls",
+    schedule: "0 10 * * *",
     endpoint: "/api/cron/refresh-instagram-urls",
   },
   {
@@ -26,6 +32,12 @@ const JOBS = [
     slug: "sync-youtube-videos",
     schedule: "30 0 * * *",
     endpoint: "/api/cron/sync-youtube-videos",
+  },
+  {
+    name: "Instagram Prospect Discovery",
+    slug: "discover-instagram-prospects",
+    schedule: "30 10 * * *",
+    endpoint: "/api/cron/discover-instagram-prospects",
   },
 ];
 

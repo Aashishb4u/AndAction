@@ -46,6 +46,8 @@ model User {
   artists                 Artist[]
   bookings                Booking[]
   bookmarks               Bookmark[]
+  acceptedProspects       Prospect[] @relation("ProspectAcceptedBy")
+  convertedFromProspect   Prospect?  @relation("ProspectConvertedUser")
   sessions                Session[]
   videos                  Video[]
 
@@ -135,6 +137,7 @@ model Artist {
   updatedAt                      DateTime   @updatedAt
   profileImage                   String?
   profileOrder                   Int        @default(0)
+  convertedFromProspect          Prospect?  @relation("ProspectConvertedArtist")
   user                           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookingsReceived               Booking[]
   bookmarkedByUsers              Bookmark[]
@@ -196,23 +199,23 @@ model Bookmark {
 }
 
 model Booking {
-  id            String        @id @default(cuid())
-  clientId      String
-  artistId      String
+  id                String        @id @default(cuid())
+  clientId          String
+  artistId          String
   clientPhoneNumber String?
-  state         String?
-  city          String?
-  eventDate     DateTime
-  eventType     String?
-  eventLocation String?
-  eventAddress  String?
-  totalPrice    Decimal       @db.Decimal(10, 2)
-  status        BookingStatus @default(PENDING)
-  notes         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  artist        Artist        @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  client        User          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  state             String?
+  city              String?
+  eventDate         DateTime
+  eventType         String?
+  eventLocation     String?
+  eventAddress      String?
+  totalPrice        Decimal       @db.Decimal(10, 2)
+  status            BookingStatus @default(PENDING)
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  artist            Artist        @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  client            User          @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   // @@unique([artistId, eventDate])
   @@index([clientId])
@@ -237,19 +240,90 @@ model CronJob {
 }
 
 model InstagramDiscoveryConfig {
-  id                String   @id
-  appId             String?
-  appSecret         String?
-  graphVersion      String?
-  businessAccountId String?
-  accessToken       String?
-  tokenExpiresAt    DateTime?
-  lastRefreshedAt   DateTime?
-  lastError         String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                                   String    @id
+  appId                                String?
+  appSecret                            String?
+  graphVersion                         String?
+  businessAccountId                    String?
+  accessToken                          String?
+  tokenExpiresAt                       DateTime?
+  lastRefreshedAt                      DateTime?
+  lastError                            String?
+  prospectDiscoveryQueries             Json?
+  prospectDiscoveryLocation            String?
+  prospectDiscoveryGoogleDomain        String?
+  prospectDiscoveryHl                  String?
+  prospectDiscoveryGl                  String?
+  prospectDiscoveryMaxResults          Int?
+  prospectDiscoveryMediaLimit          Int?
+  prospectDiscoveryRequestDelayMs      Int?
+  prospectDiscoveryStartIncrement      Int?
+  prospectDiscoveryPagesPerQuery       Int?
+  prospectDiscoveryCurrentQueryIndex   Int?
+  prospectDiscoveryCurrentStart        Int?
+  prospectDiscoveryLastCursorUpdatedAt DateTime?
+  createdAt                            DateTime  @default(now())
+  updatedAt                            DateTime  @updatedAt
 
   @@map("instagram_discovery_configs")
+}
+
+model Prospect {
+  id                             String    @id @default(cuid())
+  stageName                      String?
+  artistType                     String?
+  subArtistType                  String?
+  achievements                   String?
+  yearsOfExperience              Int?
+  shortBio                       String?
+  biography                      String?
+  performingLanguage             String?
+  performingEventType            String?
+  performingStates               String?
+  performingDurationFrom         String?
+  performingDurationTo           String?
+  performingMembers              String?
+  offStageMembers                String?
+  contactNumber                  String?
+  whatsappNumber                 String?
+  contactEmail                   String?
+  countryCode                    String?
+  soloChargesFrom                Decimal?  @db.Decimal(10, 2)
+  soloChargesTo                  Decimal?  @db.Decimal(10, 2)
+  soloChargesDescription         String?
+  chargesWithBacklineFrom        Decimal?  @db.Decimal(10, 2)
+  chargesWithBacklineTo          Decimal?  @db.Decimal(10, 2)
+  chargesWithBacklineDescription String?
+  instagramId                    String?   @unique
+  instagramUsername              String?   @unique
+  profileImage                   String?
+  website                        String?
+  followersCount                 Int?
+  followsCount                   Int?
+  mediaCount                     Int?
+  source                         String    @default("serpapi_instagram_discovery")
+  sourceQuery                    String?
+  sourceTitle                    String?
+  sourceSnippet                  String?
+  sourceLink                     String?
+  status                         String    @default("pending")
+  discoveredAt                   DateTime  @default(now())
+  lastEnrichedAt                 DateTime?
+  acceptedAt                     DateTime?
+  rejectedAt                     DateTime?
+  convertedUserId                String?   @unique
+  convertedArtistId              String?   @unique
+  acceptedByUserId               String?
+  createdAt                      DateTime  @default(now())
+  updatedAt                      DateTime  @updatedAt
+  acceptedByUser                 User?     @relation("ProspectAcceptedBy", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+  convertedArtist                Artist?   @relation("ProspectConvertedArtist", fields: [convertedArtistId], references: [id], onDelete: SetNull)
+  convertedUser                  User?     @relation("ProspectConvertedUser", fields: [convertedUserId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([instagramUsername])
+  @@index([discoveredAt])
+  @@map("prospects")
 }
 
 model admins {
