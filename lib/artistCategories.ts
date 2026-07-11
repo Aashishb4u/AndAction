@@ -20,6 +20,26 @@ export const TITLE_MAP: Record<string, string> = {
   models: "Model",
 };
 
+export const DISCOVERY_TITLE_VALUES = [
+  "Live Band",
+  "Devotional Singer",
+  "Spiritual Singer",
+  "Singer",
+  "Anchor/Emcee/Host",
+  "DJ/VJ",
+  "DJ based Band",
+  "DJ Percussionist",
+  "Musician/Instrumentalist",
+  "Dancer/Dance group",
+  "Magicial/Illusionist",
+  "Comedian/Mimicry",
+  "Special act performer",
+  "Motivational speaker",
+  "Kids Entertainer",
+  "Folk Artist",
+  "Model",
+];
+
 export const PREFERRED_ORDER = [
   "liveBands",
   "devotionalSpiritualSingers",
