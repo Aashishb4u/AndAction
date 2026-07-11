@@ -13,6 +13,10 @@ const APP_URL = (process.env.CRON_APP_URL || "http://127.0.0.1:3000").replace(
 const CRON_TIMEZONE = process.env.CRON_TIMEZONE || "Asia/Kolkata";
 const REQUEST_TIMEOUT_MS = Number(process.env.CRON_REQUEST_TIMEOUT_MS || 60000);
 const RUN_ON_STARTUP = process.env.CRON_RUN_ON_STARTUP === "true";
+const PROSPECT_DISCOVERY_RUNS_PER_DAY = parsePositiveInteger(
+  process.env.PROSPECT_DISCOVERY_RUNS_PER_DAY,
+  10,
+);
 
 const JOBS = [
   {
@@ -20,7 +24,7 @@ const JOBS = [
     slug: "refresh-instagram-urls",
     schedule: "0 9 * * *",
     endpoint: "/api/cron/refresh-instagram-urls",
-  }, 
+  },
   {
     name: "Instagram URL Refresh",
     slug: "refresh-instagram-urls",
@@ -33,13 +37,16 @@ const JOBS = [
     schedule: "30 0 * * *",
     endpoint: "/api/cron/sync-youtube-videos",
   },
-  {
-    name: "Instagram Prospect Discovery",
-    slug: "discover-instagram-prospects",
-    schedule: "30 10 * * *",
-    endpoint: "/api/cron/discover-instagram-prospects",
-  },
+  ...buildProspectDiscoveryJobs(PROSPECT_DISCOVERY_RUNS_PER_DAY),
 ];
+
+// ┌───────────── Minute       (0–59)
+// │ ┌─────────── Hour         (0–23)
+// │ │ ┌───────── Day of month (1–31)
+// │ │ │ ┌─────── Month        (1–12)
+// │ │ │ │ ┌───── Day of week  (0–7)
+// │ │ │ │ │
+// * * * * *
 
 if (!CRON_SECRET) {
   console.error("❌ CRON_SECRET not found in environment variables");
@@ -64,6 +71,9 @@ console.log("🚀 Cron Jobs Runner Started");
 console.log(`📍 Target URL: ${APP_URL}`);
 console.log(`🌍 Timezone: ${CRON_TIMEZONE}`);
 console.log(`⏱️ Request timeout: ${REQUEST_TIMEOUT_MS}ms`);
+console.log(
+  `🔁 Prospect discovery runs per day: ${PROSPECT_DISCOVERY_RUNS_PER_DAY}`,
+);
 
 async function runJob(job) {
   console.log(`\n${"=".repeat(60)}`);
@@ -125,7 +135,8 @@ if (RUN_ON_STARTUP) {
   console.log(
     "▶️ CRON_RUN_ON_STARTUP=true, running all jobs once at startup...",
   );
-  JOBS.forEach((job) => {
+  const startupJobs = dedupeJobsForStartup(JOBS);
+  startupJobs.forEach((job) => {
     runJob(job).catch((error) => {
       console.error(`❌ Startup run failed for ${job.slug}:`, error.message);
     });
@@ -159,3 +170,63 @@ process.on("uncaughtException", (error) => {
   console.error("❌ Uncaught exception:", error);
   process.exit(1);
 });
+
+function parsePositiveInteger(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return Math.floor(parsed);
+}
+
+function buildProspectDiscoveryJobs(runsPerDay) {
+  const jobs = [];
+  const schedules = buildSchedulesForRunsPerDay(runsPerDay);
+
+  schedules.forEach((schedule, index) => {
+    jobs.push({
+      name: `Instagram Prospect Discovery (${index + 1}/${schedules.length})`,
+      slug: `discover-instagram-prospects-${index + 1}`,
+      schedule,
+      endpoint: "/api/cron/discover-instagram-prospects",
+    });
+  });
+
+  return jobs;
+}
+
+function buildSchedulesForRunsPerDay(runsPerDay) {
+  const totalMinutesInDay = 24 * 60;
+  const safeRunsPerDay = Math.max(Math.floor(runsPerDay), 1);
+  const schedules = [];
+  const seenSchedules = new Set();
+
+  for (let index = 0; index < safeRunsPerDay; index++) {
+    const minuteOfDay = Math.floor((index * totalMinutesInDay) / safeRunsPerDay);
+    const hour = Math.floor(minuteOfDay / 60) % 24;
+    const minute = minuteOfDay % 60;
+    const schedule = `${minute} ${hour} * * *`;
+
+    if (!seenSchedules.has(schedule)) {
+      schedules.push(schedule);
+      seenSchedules.add(schedule);
+    }
+  }
+
+  return schedules;
+}
+
+function dedupeJobsForStartup(jobs) {
+  const seen = new Set();
+
+  return jobs.filter((job) => {
+    const key = `${job.endpoint}|${job.slug.split("-").slice(0, 3).join("-")}`;
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}

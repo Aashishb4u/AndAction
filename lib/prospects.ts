@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { InstagramDiscoveryAccount } from "@/lib/instagram-discovery";
 import { buildProspectStageName, sanitizeText } from "@/lib/prospect-discovery";
+import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 
 interface UpsertProspectInput {
   username: string;
@@ -10,6 +11,9 @@ interface UpsertProspectInput {
   sourceTitle?: string | null;
   sourceSnippet?: string | null;
   sourceLink?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
 }
 
 interface AcceptProspectInput {
@@ -29,6 +33,9 @@ export async function upsertProspectFromInstagramDiscovery(
     existingArtistFilters.push({ instagramId: input.account.id });
   }
 
+  const contactNumbers = extractPhoneNumbers(input.account.biography || "");
+  const artistType = getArtistTypeFromDiscoveryQuery(input.sourceQuery);
+
   const existingArtist = await prisma.artist.findFirst({
     where: {
       OR: existingArtistFilters,
@@ -37,33 +44,38 @@ export async function upsertProspectFromInstagramDiscovery(
   });
 
   if (existingArtist) {
-    return { skippedBecauseArtistExists: true as const, prospect: null };
+    return {
+      skippedBecauseArtistExists: true as const,
+      skippedBecauseProspectExists: false as const,
+      prospect: null,
+    };
   }
 
-  const prospect = await prisma.prospect.upsert({
-    where: { instagramUsername: normalizedUsername },
-    update: {
-      stageName: buildProspectStageName({
-        account: input.account,
-        title: input.sourceTitle,
-        username: normalizedUsername,
-      }),
-      shortBio: sanitizeText(input.account.biography),
-      biography: sanitizeText(input.account.biography),
-      instagramId: input.account.id,
-      instagramUsername: normalizedUsername,
-      profileImage: input.account.profile_picture_url || null,
-      website: sanitizeText(input.account.website),
-      followersCount: input.account.followers_count ?? null,
-      followsCount: input.account.follows_count ?? null,
-      mediaCount: input.account.media_count ?? null,
-      sourceQuery: sanitizeText(input.sourceQuery),
-      sourceTitle: sanitizeText(input.sourceTitle),
-      sourceSnippet: sanitizeText(input.sourceSnippet),
-      sourceLink: input.sourceLink || null,
-      lastEnrichedAt: new Date(),
+  const existingProspectFilters: Prisma.ProspectWhereInput[] = [
+    { instagramUsername: normalizedUsername },
+  ];
+
+  if (input.account.id) {
+    existingProspectFilters.push({ instagramId: input.account.id });
+  }
+
+  const existingProspect = await prisma.prospect.findFirst({
+    where: {
+      OR: existingProspectFilters,
     },
-    create: {
+    select: { id: true },
+  });
+
+  if (existingProspect) {
+    return {
+      skippedBecauseArtistExists: false as const,
+      skippedBecauseProspectExists: true as const,
+      prospect: null,
+    };
+  }
+
+  const prospect = await prisma.prospect.create({
+    data: {
       stageName: buildProspectStageName({
         account: input.account,
         title: input.sourceTitle,
@@ -71,8 +83,11 @@ export async function upsertProspectFromInstagramDiscovery(
       }),
       shortBio: sanitizeText(input.account.biography),
       biography: sanitizeText(input.account.biography),
+      artistType,
       instagramId: input.account.id,
       instagramUsername: normalizedUsername,
+      contactNumber: contactNumbers.length > 0 ? contactNumbers[0] || null : null,
+      countryCode: "+91",
       profileImage: input.account.profile_picture_url || null,
       website: sanitizeText(input.account.website),
       followersCount: input.account.followers_count ?? null,
@@ -82,11 +97,18 @@ export async function upsertProspectFromInstagramDiscovery(
       sourceTitle: sanitizeText(input.sourceTitle),
       sourceSnippet: sanitizeText(input.sourceSnippet),
       sourceLink: input.sourceLink || null,
+      city: sanitizeText(input.city),
+      state: sanitizeText(input.state),
+      country: sanitizeText(input.country),
       lastEnrichedAt: new Date(),
     },
   });
 
-  return { skippedBecauseArtistExists: false as const, prospect };
+  return {
+    skippedBecauseArtistExists: false as const,
+    skippedBecauseProspectExists: false as const,
+    prospect,
+  };
 }
 
 export async function acceptProspectAndConvertToArtist(
@@ -168,6 +190,8 @@ export async function acceptProspectAndConvertToArtist(
         email: normalizedEmail,
         phoneNumber: normalizedPhone,
         countryCode: prospect.countryCode || (normalizedPhone ? "+91" : null),
+        city: sanitizeText(prospect.city),
+        state: sanitizeText(prospect.state),
         avatar: prospect.profileImage || null,
         image: prospect.profileImage || null,
         role: "artist",
@@ -249,6 +273,68 @@ function splitName(displayName: string): { firstName: string; lastName: string |
 
 function normalizeInstagramUsername(value: string): string {
   return value.trim().replace(/^@/, "").toLowerCase();
+}
+
+function getArtistTypeFromDiscoveryQuery(query?: string | null): string | null {
+  const normalizedQuery = sanitizeText(query);
+  if (!normalizedQuery) return null;
+
+  const strictMatch = normalizedQuery.match(
+    /^site:instagram\.com\s+"Instagram photos and videos"\s+"([^"]+)"$/i,
+  );
+  const rawType =
+    strictMatch?.[1]?.trim() ||
+    Array.from(normalizedQuery.matchAll(/"([^"]+)"/g))
+      .map((match) => match[1]?.trim())
+      .filter(Boolean)
+      .at(-1) ||
+    "";
+
+  if (!rawType) {
+    return null;
+  }
+
+  return getArtistTypeMatches(rawType)[0] || rawType;
+}
+
+const MATHEMATICAL_BOLD_DIGITS = "𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗";
+
+function extractPhoneNumbers(text: string): string[] {
+  if (!text) return [];
+
+  // Convert fancy unicode digits (𝟘𝟙𝟚...) to normal digits
+  const normalized = Array.from(text, (char) => {
+    const digitIndex = MATHEMATICAL_BOLD_DIGITS.indexOf(char);
+    return digitIndex >= 0 ? String(digitIndex) : char;
+  }).join("");
+
+  // Match phone-like strings
+  const matches =
+    normalized.match(/(?:\+?\d[\d\s().-]{8,}\d)/g) || [];
+
+  const numbers = [];
+
+  for (let phone of matches) {
+    // Keep only digits
+    phone = phone.replace(/\D/g, "");
+
+    // Remove country code 91
+    if (phone.length === 12 && phone.startsWith("91")) {
+      phone = phone.substring(2);
+    }
+
+    // Sometimes people write 091xxxxxxxxxx
+    if (phone.length === 11 && phone.startsWith("0")) {
+      phone = phone.substring(1);
+    }
+
+    // Validate Indian mobile number
+    if (/^[6-9]\d{9}$/.test(phone)) {
+      numbers.push(phone);
+    }
+  }
+
+  return [...new Set(numbers)];
 }
 
 function normalizeEmail(value?: string | null): string | null {

@@ -69,6 +69,7 @@ export interface ProspectDiscoveryDebugEntry {
   link: string | null;
   username: string | null;
   accepted: boolean;
+  result: SerpApiOrganicResult | null;
   rejectionReason: string | null;
   snippet: string | null;
 }
@@ -115,6 +116,8 @@ export async function discoverInstagramProspectsFromSerpApi(
     api_key: apiKey,
   });
 
+  console.log(searchParams.toString(), "searchParams =============> ");
+
   const response = await fetch(`https://serpapi.com/search?${searchParams.toString()}`);
   const data = (await response.json().catch(() => ({}))) as SerpApiSearchResponse & {
     error?: string;
@@ -149,6 +152,7 @@ export async function discoverInstagramProspectsFromSerpApi(
             title,
             link: result.link || null,
             username,
+            result,
             accepted: !rejectionReason,
             rejectionReason,
             snippet,

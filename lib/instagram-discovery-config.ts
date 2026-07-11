@@ -1,12 +1,13 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { DISCOVERY_TITLE_VALUES } from "@/lib/artistCategories";
 
 const INSTAGRAM_DISCOVERY_CONFIG_ID = "default";
 const DEFAULT_GRAPH_VERSION = "v24.0";
 const REFRESH_WINDOW_MS = 5 * 24 * 60 * 60 * 1000;
-const DEFAULT_PROSPECT_DISCOVERY_QUERY =
-  'site:instagram.com "Instagram photos and videos" "spiritual singer"';
-const DEFAULT_PROSPECT_DISCOVERY_LOCATION = "India";
+const DEFAULT_PROSPECT_DISCOVERY_CITY = "Pune";
+const DEFAULT_PROSPECT_DISCOVERY_STATE = "Maharashtra";
+const DEFAULT_PROSPECT_DISCOVERY_COUNTRY = "India";
 const DEFAULT_PROSPECT_DISCOVERY_GOOGLE_DOMAIN = "google.co.in";
 const DEFAULT_PROSPECT_DISCOVERY_HL = "hi";
 const DEFAULT_PROSPECT_DISCOVERY_GL = "in";
@@ -29,12 +30,18 @@ export interface InstagramDiscoveryRuntimeConfig {
 }
 
 export interface InstagramProspectDiscoveryRuntimeConfig {
+  categoryTitles: string[];
   queries: string[];
+  activeCategoryTitle: string;
   activeQuery: string;
+  currentCategoryIndex: number;
   currentQueryIndex: number;
   currentStart: number;
   startIncrement: number;
   pagesPerQuery: number;
+  locationCity: string | null;
+  locationState: string | null;
+  locationCountry: string | null;
   location: string;
   googleDomain: string;
   hl: string;
@@ -48,6 +55,41 @@ export interface InstagramProspectDiscoveryRuntimeConfig {
 function normalizeValue(value?: string | null) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+export function buildProspectDiscoveryQueryFromCategoryTitle(categoryTitle: string) {
+  return `site:instagram.com "Instagram photos and videos" "${categoryTitle.trim()}"`;
+}
+
+function extractCategoryTitleFromDiscoveryQuery(query?: string | null) {
+  const normalizedQuery = normalizeValue(query);
+  if (!normalizedQuery) return null;
+
+  const strictMatch = normalizedQuery.match(
+    /^site:instagram\.com\s+"Instagram photos and videos"\s+"([^"]+)"$/i,
+  );
+
+  if (strictMatch?.[1]) {
+    return strictMatch[1].trim();
+  }
+
+  const quotedParts = Array.from(normalizedQuery.matchAll(/"([^"]+)"/g))
+    .map((match) => match[1]?.trim())
+    .filter(Boolean);
+
+  return quotedParts.at(-1) || null;
+}
+
+function buildProspectDiscoveryLocation(parts: {
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+}) {
+  const values = [parts.city, parts.state, parts.country]
+    .map((value) => normalizeValue(value))
+    .filter((value): value is string => Boolean(value));
+
+  return values.join(",+");
 }
 
 function normalizePositiveInteger(
@@ -68,44 +110,76 @@ function normalizePositiveInteger(
   return Math.floor(parsed);
 }
 
-function parseProspectDiscoveryQueriesFromEnv() {
-  const rawQueries = process.env.PROSPECT_DISCOVERY_QUERIES?.trim();
+function parseProspectDiscoveryCategoryTitlesFromEnv() {
+  const rawTitles = process.env.PROSPECT_DISCOVERY_CATEGORY_TITLES?.trim();
 
-  if (rawQueries) {
-    const queries = rawQueries
+  if (rawTitles) {
+    const titles = rawTitles
       .split("||")
-      .map((query) => query.trim())
+      .map((title) => title.trim())
       .filter(Boolean);
 
-    if (queries.length > 0) {
-      return queries;
+    if (titles.length > 0) {
+      return titles;
     }
   }
 
-  return [
-    normalizeValue(process.env.PROSPECT_DISCOVERY_QUERY) ||
-      DEFAULT_PROSPECT_DISCOVERY_QUERY,
-  ];
+  const rawQueries = process.env.PROSPECT_DISCOVERY_QUERIES?.trim();
+
+  if (rawQueries) {
+    const titles = rawQueries
+      .split("||")
+      .map((query) => extractCategoryTitleFromDiscoveryQuery(query))
+      .filter((title): title is string => Boolean(title));
+
+    if (titles.length > 0) {
+      return titles;
+    }
+  }
+
+  const singleTitle =
+    normalizeValue(process.env.PROSPECT_DISCOVERY_CATEGORY_TITLE) ||
+    extractCategoryTitleFromDiscoveryQuery(process.env.PROSPECT_DISCOVERY_QUERY) ||
+    null;
+
+  return singleTitle ? [singleTitle] : [...DISCOVERY_TITLE_VALUES];
 }
 
-function normalizeProspectDiscoveryQueries(
+function normalizeProspectDiscoveryCategoryTitles(
   value: Prisma.JsonValue | string[] | null | undefined,
 ) {
   const list = Array.isArray(value) ? value : [];
 
-  const queries = list
-    .map((item) => (typeof item === "string" ? item.trim() : ""))
-    .filter(Boolean);
+  const titles = list
+    .map((item) => {
+      if (typeof item !== "string") return "";
+      return extractCategoryTitleFromDiscoveryQuery(item) || item.trim();
+    })
+    .filter((title): title is string => Boolean(title));
 
-  return queries.length > 0 ? queries : parseProspectDiscoveryQueriesFromEnv();
+  return titles.length > 0 ? titles : parseProspectDiscoveryCategoryTitlesFromEnv();
 }
 
 function getProspectDiscoveryEnvDefaults() {
+  const locationCity = normalizeValue(process.env.PROSPECT_DISCOVERY_CITY);
+  const locationState = normalizeValue(process.env.PROSPECT_DISCOVERY_STATE);
+  const locationCountry =
+    normalizeValue(process.env.PROSPECT_DISCOVERY_COUNTRY) ||
+    normalizeValue(process.env.PROSPECT_DISCOVERY_LOCATION) ||
+    DEFAULT_PROSPECT_DISCOVERY_COUNTRY;
+  const categoryTitles = parseProspectDiscoveryCategoryTitlesFromEnv();
+
   return {
-    queries: parseProspectDiscoveryQueriesFromEnv(),
-    location:
-      normalizeValue(process.env.PROSPECT_DISCOVERY_LOCATION) ||
-      DEFAULT_PROSPECT_DISCOVERY_LOCATION,
+    categoryTitles,
+    queries: categoryTitles.map(buildProspectDiscoveryQueryFromCategoryTitle),
+    locationCity: locationCity ?? DEFAULT_PROSPECT_DISCOVERY_CITY,
+    locationState: locationState ?? DEFAULT_PROSPECT_DISCOVERY_STATE,
+    locationCountry,
+    location: buildProspectDiscoveryLocation({
+      city: locationCity ?? DEFAULT_PROSPECT_DISCOVERY_CITY,
+      state: locationState ?? DEFAULT_PROSPECT_DISCOVERY_STATE,
+      country: locationCountry,
+    }),
     googleDomain:
       normalizeValue(process.env.PROSPECT_DISCOVERY_GOOGLE_DOMAIN) ||
       DEFAULT_PROSPECT_DISCOVERY_GOOGLE_DOMAIN,
@@ -161,12 +235,13 @@ async function getInstagramDiscoveryConfigRecord() {
 export async function getInstagramProspectDiscoveryConfig(): Promise<InstagramProspectDiscoveryRuntimeConfig> {
   const dbConfig = await getInstagramDiscoveryConfigRecord();
   const defaults = getProspectDiscoveryEnvDefaults();
-  const queries = normalizeProspectDiscoveryQueries(
+  const categoryTitles = normalizeProspectDiscoveryCategoryTitles(
     dbConfig?.prospectDiscoveryQueries as Prisma.JsonValue | null | undefined,
   );
-  const currentQueryIndex = clampQueryIndex(
+  const queries = categoryTitles.map(buildProspectDiscoveryQueryFromCategoryTitle);
+  const currentCategoryIndex = clampQueryIndex(
     dbConfig?.prospectDiscoveryCurrentQueryIndex ?? 0,
-    queries.length,
+    categoryTitles.length,
   );
   const startIncrement = normalizePositiveInteger(
     dbConfig?.prospectDiscoveryStartIncrement,
@@ -178,14 +253,36 @@ export async function getInstagramProspectDiscoveryConfig(): Promise<InstagramPr
   );
 
   return {
+    categoryTitles,
     queries,
-    activeQuery: queries[currentQueryIndex] || defaults.queries[0],
-    currentQueryIndex,
+    activeCategoryTitle:
+      categoryTitles[currentCategoryIndex] || defaults.categoryTitles[0],
+    activeQuery: queries[currentCategoryIndex] || defaults.queries[0],
+    currentCategoryIndex,
+    currentQueryIndex: currentCategoryIndex,
     currentStart: normalizeCurrentStart(dbConfig?.prospectDiscoveryCurrentStart),
     startIncrement,
     pagesPerQuery,
-    location:
-      normalizeValue(dbConfig?.prospectDiscoveryLocation) || defaults.location,
+    locationCity:
+      normalizeValue(dbConfig?.prospectDiscoveryCity) ||
+      defaults.locationCity,
+    locationState:
+      normalizeValue(dbConfig?.prospectDiscoveryState) ||
+      defaults.locationState,
+    locationCountry:
+      normalizeValue(dbConfig?.prospectDiscoveryCountry) ||
+      defaults.locationCountry,
+    location: buildProspectDiscoveryLocation({
+      city:
+        normalizeValue(dbConfig?.prospectDiscoveryCity) ||
+        defaults.locationCity,
+      state:
+        normalizeValue(dbConfig?.prospectDiscoveryState) ||
+        defaults.locationState,
+      country:
+        normalizeValue(dbConfig?.prospectDiscoveryCountry) ||
+        defaults.locationCountry,
+    }),
     googleDomain:
       normalizeValue(dbConfig?.prospectDiscoveryGoogleDomain) ||
       defaults.googleDomain,
@@ -249,8 +346,11 @@ export async function saveInstagramDiscoveryConfig(input: {
   tokenExpiresAt?: Date | null;
   lastRefreshedAt?: Date | null;
   lastError?: string | null;
+  prospectDiscoveryCategoryTitles?: string[] | null;
   prospectDiscoveryQueries?: string[] | null;
-  prospectDiscoveryLocation?: string | null;
+  prospectDiscoveryCity?: string | null;
+  prospectDiscoveryState?: string | null;
+  prospectDiscoveryCountry?: string | null;
   prospectDiscoveryGoogleDomain?: string | null;
   prospectDiscoveryHl?: string | null;
   prospectDiscoveryGl?: string | null;
@@ -263,9 +363,13 @@ export async function saveInstagramDiscoveryConfig(input: {
   prospectDiscoveryCurrentStart?: number | null;
   prospectDiscoveryLastCursorUpdatedAt?: Date | null;
 }) {
-  const normalizedProspectQueries =
-    input.prospectDiscoveryQueries !== undefined
-      ? normalizeProspectDiscoveryQueries(input.prospectDiscoveryQueries)
+  const normalizedCategoryTitles =
+    input.prospectDiscoveryCategoryTitles !== undefined
+      ? normalizeProspectDiscoveryCategoryTitles(
+          input.prospectDiscoveryCategoryTitles,
+        )
+      : input.prospectDiscoveryQueries !== undefined
+        ? normalizeProspectDiscoveryCategoryTitles(input.prospectDiscoveryQueries)
       : undefined;
 
   return prisma.instagramDiscoveryConfig.upsert({
@@ -281,8 +385,10 @@ export async function saveInstagramDiscoveryConfig(input: {
       lastRefreshedAt: input.lastRefreshedAt ?? null,
       lastError: input.lastError ?? null,
       prospectDiscoveryQueries:
-        normalizedProspectQueries ?? getProspectDiscoveryEnvDefaults().queries,
-      prospectDiscoveryLocation: normalizeValue(input.prospectDiscoveryLocation),
+        normalizedCategoryTitles ?? getProspectDiscoveryEnvDefaults().categoryTitles,
+      prospectDiscoveryCity: normalizeValue(input.prospectDiscoveryCity),
+      prospectDiscoveryState: normalizeValue(input.prospectDiscoveryState),
+      prospectDiscoveryCountry: normalizeValue(input.prospectDiscoveryCountry),
       prospectDiscoveryGoogleDomain: normalizeValue(
         input.prospectDiscoveryGoogleDomain,
       ),
@@ -326,13 +432,27 @@ export async function saveInstagramDiscoveryConfig(input: {
         ? { lastRefreshedAt: input.lastRefreshedAt }
         : {}),
       ...(input.lastError !== undefined ? { lastError: input.lastError } : {}),
-      ...(normalizedProspectQueries !== undefined
-        ? { prospectDiscoveryQueries: normalizedProspectQueries }
+      ...(normalizedCategoryTitles !== undefined
+        ? { prospectDiscoveryQueries: normalizedCategoryTitles }
         : {}),
-      ...(input.prospectDiscoveryLocation !== undefined
+      ...(input.prospectDiscoveryCity !== undefined
         ? {
-            prospectDiscoveryLocation: normalizeValue(
-              input.prospectDiscoveryLocation,
+            prospectDiscoveryCity: normalizeValue(
+              input.prospectDiscoveryCity,
+            ),
+          }
+        : {}),
+      ...(input.prospectDiscoveryState !== undefined
+        ? {
+            prospectDiscoveryState: normalizeValue(
+              input.prospectDiscoveryState,
+            ),
+          }
+        : {}),
+      ...(input.prospectDiscoveryCountry !== undefined
+        ? {
+            prospectDiscoveryCountry: normalizeValue(
+              input.prospectDiscoveryCountry,
             ),
           }
         : {}),
@@ -403,10 +523,10 @@ export async function advanceInstagramProspectDiscoveryCursor(
 ) {
   const currentConfig =
     config || (await getInstagramProspectDiscoveryConfig());
-  const queries =
-    currentConfig.queries.length > 0
-      ? currentConfig.queries
-      : getProspectDiscoveryEnvDefaults().queries;
+  const categoryTitles =
+    currentConfig.categoryTitles.length > 0
+      ? currentConfig.categoryTitles
+      : getProspectDiscoveryEnvDefaults().categoryTitles;
   const totalPagesForQuery = Math.max(currentConfig.pagesPerQuery, 1);
   const currentPageIndex = Math.floor(
     Math.max(currentConfig.currentStart, 0) / Math.max(currentConfig.startIncrement, 1),
@@ -414,15 +534,17 @@ export async function advanceInstagramProspectDiscoveryCursor(
 
   const shouldMoveToNextQuery = currentPageIndex + 1 >= totalPagesForQuery;
   const nextQueryIndex = shouldMoveToNextQuery
-    ? (currentConfig.currentQueryIndex + 1) % queries.length
-    : currentConfig.currentQueryIndex;
+    ? (currentConfig.currentCategoryIndex + 1) % categoryTitles.length
+    : currentConfig.currentCategoryIndex;
   const nextStart = shouldMoveToNextQuery
     ? 0
     : currentConfig.currentStart + currentConfig.startIncrement;
 
   await saveInstagramDiscoveryConfig({
-    prospectDiscoveryQueries: queries,
-    prospectDiscoveryLocation: currentConfig.location,
+    prospectDiscoveryCategoryTitles: categoryTitles,
+    prospectDiscoveryCity: currentConfig.locationCity,
+    prospectDiscoveryState: currentConfig.locationState,
+    prospectDiscoveryCountry: currentConfig.locationCountry,
     prospectDiscoveryGoogleDomain: currentConfig.googleDomain,
     prospectDiscoveryHl: currentConfig.hl,
     prospectDiscoveryGl: currentConfig.gl,

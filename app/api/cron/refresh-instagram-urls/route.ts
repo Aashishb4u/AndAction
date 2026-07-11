@@ -3,14 +3,17 @@ import { prisma } from "@/lib/prisma";
 import { fetchInstagramAccountByUsername } from "@/lib/instagram-discovery";
 import type { Prisma } from "@prisma/client";
 
+const MIN_INSTAGRAM_DISCOVERY_DELAY_MS = 2000;
 const INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS = Number(
   process.env.INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS || 22,
 );
-const INSTAGRAM_REFRESH_BATCH_SIZE = Number(
-  process.env.INSTAGRAM_REFRESH_BATCH_SIZE || 10,
+const INSTAGRAM_REFRESH_BATCH_SIZE = Math.max(
+  Number(process.env.INSTAGRAM_REFRESH_BATCH_SIZE || 10),
+  1,
 );
-const INSTAGRAM_REFRESH_ARTIST_DELAY_MS = Number(
-  process.env.INSTAGRAM_REFRESH_ARTIST_DELAY_MS || 1000,
+const INSTAGRAM_REFRESH_ARTIST_DELAY_MS = Math.max(
+  Number(process.env.INSTAGRAM_REFRESH_ARTIST_DELAY_MS || 2000),
+  MIN_INSTAGRAM_DISCOVERY_DELAY_MS,
 );
 const INSTAGRAM_REFRESH_BATCH_DELAY_MS = Number(
   process.env.INSTAGRAM_REFRESH_BATCH_DELAY_MS || 2000,

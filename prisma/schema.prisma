@@ -250,7 +250,9 @@ model InstagramDiscoveryConfig {
   lastRefreshedAt                      DateTime?
   lastError                            String?
   prospectDiscoveryQueries             Json?
-  prospectDiscoveryLocation            String?
+  prospectDiscoveryCity                String?
+  prospectDiscoveryState               String?
+  prospectDiscoveryCountry             String?
   prospectDiscoveryGoogleDomain        String?
   prospectDiscoveryHl                  String?
   prospectDiscoveryGl                  String?
@@ -288,6 +290,9 @@ model Prospect {
   whatsappNumber                 String?
   contactEmail                   String?
   countryCode                    String?
+  city                           String?
+  state                          String?
+  country                        String?
   soloChargesFrom                Decimal?  @db.Decimal(10, 2)
   soloChargesTo                  Decimal?  @db.Decimal(10, 2)
   soloChargesDescription         String?

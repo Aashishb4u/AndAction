@@ -5,6 +5,7 @@ import { fetchInstagramAccountByUsername } from "@/lib/instagram-discovery";
 import { discoverInstagramProspectsFromSerpApi } from "@/lib/prospect-discovery";
 import {
   advanceInstagramProspectDiscoveryCursor,
+  buildProspectDiscoveryQueryFromCategoryTitle,
   getInstagramProspectDiscoveryConfig,
 } from "@/lib/instagram-discovery-config";
 import { upsertProspectFromInstagramDiscovery } from "@/lib/prospects";
@@ -28,15 +29,32 @@ export async function GET(request: NextRequest) {
 
     const discoveryConfig = await getInstagramProspectDiscoveryConfig();
     const hasManualQueryOverride = request.nextUrl.searchParams.has("q");
+    const hasManualCategoryOverride = request.nextUrl.searchParams.has("category");
     const hasManualStartOverride = request.nextUrl.searchParams.has("start");
-    const shouldAdvanceCursor = !hasManualQueryOverride && !hasManualStartOverride;
+    const shouldAdvanceCursor =
+      !hasManualQueryOverride &&
+      !hasManualCategoryOverride &&
+      !hasManualStartOverride;
+
+    const manualCategoryTitle =
+      request.nextUrl.searchParams.get("category")?.trim() || null;
+    const categoryTitle =
+      manualCategoryTitle ||
+      (!hasManualQueryOverride ? discoveryConfig.activeCategoryTitle : null);
 
     const query =
       request.nextUrl.searchParams.get("q") ||
+      (categoryTitle
+        ? buildProspectDiscoveryQueryFromCategoryTitle(categoryTitle)
+        : null) ||
       discoveryConfig.activeQuery;
+    const defaultStart =
+      hasManualQueryOverride || hasManualCategoryOverride
+        ? 0
+        : discoveryConfig.currentStart;
     const start = parseNonNegativeNumber(
       request.nextUrl.searchParams.get("start"),
-      discoveryConfig.currentStart,
+      defaultStart,
     );
     const location =
       request.nextUrl.searchParams.get("location") ||
@@ -82,6 +100,7 @@ export async function GET(request: NextRequest) {
 
     const enrichedProspectIds: string[] = [];
     const skippedExistingArtists: string[] = [];
+    const skippedExistingProspects: string[] = [];
     const notDiscoverable: string[] = [];
     const errors: string[] = [];
 
@@ -104,10 +123,18 @@ export async function GET(request: NextRequest) {
           sourceTitle: candidate.title,
           sourceSnippet: candidate.snippet,
           sourceLink: candidate.link,
+          city: discoveryConfig.locationCity,
+          state: discoveryConfig.locationState,
+          country: discoveryConfig.locationCountry,
         });
 
         if (result.skippedBecauseArtistExists) {
           skippedExistingArtists.push(candidate.username);
+          continue;
+        }
+
+        if (result.skippedBecauseProspectExists) {
+          skippedExistingProspects.push(candidate.username);
           continue;
         }
 
@@ -132,7 +159,10 @@ export async function GET(request: NextRequest) {
     const nextCursor = shouldAdvanceCursor
       ? await advanceInstagramProspectDiscoveryCursor({
           ...discoveryConfig,
-          activeQuery: query,
+          activeCategoryTitle: categoryTitle || discoveryConfig.activeCategoryTitle,
+          activeQuery: categoryTitle
+            ? buildProspectDiscoveryQueryFromCategoryTitle(categoryTitle)
+            : query,
           currentStart: start,
           location,
           googleDomain,
@@ -144,7 +174,13 @@ export async function GET(request: NextRequest) {
         })
       : null;
 
-    const metadata = {
+    const metadata: any = {
+      categoryTitle,
+      categoryIndex:
+        hasManualQueryOverride || hasManualCategoryOverride
+          ? null
+          : discoveryConfig.currentCategoryIndex,
+      totalCategories: discoveryConfig.categoryTitles.length,
       query,
       queryIndex: discoveryConfig.currentQueryIndex,
       totalQueries: discoveryConfig.queries.length,
@@ -170,6 +206,8 @@ export async function GET(request: NextRequest) {
       prospectIds: enrichedProspectIds,
       skippedExistingArtists: skippedExistingArtists.length,
       skippedExistingArtistUsernames: skippedExistingArtists,
+      skippedExistingProspects: skippedExistingProspects.length,
+      skippedExistingProspectUsernames: skippedExistingProspects,
       notDiscoverableCount: notDiscoverable.length,
       notDiscoverableUsernames: notDiscoverable,
       errors: errors.length,
