@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const raleway = Raleway({
   subsets: ['latin'],
@@ -131,9 +132,8 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
       </head>
-      <body
-        className={`${raleway.variable} ${poppins.variable} antialiased bg-background min-h-screen`}
-      >
+      <GoogleAnalytics gaId="G-XKZCT58CB4" />
+      <body className={`${raleway.variable} ${poppins.variable} antialiased bg-background min-h-screen`} >
         <ServiceWorkerRegistration />
         <Providers>
           <BreadcrumbJsonLd siteUrl={siteUrl} />
