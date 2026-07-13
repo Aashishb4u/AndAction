@@ -31,10 +31,12 @@ export async function GET(request: NextRequest) {
     const hasManualQueryOverride = request.nextUrl.searchParams.has("q");
     const hasManualCategoryOverride = request.nextUrl.searchParams.has("category");
     const hasManualStartOverride = request.nextUrl.searchParams.has("start");
+    const hasManualLocationOverride = request.nextUrl.searchParams.has("location");
     const shouldAdvanceCursor =
       !hasManualQueryOverride &&
       !hasManualCategoryOverride &&
-      !hasManualStartOverride;
+      !hasManualStartOverride &&
+      !hasManualLocationOverride;
 
     const manualCategoryTitle =
       request.nextUrl.searchParams.get("category")?.trim() || null;
@@ -175,6 +177,13 @@ export async function GET(request: NextRequest) {
       : null;
 
     const metadata: any = {
+      locationCity: discoveryConfig.locationCity,
+      locationState: discoveryConfig.locationState,
+      locationCountry: discoveryConfig.locationCountry,
+      locationIndex: hasManualLocationOverride
+        ? null
+        : discoveryConfig.currentLocationIndex,
+      totalLocations: discoveryConfig.locations.length,
       categoryTitle,
       categoryIndex:
         hasManualQueryOverride || hasManualCategoryOverride
@@ -188,6 +197,7 @@ export async function GET(request: NextRequest) {
       startIncrement: discoveryConfig.startIncrement,
       pagesPerQuery: discoveryConfig.pagesPerQuery,
       cursorAdvanced: shouldAdvanceCursor,
+      nextLocationIndex: nextCursor?.nextLocationIndex ?? null,
       nextQueryIndex: nextCursor?.nextQueryIndex ?? null,
       nextStart: nextCursor?.nextStart ?? null,
       location,

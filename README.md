@@ -187,3 +187,70 @@ npx prisma migrate reset
 ## Support
 
 For issues and questions, please open an issue on GitHub.
+
+
+
+# Instagram Discovery Logic - 
+
+
+1. It runs 10 times in 24 hours
+   
+   - scripts/cron-jobs.js spreads the cron evenly across the day.
+   - So it does not run all discovery work at once.
+   - It takes 10 small turns per day .
+
+2. Each run remembers where it stopped
+   
+   - We store the current progress in the database.
+   - That means after one run finishes, the next run continues from the next step instead of starting again from the first city/category/page.
+
+3. It now rotates through cities
+   
+   - Earlier it was basically stuck on one city.
+   - Now we have a list of cities/locations in DB.
+   - Example: Mumbai -> Delhi -> Bengaluru -> next city...
+4. Within each city, it rotates through categories
+   
+   - Example:
+     - Live Band
+     - Singer
+     - DJ/VJ
+     - etc.
+
+5. Within each category, it rotates through pages/results
+   
+   - It does page 1, then page 2, then page 3, based on:
+     - start
+     - startIncrement
+     - pagesPerQuery
+
+6. When one city is fully done, it moves to the next city
+   
+   - “Fully done” means:
+     - all pages of current category done
+     - then next category
+     - and after all categories are done
+     - it switches to the next city
+     
+So the real flow is:
+
+- Run 1: Mumbai + Category 1 + Page 1
+- Run 2: Mumbai + Category 1 + Page 2
+- Run 3: Mumbai + Category 1 + Page 3
+- ...
+- then Mumbai + Category 2
+- ...
+- after all Mumbai categories/pages finish -> move to Delhi
+- then same cycle for Delhi
+- then Bengaluru
+- and so on
+So when you say “bucket of 10 and 24 hours” , the easiest way to think about it is:
+
+- 24 hours = full day window
+- 10 runs = 10 chances in that day
+- each run picks up the next saved bucket/slot of work
+- the “bucket” is not a separate table, it is the saved cursor state in DB :
+  - current city index
+  - current category index
+  - current page/start
+So yes, the cron is now doing small rotating discovery batches across cities over the day .

@@ -1,21 +1,19 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { DISCOVERY_TITLE_VALUES } from "@/lib/artistCategories";
 
 const INSTAGRAM_DISCOVERY_CONFIG_ID = "default";
-const DEFAULT_GRAPH_VERSION = "v24.0";
 const REFRESH_WINDOW_MS = 5 * 24 * 60 * 60 * 1000;
-const DEFAULT_PROSPECT_DISCOVERY_CITY = "Pune";
-const DEFAULT_PROSPECT_DISCOVERY_STATE = "Maharashtra";
-const DEFAULT_PROSPECT_DISCOVERY_COUNTRY = "India";
-const DEFAULT_PROSPECT_DISCOVERY_GOOGLE_DOMAIN = "google.co.in";
-const DEFAULT_PROSPECT_DISCOVERY_HL = "hi";
-const DEFAULT_PROSPECT_DISCOVERY_GL = "in";
-const DEFAULT_PROSPECT_DISCOVERY_MAX_RESULTS = 10;
-const DEFAULT_PROSPECT_DISCOVERY_MEDIA_LIMIT = 12;
-const DEFAULT_PROSPECT_DISCOVERY_REQUEST_DELAY_MS = 1000;
-const DEFAULT_PROSPECT_DISCOVERY_START_INCREMENT = 10;
-const DEFAULT_PROSPECT_DISCOVERY_PAGES_PER_QUERY = 10;
+
+interface ProspectDiscoveryCategory {
+  title: string;
+  description: string;
+}
+
+interface ProspectDiscoveryLocation {
+  city: string | null;
+  state: string | null;
+  country: string | null;
+}
 
 export interface InstagramDiscoveryRuntimeConfig {
   appId: string | null;
@@ -30,7 +28,11 @@ export interface InstagramDiscoveryRuntimeConfig {
 }
 
 export interface InstagramProspectDiscoveryRuntimeConfig {
+  categories: ProspectDiscoveryCategory[];
   categoryTitles: string[];
+  categoryDescriptions: Record<string, string>;
+  locations: ProspectDiscoveryLocation[];
+  currentLocationIndex: number;
   queries: string[];
   activeCategoryTitle: string;
   activeQuery: string;
@@ -55,6 +57,23 @@ export interface InstagramProspectDiscoveryRuntimeConfig {
 function normalizeValue(value?: string | null) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+function parseOptionalPositiveInteger(
+  value: number | string | null | undefined,
+): number | null {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : value != null && String(value).trim() !== ""
+        ? Number(value)
+        : NaN;
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return Math.floor(parsed);
 }
 
 export function buildProspectDiscoveryQueryFromCategoryTitle(categoryTitle: string) {
@@ -92,22 +111,62 @@ function buildProspectDiscoveryLocation(parts: {
   return values.join(",+");
 }
 
-function normalizePositiveInteger(
-  value: number | string | null | undefined,
-  fallback: number,
-) {
-  const parsed =
-    typeof value === "number"
-      ? value
-      : value != null && String(value).trim() !== ""
-        ? Number(value)
-        : NaN;
-
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return fallback;
+function normalizeProspectDiscoveryLocation(
+  value: unknown,
+): ProspectDiscoveryLocation | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
   }
 
-  return Math.floor(parsed);
+  const city = normalizeValue((value as Record<string, unknown>).city as string);
+  const state = normalizeValue((value as Record<string, unknown>).state as string);
+  const country = normalizeValue(
+    (value as Record<string, unknown>).country as string,
+  );
+
+  if (!city && !state && !country) {
+    return null;
+  }
+
+  return { city, state, country };
+}
+
+function resolveRequiredStringConfig(
+  dbValue: string | null | undefined,
+  envValue: string | null | undefined,
+  configName: string,
+) {
+  const resolved = normalizeValue(dbValue) || normalizeValue(envValue);
+
+  if (!resolved) {
+    throw new Error(
+      `${configName} is missing in instagram_discovery_configs and env`,
+    );
+  }
+
+  return resolved;
+}
+
+function resolveRequiredPositiveIntegerConfig(
+  dbValue: number | null | undefined,
+  envValue: number | null | undefined,
+  configName: string,
+) {
+  const resolved =
+    parseOptionalPositiveInteger(dbValue) ??
+    parseOptionalPositiveInteger(envValue);
+
+  if (resolved == null) {
+    throw new Error(
+      `${configName} is missing in instagram_discovery_configs and env`,
+    );
+  }
+
+  return resolved;
+}
+
+function buildProspectDiscoveryCategoryDescription(title: string) {
+  return `Used in Instagram prospect discovery to find creator or business profiles related to ${title}.`;
 }
 
 function parseProspectDiscoveryCategoryTitlesFromEnv() {
@@ -142,7 +201,45 @@ function parseProspectDiscoveryCategoryTitlesFromEnv() {
     extractCategoryTitleFromDiscoveryQuery(process.env.PROSPECT_DISCOVERY_QUERY) ||
     null;
 
-  return singleTitle ? [singleTitle] : [...DISCOVERY_TITLE_VALUES];
+  return singleTitle ? [singleTitle] : [];
+}
+
+function parseProspectDiscoveryLocationsFromEnv() {
+  const rawLocations = process.env.PROSPECT_DISCOVERY_LOCATIONS?.trim();
+
+  if (rawLocations) {
+    try {
+      const parsed = JSON.parse(rawLocations);
+
+      if (Array.isArray(parsed)) {
+        const locations = parsed
+          .map((location) => normalizeProspectDiscoveryLocation(location))
+          .filter(
+            (location): location is ProspectDiscoveryLocation =>
+              location !== null,
+          );
+
+        if (locations.length > 0) {
+          return locations;
+        }
+      }
+    } catch (error) {
+      console.warn(
+        "[INSTAGRAM_DISCOVERY_CONFIG] Failed to parse PROSPECT_DISCOVERY_LOCATIONS:",
+        error,
+      );
+    }
+  }
+
+  const legacyLocation = normalizeProspectDiscoveryLocation({
+    city: process.env.PROSPECT_DISCOVERY_CITY,
+    state: process.env.PROSPECT_DISCOVERY_STATE,
+    country:
+      process.env.PROSPECT_DISCOVERY_COUNTRY ||
+      process.env.PROSPECT_DISCOVERY_LOCATION,
+  });
+
+  return legacyLocation ? [legacyLocation] : [];
 }
 
 function normalizeProspectDiscoveryCategoryTitles(
@@ -157,57 +254,108 @@ function normalizeProspectDiscoveryCategoryTitles(
     })
     .filter((title): title is string => Boolean(title));
 
-  return titles.length > 0 ? titles : parseProspectDiscoveryCategoryTitlesFromEnv();
+  return titles;
 }
 
-function getProspectDiscoveryEnvDefaults() {
-  const locationCity = normalizeValue(process.env.PROSPECT_DISCOVERY_CITY);
-  const locationState = normalizeValue(process.env.PROSPECT_DISCOVERY_STATE);
-  const locationCountry =
-    normalizeValue(process.env.PROSPECT_DISCOVERY_COUNTRY) ||
-    normalizeValue(process.env.PROSPECT_DISCOVERY_LOCATION) ||
-    DEFAULT_PROSPECT_DISCOVERY_COUNTRY;
+function normalizeProspectDiscoveryLocations(
+  value: Prisma.JsonValue | ProspectDiscoveryLocation[] | null | undefined,
+) {
+  const list = Array.isArray(value) ? value : [];
+
+  return list
+    .map((location) => normalizeProspectDiscoveryLocation(location))
+    .filter(
+      (location): location is ProspectDiscoveryLocation => location !== null,
+    );
+}
+
+function normalizeProspectDiscoveryCategoryDescriptions(
+  value: Prisma.JsonValue | Record<string, string> | null | undefined,
+  categoryTitles: string[],
+) {
+  const descriptions: Record<string, string> = {};
+
+  if (Array.isArray(value)) {
+    for (let index = 0; index < categoryTitles.length; index++) {
+      const title = categoryTitles[index];
+      const description = value[index];
+
+      if (typeof description === "string" && description.trim()) {
+        descriptions[title] = description.trim();
+      }
+    }
+  } else if (value && typeof value === "object") {
+    for (const title of categoryTitles) {
+      const description = (value as Record<string, unknown>)[title];
+
+      if (typeof description === "string" && description.trim()) {
+        descriptions[title] = description.trim();
+      }
+    }
+  }
+
+  for (const title of categoryTitles) {
+    if (!descriptions[title]) {
+      descriptions[title] = buildProspectDiscoveryCategoryDescription(title);
+    }
+  }
+
+  return descriptions;
+}
+
+function getInstagramDiscoveryEnvFallbacks() {
+  return {
+    appId: normalizeValue(process.env.META_APP_ID),
+    appSecret: normalizeValue(process.env.META_APP_SECRET),
+    graphVersion: normalizeValue(process.env.INSTAGRAM_GRAPH_VERSION),
+    businessAccountId: normalizeValue(process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID),
+    accessToken: normalizeValue(process.env.INSTAGRAM_GRAPH_ACCESS_TOKEN),
+  };
+}
+
+function getProspectDiscoveryEnvFallbacks() {
   const categoryTitles = parseProspectDiscoveryCategoryTitlesFromEnv();
+  const locations = parseProspectDiscoveryLocationsFromEnv();
+  const primaryLocation = locations[0] || {
+    city: null,
+    state: null,
+    country: null,
+  };
 
   return {
     categoryTitles,
+    categoryDescriptions: normalizeProspectDiscoveryCategoryDescriptions(
+      null,
+      categoryTitles,
+    ),
+    locations,
+    currentLocationIndex: 0,
     queries: categoryTitles.map(buildProspectDiscoveryQueryFromCategoryTitle),
-    locationCity: locationCity ?? DEFAULT_PROSPECT_DISCOVERY_CITY,
-    locationState: locationState ?? DEFAULT_PROSPECT_DISCOVERY_STATE,
-    locationCountry,
+    locationCity: primaryLocation.city,
+    locationState: primaryLocation.state,
+    locationCountry: primaryLocation.country,
     location: buildProspectDiscoveryLocation({
-      city: locationCity ?? DEFAULT_PROSPECT_DISCOVERY_CITY,
-      state: locationState ?? DEFAULT_PROSPECT_DISCOVERY_STATE,
-      country: locationCountry,
+      city: primaryLocation.city,
+      state: primaryLocation.state,
+      country: primaryLocation.country,
     }),
-    googleDomain:
-      normalizeValue(process.env.PROSPECT_DISCOVERY_GOOGLE_DOMAIN) ||
-      DEFAULT_PROSPECT_DISCOVERY_GOOGLE_DOMAIN,
-    hl:
-      normalizeValue(process.env.PROSPECT_DISCOVERY_HL) ||
-      DEFAULT_PROSPECT_DISCOVERY_HL,
-    gl:
-      normalizeValue(process.env.PROSPECT_DISCOVERY_GL) ||
-      DEFAULT_PROSPECT_DISCOVERY_GL,
-    maxResults: normalizePositiveInteger(
+    googleDomain: normalizeValue(process.env.PROSPECT_DISCOVERY_GOOGLE_DOMAIN),
+    hl: normalizeValue(process.env.PROSPECT_DISCOVERY_HL),
+    gl: normalizeValue(process.env.PROSPECT_DISCOVERY_GL),
+    maxResults: parseOptionalPositiveInteger(
       process.env.PROSPECT_DISCOVERY_MAX_RESULTS,
-      DEFAULT_PROSPECT_DISCOVERY_MAX_RESULTS,
     ),
-    mediaLimit: normalizePositiveInteger(
+    mediaLimit: parseOptionalPositiveInteger(
       process.env.PROSPECT_DISCOVERY_MEDIA_LIMIT,
-      DEFAULT_PROSPECT_DISCOVERY_MEDIA_LIMIT,
     ),
-    requestDelayMs: normalizePositiveInteger(
+    requestDelayMs: parseOptionalPositiveInteger(
       process.env.PROSPECT_DISCOVERY_REQUEST_DELAY_MS,
-      DEFAULT_PROSPECT_DISCOVERY_REQUEST_DELAY_MS,
     ),
-    startIncrement: normalizePositiveInteger(
+    startIncrement: parseOptionalPositiveInteger(
       process.env.PROSPECT_DISCOVERY_START_INCREMENT,
-      DEFAULT_PROSPECT_DISCOVERY_START_INCREMENT,
     ),
-    pagesPerQuery: normalizePositiveInteger(
+    pagesPerQuery: parseOptionalPositiveInteger(
       process.env.PROSPECT_DISCOVERY_PAGES_PER_QUERY,
-      DEFAULT_PROSPECT_DISCOVERY_PAGES_PER_QUERY,
     ),
   };
 }
@@ -216,6 +364,12 @@ function clampQueryIndex(index: number, queryCount: number) {
   if (queryCount <= 0) return 0;
   if (!Number.isFinite(index) || index < 0) return 0;
   return index % queryCount;
+}
+
+function clampLocationIndex(index: number, locationCount: number) {
+  if (locationCount <= 0) return 0;
+  if (!Number.isFinite(index) || index < 0) return 0;
+  return index % locationCount;
 }
 
 function normalizeCurrentStart(value: number | null | undefined) {
@@ -234,71 +388,124 @@ async function getInstagramDiscoveryConfigRecord() {
 
 export async function getInstagramProspectDiscoveryConfig(): Promise<InstagramProspectDiscoveryRuntimeConfig> {
   const dbConfig = await getInstagramDiscoveryConfigRecord();
-  const defaults = getProspectDiscoveryEnvDefaults();
-  const categoryTitles = normalizeProspectDiscoveryCategoryTitles(
+  const envFallbacks = getProspectDiscoveryEnvFallbacks();
+  const dbCategoryTitles = normalizeProspectDiscoveryCategoryTitles(
     dbConfig?.prospectDiscoveryQueries as Prisma.JsonValue | null | undefined,
   );
+  const categoryTitles =
+    dbCategoryTitles.length > 0
+      ? dbCategoryTitles
+      : envFallbacks.categoryTitles;
+
+  if (categoryTitles.length === 0) {
+    throw new Error(
+      "Prospect discovery category titles are missing in instagram_discovery_configs and env",
+    );
+  }
+
+  const categoryDescriptions = normalizeProspectDiscoveryCategoryDescriptions(
+    dbConfig?.prospectDiscoveryCategoryDescriptions as
+      | Prisma.JsonValue
+      | null
+      | undefined,
+    categoryTitles,
+  );
+  const dbLegacyLocation = normalizeProspectDiscoveryLocation({
+    city: dbConfig?.prospectDiscoveryCity,
+    state: dbConfig?.prospectDiscoveryState,
+    country: dbConfig?.prospectDiscoveryCountry,
+  });
+  const dbLocations = normalizeProspectDiscoveryLocations(
+    dbConfig?.prospectDiscoveryLocations as Prisma.JsonValue | null | undefined,
+  );
+  const locations =
+    dbLocations.length > 0
+      ? dbLocations
+      : dbLegacyLocation
+        ? [dbLegacyLocation]
+        : envFallbacks.locations;
+
+  if (locations.length === 0) {
+    throw new Error(
+      "Prospect discovery locations are missing in instagram_discovery_configs and env",
+    );
+  }
+
+  const currentLocationIndex = clampLocationIndex(
+    dbConfig?.prospectDiscoveryCurrentLocationIndex ?? 0,
+    locations.length,
+  );
+  const activeLocation = locations[currentLocationIndex] || locations[0];
   const queries = categoryTitles.map(buildProspectDiscoveryQueryFromCategoryTitle);
   const currentCategoryIndex = clampQueryIndex(
     dbConfig?.prospectDiscoveryCurrentQueryIndex ?? 0,
     categoryTitles.length,
   );
-  const startIncrement = normalizePositiveInteger(
+  const startIncrement = resolveRequiredPositiveIntegerConfig(
     dbConfig?.prospectDiscoveryStartIncrement,
-    defaults.startIncrement,
+    envFallbacks.startIncrement,
+    "PROSPECT_DISCOVERY_START_INCREMENT",
   );
-  const pagesPerQuery = normalizePositiveInteger(
+  const pagesPerQuery = resolveRequiredPositiveIntegerConfig(
     dbConfig?.prospectDiscoveryPagesPerQuery,
-    defaults.pagesPerQuery,
+    envFallbacks.pagesPerQuery,
+    "PROSPECT_DISCOVERY_PAGES_PER_QUERY",
   );
 
   return {
+    categories: categoryTitles.map((title) => ({
+      title,
+      description: categoryDescriptions[title],
+    })),
     categoryTitles,
+    categoryDescriptions,
+    locations,
+    currentLocationIndex,
     queries,
-    activeCategoryTitle:
-      categoryTitles[currentCategoryIndex] || defaults.categoryTitles[0],
-    activeQuery: queries[currentCategoryIndex] || defaults.queries[0],
+    activeCategoryTitle: categoryTitles[currentCategoryIndex] || categoryTitles[0],
+    activeQuery: queries[currentCategoryIndex] || queries[0],
     currentCategoryIndex,
     currentQueryIndex: currentCategoryIndex,
     currentStart: normalizeCurrentStart(dbConfig?.prospectDiscoveryCurrentStart),
     startIncrement,
     pagesPerQuery,
-    locationCity:
-      normalizeValue(dbConfig?.prospectDiscoveryCity) ||
-      defaults.locationCity,
-    locationState:
-      normalizeValue(dbConfig?.prospectDiscoveryState) ||
-      defaults.locationState,
-    locationCountry:
-      normalizeValue(dbConfig?.prospectDiscoveryCountry) ||
-      defaults.locationCountry,
+    locationCity: activeLocation.city,
+    locationState: activeLocation.state,
+    locationCountry: activeLocation.country,
     location: buildProspectDiscoveryLocation({
-      city:
-        normalizeValue(dbConfig?.prospectDiscoveryCity) ||
-        defaults.locationCity,
-      state:
-        normalizeValue(dbConfig?.prospectDiscoveryState) ||
-        defaults.locationState,
-      country:
-        normalizeValue(dbConfig?.prospectDiscoveryCountry) ||
-        defaults.locationCountry,
+      city: activeLocation.city,
+      state: activeLocation.state,
+      country: activeLocation.country,
     }),
-    googleDomain:
-      normalizeValue(dbConfig?.prospectDiscoveryGoogleDomain) ||
-      defaults.googleDomain,
-    hl: normalizeValue(dbConfig?.prospectDiscoveryHl) || defaults.hl,
-    gl: normalizeValue(dbConfig?.prospectDiscoveryGl) || defaults.gl,
-    maxResults: normalizePositiveInteger(
+    googleDomain: resolveRequiredStringConfig(
+      dbConfig?.prospectDiscoveryGoogleDomain,
+      envFallbacks.googleDomain,
+      "PROSPECT_DISCOVERY_GOOGLE_DOMAIN",
+    ),
+    hl: resolveRequiredStringConfig(
+      dbConfig?.prospectDiscoveryHl,
+      envFallbacks.hl,
+      "PROSPECT_DISCOVERY_HL",
+    ),
+    gl: resolveRequiredStringConfig(
+      dbConfig?.prospectDiscoveryGl,
+      envFallbacks.gl,
+      "PROSPECT_DISCOVERY_GL",
+    ),
+    maxResults: resolveRequiredPositiveIntegerConfig(
       dbConfig?.prospectDiscoveryMaxResults,
-      defaults.maxResults,
+      envFallbacks.maxResults,
+      "PROSPECT_DISCOVERY_MAX_RESULTS",
     ),
-    mediaLimit: normalizePositiveInteger(
+    mediaLimit: resolveRequiredPositiveIntegerConfig(
       dbConfig?.prospectDiscoveryMediaLimit,
-      defaults.mediaLimit,
+      envFallbacks.mediaLimit,
+      "PROSPECT_DISCOVERY_MEDIA_LIMIT",
     ),
-    requestDelayMs: normalizePositiveInteger(
+    requestDelayMs: resolveRequiredPositiveIntegerConfig(
       dbConfig?.prospectDiscoveryRequestDelayMs,
-      defaults.requestDelayMs,
+      envFallbacks.requestDelayMs,
+      "PROSPECT_DISCOVERY_REQUEST_DELAY_MS",
     ),
     lastCursorUpdatedAt: dbConfig?.prospectDiscoveryLastCursorUpdatedAt || null,
   };
@@ -306,18 +513,25 @@ export async function getInstagramProspectDiscoveryConfig(): Promise<InstagramPr
 
 export async function getInstagramDiscoveryConfig(): Promise<InstagramDiscoveryRuntimeConfig | null> {
   const dbConfig = await getInstagramDiscoveryConfigRecord();
+  const envFallbacks = getInstagramDiscoveryEnvFallbacks();
 
-  const businessAccountId = dbConfig?.businessAccountId || null;
-  const accessToken = dbConfig?.accessToken || null;
+  const businessAccountId =
+    normalizeValue(dbConfig?.businessAccountId) || envFallbacks.businessAccountId;
+  const accessToken =
+    normalizeValue(dbConfig?.accessToken) || envFallbacks.accessToken;
 
   if (!businessAccountId || !accessToken) {
     return null;
   }
 
   return {
-    appId: dbConfig?.appId || null,
-    appSecret: dbConfig?.appSecret || null,
-    graphVersion: dbConfig?.graphVersion || DEFAULT_GRAPH_VERSION,
+    appId: normalizeValue(dbConfig?.appId) || envFallbacks.appId,
+    appSecret: normalizeValue(dbConfig?.appSecret) || envFallbacks.appSecret,
+    graphVersion: resolveRequiredStringConfig(
+      dbConfig?.graphVersion,
+      envFallbacks.graphVersion,
+      "INSTAGRAM_GRAPH_VERSION",
+    ),
     businessAccountId,
     accessToken,
     tokenExpiresAt: dbConfig?.tokenExpiresAt || null,
@@ -348,6 +562,8 @@ export async function saveInstagramDiscoveryConfig(input: {
   lastError?: string | null;
   prospectDiscoveryCategoryTitles?: string[] | null;
   prospectDiscoveryQueries?: string[] | null;
+  prospectDiscoveryCategoryDescriptions?: Record<string, string> | null;
+  prospectDiscoveryLocations?: ProspectDiscoveryLocation[] | null;
   prospectDiscoveryCity?: string | null;
   prospectDiscoveryState?: string | null;
   prospectDiscoveryCountry?: string | null;
@@ -359,6 +575,7 @@ export async function saveInstagramDiscoveryConfig(input: {
   prospectDiscoveryRequestDelayMs?: number | null;
   prospectDiscoveryStartIncrement?: number | null;
   prospectDiscoveryPagesPerQuery?: number | null;
+  prospectDiscoveryCurrentLocationIndex?: number | null;
   prospectDiscoveryCurrentQueryIndex?: number | null;
   prospectDiscoveryCurrentStart?: number | null;
   prospectDiscoveryLastCursorUpdatedAt?: Date | null;
@@ -371,6 +588,29 @@ export async function saveInstagramDiscoveryConfig(input: {
       : input.prospectDiscoveryQueries !== undefined
         ? normalizeProspectDiscoveryCategoryTitles(input.prospectDiscoveryQueries)
       : undefined;
+  const normalizedCategoryDescriptions =
+    input.prospectDiscoveryCategoryDescriptions !== undefined
+      ? normalizeProspectDiscoveryCategoryDescriptions(
+          input.prospectDiscoveryCategoryDescriptions,
+          normalizedCategoryTitles ?? [],
+        )
+      : undefined;
+  const normalizedLocations =
+    input.prospectDiscoveryLocations !== undefined
+      ? normalizeProspectDiscoveryLocations(input.prospectDiscoveryLocations)
+      : undefined;
+  const envFallbacks = getProspectDiscoveryEnvFallbacks();
+  const instagramEnvFallbacks = getInstagramDiscoveryEnvFallbacks();
+  const effectiveLocations =
+    normalizedLocations ??
+    (envFallbacks.locations.length > 0 ? envFallbacks.locations : []);
+  const effectiveCurrentLocationIndex =
+    input.prospectDiscoveryCurrentLocationIndex ?? 0;
+  const effectiveLocation =
+    effectiveLocations[clampLocationIndex(
+      effectiveCurrentLocationIndex,
+      Math.max(effectiveLocations.length, 1),
+    )] || null;
 
   return prisma.instagramDiscoveryConfig.upsert({
     where: { id: INSTAGRAM_DISCOVERY_CONFIG_ID },
@@ -378,17 +618,32 @@ export async function saveInstagramDiscoveryConfig(input: {
       id: INSTAGRAM_DISCOVERY_CONFIG_ID,
       appId: normalizeValue(input.appId),
       appSecret: normalizeValue(input.appSecret),
-      graphVersion: normalizeValue(input.graphVersion) || DEFAULT_GRAPH_VERSION,
+      graphVersion:
+        normalizeValue(input.graphVersion) || instagramEnvFallbacks.graphVersion,
       businessAccountId: normalizeValue(input.businessAccountId),
       accessToken: normalizeValue(input.accessToken),
       tokenExpiresAt: input.tokenExpiresAt ?? null,
       lastRefreshedAt: input.lastRefreshedAt ?? null,
       lastError: input.lastError ?? null,
       prospectDiscoveryQueries:
-        normalizedCategoryTitles ?? getProspectDiscoveryEnvDefaults().categoryTitles,
-      prospectDiscoveryCity: normalizeValue(input.prospectDiscoveryCity),
-      prospectDiscoveryState: normalizeValue(input.prospectDiscoveryState),
-      prospectDiscoveryCountry: normalizeValue(input.prospectDiscoveryCountry),
+        normalizedCategoryTitles ??
+        (envFallbacks.categoryTitles.length > 0
+          ? envFallbacks.categoryTitles
+          : undefined),
+      prospectDiscoveryCategoryDescriptions:
+        normalizedCategoryDescriptions ??
+        (envFallbacks.categoryTitles.length > 0
+          ? envFallbacks.categoryDescriptions
+          : undefined),
+      prospectDiscoveryLocations:
+        effectiveLocations.length > 0 ? effectiveLocations : undefined,
+      prospectDiscoveryCity:
+        normalizeValue(input.prospectDiscoveryCity) ?? effectiveLocation?.city,
+      prospectDiscoveryState:
+        normalizeValue(input.prospectDiscoveryState) ?? effectiveLocation?.state,
+      prospectDiscoveryCountry:
+        normalizeValue(input.prospectDiscoveryCountry) ??
+        effectiveLocation?.country,
       prospectDiscoveryGoogleDomain: normalizeValue(
         input.prospectDiscoveryGoogleDomain,
       ),
@@ -402,6 +657,8 @@ export async function saveInstagramDiscoveryConfig(input: {
         input.prospectDiscoveryStartIncrement ?? null,
       prospectDiscoveryPagesPerQuery:
         input.prospectDiscoveryPagesPerQuery ?? null,
+      prospectDiscoveryCurrentLocationIndex:
+        input.prospectDiscoveryCurrentLocationIndex ?? 0,
       prospectDiscoveryCurrentQueryIndex:
         input.prospectDiscoveryCurrentQueryIndex ?? null,
       prospectDiscoveryCurrentStart: input.prospectDiscoveryCurrentStart ?? null,
@@ -414,10 +671,7 @@ export async function saveInstagramDiscoveryConfig(input: {
         ? { appSecret: normalizeValue(input.appSecret) }
         : {}),
       ...(input.graphVersion !== undefined
-        ? {
-            graphVersion:
-              normalizeValue(input.graphVersion) || DEFAULT_GRAPH_VERSION,
-          }
+        ? { graphVersion: normalizeValue(input.graphVersion) }
         : {}),
       ...(input.businessAccountId !== undefined
         ? { businessAccountId: normalizeValue(input.businessAccountId) }
@@ -434,6 +688,18 @@ export async function saveInstagramDiscoveryConfig(input: {
       ...(input.lastError !== undefined ? { lastError: input.lastError } : {}),
       ...(normalizedCategoryTitles !== undefined
         ? { prospectDiscoveryQueries: normalizedCategoryTitles }
+        : {}),
+      ...(normalizedCategoryDescriptions !== undefined
+        ? {
+            prospectDiscoveryCategoryDescriptions:
+              normalizedCategoryDescriptions,
+          }
+        : {}),
+      ...(normalizedLocations !== undefined
+        ? {
+            prospectDiscoveryLocations:
+              normalizedLocations.length > 0 ? normalizedLocations : null,
+          }
         : {}),
       ...(input.prospectDiscoveryCity !== undefined
         ? {
@@ -497,6 +763,12 @@ export async function saveInstagramDiscoveryConfig(input: {
               input.prospectDiscoveryPagesPerQuery,
           }
         : {}),
+      ...(input.prospectDiscoveryCurrentLocationIndex !== undefined
+        ? {
+            prospectDiscoveryCurrentLocationIndex:
+              input.prospectDiscoveryCurrentLocationIndex,
+          }
+        : {}),
       ...(input.prospectDiscoveryCurrentQueryIndex !== undefined
         ? {
             prospectDiscoveryCurrentQueryIndex:
@@ -523,28 +795,39 @@ export async function advanceInstagramProspectDiscoveryCursor(
 ) {
   const currentConfig =
     config || (await getInstagramProspectDiscoveryConfig());
-  const categoryTitles =
-    currentConfig.categoryTitles.length > 0
-      ? currentConfig.categoryTitles
-      : getProspectDiscoveryEnvDefaults().categoryTitles;
+  const categoryTitles = currentConfig.categoryTitles;
+  const locations = currentConfig.locations;
   const totalPagesForQuery = Math.max(currentConfig.pagesPerQuery, 1);
   const currentPageIndex = Math.floor(
     Math.max(currentConfig.currentStart, 0) / Math.max(currentConfig.startIncrement, 1),
   );
 
   const shouldMoveToNextQuery = currentPageIndex + 1 >= totalPagesForQuery;
-  const nextQueryIndex = shouldMoveToNextQuery
+  const wrappedToNextQuery = shouldMoveToNextQuery
     ? (currentConfig.currentCategoryIndex + 1) % categoryTitles.length
     : currentConfig.currentCategoryIndex;
+  const completedLocationCycle =
+    shouldMoveToNextQuery &&
+    currentConfig.currentCategoryIndex + 1 >= categoryTitles.length;
+  const nextLocationIndex = completedLocationCycle
+    ? clampLocationIndex(
+        currentConfig.currentLocationIndex + 1,
+        Math.max(locations.length, 1),
+      )
+    : currentConfig.currentLocationIndex;
+  const nextQueryIndex = completedLocationCycle ? 0 : wrappedToNextQuery;
   const nextStart = shouldMoveToNextQuery
     ? 0
     : currentConfig.currentStart + currentConfig.startIncrement;
+  const nextLocation = locations[nextLocationIndex] || currentConfig.locations[0];
 
   await saveInstagramDiscoveryConfig({
     prospectDiscoveryCategoryTitles: categoryTitles,
-    prospectDiscoveryCity: currentConfig.locationCity,
-    prospectDiscoveryState: currentConfig.locationState,
-    prospectDiscoveryCountry: currentConfig.locationCountry,
+    prospectDiscoveryCategoryDescriptions: currentConfig.categoryDescriptions,
+    prospectDiscoveryLocations: locations,
+    prospectDiscoveryCity: nextLocation?.city ?? null,
+    prospectDiscoveryState: nextLocation?.state ?? null,
+    prospectDiscoveryCountry: nextLocation?.country ?? null,
     prospectDiscoveryGoogleDomain: currentConfig.googleDomain,
     prospectDiscoveryHl: currentConfig.hl,
     prospectDiscoveryGl: currentConfig.gl,
@@ -553,12 +836,14 @@ export async function advanceInstagramProspectDiscoveryCursor(
     prospectDiscoveryRequestDelayMs: currentConfig.requestDelayMs,
     prospectDiscoveryStartIncrement: currentConfig.startIncrement,
     prospectDiscoveryPagesPerQuery: currentConfig.pagesPerQuery,
+    prospectDiscoveryCurrentLocationIndex: nextLocationIndex,
     prospectDiscoveryCurrentQueryIndex: nextQueryIndex,
     prospectDiscoveryCurrentStart: nextStart,
     prospectDiscoveryLastCursorUpdatedAt: new Date(),
   });
 
   return {
+    nextLocationIndex,
     nextQueryIndex,
     nextStart,
   };

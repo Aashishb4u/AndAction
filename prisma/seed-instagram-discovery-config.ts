@@ -1,10 +1,12 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-import { DISCOVERY_TITLE_VALUES } from "@/lib/artistCategories";
 
 const prisma = new PrismaClient();
 const INSTAGRAM_DISCOVERY_CONFIG_ID = "default";
-const DEFAULT_GRAPH_VERSION = "v24.0";
+
+function buildProspectDiscoveryCategoryDescription(title: string) {
+  return `Used in Instagram prospect discovery to find creator or business profiles related to ${title}.`;
+}
 
 function extractCategoryTitleFromDiscoveryQuery(query?: string | null) {
   const normalizedQuery = query?.trim();
@@ -89,18 +91,68 @@ function maskToken(token: string) {
   return `${token.slice(0, 8)}...${token.slice(-6)}`;
 }
 
+function parseLocationList(value?: string) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+
+  const parsed = JSON.parse(trimmed);
+  if (!Array.isArray(parsed)) {
+    throw new Error("PROSPECT_DISCOVERY_LOCATIONS must be a JSON array");
+  }
+
+  const locations = parsed
+    .map((location) => {
+      if (!location || typeof location !== "object" || Array.isArray(location)) {
+        return null;
+      }
+
+      const city =
+        typeof location.city === "string" ? location.city.trim() || null : null;
+      const state =
+        typeof location.state === "string" ? location.state.trim() || null : null;
+      const country =
+        typeof location.country === "string"
+          ? location.country.trim() || null
+          : null;
+
+      if (!city && !state && !country) {
+        return null;
+      }
+
+      return { city, state, country };
+    })
+    .filter(Boolean);
+
+  return locations.length > 0 ? locations : null;
+}
+
 async function main() {
   const appId = requiredEnv("META_APP_ID");
   const appSecret = requiredEnv("META_APP_SECRET");
   const businessAccountId = requiredEnv("INSTAGRAM_BUSINESS_ACCOUNT_ID");
   const accessToken = requiredEnv("INSTAGRAM_GRAPH_ACCESS_TOKEN");
-  const graphVersion =
-    process.env.INSTAGRAM_GRAPH_VERSION?.trim() || DEFAULT_GRAPH_VERSION;
+  const graphVersion = requiredEnv("INSTAGRAM_GRAPH_VERSION");
   const prospectDiscoveryCategoryTitles =
     parseCategoryTitleList(process.env.PROSPECT_DISCOVERY_CATEGORY_TITLES) ||
     parseCategoryTitleList(process.env.PROSPECT_DISCOVERY_CATEGORY_TITLE) ||
-    parseCategoryTitlesFromLegacyQueryEnv() ||
-    [...DISCOVERY_TITLE_VALUES];
+    parseCategoryTitlesFromLegacyQueryEnv();
+  const prospectDiscoveryCategoryDescriptions = prospectDiscoveryCategoryTitles
+    ? Object.fromEntries(
+        prospectDiscoveryCategoryTitles.map((title) => [
+          title,
+          buildProspectDiscoveryCategoryDescription(title),
+        ]),
+      )
+    : null;
+  const prospectDiscoveryLocations =
+    parseLocationList(process.env.PROSPECT_DISCOVERY_LOCATIONS) ||
+    [
+      {
+        city: optionalEnv("PROSPECT_DISCOVERY_CITY"),
+        state: optionalEnv("PROSPECT_DISCOVERY_STATE"),
+        country: optionalEnv("PROSPECT_DISCOVERY_COUNTRY"),
+      },
+    ].filter((location) => location.city || location.state || location.country);
   const prospectDiscoveryCity = optionalEnv("PROSPECT_DISCOVERY_CITY");
   const prospectDiscoveryState = optionalEnv("PROSPECT_DISCOVERY_STATE");
   const prospectDiscoveryCountry =
@@ -136,6 +188,12 @@ async function main() {
       accessToken,
       lastError: null,
       prospectDiscoveryQueries: prospectDiscoveryCategoryTitles ?? undefined,
+      prospectDiscoveryCategoryDescriptions:
+        prospectDiscoveryCategoryDescriptions ?? undefined,
+      prospectDiscoveryLocations:
+        prospectDiscoveryLocations.length > 0
+          ? prospectDiscoveryLocations
+          : undefined,
       prospectDiscoveryCity,
       prospectDiscoveryState,
       prospectDiscoveryCountry,
@@ -147,6 +205,7 @@ async function main() {
       prospectDiscoveryRequestDelayMs,
       prospectDiscoveryStartIncrement,
       prospectDiscoveryPagesPerQuery,
+      prospectDiscoveryCurrentLocationIndex: 0,
       prospectDiscoveryCurrentQueryIndex: 0,
       prospectDiscoveryCurrentStart: 0,
     },
@@ -159,6 +218,15 @@ async function main() {
       lastError: null,
       ...(prospectDiscoveryCategoryTitles
         ? { prospectDiscoveryQueries: prospectDiscoveryCategoryTitles }
+        : {}),
+      ...(prospectDiscoveryCategoryDescriptions
+        ? {
+            prospectDiscoveryCategoryDescriptions:
+              prospectDiscoveryCategoryDescriptions,
+          }
+        : {}),
+      ...(prospectDiscoveryLocations.length > 0
+        ? { prospectDiscoveryLocations }
         : {}),
       ...(prospectDiscoveryCity ? { prospectDiscoveryCity } : {}),
       ...(prospectDiscoveryState ? { prospectDiscoveryState } : {}),
@@ -195,6 +263,11 @@ async function main() {
     businessAccountId: record.businessAccountId,
     accessToken: maskToken(record.accessToken || ""),
     prospectDiscoveryCategoryTitles: record.prospectDiscoveryQueries,
+    prospectDiscoveryCategoryDescriptions:
+      record.prospectDiscoveryCategoryDescriptions,
+    prospectDiscoveryLocations: record.prospectDiscoveryLocations,
+    prospectDiscoveryCurrentLocationIndex:
+      record.prospectDiscoveryCurrentLocationIndex,
     prospectDiscoveryCurrentQueryIndex:
       record.prospectDiscoveryCurrentQueryIndex,
     prospectDiscoveryCurrentStart: record.prospectDiscoveryCurrentStart,
