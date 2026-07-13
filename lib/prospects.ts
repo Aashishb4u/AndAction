@@ -200,6 +200,10 @@ export async function acceptProspectAndConvertToArtist(
       },
     });
 
+    const hasInstagramAccount =
+      Boolean(prospect.instagramId) && Boolean(prospect.instagramUsername);
+    const connectedAt = prospect.lastEnrichedAt || new Date();
+
     const artist = await tx.artist.create({
       data: {
         userId: user.id,
@@ -228,7 +232,10 @@ export async function acceptProspectAndConvertToArtist(
         chargesWithBacklineDescription: prospect.chargesWithBacklineDescription,
         instagramId: prospect.instagramId,
         instagramUsername: prospect.instagramUsername,
-        instagramConnectedAt: prospect.lastEnrichedAt || new Date(),
+        instagramConnectedAt: hasInstagramAccount ? connectedAt : null,
+        instagramRefreshNextRunAt: hasInstagramAccount
+          ? connectedAt
+          : null,
         profileImage: prospect.profileImage,
       },
     });

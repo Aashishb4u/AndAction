@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { fetchInstagramAccountByUsername } from "@/lib/instagram-discovery";
+import { scheduleNextInstagramRefresh } from "@/lib/instagram-refresh-schedule";
 
 interface SyncResult {
   success: boolean;
@@ -90,6 +91,13 @@ export async function syncInstagramReels(
     }
 
     if (!mediaData.data || mediaData.data.length === 0) {
+      await prisma.artist.update({
+        where: { id: artist.id },
+        data: {
+          instagramRefreshNextRunAt: scheduleNextInstagramRefresh(),
+        },
+      });
+
       return { success: true, message: "No reels found", synced: 0, total: 0 };
     }
 
@@ -99,6 +107,13 @@ export async function syncInstagramReels(
     );
 
     if (reels.length === 0) {
+      await prisma.artist.update({
+        where: { id: artist.id },
+        data: {
+          instagramRefreshNextRunAt: scheduleNextInstagramRefresh(),
+        },
+      });
+
       return {
         success: true,
         message: "No reels found",
@@ -136,6 +151,13 @@ export async function syncInstagramReels(
     );
 
     if (newReels.length === 0) {
+      await prisma.artist.update({
+        where: { id: artist.id },
+        data: {
+          instagramRefreshNextRunAt: scheduleNextInstagramRefresh(),
+        },
+      });
+
       return {
         success: true,
         message: "All reels already synced",
@@ -164,6 +186,13 @@ export async function syncInstagramReels(
         instagramReelId: reel.instagramReelId,
       })),
       skipDuplicates: true,
+    });
+
+    await prisma.artist.update({
+      where: { id: artist.id },
+      data: {
+        instagramRefreshNextRunAt: scheduleNextInstagramRefresh(),
+      },
     });
 
     revalidatePath("/artist/profile");

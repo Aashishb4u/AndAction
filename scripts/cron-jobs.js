@@ -22,13 +22,7 @@ const JOBS = [
   {
     name: "Instagram URL Refresh",
     slug: "refresh-instagram-urls",
-    schedule: "0 9 * * *",
-    endpoint: "/api/cron/refresh-instagram-urls",
-  },
-  {
-    name: "Instagram URL Refresh",
-    slug: "refresh-instagram-urls",
-    schedule: "0 10 * * *",
+    schedule: "*/30 * * * *",
     endpoint: "/api/cron/refresh-instagram-urls",
   },
   {

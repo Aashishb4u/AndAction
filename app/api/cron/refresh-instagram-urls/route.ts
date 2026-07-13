@@ -1,29 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchInstagramAccountByUsername } from "@/lib/instagram-discovery";
+import {
+  getInstagramRefreshIntervalHours,
+  scheduleNextInstagramRefresh,
+} from "@/lib/instagram-refresh-schedule";
 import type { Prisma } from "@prisma/client";
 
 const MIN_INSTAGRAM_DISCOVERY_DELAY_MS = 2000;
-const INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS = Number(
-  process.env.INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS || 22,
-);
+const INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS =
+  getInstagramRefreshIntervalHours();
 
 const INSTAGRAM_REFRESH_BATCH_SIZE = Math.max(
   Number(process.env.INSTAGRAM_REFRESH_BATCH_SIZE || 10),
   1,
 );
+const INSTAGRAM_REFRESH_MAX_ARTISTS_PER_RUN = Math.max(
+  Number(process.env.INSTAGRAM_REFRESH_MAX_ARTISTS_PER_RUN || 95),
+  1,
+);
 const INSTAGRAM_REFRESH_ARTIST_DELAY_MS = Math.max(
-  Number(process.env.INSTAGRAM_REFRESH_ARTIST_DELAY_MS || 30000),
+  Number(process.env.INSTAGRAM_REFRESH_ARTIST_DELAY_MS || 10000),
   MIN_INSTAGRAM_DISCOVERY_DELAY_MS,
 );
 const INSTAGRAM_REFRESH_BATCH_DELAY_MS = Number(
-  process.env.INSTAGRAM_REFRESH_BATCH_DELAY_MS || 30000,
+  process.env.INSTAGRAM_REFRESH_BATCH_DELAY_MS || 0,
 );
 const INSTAGRAM_REFRESH_RETRY_DELAY_MS = Number(
   process.env.INSTAGRAM_REFRESH_RETRY_DELAY_MS || 20 * 60 * 1000,
 );
-const INSTAGRAM_REFRESH_MAX_RETRY_ROUNDS = Number(
-  process.env.INSTAGRAM_REFRESH_MAX_RETRY_ROUNDS || 1,
+const INSTAGRAM_REFRESH_MAX_RETRY_ROUNDS = Math.max(
+  Number(process.env.INSTAGRAM_REFRESH_MAX_RETRY_ROUNDS || 0),
+  0,
 );
 
 interface InstagramMediaResponse {
@@ -43,6 +51,7 @@ interface InstagramRefreshArtist {
   userId: string;
   instagramUsername: string | null;
   latestInstagramVideoUpdatedAt: Date | null;
+  instagramRefreshNextRunAt: Date | null;
 }
 
 interface ArtistBatchProcessingResult {
@@ -57,7 +66,7 @@ interface ArtistBatchProcessingResult {
 }
 
 export async function GET(request: NextRequest) {
-  const cronJobId = await createCronJobRecord("refresh-instagram-urls");
+  let cronJobId: string | null = null;
 
   try {
     // Security check - validate cron secret
@@ -73,9 +82,35 @@ export async function GET(request: NextRequest) {
       headerToken || request.headers.get("x-cron-secret") || queryToken;
 
     if (cronSecret && providedSecret !== cronSecret) {
-      await updateCronJobRecord(cronJobId, "failed", "Unauthorized");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const activeCronJob = await prisma.cronJob.findFirst({
+      where: {
+        jobName: "refresh-instagram-urls",
+        status: "started",
+        completedAt: null,
+      },
+      orderBy: {
+        startedAt: "desc",
+      },
+    });
+
+    if (activeCronJob) {
+      console.log(
+        `[CRON] Skipping Instagram URL refresh because run ${activeCronJob.id} is still active`,
+      );
+
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        message: "Instagram URL refresh is already running",
+        activeCronJobId: activeCronJob.id,
+        activeCronJobStartedAt: activeCronJob.startedAt.toISOString(),
+      });
+    }
+
+    cronJobId = await createCronJobRecord("refresh-instagram-urls");
 
     console.log("[CRON] Starting Instagram URL refresh job...");
 
@@ -89,6 +124,7 @@ export async function GET(request: NextRequest) {
         id: true,
         userId: true,
         instagramUsername: true,
+        instagramRefreshNextRunAt: true,
         videos: {
           where: {
             source: "instagram",
@@ -109,8 +145,10 @@ export async function GET(request: NextRequest) {
     );
 
     // Refresh cached Instagram media URLs frequently because direct media URLs expire.
+    const currentTime = new Date();
     const refreshCutoff = new Date(
-      Date.now() - INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS * 60 * 60 * 1000,
+      currentTime.getTime() -
+        INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS * 60 * 60 * 1000,
     );
 
     const artists: InstagramRefreshArtist[] = [];
@@ -119,39 +157,57 @@ export async function GET(request: NextRequest) {
     for (const artist of allArtists) {
       const latestInstagramVideoUpdatedAt =
         artist.videos[0]?.updatedAt ?? null;
+      const isQueuedRefreshDue = Boolean(
+        artist.instagramRefreshNextRunAt &&
+          artist.instagramRefreshNextRunAt <= currentTime,
+      );
+      const isFallbackRefreshDue =
+        !artist.instagramRefreshNextRunAt &&
+        (!latestInstagramVideoUpdatedAt ||
+          latestInstagramVideoUpdatedAt < refreshCutoff);
 
       // If no videos exist OR last update is older than our refresh window,
       // process this artist again to refresh stale media URLs.
-      if (
-        !latestInstagramVideoUpdatedAt ||
-        latestInstagramVideoUpdatedAt < refreshCutoff
-      ) {
+      if (isQueuedRefreshDue || isFallbackRefreshDue) {
         artists.push({
           id: artist.id,
           userId: artist.userId,
           instagramUsername: artist.instagramUsername,
           latestInstagramVideoUpdatedAt,
+          instagramRefreshNextRunAt: artist.instagramRefreshNextRunAt,
         });
       } else {
         skippedCount++;
         console.log(
-          `[CRON] Skipping artist ${artist.id}: last updated ${Math.floor((Date.now() - latestInstagramVideoUpdatedAt.getTime()) / (1000 * 60 * 60))} hours ago`,
+          artist.instagramRefreshNextRunAt
+            ? `[CRON] Skipping artist ${artist.id}: queued for ${artist.instagramRefreshNextRunAt.toISOString()}`
+            : latestInstagramVideoUpdatedAt
+              ? `[CRON] Skipping artist ${artist.id}: last updated ${Math.floor((currentTime.getTime() - latestInstagramVideoUpdatedAt.getTime()) / (1000 * 60 * 60))} hours ago`
+              : `[CRON] Skipping artist ${artist.id}: waiting for next refresh slot`,
         );
       }
     }
 
     artists.sort(compareArtistsByRefreshPriority);
+    const artistsToProcess = artists.slice(
+      0,
+      Math.max(INSTAGRAM_REFRESH_MAX_ARTISTS_PER_RUN, 1),
+    );
+    const deferredArtistsCount = Math.max(
+      artists.length - artistsToProcess.length,
+      0,
+    );
 
     const totalBatches = Math.ceil(
-      artists.length / Math.max(INSTAGRAM_REFRESH_BATCH_SIZE, 1),
+      artistsToProcess.length / Math.max(INSTAGRAM_REFRESH_BATCH_SIZE, 1),
     );
 
     console.log(
-      `[CRON] Processing ${artists.length} eligible artists in ${totalBatches} batches (skipped ${skippedCount} recently updated)`,
+      `[CRON] Processing ${artistsToProcess.length} eligible artists in ${totalBatches} batches (skipped ${skippedCount} recently updated, deferred ${deferredArtistsCount} to the next run)`,
     );
 
     const result = await processArtistsInBatches({
-      artists,
+      artists: artistsToProcess,
       batchSize: INSTAGRAM_REFRESH_BATCH_SIZE,
       perArtistDelayMs: INSTAGRAM_REFRESH_ARTIST_DELAY_MS,
       batchDelayMs: INSTAGRAM_REFRESH_BATCH_DELAY_MS,
@@ -162,8 +218,12 @@ export async function GET(request: NextRequest) {
     const metadata = {
       totalArtists: allArtists.length,
       artistsEligible: artists.length,
+      artistsScheduledThisRun: artistsToProcess.length,
+      artistsDeferredToNextRun: deferredArtistsCount,
       artistsSkipped: skippedCount,
+      refreshIntervalHours: INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS,
       batchSize: Math.max(INSTAGRAM_REFRESH_BATCH_SIZE, 1),
+      maxArtistsPerRun: INSTAGRAM_REFRESH_MAX_ARTISTS_PER_RUN,
       batchesPlanned: totalBatches,
       batchesProcessed: result.batchesProcessed,
       perArtistDelayMs: INSTAGRAM_REFRESH_ARTIST_DELAY_MS,
@@ -193,7 +253,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
-    await updateCronJobRecord(cronJobId, "failed", errorMessage);
+
+    if (cronJobId) {
+      await updateCronJobRecord(cronJobId, "failed", errorMessage);
+    }
 
     console.error("[CRON] Job failed:", error);
 
@@ -415,6 +478,12 @@ async function processArtistsInBatches(params: {
             artist.userId,
             artist.instagramUsername,
           );
+          await prisma.artist.update({
+            where: { id: artist.id },
+            data: {
+              instagramRefreshNextRunAt: scheduleNextInstagramRefresh(),
+            },
+          });
 
           artistsProcessed++;
           videosUpdated += result.videosUpdated;
@@ -475,6 +544,24 @@ function compareArtistsByRefreshPriority(
   a: InstagramRefreshArtist,
   b: InstagramRefreshArtist,
 ): number {
+  if (a.instagramRefreshNextRunAt && b.instagramRefreshNextRunAt) {
+    const queueTimeDifference =
+      a.instagramRefreshNextRunAt.getTime() -
+      b.instagramRefreshNextRunAt.getTime();
+
+    if (queueTimeDifference !== 0) {
+      return queueTimeDifference;
+    }
+  }
+
+  if (a.instagramRefreshNextRunAt) {
+    return -1;
+  }
+
+  if (b.instagramRefreshNextRunAt) {
+    return 1;
+  }
+
   if (!a.latestInstagramVideoUpdatedAt && !b.latestInstagramVideoUpdatedAt) {
     return a.id.localeCompare(b.id);
   }

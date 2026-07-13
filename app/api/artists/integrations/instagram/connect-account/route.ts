@@ -6,6 +6,7 @@ import {
   isInstagramDiscoveryConfigured,
   InstagramDiscoveryMedia,
 } from "@/lib/instagram-discovery";
+import { scheduleNextInstagramRefresh } from "@/lib/instagram-refresh-schedule";
 
 /**
  * Remove emojis and sanitize text for safe database storage.
@@ -133,13 +134,16 @@ export async function POST(request: NextRequest) {
       synced = result.count;
     }
 
+    const connectedAt = new Date();
+
     // Save the Instagram account to the artist profile (only after a successful sync)
     await prisma.artist.update({
       where: { id: artist.id },
       data: {
         instagramId: account.id,
         instagramUsername: account.username,
-        instagramConnectedAt: new Date(),
+        instagramConnectedAt: connectedAt,
+        instagramRefreshNextRunAt: scheduleNextInstagramRefresh(connectedAt),
       },
     });
 

@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
           instagramId: null,
           instagramUsername: null,
           instagramConnectedAt: null,
+          instagramRefreshNextRunAt: null,
         },
       }),
     ]);

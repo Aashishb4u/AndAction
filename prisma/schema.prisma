@@ -133,6 +133,7 @@ model Artist {
   instagramTokenExpiry           DateTime?
   instagramUsername              String?
   instagramConnectedAt           DateTime?
+  instagramRefreshNextRunAt      DateTime?
   createdAt                      DateTime   @default(now())
   updatedAt                      DateTime   @updatedAt
   profileImage                   String?
