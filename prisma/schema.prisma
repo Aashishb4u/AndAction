@@ -277,6 +277,8 @@ model InstagramDiscoveryConfig {
 model Prospect {
   id                             String    @id @default(cuid())
   stageName                      String?
+  firstName                      String?
+  lastName                       String?
   artistType                     String?
   subArtistType                  String?
   achievements                   String?
@@ -294,15 +296,22 @@ model Prospect {
   whatsappNumber                 String?
   contactEmail                   String?
   countryCode                    String?
+  address                        String?
   city                           String?
   state                          String?
   country                        String?
+  zip                            String?
+  gender                         String?
+  dob                            DateTime?
   soloChargesFrom                Decimal?  @db.Decimal(10, 2)
   soloChargesTo                  Decimal?  @db.Decimal(10, 2)
   soloChargesDescription         String?
   chargesWithBacklineFrom        Decimal?  @db.Decimal(10, 2)
   chargesWithBacklineTo          Decimal?  @db.Decimal(10, 2)
   chargesWithBacklineDescription String?
+  youtubeChannelId               String?
+  youtubeChannelName             String?
+  youtubeConnectedAt             DateTime?
   instagramId                    String?   @unique
   instagramUsername              String?   @unique
   profileImage                   String?

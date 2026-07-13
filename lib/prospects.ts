@@ -25,6 +25,10 @@ export async function upsertProspectFromInstagramDiscovery(
   input: UpsertProspectInput,
 ) {
   const normalizedUsername = normalizeInstagramUsername(input.username);
+  const discoveredName = sanitizeText(input.account.name);
+  const derivedName = splitName(
+    discoveredName || normalizedUsername || "Instagram Prospect",
+  );
   const existingArtistFilters: Prisma.ArtistWhereInput[] = [
     { instagramUsername: normalizedUsername },
   ];
@@ -81,6 +85,8 @@ export async function upsertProspectFromInstagramDiscovery(
         title: input.sourceTitle,
         username: normalizedUsername,
       }),
+      firstName: discoveredName ? derivedName.firstName : null,
+      lastName: discoveredName ? derivedName.lastName : null,
       shortBio: sanitizeText(input.account.biography),
       biography: sanitizeText(input.account.biography),
       artistType,
@@ -178,9 +184,14 @@ export async function acceptProspectAndConvertToArtist(
 
     const displayName =
       sanitizeText(prospect.stageName) ||
+      [sanitizeText(prospect.firstName), sanitizeText(prospect.lastName)]
+        .filter(Boolean)
+        .join(" ") ||
       sanitizeText(prospect.instagramUsername) ||
       "Instagram Prospect";
-    const { firstName, lastName } = splitName(displayName);
+    const derivedName = splitName(displayName);
+    const firstName = sanitizeText(prospect.firstName) || derivedName.firstName;
+    const lastName = sanitizeText(prospect.lastName) || derivedName.lastName;
 
     const user = await tx.user.create({
       data: {
@@ -190,10 +201,14 @@ export async function acceptProspectAndConvertToArtist(
         email: normalizedEmail,
         phoneNumber: normalizedPhone,
         countryCode: prospect.countryCode || (normalizedPhone ? "+91" : null),
+        address: sanitizeText(prospect.address),
         city: sanitizeText(prospect.city),
         state: sanitizeText(prospect.state),
+        zip: sanitizeText(prospect.zip),
         avatar: prospect.profileImage || null,
         image: prospect.profileImage || null,
+        gender: sanitizeText(prospect.gender),
+        dob: prospect.dob || null,
         role: "artist",
         isAccountVerified: true,
         isArtistVerified: true,
@@ -230,6 +245,9 @@ export async function acceptProspectAndConvertToArtist(
         chargesWithBacklineFrom: prospect.chargesWithBacklineFrom,
         chargesWithBacklineTo: prospect.chargesWithBacklineTo,
         chargesWithBacklineDescription: prospect.chargesWithBacklineDescription,
+        youtubeChannelId: prospect.youtubeChannelId,
+        youtubeChannelName: prospect.youtubeChannelName,
+        youtubeConnectedAt: prospect.youtubeConnectedAt,
         instagramId: prospect.instagramId,
         instagramUsername: prospect.instagramUsername,
         instagramConnectedAt: hasInstagramAccount ? connectedAt : null,
