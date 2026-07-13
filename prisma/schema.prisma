@@ -250,6 +250,8 @@ model InstagramDiscoveryConfig {
   lastRefreshedAt                      DateTime?
   lastError                            String?
   prospectDiscoveryQueries             Json?
+  prospectDiscoveryCategoryDescriptions Json?
+  prospectDiscoveryLocations           Json?
   prospectDiscoveryCity                String?
   prospectDiscoveryState               String?
   prospectDiscoveryCountry             String?
@@ -261,6 +263,7 @@ model InstagramDiscoveryConfig {
   prospectDiscoveryRequestDelayMs      Int?
   prospectDiscoveryStartIncrement      Int?
   prospectDiscoveryPagesPerQuery       Int?
+  prospectDiscoveryCurrentLocationIndex Int?
   prospectDiscoveryCurrentQueryIndex   Int?
   prospectDiscoveryCurrentStart        Int?
   prospectDiscoveryLastCursorUpdatedAt DateTime?
