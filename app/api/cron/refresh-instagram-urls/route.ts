@@ -473,20 +473,31 @@ async function refreshArtistInstagramVideos(
     return { videosUpdated: 0 };
   }
 
-  // Get current Instagram reel IDs from their account
-  const currentReelIds = new Set(currentReels.map((reel) => reel.id));
+  // // Get current Instagram reel IDs from their account
+  // const currentReelIds = new Set(currentReels.map((reel) => reel.id));
 
-  // Delete videos that are no longer on Instagram
+  // // Delete videos that are no longer on Instagram
+  // const deleteResult = await prisma.video.deleteMany({
+  //   where: {
+  //     artistId: artistId,
+  //     source: "instagram",
+  //     instagramReelId: {
+  //       not: null,
+  //       notIn: Array.from(currentReelIds),
+  //     },
+  //   },
+  // });
+  // Delete ALL existing Instagram videos for this artist
   const deleteResult = await prisma.video.deleteMany({
     where: {
-      artistId: artistId,
+      artistId,
       source: "instagram",
-      instagramReelId: {
-        not: null,
-        notIn: Array.from(currentReelIds),
-      },
     },
   });
+
+  console.log(
+    `[CRON] Deleted ${deleteResult.count} existing Instagram videos for artist ${artistId}`,
+  );
 
   console.log(
     `[CRON] Deleted ${deleteResult.count} old reels for artist ${artistId}`,
@@ -522,22 +533,8 @@ async function refreshArtistInstagramVideos(
       };
 
       // Upsert: update if exists, create if new
-      await prisma.video.upsert({
-        where: {
-          instagramReelId_userId: {
-            instagramReelId: reel.id,
-            userId: userId,
-          },
-        },
-        update: {
-          url: videoData.url,
-          thumbnailUrl: videoData.thumbnailUrl,
-          title: videoData.title,
-          description: videoData.description,
-          artistId: videoData.artistId,
-          updatedAt: new Date(),
-        },
-        create: videoData,
+      await prisma.video.create({
+        data: videoData,
       });
 
       videosUpdated++;
