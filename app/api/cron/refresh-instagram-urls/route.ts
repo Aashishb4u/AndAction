@@ -33,6 +33,10 @@ const INSTAGRAM_REFRESH_MAX_RETRY_ROUNDS = Math.max(
   Number(process.env.INSTAGRAM_REFRESH_MAX_RETRY_ROUNDS || 0),
   0,
 );
+const INSTAGRAM_REFRESH_MAX_API_CALLS_PER_HOUR = Math.max(
+  Number(process.env.INSTAGRAM_REFRESH_MAX_API_CALLS_PER_HOUR || 180),
+  1,
+);
 
 interface InstagramMediaResponse {
   data?: Array<{
@@ -63,6 +67,31 @@ interface ArtistBatchProcessingResult {
   retryRoundsExecuted: number;
   batchesProcessed: number;
   failedArtists: InstagramRefreshArtist[];
+  deferredArtists: InstagramRefreshArtist[];
+  stoppedDueToRateLimit: boolean;
+  rateLimitBlockedUntil: Date | null;
+  apiUsageSnapshot: InstagramRefreshApiUsageSnapshot | null;
+}
+
+interface InstagramRefreshApiUsageSnapshot {
+  windowStartedAt: Date;
+  windowEndsAt: Date;
+  apiCallsCount: number;
+  rateLimitHits: number;
+  blockedUntil: Date | null;
+  lastRateLimitedAt: Date | null;
+}
+
+class InstagramRefreshRateLimitError extends Error {
+  blockedUntil: Date;
+  usageSnapshot: InstagramRefreshApiUsageSnapshot;
+
+  constructor(message: string, usageSnapshot: InstagramRefreshApiUsageSnapshot) {
+    super(message);
+    this.name = "InstagramRefreshRateLimitError";
+    this.blockedUntil = usageSnapshot.blockedUntil || usageSnapshot.windowEndsAt;
+    this.usageSnapshot = usageSnapshot;
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -189,14 +218,20 @@ export async function GET(request: NextRequest) {
     }
 
     artists.sort(compareArtistsByRefreshPriority);
+    console.log("[CRON] Sorted artists by refresh priority ===========> Start: ", artists, "+++++ END ==============>");
     const artistsToProcess = artists.slice(
       0,
       Math.max(INSTAGRAM_REFRESH_MAX_ARTISTS_PER_RUN, 1),
     );
+
+    console.log("[CRON] Artists to process ===========> Start: ", artistsToProcess, "+++++ END ==============>");
+
     const deferredArtistsCount = Math.max(
       artists.length - artistsToProcess.length,
       0,
     );
+
+    console.log("[CRON] Deferred artists count ===========> ", deferredArtistsCount, "+++++ END ==============>");
 
     const totalBatches = Math.ceil(
       artistsToProcess.length / Math.max(INSTAGRAM_REFRESH_BATCH_SIZE, 1),
@@ -220,10 +255,15 @@ export async function GET(request: NextRequest) {
       artistsEligible: artists.length,
       artistsScheduledThisRun: artistsToProcess.length,
       artistsDeferredToNextRun: deferredArtistsCount,
+      artistsDeferredDueToRateLimit: result.deferredArtists.length,
+      artistIdsDeferredDueToRateLimit: result.deferredArtists.map(
+        (artist) => artist.id,
+      ),
       artistsSkipped: skippedCount,
       refreshIntervalHours: INSTAGRAM_MEDIA_REFRESH_INTERVAL_HOURS,
       batchSize: Math.max(INSTAGRAM_REFRESH_BATCH_SIZE, 1),
       maxArtistsPerRun: INSTAGRAM_REFRESH_MAX_ARTISTS_PER_RUN,
+      maxApiCallsPerHour: INSTAGRAM_REFRESH_MAX_API_CALLS_PER_HOUR,
       batchesPlanned: totalBatches,
       batchesProcessed: result.batchesProcessed,
       perArtistDelayMs: INSTAGRAM_REFRESH_ARTIST_DELAY_MS,
@@ -238,6 +278,21 @@ export async function GET(request: NextRequest) {
       failedArtistsAfterRetries: result.failedArtists.length,
       failedArtistIds: result.failedArtists.map((artist) => artist.id),
       failedArtistInstagramUserNames: result.failedArtists.map((artist) => artist.instagramUsername),
+      stoppedDueToRateLimit: result.stoppedDueToRateLimit,
+      rateLimitBlockedUntil: result.rateLimitBlockedUntil?.toISOString() || null,
+      apiCallsUsedThisHour: result.apiUsageSnapshot?.apiCallsCount || 0,
+      apiCallsRemainingThisHour: result.apiUsageSnapshot
+        ? Math.max(
+            INSTAGRAM_REFRESH_MAX_API_CALLS_PER_HOUR -
+              result.apiUsageSnapshot.apiCallsCount,
+            0,
+          )
+        : INSTAGRAM_REFRESH_MAX_API_CALLS_PER_HOUR,
+      apiUsageWindowStartedAt:
+        result.apiUsageSnapshot?.windowStartedAt.toISOString() || null,
+      apiUsageWindowEndsAt:
+        result.apiUsageSnapshot?.windowEndsAt.toISOString() || null,
+      apiRateLimitHitsThisHour: result.apiUsageSnapshot?.rateLimitHits || 0,
       errorMessages: result.errorMessages,
     };
 
@@ -291,8 +346,25 @@ async function refreshArtistInstagramVideos(
 
   if (username) {
     // Refresh via the shared Business Discovery token.
-    const account = await fetchInstagramAccountByUsername(username);
-    mediaData = { data: account?.media?.data || [] };
+    await reserveInstagramRefreshApiCallSlot();
+
+    try {
+      const account = await fetchInstagramAccountByUsername(username);
+      mediaData = { data: account?.media?.data || [] };
+    } catch (error) {
+      if (isInstagramApplicationRateLimitError(error)) {
+        const usageSnapshot = await markInstagramRefreshRateLimitHit(
+          error instanceof Error ? error.message : "Application request limit reached",
+        );
+
+        throw new InstagramRefreshRateLimitError(
+          error instanceof Error ? error.message : "Application request limit reached",
+          usageSnapshot,
+        );
+      }
+
+      throw error;
+    }
   } else {
     throw new Error(`Artist ${artistId} has no Instagram username`);
   }
@@ -345,13 +417,21 @@ async function refreshArtistInstagramVideos(
 
   for (const reel of currentReels) {
     try {
+      const safeCaption = sanitizeInstagramText(reel.caption);
+      const safeMediaUrl = sanitizeInstagramUrl(reel.media_url);
+      const safeThumbnailUrl =
+        sanitizeInstagramUrl(reel.thumbnail_url) ||
+        safeMediaUrl;
+
       const videoData = {
         userId: userId,
         artistId: artistId,
-        title: removeEmojis(reel.caption?.slice(0, 100) || "Instagram Reel"),
-        description: removeEmojis(reel.caption || ""),
-        url: reel.media_url || "",
-        thumbnailUrl: reel.thumbnail_url || reel.media_url || "",
+        title:
+          safeCaption?.slice(0, 100) ||
+          "Instagram Reel",
+        description: safeCaption,
+        url: safeMediaUrl || "",
+        thumbnailUrl: safeThumbnailUrl || "",
         duration: 0,
         durationFormatted: "0:00",
         views: 0,
@@ -420,6 +500,10 @@ async function processArtistsInBatches(params: {
   let retryRoundsExecuted = 0;
   let batchesProcessed = 0;
   const errorMessages: string[] = [];
+  let deferredArtists: InstagramRefreshArtist[] = [];
+  let stoppedDueToRateLimit = false;
+  let rateLimitBlockedUntil: Date | null = null;
+  let apiUsageSnapshot: InstagramRefreshApiUsageSnapshot | null = null;
 
   for (
     let attemptNumber = 0;
@@ -499,6 +583,38 @@ async function processArtistsInBatches(params: {
           errorMessages.push(
             `Attempt ${attemptNumber + 1}, batch ${batchIndex + 1}, artist ${artist.id}: ${message}`,
           );
+
+          if (error instanceof InstagramRefreshRateLimitError) {
+            stoppedDueToRateLimit = true;
+            rateLimitBlockedUntil = error.blockedUntil;
+            apiUsageSnapshot = error.usageSnapshot;
+            deferredArtists = [
+              artist,
+              ...batch.slice(artistIndex + 1),
+              ...batches.slice(batchIndex + 1).flat(),
+            ];
+
+            console.error(
+              `[CRON] Stopping refresh run after hitting Instagram API rate limit. Blocked until ${error.blockedUntil.toISOString()}:`,
+              error,
+            );
+
+            return {
+              artistsProcessed,
+              artistAttempts,
+              videosUpdated,
+              errors,
+              errorMessages,
+              retryRoundsExecuted,
+              batchesProcessed,
+              failedArtists: failedArtistsForNextAttempt,
+              deferredArtists,
+              stoppedDueToRateLimit,
+              rateLimitBlockedUntil,
+              apiUsageSnapshot,
+            };
+          }
+
           failedArtistsForNextAttempt.push(artist);
 
           console.error(
@@ -518,6 +634,10 @@ async function processArtistsInBatches(params: {
     );
   }
 
+  if (!apiUsageSnapshot) {
+    apiUsageSnapshot = await getInstagramRefreshApiUsageSnapshot();
+  }
+
   return {
     artistsProcessed,
     artistAttempts,
@@ -527,6 +647,10 @@ async function processArtistsInBatches(params: {
     retryRoundsExecuted,
     batchesProcessed,
     failedArtists: pendingArtists,
+    deferredArtists,
+    stoppedDueToRateLimit,
+    rateLimitBlockedUntil,
+    apiUsageSnapshot,
   };
 }
 
@@ -601,9 +725,171 @@ function removeEmojis(text: string): string {
 
   return text
     .replace(/[\p{Extended_Pictographic}]/gu, "") // Remove emojis
-    .replace(/[\u0000-\u001F\u007F-\u009F]/g, "") // Remove control characters
-    .replace(/\\/g, "\\\\") // Escape backslashes
+    .replace(/\p{Cc}/gu, "") // Remove control characters / null bytes
+    .replace(/\p{Cs}/gu, "") // Remove lone/unpaired surrogates
     .trim();
+}
+
+function sanitizeInstagramText(value?: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const cleaned = removeEmojis(value)
+    // Drop literal escape fragments that can break downstream serialization.
+    .replace(/\\x[0-9A-Fa-f]{0,1}(?![0-9A-Fa-f])/g, "")
+    .replace(/\\u[0-9A-Fa-f]{0,3}(?![0-9A-Fa-f])/g, "")
+    .trim();
+
+  return cleaned || null;
+}
+
+function sanitizeInstagramUrl(value?: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const cleaned = value
+    .replace(/\p{Cc}/gu, "")
+    .replace(/\p{Cs}/gu, "")
+    .trim();
+
+  return cleaned || null;
+}
+
+function isInstagramApplicationRateLimitError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error || "");
+  return (
+    /Application request limit reached/i.test(message) ||
+    /\(#4\)/.test(message)
+  );
+}
+
+function getCurrentHourWindow(now = new Date()) {
+  const windowStartedAt = new Date(now);
+  windowStartedAt.setMinutes(0, 0, 0);
+
+  const windowEndsAt = new Date(windowStartedAt);
+  windowEndsAt.setHours(windowEndsAt.getHours() + 1);
+
+  return { windowStartedAt, windowEndsAt };
+}
+
+async function reserveInstagramRefreshApiCallSlot(): Promise<InstagramRefreshApiUsageSnapshot> {
+  const now = new Date();
+  const { windowStartedAt, windowEndsAt } = getCurrentHourWindow(now);
+
+  await prisma.instagramRefreshApiUsage.upsert({
+    where: { windowStartedAt },
+    create: {
+      windowStartedAt,
+      windowEndsAt,
+    },
+    update: {
+      windowEndsAt,
+    },
+  });
+
+  const usage = await prisma.instagramRefreshApiUsage.findUnique({
+    where: { windowStartedAt },
+  });
+
+  if (!usage) {
+    throw new Error("Failed to load Instagram refresh API usage");
+  }
+
+  if (usage.blockedUntil && usage.blockedUntil > now) {
+    throw new InstagramRefreshRateLimitError(
+      `Instagram refresh API is blocked until ${usage.blockedUntil.toISOString()}`,
+      toInstagramRefreshApiUsageSnapshot(usage),
+    );
+  }
+
+  if (usage.apiCallsCount >= INSTAGRAM_REFRESH_MAX_API_CALLS_PER_HOUR) {
+    const blockedUsage = await prisma.instagramRefreshApiUsage.update({
+      where: { id: usage.id },
+      data: {
+        blockedUntil: usage.blockedUntil && usage.blockedUntil > windowEndsAt
+          ? usage.blockedUntil
+          : windowEndsAt,
+        lastError: `Hourly API call cap reached (${INSTAGRAM_REFRESH_MAX_API_CALLS_PER_HOUR})`,
+      },
+    });
+
+    throw new InstagramRefreshRateLimitError(
+      `Hourly Instagram refresh API cap reached (${INSTAGRAM_REFRESH_MAX_API_CALLS_PER_HOUR})`,
+      toInstagramRefreshApiUsageSnapshot(blockedUsage),
+    );
+  }
+
+  const reservedUsage = await prisma.instagramRefreshApiUsage.update({
+    where: { id: usage.id },
+    data: {
+      apiCallsCount: {
+        increment: 1,
+      },
+      lastError: null,
+    },
+  });
+
+  return toInstagramRefreshApiUsageSnapshot(reservedUsage);
+}
+
+async function markInstagramRefreshRateLimitHit(
+  message: string,
+): Promise<InstagramRefreshApiUsageSnapshot> {
+  const now = new Date();
+  const { windowStartedAt, windowEndsAt } = getCurrentHourWindow(now);
+
+  const usage = await prisma.instagramRefreshApiUsage.upsert({
+    where: { windowStartedAt },
+    create: {
+      windowStartedAt,
+      windowEndsAt,
+      rateLimitHits: 1,
+      lastRateLimitedAt: now,
+      blockedUntil: windowEndsAt,
+      lastError: message,
+    },
+    update: {
+      windowEndsAt,
+      rateLimitHits: {
+        increment: 1,
+      },
+      lastRateLimitedAt: now,
+      blockedUntil: windowEndsAt,
+      lastError: message,
+    },
+  });
+
+  return toInstagramRefreshApiUsageSnapshot(usage);
+}
+
+async function getInstagramRefreshApiUsageSnapshot(): Promise<InstagramRefreshApiUsageSnapshot | null> {
+  const { windowStartedAt } = getCurrentHourWindow(new Date());
+  const usage = await prisma.instagramRefreshApiUsage.findUnique({
+    where: { windowStartedAt },
+  });
+
+  return usage ? toInstagramRefreshApiUsageSnapshot(usage) : null;
+}
+
+function toInstagramRefreshApiUsageSnapshot(usage: {
+  windowStartedAt: Date;
+  windowEndsAt: Date;
+  apiCallsCount: number;
+  rateLimitHits: number;
+  blockedUntil: Date | null;
+  lastRateLimitedAt: Date | null;
+}): InstagramRefreshApiUsageSnapshot {
+  return {
+    windowStartedAt: usage.windowStartedAt,
+    windowEndsAt: usage.windowEndsAt,
+    apiCallsCount: usage.apiCallsCount,
+    rateLimitHits: usage.rateLimitHits,
+    blockedUntil: usage.blockedUntil,
+    lastRateLimitedAt: usage.lastRateLimitedAt,
+  };
 }
 
 /**
