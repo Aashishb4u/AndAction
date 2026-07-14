@@ -114,6 +114,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const artistId = request.nextUrl.searchParams.get("artistId");
+    const force =
+      request.nextUrl.searchParams.get("force")?.toLowerCase() === "true";
+
+    const isManualForceRun = force && Boolean(artistId);
+
+    if (force && !artistId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "artistId is required when force=true",
+        },
+        { status: 400 },
+      );
+    }
+
+    console.log("[INSTAGRAM REFRESH] Request mode:", {
+      artistId,
+      force,
+      isManualForceRun,
+    });
+
     const activeCronJob = await prisma.cronJob.findFirst({
       where: {
         jobName: "refresh-instagram-urls",
@@ -125,7 +147,21 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    if (activeCronJob) {
+    // if (activeCronJob) {
+    //   console.log(
+    //     `[CRON] Skipping Instagram URL refresh because run ${activeCronJob.id} is still active`,
+    //   );
+
+    //   return NextResponse.json({
+    //     success: true,
+    //     skipped: true,
+    //     message: "Instagram URL refresh is already running",
+    //     activeCronJobId: activeCronJob.id,
+    //     activeCronJobStartedAt: activeCronJob.startedAt.toISOString(),
+    //   });
+    // }
+
+    if (activeCronJob && !isManualForceRun) {
       console.log(
         `[CRON] Skipping Instagram URL refresh because run ${activeCronJob.id} is still active`,
       );
@@ -139,8 +175,19 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    cronJobId = await createCronJobRecord("refresh-instagram-urls");
+    if (activeCronJob && isManualForceRun) {
+      console.log(
+        `[FORCE] Bypassing active cron job ${activeCronJob.id} for targeted artist refresh`,
+      );
+    }
 
+    // cronJobId = await createCronJobRecord("refresh-instagram-urls");
+
+    const jobName = isManualForceRun
+      ? "force-refresh-instagram-artist"
+      : "refresh-instagram-urls";
+
+    cronJobId = await createCronJobRecord(jobName);
     console.log("[CRON] Starting Instagram URL refresh job...");
 
     // Get all artists connected through username-based Business Discovery.
@@ -148,6 +195,12 @@ export async function GET(request: NextRequest) {
       where: {
         instagramId: { not: null },
         instagramUsername: { not: null },
+
+        ...(artistId
+          ? {
+              id: artistId,
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -168,6 +221,22 @@ export async function GET(request: NextRequest) {
         },
       },
     });
+
+    console.log(`[CRON] Found ${allArtists.length} total artists with Instagram connected`);
+
+    if (isManualForceRun && allArtists.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: artistId
+            ? `No Instagram-connected artist found with id ${artistId}`
+            : `No Instagram-connected artist found`,
+        },
+        {
+          status: 404,
+        },
+      );
+    }
 
     console.log(
       `[CRON] Found ${allArtists.length} total artists with Instagram connected`,
@@ -197,7 +266,11 @@ export async function GET(request: NextRequest) {
 
       // If no videos exist OR last update is older than our refresh window,
       // process this artist again to refresh stale media URLs.
-      if (isQueuedRefreshDue || isFallbackRefreshDue) {
+      if (
+        isManualForceRun ||
+        isQueuedRefreshDue ||
+        isFallbackRefreshDue
+      ) {
         artists.push({
           id: artist.id,
           userId: artist.userId,
@@ -205,6 +278,12 @@ export async function GET(request: NextRequest) {
           latestInstagramVideoUpdatedAt,
           instagramRefreshNextRunAt: artist.instagramRefreshNextRunAt,
         });
+
+        if (isManualForceRun) {
+          console.log(
+            `[FORCE] Artist ${artist.id} added to refresh queue regardless of schedule`,
+          );
+        }
       } else {
         skippedCount++;
         console.log(
