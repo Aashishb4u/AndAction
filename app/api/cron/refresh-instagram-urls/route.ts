@@ -800,7 +800,7 @@ async function reserveInstagramRefreshApiCallSlot(): Promise<InstagramRefreshApi
 
   if (usage.blockedUntil && usage.blockedUntil > now) {
     throw new InstagramRefreshRateLimitError(
-      `Instagram refresh API is blocked until ${usage.blockedUntil.toISOString()}`,
+      `Instagram refresh API is blocked until ${new Date(usage.blockedUntil!).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} (IST)`,
       toInstagramRefreshApiUsageSnapshot(usage),
     );
   }
