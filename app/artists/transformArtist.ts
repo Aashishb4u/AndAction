@@ -84,7 +84,7 @@ export function transformArtist(raw: RawArtistFromAPI): Artist {
     category: capitalize(raw.artistType || ""),
     location: formatDisplayLabel(raw.user.state || ""),
     duration,
-    startingPrice: raw.soloChargesFrom || 0,
+    startingPrice: Number(raw.soloChargesFrom) || 0,
     languages: formatDisplayLabels(raw.performingLanguage || null),
     image: raw.profileImage || "/avatars/default.jpg",
     // TODO: Implement bookmark logic

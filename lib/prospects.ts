@@ -7,13 +7,18 @@ import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 interface UpsertProspectInput {
   username: string;
   account: InstagramDiscoveryAccount;
-  sourceQuery: string;
+  sourceQuery: string | null;
+  source?: string | null;
   sourceTitle?: string | null;
   sourceSnippet?: string | null;
   sourceLink?: string | null;
+  address?: string | null;
   city?: string | null;
   state?: string | null;
   country?: string | null;
+  zip?: string | null;
+  contactNumber?: string | null;
+  website?: string | null;
 }
 
 interface AcceptProspectInput {
@@ -37,7 +42,10 @@ export async function upsertProspectFromInstagramDiscovery(
     existingArtistFilters.push({ instagramId: input.account.id });
   }
 
-  const contactNumbers = extractPhoneNumbers(input.account.biography || "");
+  const contactNumbers = [
+    ...extractPhoneNumbers(input.account.biography || ""),
+    ...extractPhoneNumbers(input.contactNumber || ""),
+  ];
   const artistType = getArtistTypeFromDiscoveryQuery(input.sourceQuery);
 
   const existingArtist = await prisma.artist.findFirst({
@@ -95,17 +103,20 @@ export async function upsertProspectFromInstagramDiscovery(
       contactNumber: contactNumbers.length > 0 ? contactNumbers[0] || null : null,
       countryCode: "+91",
       profileImage: input.account.profile_picture_url || null,
-      website: sanitizeText(input.account.website),
+      website: sanitizeText(input.account.website) || sanitizeText(input.website),
       followersCount: input.account.followers_count ?? null,
       followsCount: input.account.follows_count ?? null,
       mediaCount: input.account.media_count ?? null,
+      ...(sanitizeText(input.source) ? { source: sanitizeText(input.source)! } : {}),
       sourceQuery: sanitizeText(input.sourceQuery),
       sourceTitle: sanitizeText(input.sourceTitle),
       sourceSnippet: sanitizeText(input.sourceSnippet),
       sourceLink: input.sourceLink || null,
+      address: sanitizeText(input.address),
       city: sanitizeText(input.city),
       state: sanitizeText(input.state),
       country: sanitizeText(input.country),
+      zip: sanitizeText(input.zip),
       lastEnrichedAt: new Date(),
     },
   });

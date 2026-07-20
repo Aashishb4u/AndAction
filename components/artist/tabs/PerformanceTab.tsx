@@ -556,7 +556,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-1">
           <label className="block text-sm font-medium text-white">
-            Charges with backing
+            Charges with backling
           </label>
           <Tooltip content="Amount including backline like sound, stage, and support setup">
             <Info size={16} className="text-blue" />

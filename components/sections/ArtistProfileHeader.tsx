@@ -42,10 +42,12 @@ const ArtistProfileHeader: React.FC<ArtistProfileHeaderProps> = ({
 
 
   const formatPriceOrRequest = (price: number | null | undefined) => {
-    if (price == null || price === 0) {
-      return "Price on request";
+    // Charges arrive as Prisma Decimals, which serialize to strings over JSON.
+    const amount = Number(price);
+    if (price == null || !Number.isFinite(amount) || amount === 0) {
+      return "Price On Request";
     }
-    return `₹${price.toLocaleString()}`;
+    return `₹${amount.toLocaleString()}`;
   };
 
   const handleRequestBooking = () => {

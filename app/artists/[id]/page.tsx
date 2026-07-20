@@ -439,11 +439,8 @@ export default function ArtistDetailPage() {
         return digitsOnly;
       };
 
-      const userName =
-        `${session.user.firstName || ""} ${session.user.lastName || ""}`.trim() ||
-        "a user";
       const artistName = artist.name || "Artist";
-      const message = `Hi ${artistName}, I am ${userName} found your profile on ANDACTION`;
+      const message = `Hi ${artistName}, I came across your profile on www.andaction.in and would like to connect regarding an upcoming event.`;
       const encodedMessage = encodeURIComponent(message);
 
       const normalizedNumber = normalizeWhatsappNumber(whatsappTarget);

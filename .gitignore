@@ -43,3 +43,6 @@ next-env.d.ts
 production_backup.sql
 /lib/generated/prisma
 backup/
+
+# claude code
+.claude/

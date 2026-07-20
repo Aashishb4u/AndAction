@@ -879,7 +879,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             <div className="space-y-2">
               {parseAchievementItems(artist.achievements).map(
                 (achievement: string, index: number) => (
-                  <p key={index} className="text-sm text-white leading-6">
+                  <p key={index} className="secondary-grey-text">
                     {achievement}
                   </p>
                 ),
@@ -896,13 +896,13 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         const hasSoloCharges =
           (artist.soloChargesFrom !== undefined &&
             artist.soloChargesFrom !== null &&
-            `${artist.soloChargesFrom}`.trim() !== "");
+            Number(artist.soloChargesFrom) > 0);
         const hasBacklineCharges =
           (artist.chargesWithBacklineFrom !== undefined &&
             artist.chargesWithBacklineFrom !== null &&
             Number(artist.chargesWithBacklineFrom) > 0);
         const hasPricingSection =
-          true; // Always show pricing section to display "Price on request" when needed
+          true; // Always show pricing section to display "Price On Request" when needed
 
         const hasDuration =
           !!artist.performingDurationFrom || !!artist.performingDurationTo;
@@ -952,12 +952,12 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                   <h3 className="text-text-gray mb-1">Solo Charges</h3>
                   {hasSoloCharges ? (
                     <div className="text-white mb-1">
-                      {artist.soloChargesFrom
+                      {Number(artist.soloChargesFrom) > 0
                         ? `Starting from ₹${Number(artist.soloChargesFrom).toLocaleString()}`
-                        : `Price on request`}
+                        : `Price On Request`}
                     </div>
                   ) : (
-                    <div className="text-white mb-1">Price on request</div>
+                    <div className="text-white mb-1">Price On Request</div>
                   )}
                   {artist.soloChargesDescription?.trim() ? (
                     <p className="footnote">{artist.soloChargesDescription.trim()}</p>
@@ -969,9 +969,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                     <h3 className="text-text-gray mb-1">Charges with backline</h3>
                     {hasBacklineCharges && (
                       <div className="text-white mb-1">
-                        {artist.chargesWithBacklineFrom
+                        {Number(artist.chargesWithBacklineFrom) > 0
                           ? `Starting from ₹${Number(artist.chargesWithBacklineFrom).toLocaleString()}`
-                          : `Price on request`}
+                          : `Price On Request`}
                       </div>
                     )}
                     {artist.chargesWithBacklineDescription?.trim() ? (
@@ -996,7 +996,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                   <div className="flex flex-col md:flex-row md:items-center">
                     {hasDuration && (
                       <div className="flex-1 md:px-3">
-                        <h4 className="text-text-gray mb-1">Performing duration</h4>
+                        <h4 className="text-text-gray">Performing duration</h4>
                         <p className="text-white mb-1">
                           {artist.performingDurationFrom || ""}
                           {artist.performingDurationFrom && artist.performingDurationTo ? " - " : ""}
@@ -1013,7 +1013,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
                     {hasPerformingMembers && (
                       <div className="flex-1 md:px-8">
-                        <h4 className="text-text-gray mb-1">Performing members</h4>
+                        <h4 className="text-text-gray">Performing members</h4>
                         <p className="text-white mb-1">{formatMembersValue(artist.performingMembers)}</p>
                       </div>
                     )}
@@ -1024,7 +1024,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
 
                     {hasOffStageMembers && (
                       <div className="flex-1 md:px-8">
-                        <h4 className="text-text-gray mb-1">Off stage members</h4>
+                        <h4 className="text-text-gray">Off stage members</h4>
                         <p className="text-white mb-1">{formatMembersValue(artist.offStageMembers)}</p>
                       </div>
                     )}
