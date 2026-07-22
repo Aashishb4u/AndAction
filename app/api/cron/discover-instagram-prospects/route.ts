@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       throw new Error("SERPAPI_KEY is missing");
     }
 
+
     const discoveryConfig = await getInstagramProspectDiscoveryConfig();
     const hasManualQueryOverride = request.nextUrl.searchParams.has("q");
     const hasManualCategoryOverride = request.nextUrl.searchParams.has("category");
@@ -87,6 +88,20 @@ export async function GET(request: NextRequest) {
       process.env.PROSPECT_DISCOVERY_DEBUG === "true";
 
     console.log("[CRON] Starting Instagram prospect discovery...");
+
+
+    // api call - to n8n
+    // api payload - 
+    // 1. category
+    // 2. location
+    // 3. latitude, longitude
+    // 4. source - "discover-googlemaps-prospects"
+    // 5. start
+    // 6. maxResults
+    // 7. google_domain
+    // 8. hl
+    // 9. gl
+
 
     const searchResult = await discoverInstagramProspectsFromSerpApi({
       apiKey,
