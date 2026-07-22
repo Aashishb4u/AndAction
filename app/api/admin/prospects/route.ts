@@ -16,37 +16,92 @@ const MAX_IMPORT_ITEMS = 50;
 const IMPORT_SOURCE = "admin_payload_import";
 
 interface ProspectImportSearchMetadata {
-  title?: string;
-  snippet?: string;
-  link?: string;
-  instagram_id?: string;
+  title?: string | null;
+  snippet?: string | null;
+  link?: string | null;
+  instagram_id?: string | null;
+  source?: string | null;
 }
 
 interface ProspectImportBusinessData {
-  title?: string;
-  address?: string;
-  phone?: string;
-  website?: string;
-  country?: string;
-  instagram_search_query?: string;
+  title?: string | null;
+  address?: string | null;
+  artist_type?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  country?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  pincode?: string | null;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  instagram_search_query?: string | null;
 }
 
 interface ProspectImportEnrichedInstagram {
-  id?: string;
-  username?: string;
-  name?: string;
-  biography?: string;
-  profile_picture_url?: string;
-  website?: string;
-  followers_count?: number;
-  follows_count?: number;
-  media_count?: number;
+  id?: string | null;
+  username?: string | null;
+  name?: string | null;
+  biography?: string | null;
+  profile_picture_url?: string | null;
+  website?: string | null;
+  followers_count?: number | string | null;
+  follows_count?: number | string | null;
+  media_count?: number | string | null;
 }
 
 interface ProspectImportItem {
   search_metadata?: ProspectImportSearchMetadata;
   business_data?: ProspectImportBusinessData;
   enriched_instagram?: ProspectImportEnrichedInstagram;
+}
+
+/**
+ * Accepted request shapes:
+ *   1. a single item                      -> { search_metadata, ... }
+ *   2. an array of items                  -> [ { ... }, { ... } ]
+ *   3. an n8n-style envelope              -> [ { payload: [ { json: { ... } } ] } ]
+ * Envelopes may also appear unwrapped as { payload: [...] } or { json: {...} }.
+ */
+function flattenImportItems(input: unknown, depth = 0): ProspectImportItem[] {
+  if (!input || typeof input !== "object" || depth > 5) return [];
+
+  if (Array.isArray(input)) {
+    return input.flatMap((entry) => flattenImportItems(entry, depth + 1));
+  }
+
+  const record = input as Record<string, unknown>;
+
+  if (record.payload !== undefined) {
+    return flattenImportItems(record.payload, depth + 1);
+  }
+
+  if (record.json !== undefined) {
+    return flattenImportItems(record.json, depth + 1);
+  }
+
+  if (
+    record.enriched_instagram !== undefined ||
+    record.business_data !== undefined ||
+    record.search_metadata !== undefined
+  ) {
+    return [record as ProspectImportItem];
+  }
+
+  return [];
+}
+
+function toOptionalNumber(value: unknown): number | undefined {
+  if (value === null || value === undefined || value === "") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function toCoordinate(value: unknown, max: number): number | null {
+  const parsed = toOptionalNumber(value);
+  if (parsed === undefined || Math.abs(parsed) > max) return null;
+  return parsed;
 }
 
 interface ProspectImportResult {
@@ -192,21 +247,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    const body = (await request.json().catch(() => null)) as
-      | ProspectImportItem
-      | ProspectImportItem[]
-      | null;
+    const body = await request.json().catch(() => null);
 
-    if (!body || (typeof body !== "object" && !Array.isArray(body))) {
+    if (!body || typeof body !== "object") {
       return ApiErrors.badRequest(
         "Request body must be a prospect payload object or an array of payload objects.",
       );
     }
 
-    const items = Array.isArray(body) ? body : [body];
+    const items = flattenImportItems(body);
 
     if (items.length === 0) {
-      return ApiErrors.badRequest("Payload array is empty.");
+      return ApiErrors.badRequest(
+        "No prospect payloads found. Each item must contain an enriched_instagram, business_data, or search_metadata object.",
+      );
     }
 
     if (items.length > MAX_IMPORT_ITEMS) {
@@ -246,25 +300,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         profile_picture_url:
           sanitizeText(enriched.profile_picture_url) || undefined,
         website: sanitizeText(enriched.website) || undefined,
-        followers_count:
-          typeof enriched.followers_count === "number"
-            ? enriched.followers_count
-            : undefined,
-        follows_count:
-          typeof enriched.follows_count === "number"
-            ? enriched.follows_count
-            : undefined,
-        media_count:
-          typeof enriched.media_count === "number"
-            ? enriched.media_count
-            : undefined,
+        followers_count: toOptionalNumber(enriched.followers_count),
+        follows_count: toOptionalNumber(enriched.follows_count),
+        media_count: toOptionalNumber(enriched.media_count),
       };
 
       try {
         const result = await upsertProspectFromInstagramDiscovery({
           username,
           account,
-          source: IMPORT_SOURCE,
+          source: sanitizeText(searchMetadata?.source) || IMPORT_SOURCE,
+          artistType: sanitizeText(businessData?.artist_type),
           sourceQuery: sanitizeText(businessData?.instagram_search_query),
           sourceTitle:
             sanitizeText(searchMetadata?.title) ||
@@ -272,7 +318,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           sourceSnippet: sanitizeText(searchMetadata?.snippet),
           sourceLink: sanitizeText(searchMetadata?.link),
           address: sanitizeText(businessData?.address),
+          city: sanitizeText(businessData?.city),
+          state: sanitizeText(businessData?.state),
           country: sanitizeText(businessData?.country),
+          zip:
+            sanitizeText(businessData?.zip) ||
+            sanitizeText(businessData?.pincode),
+          pincode:
+            sanitizeText(businessData?.pincode) ||
+            sanitizeText(businessData?.zip),
+          latitude: toCoordinate(businessData?.latitude, 90),
+          longitude: toCoordinate(businessData?.longitude, 180),
           contactNumber: sanitizeText(businessData?.phone),
           website: sanitizeText(businessData?.website),
         });

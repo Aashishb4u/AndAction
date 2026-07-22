@@ -9,6 +9,7 @@ interface UpsertProspectInput {
   account: InstagramDiscoveryAccount;
   sourceQuery: string | null;
   source?: string | null;
+  artistType?: string | null;
   sourceTitle?: string | null;
   sourceSnippet?: string | null;
   sourceLink?: string | null;
@@ -17,6 +18,9 @@ interface UpsertProspectInput {
   state?: string | null;
   country?: string | null;
   zip?: string | null;
+  pincode?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   contactNumber?: string | null;
   website?: string | null;
 }
@@ -46,7 +50,10 @@ export async function upsertProspectFromInstagramDiscovery(
     ...extractPhoneNumbers(input.account.biography || ""),
     ...extractPhoneNumbers(input.contactNumber || ""),
   ];
-  const artistType = getArtistTypeFromDiscoveryQuery(input.sourceQuery);
+  const explicitArtistType = sanitizeText(input.artistType);
+  const artistType = explicitArtistType
+    ? getArtistTypeMatches(explicitArtistType)[0] || explicitArtistType
+    : getArtistTypeFromDiscoveryQuery(input.sourceQuery);
 
   const existingArtist = await prisma.artist.findFirst({
     where: {
@@ -117,6 +124,9 @@ export async function upsertProspectFromInstagramDiscovery(
       state: sanitizeText(input.state),
       country: sanitizeText(input.country),
       zip: sanitizeText(input.zip),
+      pincode: sanitizeText(input.pincode),
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
       lastEnrichedAt: new Date(),
     },
   });
@@ -220,6 +230,12 @@ export async function acceptProspectAndConvertToArtist(
         image: prospect.profileImage || null,
         gender: sanitizeText(prospect.gender),
         dob: prospect.dob || null,
+        // Carry discovered coordinates so the artist is findable in nearby search.
+        latitude: prospect.latitude ?? null,
+        longitude: prospect.longitude ?? null,
+        geocodedAt: prospect.latitude != null && prospect.longitude != null
+          ? new Date()
+          : null,
         role: "artist",
         isAccountVerified: true,
         isArtistVerified: true,

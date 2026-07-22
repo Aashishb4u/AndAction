@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 const INSTAGRAM_DISCOVERY_CONFIG_ID = "default";
@@ -13,6 +13,8 @@ interface ProspectDiscoveryLocation {
   city: string | null;
   state: string | null;
   country: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface InstagramDiscoveryRuntimeConfig {
@@ -44,6 +46,8 @@ export interface InstagramProspectDiscoveryRuntimeConfig {
   locationCity: string | null;
   locationState: string | null;
   locationCountry: string | null;
+  locationLatitude: number | null;
+  locationLongitude: number | null;
   location: string;
   googleDomain: string;
   hl: string;
@@ -123,12 +127,46 @@ function normalizeProspectDiscoveryLocation(
   const country = normalizeValue(
     (value as Record<string, unknown>).country as string,
   );
+  const latitude = normalizeCoordinate(
+    (value as Record<string, unknown>).latitude,
+    90,
+  );
+  const longitude = normalizeCoordinate(
+    (value as Record<string, unknown>).longitude,
+    180,
+  );
 
   if (!city && !state && !country) {
     return null;
   }
 
-  return { city, state, country };
+  return { city, state, country, latitude, longitude };
+}
+
+/** Prisma's Json input types reject interfaces (no index signature), so widen. */
+function toJsonLocations(
+  locations: ProspectDiscoveryLocation[],
+): Prisma.InputJsonValue {
+  return locations.map((location) => ({
+    city: location.city,
+    state: location.state,
+    country: location.country,
+    latitude: location.latitude,
+    longitude: location.longitude,
+  })) as unknown as Prisma.InputJsonValue;
+}
+
+function normalizeCoordinate(value: unknown, max: number): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || Math.abs(parsed) > max) {
+    return null;
+  }
+
+  return parsed;
 }
 
 function resolveRequiredStringConfig(
@@ -320,6 +358,8 @@ function getProspectDiscoveryEnvFallbacks() {
     city: null,
     state: null,
     country: null,
+    latitude: null,
+    longitude: null,
   };
 
   return {
@@ -334,6 +374,8 @@ function getProspectDiscoveryEnvFallbacks() {
     locationCity: primaryLocation.city,
     locationState: primaryLocation.state,
     locationCountry: primaryLocation.country,
+    locationLatitude: primaryLocation.latitude,
+    locationLongitude: primaryLocation.longitude,
     location: buildProspectDiscoveryLocation({
       city: primaryLocation.city,
       state: primaryLocation.state,
@@ -472,6 +514,8 @@ export async function getInstagramProspectDiscoveryConfig(): Promise<InstagramPr
     locationCity: activeLocation.city,
     locationState: activeLocation.state,
     locationCountry: activeLocation.country,
+    locationLatitude: activeLocation.latitude ?? null,
+    locationLongitude: activeLocation.longitude ?? null,
     location: buildProspectDiscoveryLocation({
       city: activeLocation.city,
       state: activeLocation.state,
@@ -636,7 +680,9 @@ export async function saveInstagramDiscoveryConfig(input: {
           ? envFallbacks.categoryDescriptions
           : undefined),
       prospectDiscoveryLocations:
-        effectiveLocations.length > 0 ? effectiveLocations : undefined,
+        effectiveLocations.length > 0
+          ? toJsonLocations(effectiveLocations)
+          : undefined,
       prospectDiscoveryCity:
         normalizeValue(input.prospectDiscoveryCity) ?? effectiveLocation?.city,
       prospectDiscoveryState:
@@ -698,7 +744,9 @@ export async function saveInstagramDiscoveryConfig(input: {
       ...(normalizedLocations !== undefined
         ? {
             prospectDiscoveryLocations:
-              normalizedLocations.length > 0 ? normalizedLocations : null,
+              normalizedLocations.length > 0
+                ? toJsonLocations(normalizedLocations)
+                : Prisma.JsonNull,
           }
         : {}),
       ...(input.prospectDiscoveryCity !== undefined

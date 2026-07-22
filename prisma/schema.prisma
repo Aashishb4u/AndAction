@@ -332,10 +332,14 @@ model Prospect {
   instagramId                    String?   @unique
   instagramUsername              String?   @unique
   profileImage                   String?
+  originalProfileImage           String?
   website                        String?
   followersCount                 Int?
   followsCount                   Int?
   mediaCount                     Int?
+  pincode                        String?
+  latitude                       Float?
+  longitude                      Float?
   source                         String    @default("serpapi_instagram_discovery")
   sourceQuery                    String?
   sourceTitle                    String?

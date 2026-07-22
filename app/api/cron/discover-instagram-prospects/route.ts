@@ -10,6 +10,12 @@ import {
 } from "@/lib/instagram-discovery-config";
 import { upsertProspectFromInstagramDiscovery } from "@/lib/prospects";
 
+const GOOGLE_MAPS_DISCOVERY_SOURCE = "discover-googlemaps-prospects";
+const GOOGLE_MAPS_DISCOVERY_WEBHOOK_URL =
+  process.env.N8N_GOOGLE_MAPS_DISCOVERY_URL ||
+  "https://n8n.creativehand.co.in/webhook/discover-google-maps-ai-agent";
+const GOOGLE_MAPS_DISCOVERY_TIMEOUT_MS = 30000;
+
 export async function GET(request: NextRequest) {
   const cronJobId = await createCronJobRecord("discover-instagram-prospects");
 
@@ -91,7 +97,7 @@ export async function GET(request: NextRequest) {
 
 
     // api call - to n8n
-    // api payload - 
+    // api payload -
     // 1. category
     // 2. location
     // 3. latitude, longitude
@@ -101,7 +107,21 @@ export async function GET(request: NextRequest) {
     // 7. google_domain
     // 8. hl
     // 9. gl
-
+    const googleMapsAgent = await triggerGoogleMapsDiscoveryAgent({
+      category: categoryTitle,
+      location: discoveryConfig.locationCity || location,
+      city: discoveryConfig.locationCity,
+      state: discoveryConfig.locationState,
+      country: discoveryConfig.locationCountry,
+      latitude: discoveryConfig.locationLatitude,
+      longitude: discoveryConfig.locationLongitude,
+      source: GOOGLE_MAPS_DISCOVERY_SOURCE,
+      start,
+      maxResults,
+      google_domain: googleDomain,
+      hl,
+      gl,
+    });
 
     const searchResult = await discoverInstagramProspectsFromSerpApi({
       apiKey,
@@ -223,6 +243,9 @@ export async function GET(request: NextRequest) {
       mediaLimit,
       requestDelayMs,
       debug,
+      googleMapsAgentTriggered: googleMapsAgent.ok,
+      googleMapsAgentStatus: googleMapsAgent.status,
+      googleMapsAgentError: googleMapsAgent.error,
       searchMetadata: searchResult.metadata,
       candidatesFound: searchResult.candidates.length,
       rawOrganicResultsCount: searchResult.debug?.rawOrganicResultsCount ?? null,
@@ -262,6 +285,68 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 },
     );
+  }
+}
+
+interface GoogleMapsDiscoveryAgentPayload {
+  category: string | null;
+  location: string;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  source: string;
+  start: number;
+  maxResults: number;
+  google_domain: string;
+  hl: string;
+  gl: string;
+}
+
+/**
+ * Fires the Google Maps discovery agent in n8n. The agent enriches prospects on
+ * its own schedule and posts them back to POST /api/admin/prospects, so a
+ * failure here must not abort the SerpAPI discovery run below.
+ */
+async function triggerGoogleMapsDiscoveryAgent(
+  payload: GoogleMapsDiscoveryAgentPayload,
+): Promise<{ ok: boolean; status: number | null; error: string | null }> {
+  try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (process.env.CRON_SECRET) {
+      headers["cron-secret"] = process.env.CRON_SECRET;
+    }
+
+    const response = await fetch(GOOGLE_MAPS_DISCOVERY_WEBHOOK_URL, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(GOOGLE_MAPS_DISCOVERY_TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      console.error(
+        `[CRON] Google Maps discovery agent responded ${response.status}:`,
+        body.slice(0, 500),
+      );
+      return {
+        ok: false,
+        status: response.status,
+        error: `Agent responded with ${response.status}`,
+      };
+    }
+
+    console.log("[CRON] Google Maps discovery agent triggered.");
+    return { ok: true, status: response.status, error: null };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[CRON] Google Maps discovery agent call failed:", error);
+    return { ok: false, status: null, error: message };
   }
 }
 
