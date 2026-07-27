@@ -286,6 +286,173 @@ export async function geocodeAddress(
   return geocodeQuery(query);
 }
 
+/** Full location parsed out of a free-text address via geocoding. */
+export interface GeocodedLocation {
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  country: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  formattedAddress: string | null;
+}
+
+const GEOCODE_ADDRESS_CACHE = new Map<
+  string,
+  { value: GeocodedLocation | null; expiresAt: number }
+>();
+const GEOCODE_ADDRESS_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+/** Minimal India state-name normaliser (extend as needed). */
+const INDIAN_STATE_ALIASES: Record<string, string> = {
+  "nct of delhi": "Delhi",
+  "national capital territory of delhi": "Delhi",
+  delhi: "Delhi",
+  pondicherry: "Puducherry",
+  orissa: "Odisha",
+  uttaranchal: "Uttarakhand",
+};
+
+export function normalizeIndianStateName(
+  value: string | null | undefined,
+): string | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  return INDIAN_STATE_ALIASES[raw.toLowerCase()] || raw;
+}
+
+function componentTypes(comp: any): string[] {
+  return Array.isArray(comp?.types) ? (comp.types as string[]) : [];
+}
+
+function findComponent(
+  components: any[],
+  wanted: string[],
+  mode: "long" | "short" = "long",
+): string | null {
+  for (const comp of components) {
+    const types = componentTypes(comp);
+    if (wanted.some((t) => types.includes(t))) {
+      const raw = mode === "short" ? comp?.short_name : comp?.long_name;
+      const value = raw == null ? "" : String(raw).trim();
+      if (value) return value;
+    }
+  }
+  return null;
+}
+
+/**
+ * Forward-geocode a free-text address and pull the full location out of it:
+ * city, state, pincode, latitude, longitude. Uses the same provider/parse path
+ * as the reverse-geocode route. Cached 30 days per address. Never throws —
+ * returns null on any failure so callers can safely ignore geocoding.
+ */
+export async function geocodeAddressText(
+  address: string | null | undefined,
+): Promise<GeocodedLocation | null> {
+  const normalized = String(address ?? "").trim();
+  if (!normalized) return null;
+
+  const cacheKey = normalized.toLowerCase();
+  const cached = GEOCODE_ADDRESS_CACHE.get(cacheKey);
+  if (cached && cached.expiresAt > cacheTimeNow()) {
+    return cached.value;
+  }
+
+  let value: GeocodedLocation | null = null;
+
+  try {
+    const { results } = await fetchGeocode({ address: normalized });
+    value = parseGeocodeResult(results[0]);
+  } catch (error) {
+    console.error("[geocodeAddressText] failed for:", normalized, error);
+    value = null;
+  }
+
+  GEOCODE_ADDRESS_CACHE.set(cacheKey, {
+    value,
+    expiresAt: cacheTimeNow() + GEOCODE_ADDRESS_TTL_MS,
+  });
+  return value;
+}
+
+/**
+ * Reverse-geocode a lat/long pair into a full location. Fallback for when the
+ * pipeline sends coordinates but no usable address. Never throws.
+ */
+export async function reverseGeocodeToLocation(
+  latitude: number | null | undefined,
+  longitude: number | null | undefined,
+): Promise<GeocodedLocation | null> {
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+
+  const cacheKey = `reverse:${lat.toFixed(5)},${lng.toFixed(5)}`;
+  const cached = GEOCODE_ADDRESS_CACHE.get(cacheKey);
+  if (cached && cached.expiresAt > cacheTimeNow()) {
+    return cached.value;
+  }
+
+  let value: GeocodedLocation | null = null;
+  try {
+    const { results } = await fetchGeocode({ latlng: `${lat},${lng}` });
+    value = parseGeocodeResult(results[0]);
+    // Reverse geocoding already knows the exact point; keep the input coords
+    // when the provider omits geometry.
+    if (value && value.latitude == null) value.latitude = lat;
+    if (value && value.longitude == null) value.longitude = lng;
+  } catch (error) {
+    console.error("[reverseGeocodeToLocation] failed for:", cacheKey, error);
+    value = null;
+  }
+
+  GEOCODE_ADDRESS_CACHE.set(cacheKey, {
+    value,
+    expiresAt: cacheTimeNow() + GEOCODE_ADDRESS_TTL_MS,
+  });
+  return value;
+}
+
+/** Parse a single provider result (Ola/Google shape) into a GeocodedLocation. */
+function parseGeocodeResult(first: any): GeocodedLocation | null {
+  const components = Array.isArray(first?.address_components)
+    ? first.address_components
+    : [];
+  if (!first || components.length === 0) return null;
+
+  const city =
+    findComponent(components, ["locality"], "short") ||
+    findComponent(components, ["postal_town"], "short") ||
+    findComponent(components, ["sublocality_level_1", "sublocality"], "long") ||
+    findComponent(components, ["administrative_area_level_3"], "short") ||
+    findComponent(components, ["administrative_area_level_2"], "short");
+  const state = normalizeIndianStateName(
+    findComponent(components, ["administrative_area_level_1"], "long"),
+  );
+  const pincode = findComponent(components, ["postal_code"], "long");
+  const country = findComponent(components, ["country"], "long");
+  const lat = first?.geometry?.location?.lat;
+  const lng = first?.geometry?.location?.lng;
+
+  return {
+    city: city || null,
+    state: state || null,
+    pincode: pincode || null,
+    country: country || null,
+    latitude: lat != null && Number.isFinite(Number(lat)) ? Number(lat) : null,
+    longitude: lng != null && Number.isFinite(Number(lng)) ? Number(lng) : null,
+    formattedAddress:
+      String(first?.formatted_address ?? first?.name ?? "").trim() || null,
+  };
+}
+
+/** Isolated so the module stays testable without Date.now sprinkled around. */
+function cacheTimeNow(): number {
+  return Date.now();
+}
+
 /**
  * Calculate distance between two points using Haversine formula
  * Returns distance in kilometers

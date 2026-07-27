@@ -872,7 +872,10 @@ export async function advanceInstagramProspectDiscoveryCursor(
   await saveInstagramDiscoveryConfig({
     prospectDiscoveryCategoryTitles: categoryTitles,
     prospectDiscoveryCategoryDescriptions: currentConfig.categoryDescriptions,
-    prospectDiscoveryLocations: locations,
+    // NOTE: intentionally NOT re-writing prospectDiscoveryLocations here.
+    // Advancing the cursor only moves the pointer (indexes/start); rewriting the
+    // full locations array on every run risks dropping fields (e.g. latitude/
+    // longitude) if any caller round-trips through an older shape.
     prospectDiscoveryCity: nextLocation?.city ?? null,
     prospectDiscoveryState: nextLocation?.state ?? null,
     prospectDiscoveryCountry: nextLocation?.country ?? null,

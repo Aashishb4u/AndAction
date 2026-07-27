@@ -9,6 +9,14 @@ import {
   extractInstagramUsernameFromUrl,
   sanitizeText,
 } from "@/lib/prospect-discovery";
+import {
+  geocodeAddressText,
+  reverseGeocodeToLocation,
+} from "@/lib/geocoding";
+import {
+  resolveCanonicalArtistType,
+  detectArtistTypeFromText,
+} from "@/lib/artist-type-mapping";
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
@@ -305,30 +313,76 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         media_count: toOptionalNumber(enriched.media_count),
       };
 
+      const payloadCity = sanitizeText(businessData?.city);
+      const payloadState = sanitizeText(businessData?.state);
+      const payloadZip =
+        sanitizeText(businessData?.zip) || sanitizeText(businessData?.pincode);
+      // Coordinates are atomic: a lone lat or lng is meaningless, so keep the
+      // pair only when BOTH are valid, otherwise drop both.
+      const rawLat = toCoordinate(businessData?.latitude, 90);
+      const rawLng = toCoordinate(businessData?.longitude, 180);
+      const payloadLat = rawLat != null && rawLng != null ? rawLat : null;
+      const payloadLng = rawLat != null && rawLng != null ? rawLng : null;
+
+      // Pull the full location (city/state/pincode/lat/long) via the map API,
+      // trying the most precise signal available. All guarded: never blocks.
+      //   1. real address                -> forward geocode
+      //   2. no address, has city/state  -> forward geocode "city, state, country"
+      //   3. no address, has coordinates -> reverse geocode
+      const address = sanitizeText(businessData?.address);
+      let geo = await geocodeAddressText(address);
+
+      if (!geo && (payloadCity || payloadState)) {
+        const composed = [payloadCity, payloadState, sanitizeText(businessData?.country)]
+          .filter(Boolean)
+          .join(", ");
+        geo = await geocodeAddressText(composed);
+      }
+
+      if (!geo && payloadLat != null && payloadLng != null) {
+        geo = await reverseGeocodeToLocation(payloadLat, payloadLng);
+      }
+
+      // Resolve artist_type to a real category. The pipeline often sends the
+      // Google Maps business name here (e.g. "Shiv Aradhya Group | ... Singer"),
+      // so map a known category, else sniff one out of the type/title/bio, else
+      // leave it null for an admin to set — never store the business name.
+      const rawArtistType = sanitizeText(businessData?.artist_type);
+      const resolvedArtistType =
+        resolveCanonicalArtistType(rawArtistType) ||
+        detectArtistTypeFromText(rawArtistType) ||
+        detectArtistTypeFromText(businessData?.title) ||
+        detectArtistTypeFromText(account.biography) ||
+        null;
+
+      const finalCity = geo?.city ?? payloadCity;
+      const finalState = geo?.state ?? payloadState;
+      const finalZip = geo?.pincode ?? payloadZip;
+      const resolvedLat = geo?.latitude ?? payloadLat;
+      const resolvedLng = geo?.longitude ?? payloadLng;
+      const finalLat = resolvedLat != null && resolvedLng != null ? resolvedLat : null;
+      const finalLng = resolvedLat != null && resolvedLng != null ? resolvedLng : null;
+
       try {
         const result = await upsertProspectFromInstagramDiscovery({
           username,
           account,
           source: sanitizeText(searchMetadata?.source) || IMPORT_SOURCE,
-          artistType: sanitizeText(businessData?.artist_type),
+          artistType: resolvedArtistType,
           sourceQuery: sanitizeText(businessData?.instagram_search_query),
           sourceTitle:
             sanitizeText(searchMetadata?.title) ||
             sanitizeText(businessData?.title),
           sourceSnippet: sanitizeText(searchMetadata?.snippet),
           sourceLink: sanitizeText(searchMetadata?.link),
-          address: sanitizeText(businessData?.address),
-          city: sanitizeText(businessData?.city),
-          state: sanitizeText(businessData?.state),
-          country: sanitizeText(businessData?.country),
-          zip:
-            sanitizeText(businessData?.zip) ||
-            sanitizeText(businessData?.pincode),
-          pincode:
-            sanitizeText(businessData?.pincode) ||
-            sanitizeText(businessData?.zip),
-          latitude: toCoordinate(businessData?.latitude, 90),
-          longitude: toCoordinate(businessData?.longitude, 180),
+          address,
+          city: finalCity,
+          state: finalState,
+          country: geo?.country ?? sanitizeText(businessData?.country),
+          zip: finalZip,
+          pincode: finalZip,
+          latitude: finalLat,
+          longitude: finalLng,
           contactNumber: sanitizeText(businessData?.phone),
           website: sanitizeText(businessData?.website),
         });

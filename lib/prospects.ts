@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { InstagramDiscoveryAccount } from "@/lib/instagram-discovery";
 import { buildProspectStageName, sanitizeText } from "@/lib/prospect-discovery";
-import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
+import { resolveCanonicalArtistType } from "@/lib/artist-type-mapping";
 
 interface UpsertProspectInput {
   username: string;
@@ -50,10 +50,14 @@ export async function upsertProspectFromInstagramDiscovery(
     ...extractPhoneNumbers(input.account.biography || ""),
     ...extractPhoneNumbers(input.contactNumber || ""),
   ];
+  // Callers (e.g. the ingest API) already resolve artistType to a canonical
+  // slug or null, so trust an explicit value. When absent, derive from the
+  // discovery query but only keep it if it maps to a real category — never
+  // store a raw business name.
   const explicitArtistType = sanitizeText(input.artistType);
-  const artistType = explicitArtistType
-    ? getArtistTypeMatches(explicitArtistType)[0] || explicitArtistType
-    : getArtistTypeFromDiscoveryQuery(input.sourceQuery);
+  const artistType =
+    explicitArtistType ||
+    resolveCanonicalArtistType(getArtistTypeFromDiscoveryQuery(input.sourceQuery));
 
   const existingArtist = await prisma.artist.findFirst({
     where: {
@@ -342,11 +346,10 @@ function getArtistTypeFromDiscoveryQuery(query?: string | null): string | null {
       .at(-1) ||
     "";
 
-  if (!rawType) {
-    return null;
-  }
-
-  return getArtistTypeMatches(rawType)[0] || rawType;
+  // Return the raw quoted term; the caller decides whether it maps to a real
+  // category (via resolveCanonicalArtistType). Mapping here would echo unknown
+  // terms back verbatim.
+  return rawType || null;
 }
 
 const MATHEMATICAL_BOLD_DIGITS = "𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗";
