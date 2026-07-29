@@ -313,7 +313,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
                   ROW_NUMBER() OVER (
                     PARTITION BY v."userId"
                     ORDER BY ${perArtistOrder}
-                  ) AS video_rank
+                  ) AS video_rank,
+                  MD5(v."userId" || ${effectiveSeedStr}) AS artist_sort_key
                 FROM "videos" v
                 JOIN ranked_artists ra ON ra.user_id = v."userId"
                 WHERE v."isApproved" = true
@@ -326,7 +327,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
               )
               SELECT id
               FROM artist_ranked
-              ORDER BY artist_bucket, video_rank, artist_distance_rank, id DESC
+              -- artist_sort_key shuffles artists WITHIN a distance bucket, so the
+              -- nearest artists still come first but the running order (and the
+              -- opening reel) differs per session instead of being frozen.
+              -- It is unique per artist, so the ordering stays total and OFFSET
+              -- pagination cannot repeat or skip rows.
+              ORDER BY artist_bucket, video_rank, artist_sort_key, id DESC
               LIMIT ${limit} OFFSET ${offset}
             `
           : prisma.$queryRaw<{ id: string }[]>`

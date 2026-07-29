@@ -94,7 +94,7 @@ export function createAboutDraft(artist: Artist): AboutDraft {
       "",
     email: extendedArtist.contactEmail || extendedArtist.email || "",
     achievements,
-    yearsOfExperience: artist.yearsOfExperience?.toString() || "4",
+    yearsOfExperience: artist.yearsOfExperience?.toString() || "",
     shortBio: artist.bio || "",
     subArtistTypes,
   };

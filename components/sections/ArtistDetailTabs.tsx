@@ -9,6 +9,10 @@ import { Loader2 } from "lucide-react";
 import { getArtishName, formatDisplayLabels, formatDisplayValues } from "@/lib/utils";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
+import {
+  resolveExperienceLabel,
+  type ExperienceOption,
+} from "@/lib/experience-utils";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
 
@@ -44,6 +48,9 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
   const bioRef = useRef<HTMLParagraphElement>(null);
   const [preferenceEventTypes, setPreferenceEventTypes] = useState<
     { value: string; label: string }[]
+  >([]);
+  const [preferenceExperienceYears, setPreferenceExperienceYears] = useState<
+    ExperienceOption[]
   >([]);
   const preferenceEventTypeLabelMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -97,6 +104,10 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
         if (!cancelled && Array.isArray(options)) {
           setPreferenceEventTypes(options);
         }
+        const experienceOptions = json?.data?.preferences?.experienceYears;
+        if (!cancelled && Array.isArray(experienceOptions)) {
+          setPreferenceExperienceYears(experienceOptions);
+        }
       } catch {
       }
     })();
@@ -105,23 +116,11 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
     };
   }, []);
 
-  const formatExperienceLabel = (value: unknown): string | null => {
-    if (value === null || value === undefined) return null;
-    const num = typeof value === "number" ? value : Number(String(value).trim());
-    if (!Number.isFinite(num) || num <= 0) return null;
-
-    if (num === 1) return "0-1";
-    if (num === 2) return "1-3";
-    if (num === 3) return "3-5";
-    if (num === 4) return "5-10";
-    if (num === 5) return "10+";
-
-    if (num > 10) return "10+";
-    if (num > 5) return "5-10";
-    if (num > 3) return "3-5";
-    if (num > 1) return "1-3";
-    return "0-1";
-  };
+  const formatExperienceLabel = useCallback(
+    (value: unknown): string | null =>
+      resolveExperienceLabel(value, preferenceExperienceYears),
+    [preferenceExperienceYears],
+  );
 
   const parseAchievementItems = (value: unknown): string[] => {
     if (Array.isArray(value)) {
@@ -801,7 +800,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
             </div>
           );
         })()}
-      {/* Years of experience: show only when a positive number is provided */}
+      {/* Years of experience: label comes from artist_profile_preferences.experienceYears */}
       {(() => {
         const label = formatExperienceLabel((artist as any).yearsOfExperience);
         if (!label) return null;
@@ -815,7 +814,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
               Years of experience
             </h3>
             <p className="secondary-grey-text">
-              {label} Years
+              {label}
             </p>
           </div>
         );

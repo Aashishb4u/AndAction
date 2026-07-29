@@ -17,6 +17,7 @@ import {
   useIndianCitiesByState,
 } from "@/hooks/use-indian-cities";
 import type { AboutDraft } from "./profileDraftTypes";
+import type { ExperienceOption } from "@/lib/experience-utils";
 
 interface AboutTabProps {
   draft: AboutDraft;
@@ -35,13 +36,7 @@ const genderOptions = [
 
 // Category options are loaded from artist_categories table.
 
-const experienceOptions = [
-  { value: "1", label: "0-1 years" },
-  { value: "2", label: "1-3 years" },
-  { value: "3", label: "3-5 years" },
-  { value: "4", label: "5-10 years" },
-  { value: "5", label: "10+ years" },
-];
+// Experience options are loaded from artist_profile_preferences.experienceYears.
 
 const AboutTab: React.FC<AboutTabProps> = ({
   draft,
@@ -51,6 +46,28 @@ const AboutTab: React.FC<AboutTabProps> = ({
   onReset,
 }) => {
   const { categories } = useArtistCategories();
+  const [experienceOptions, setExperienceOptions] = useState<
+    ExperienceOption[]
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/preferences/artist-profile");
+        const json = await res.json();
+        const options = json?.data?.preferences?.experienceYears;
+        if (!cancelled && Array.isArray(options)) {
+          setExperienceOptions(options);
+        }
+      } catch {
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const isSubArtistDisabled = !(draft.artistType || "").trim();
   const {
     subTypes: subArtistSuggestions,

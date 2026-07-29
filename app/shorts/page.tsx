@@ -128,36 +128,47 @@ export default function ShortsPage() {
       refetchOnWindowFocus: true,
     });
 
-  const shorts = data?.pages.flat() || [];
-
-  // Group shorts by artist (all shorts from one artist together)
+  // Group shorts by artist (all shorts from one artist together).
+  //
+  // Grouping is applied PER PAGE, never across the whole accumulated list.
+  // currentIndex is a position, so anything that reorders already-loaded
+  // shorts pushes the viewer back onto reels they have already watched:
+  // once the feed wraps to an artist's second reel, a full re-group pulls it
+  // up next to their first one and shifts every later position down.
+  // Grouping within a page keeps the list append-only, so positions the
+  // viewer has passed can never change.
   const groupedShorts = useMemo(() => {
-    if (!shorts.length) return [];
+    const pages = data?.pages || [];
+    const seenIds = new Set<string>();
+    const result: any[] = [];
 
-    // Group by profile (fallback: user)
-    const shortsByArtist = shorts.reduce(
-      (acc, short) => {
-        if (!acc[short.groupId]) {
-          acc[short.groupId] = [];
+    for (const page of pages) {
+      if (!page?.length) continue;
+
+      // Group by profile (fallback: user), in order of first appearance
+      const shortsByArtist: Record<string, any[]> = {};
+      const artistOrder: string[] = [];
+
+      for (const short of page) {
+        // Guard against a short arriving on more than one page (e.g. new rows
+        // shifting the OFFSET window between requests).
+        if (seenIds.has(short.id)) continue;
+        seenIds.add(short.id);
+
+        if (!shortsByArtist[short.groupId]) {
+          shortsByArtist[short.groupId] = [];
+          artistOrder.push(short.groupId);
         }
-        acc[short.groupId].push(short);
-        return acc;
-      },
-      {} as Record<string, typeof shorts>,
-    );
-
-    // Flatten back to array, maintaining artist grouping
-    // Get unique artist IDs in order of first appearance
-    const artistOrder: string[] = [];
-    shorts.forEach((short) => {
-      if (!artistOrder.includes(short.groupId)) {
-        artistOrder.push(short.groupId);
+        shortsByArtist[short.groupId].push(short);
       }
-    });
 
-    // Return shorts grouped by artist
-    return artistOrder.flatMap((artistId) => shortsByArtist[artistId]);
-  }, [shorts]);
+      for (const artistId of artistOrder) {
+        result.push(...shortsByArtist[artistId]);
+      }
+    }
+
+    return result;
+  }, [data?.pages]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
