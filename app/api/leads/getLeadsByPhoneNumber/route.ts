@@ -7,6 +7,9 @@
  * POST /api/leads/getLeadsByPhoneNumber
  * Body: { "phoneNumber": "9876543210" }
  *
+ * 409 when a lead already exists (the record is returned in the body anyway),
+ * 200 when nothing matches.
+ *
  * Numbers are stored inconsistently (bare 10-digit, 91-prefixed, and +91...),
  * so the 10-digit Indian national number is extracted before matching.
  * India (+91) only.
@@ -277,6 +280,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           ? "artist"
           : "prospect";
 
+    // 409: the lead already exists. The record is still returned in the body so
+    // callers can use it without a second request.
     return successResponse(
       {
         found: true,
@@ -289,7 +294,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         artists: artistRecords,
         prospects: prospectRecords,
       },
-      "Lead retrieved successfully.",
+      "Lead already exists for this phone number.",
+      409,
     );
   } catch (error) {
     console.error("POST /api/leads/getLeadsByPhoneNumber API Error:", error);
