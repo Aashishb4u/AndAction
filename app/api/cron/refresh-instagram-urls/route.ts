@@ -455,7 +455,7 @@ async function refreshArtistInstagramVideos(
 
   // Filter for VIDEO and REEL types only
   const currentReels = mediaData.data.filter(
-    (item) => item.media_type === "VIDEO" || item.media_type === "REEL",
+    (item) => (item.media_type === "VIDEO" || item.media_type === "REEL") && item.media_url,
   );
 
   console.log(

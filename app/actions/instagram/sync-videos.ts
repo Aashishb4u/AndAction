@@ -103,7 +103,7 @@ export async function syncInstagramReels(
 
     // Filter VIDEO and REEL types - all Instagram videos are treated as reels/shorts
     const reels = mediaData.data.filter(
-      (item) => item.media_type === "VIDEO" || item.media_type === "REEL"
+      (item) => (item.media_type === "VIDEO" || item.media_type === "REEL") && item.media_url
     );
 
     if (reels.length === 0) {
