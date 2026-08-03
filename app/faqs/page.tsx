@@ -2,191 +2,277 @@ import React from 'react';
 import { Metadata } from 'next';
 import PageLayout from '@/components/layout/PageLayout';
 import FAQAccordion from '@/components/ui/FAQAccordion';
-import { HelpCircle, Users, CreditCard, Music, Phone, Mail } from 'lucide-react';
+import {
+  HelpCircle,
+  CreditCard,
+  Handshake,
+  UserCog,
+  ShieldCheck,
+  Sparkles,
+  CheckCircle2,
+  Mail,
+  Phone,
+} from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'FAQs - ANDACTION | Frequently Asked Questions & Support',
-  description: 'Find answers to common questions about ANDACTION platform, booking process, payments, artist registration, and support. Get help with using our artist booking service.',
-  keywords: 'ANDACTION FAQ, frequently asked questions, booking help, artist platform support, payment questions, how to book artists',
+  title: 'FAQs - ANDACTION | Frequently Asked Questions for Artists',
+  description:
+    'Answers to common questions from artists about AndAction: free listing, profile control, how event organizers contact you, updating your profile, location and privacy, and how search results work.',
+  keywords:
+    'ANDACTION FAQ, artist FAQ, free artist listing, artist discovery platform India, update artist profile, remove artist profile, artist privacy',
   openGraph: {
     title: 'FAQs - ANDACTION',
-    description: 'Get answers to your questions about booking artists and using ANDACTION platform.',
+    description:
+      'Everything artists need to know about being listed on AndAction — free listing, full profile control, and direct contact with event organizers.',
     type: 'website',
   },
 };
 
+const faqCategories = [
+  {
+    id: 'about-andaction',
+    title: 'About AndAction',
+    icon: <HelpCircle className="w-6 h-6" />,
+    faqs: [
+      {
+        id: 'what-is-andaction',
+        question: 'What is AndAction?',
+        answer:
+          'AndAction is an artist discovery platform that connects talented artists with genuine event organizers across India. Our mission is to help artists gain visibility and create more performance opportunities.',
+      },
+      {
+        id: 'why-profile-created',
+        question: 'Why have you created my profile?',
+        answer:
+          'We discovered your work through publicly available professional sources and created your artist profile to help event organizers discover and connect with you more easily.',
+      },
+      {
+        id: 'artist-management-company',
+        question: 'Are you an artist management company?',
+        answer:
+          'No. AndAction is not an artist management or talent agency. We simply provide a platform where artists and event organizers can connect directly.',
+      },
+      {
+        id: 'exclusive-rights',
+        question: 'Do you have exclusive rights over my profile or performances?',
+        answer:
+          'No. Your profile belongs to you. You are free to accept bookings from anyone and work independently or with any agency. Creating a profile on AndAction does not give us any exclusive rights over your work.',
+      },
+    ],
+  },
+  {
+    id: 'listing-pricing',
+    title: 'Listing & Pricing',
+    icon: <CreditCard className="w-6 h-6" />,
+    faqs: [
+      {
+        id: 'pay-to-be-listed',
+        question: 'Do I have to pay to be listed?',
+        answer:
+          'No. Listing your profile on AndAction is completely free. We do not charge any registration fee, subscription fee, or commission from artists as of now.',
+      },
+      {
+        id: 'starting-price',
+        question: 'Why do you ask for my starting price?',
+        answer:
+          'Your starting price helps event organizers shortlist artists within their budget. The final booking price is always decided between you and the client based on the event requirements.',
+      },
+    ],
+  },
+  {
+    id: 'bookings-enquiries',
+    title: 'Bookings & Enquiries',
+    icon: <Handshake className="w-6 h-6" />,
+    faqs: [
+      {
+        id: 'how-organizers-contact',
+        question: 'How do event organizers contact me?',
+        answer:
+          'Your profile already includes your WhatsApp and Contact buttons. If an event organizer likes your profile, they can contact you directly through WhatsApp or a phone call using your booking number. AndAction is only a discovery platform, so there is no intermediary involved.',
+      },
+    ],
+  },
+  {
+    id: 'managing-profile',
+    title: 'Managing Your Profile',
+    icon: <UserCog className="w-6 h-6" />,
+    faqs: [
+      {
+        id: 'update-profile',
+        question: 'How can I update my profile?',
+        answer:
+          'Simply log in to your account using your phone number from the Login section on our website. From your dashboard, go to Edit Profile to update your information anytime.',
+      },
+      {
+        id: 'upload-media',
+        question: 'How do I upload my photos and videos?',
+        answer:
+          'You do not need to upload them manually. Simply connect your Instagram and YouTube accounts, and your media will be automatically synced to your AndAction profile.',
+      },
+      {
+        id: 'remove-profile',
+        question: 'Can I remove my profile?',
+        answer:
+          'Yes. If you no longer wish to be listed on AndAction, simply contact our support team, and we will remove your profile.',
+      },
+    ],
+  },
+  {
+    id: 'privacy-visibility',
+    title: 'Privacy & Visibility',
+    icon: <ShieldCheck className="w-6 h-6" />,
+    faqs: [
+      {
+        id: 'why-location',
+        question: 'Why do you ask for my location?',
+        answer:
+          'Your location helps us show your profile to event organizers looking for artists in or near your city. This increases your chances of receiving relevant booking enquiries.',
+      },
+      {
+        id: 'address-privacy',
+        question: 'Will my exact address be shown publicly?',
+        answer:
+          'No. We only display your city or service area to users. Your exact address and personal details remain private.',
+      },
+      {
+        id: 'search-results',
+        question: 'How does my profile appear in search results?',
+        answer:
+          'Artists are matched based on factors like location, performance category, availability, profile completeness, and the search preferences of the user.',
+      },
+    ],
+  },
+  {
+    id: 'why-andaction',
+    title: 'Why AndAction',
+    icon: <Sparkles className="w-6 h-6" />,
+    faqs: [
+      {
+        id: 'why-stay',
+        question: 'Why should I stay on AndAction?',
+        answer:
+          'Our goal is to build India’s largest network of artists and help talented performers connect with genuine event organizers. By being a part of AndAction, you increase your visibility and improve your chances of receiving genuine performance opportunities.',
+      },
+    ],
+  },
+];
+
+const promises = [
+  '100% Free Listing',
+  'No Registration Fees',
+  'No Subscription Charges',
+  'No Commissions (as of now)',
+  'No Exclusive Contracts',
+  'Direct Contact with Event Organizers',
+  'Full Control Over Your Profile',
+  'Update or Remove Your Profile Anytime',
+  'Dedicated Support Whenever You Need Assistance',
+];
+
+// Structured data so the questions can surface directly in search results.
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqCategories.flatMap((category) =>
+    category.faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  ),
+};
+
 const FAQPage = () => {
-
-  const faqCategories = [
-    {
-      id: 'general',
-      title: 'General Questions',
-      icon: <HelpCircle className="w-6 h-6" />,
-      faqs: [
-        {
-          id: 'what-is-andaction',
-          question: 'What is ANDACTION?',
-          answer: 'ANDACTION is a comprehensive platform that connects talented artists with event organizers. Whether you\'re planning a wedding, corporate event, festival, or private party, we help you find and book the perfect entertainment for your occasion.'
-        },
-        {
-          id: 'how-it-works',
-          question: 'How does ANDACTION work?',
-          answer: 'Simply browse our extensive catalog of verified artists, view their profiles, watch performance videos, and book directly through our platform. We handle the entire process from discovery to payment, making event planning effortless.'
-        },
-        {
-          id: 'who-can-use',
-          question: 'Who can use ANDACTION?',
-          answer: 'ANDACTION is designed for both event organizers looking to book entertainment and artists wanting to showcase their talents. Anyone over 18 can create an account and start using our services.'
-        },
-        {
-          id: 'cost-to-use',
-          question: 'Is it free to use ANDACTION?',
-          answer: 'Creating an account and browsing artists is completely free. We charge a small service fee only when you successfully book an artist through our platform. Artists can create profiles and receive bookings at no upfront cost.'
-        }
-      ]
-    },
-    {
-      id: 'booking',
-      title: 'Booking Process',
-      icon: <Music className="w-6 h-6" />,
-      faqs: [
-        {
-          id: 'how-to-book',
-          question: 'How do I book an artist?',
-          answer: 'Browse artists by category, location, or search for specific talents. Once you find the perfect artist, click "Request Booking," fill in your event details, and submit your request. The artist will respond with availability and final pricing.'
-        },
-        {
-          id: 'booking-confirmation',
-          question: 'How do I know my booking is confirmed?',
-          answer: 'You\'ll receive email and in-app notifications when an artist accepts your booking request. A confirmed booking includes event details, payment information, and contact details for direct communication with the artist.'
-        },
-        {
-          id: 'cancellation-policy',
-          question: 'What is the cancellation policy?',
-          answer: 'Cancellation policies vary by artist and are clearly stated in each booking. Generally, cancellations made 7+ days before the event receive full refunds, while last-minute cancellations may incur fees. Check the specific policy before booking.'
-        },
-        {
-          id: 'modify-booking',
-          question: 'Can I modify my booking after confirmation?',
-          answer: 'Yes, you can request modifications through our platform. Changes to date, time, or event details are subject to artist availability and may affect pricing. Both parties must agree to any modifications.'
-        }
-      ]
-    },
-    {
-      id: 'payments',
-      title: 'Payments & Pricing',
-      icon: <CreditCard className="w-6 h-6" />,
-      faqs: [
-        {
-          id: 'payment-methods',
-          question: 'What payment methods do you accept?',
-          answer: 'We accept all major credit cards, debit cards, UPI, net banking, and digital wallets. All payments are processed securely through encrypted, PCI-compliant payment gateways.'
-        },
-        {
-          id: 'when-charged',
-          question: 'When am I charged for a booking?',
-          answer: 'Payment is processed when the artist confirms your booking. We use a secure escrow system - funds are held safely and released to the artist after the successful completion of your event.'
-        },
-        {
-          id: 'service-fees',
-          question: 'What are the service fees?',
-          answer: 'ANDACTION charges a small service fee (typically 3-5%) to cover platform maintenance, payment processing, and customer support. This fee is clearly displayed before you complete your booking.'
-        },
-        {
-          id: 'refund-process',
-          question: 'How do refunds work?',
-          answer: 'Refunds are processed according to the cancellation policy agreed upon at booking. Approved refunds are typically processed within 5-7 business days to your original payment method.'
-        }
-      ]
-    },
-    {
-      id: 'artists',
-      title: 'For Artists',
-      icon: <Users className="w-6 h-6" />,
-      faqs: [
-        {
-          id: 'join-as-artist',
-          question: 'How do I join as an artist?',
-          answer: 'Click "Join as an Artist" and complete our registration process. You\'ll need to provide basic information, upload performance videos/photos, set your pricing, and verify your identity. Our team reviews all applications to maintain quality standards.'
-        },
-        {
-          id: 'artist-verification',
-          question: 'What is the artist verification process?',
-          answer: 'We verify all artists through identity checks, performance sample reviews, and background verification. This process typically takes 2-3 business days and ensures all artists on our platform meet our quality and safety standards.'
-        },
-        {
-          id: 'artist-earnings',
-          question: 'How do artists get paid?',
-          answer: 'Artists receive payment within 24-48 hours after event completion. Payments are transferred directly to your registered bank account. We provide detailed earning reports and tax documentation as needed.'
-        },
-        {
-          id: 'artist-support',
-          question: 'What support do you provide to artists?',
-          answer: 'We offer profile optimization tips, marketing support, booking management tools, and dedicated artist support. Our team helps you maximize your visibility and booking potential on the platform.'
-        }
-      ]
-    }
-  ];
-
   return (
     <PageLayout
       title="Frequently Asked Questions"
-      description="Find answers to common questions about using ANDACTION platform and services."
+      description="Answers to the questions artists ask us most about being listed on AndAction."
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       <div className="space-y-8">
-        {/* Search Hint */}
+        {/* Intro */}
         <div className="text-center py-6 bg-gradient-to-r from-primary-orange/10 to-primary-pink/10 rounded-xl border border-primary-pink/20">
           <p className="text-text-light-gray">
-            Can&apos;t find what you&apos;re looking for? <a href="#contact" className="text-primary-pink hover:underline">Contact our support team</a> for personalized assistance.
+            Can&apos;t find what you&apos;re looking for?{' '}
+            <a href="#contact" className="text-primary-pink hover:underline">
+              Contact our support team
+            </a>{' '}
+            and we&apos;ll be happy to help.
           </p>
         </div>
 
         {/* FAQ Categories */}
         <FAQAccordion categories={faqCategories} />
 
-        {/* Contact Support Section */}
-        <section id="contact" className="bg-card/30 rounded-xl p-8 border border-background-light">
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 text-center">Still Have Questions?</h2>
-          <p className="text-text-light-gray text-center mb-8 leading-relaxed">
-            Our support team is here to help! Reach out to us through any of the following channels, 
-            and we&apos;ll get back to you as soon as possible.
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <a
-              href="mailto:support@andaction.com"
-              className="flex items-center gap-4 p-6 bg-card/50 rounded-xl border border-background-light hover:border-primary-pink/30 transition-all duration-300 group"
-            >
-              <div className="text-primary-pink group-hover:scale-110 transition-transform duration-300">
-                <Mail className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-1">Email Support</h3>
-                <p className="text-text-gray text-sm">support@andaction.com</p>
-                <p className="text-text-gray text-xs">Response within 24 hours</p>
-              </div>
-            </a>
-
-            <a
-              href="tel:+918595114889"
-              className="flex items-center gap-4 p-6 bg-card/50 rounded-xl border border-background-light hover:border-primary-orange/30 transition-all duration-300 group"
-            >
-              <div className="text-primary-orange group-hover:scale-110 transition-transform duration-300">
-                <Phone className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold mb-1">Phone Support</h3>
-                <p className="text-text-gray text-sm">+91 8595114889</p>
-                <p className="text-text-gray text-xs">Mon-Fri, 9 AM - 6 PM IST</p>
-              </div>
-            </a>
+        {/* Our Promise to Artists */}
+        <section id="our-promise">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="text-primary-orange">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-white">
+              Our Promise to Artists
+            </h2>
           </div>
 
-          <div className="text-center mt-8">
-            <p className="text-text-gray text-sm">
-              For urgent booking issues or technical problems, please call us directly. 
-              For general inquiries, email is the fastest way to get detailed assistance.
+          <div className="bg-gradient-to-r from-primary-orange/10 to-primary-pink/10 rounded-xl p-6 md:p-8 border border-primary-pink/20">
+            <p className="text-text-light-gray leading-relaxed mb-6">
+              At AndAction, we believe artists deserve a transparent and trustworthy platform.
+              Here&apos;s our commitment to you:
             </p>
+
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {promises.map((promise) => (
+                <li key={promise} className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-primary-pink flex-shrink-0 mt-0.5" />
+                  <span className="text-text-light-gray leading-relaxed">{promise}</span>
+                </li>
+              ))}
+            </ul>
+
+            <p className="text-text-light-gray leading-relaxed mt-6 pt-6 border-t border-primary-pink/20">
+              Our mission is simple: to build India&apos;s most trusted artist discovery platform,
+              helping talented artists get discovered and connect directly with genuine event
+              organizers.
+            </p>
+          </div>
+        </section>
+
+        {/* Still have questions? */}
+        <section
+          id="contact"
+          className="text-center py-8 px-6 bg-card/30 rounded-xl border border-background-light"
+        >
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+            Still Have Questions?
+          </h2>
+          <p className="text-text-gray text-sm mb-6 max-w-xl mx-auto leading-relaxed">
+            If you have any questions or need any assistance, simply contact our support team.
+            We&apos;re always happy to help.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a
+              href="mailto:official@andaction.in"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
+            >
+              <Mail className="w-4 h-4" />
+              <span>official@andaction.in</span>
+            </a>
+            <a
+              href="tel:+918595114889"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
+            >
+              <Phone className="w-4 h-4" />
+              <span>+91 8595114889</span>
+            </a>
           </div>
         </section>
       </div>
