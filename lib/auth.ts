@@ -146,43 +146,52 @@ export const getCurrentUser = async (): Promise<User | null> => {
   }
 };
 
+/**
+ * Every OAuth sign-in lands on /api/auth/oauth-callback so the
+ * profile-completeness check runs for regular users too, not only artists.
+ * Sending them straight to `/` would skip it entirely.
+ */
+const buildOAuthCallbackUrl = (role?: "user" | "artist"): string => {
+  const params = new URLSearchParams();
+
+  if (role === "artist") {
+    params.set("role", "artist");
+  }
+
+  // Where to land once the profile is complete.
+  params.set(
+    "redirect",
+    getRedirectUrl(new URLSearchParams(window.location.search)),
+  );
+
+  return `/api/auth/oauth-callback?${params.toString()}`;
+};
+
 export const signInWithGoogle = async (
   role?: "user" | "artist",
 ): Promise<void> => {
-  const baseUrl = getRedirectUrl();
-  const callbackUrl =
-    role === "artist"
-      ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
-          window.location.origin,
-        )}`
-      : baseUrl;
-  await nextAuthSignIn("google", { callbackUrl, redirect: true });
+  await nextAuthSignIn("google", {
+    callbackUrl: buildOAuthCallbackUrl(role),
+    redirect: true,
+  });
 };
 
 export const signInWithFacebook = async (
   role?: "user" | "artist",
 ): Promise<void> => {
-  const baseUrl = getRedirectUrl();
-  const callbackUrl =
-    role === "artist"
-      ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
-          window.location.origin,
-        )}`
-      : baseUrl;
-  await nextAuthSignIn("facebook", { callbackUrl, redirect: true });
+  await nextAuthSignIn("facebook", {
+    callbackUrl: buildOAuthCallbackUrl(role),
+    redirect: true,
+  });
 };
 
 export const signInWithApple = async (
   role?: "user" | "artist",
 ): Promise<void> => {
-  const baseUrl = getRedirectUrl();
-  const callbackUrl =
-    role === "artist"
-      ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
-          baseUrl,
-        )}`
-      : baseUrl;
-  await nextAuthSignIn("apple", { callbackUrl, redirect: true });
+  await nextAuthSignIn("apple", {
+    callbackUrl: buildOAuthCallbackUrl(role),
+    redirect: true,
+  });
 };
 
 // Artist-specific OAuth functions for convenience
