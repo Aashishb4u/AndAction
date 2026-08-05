@@ -153,7 +153,7 @@ export const signInWithGoogle = async (
   const callbackUrl =
     role === "artist"
       ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
-          'https://andaction.in',
+          window.location.origin,
         )}`
       : baseUrl;
   await nextAuthSignIn("google", { callbackUrl, redirect: true });
@@ -162,11 +162,11 @@ export const signInWithGoogle = async (
 export const signInWithFacebook = async (
   role?: "user" | "artist",
 ): Promise<void> => {
-  const baseUrl = 'https://andaction.in';
+  const baseUrl = getRedirectUrl();
   const callbackUrl =
     role === "artist"
       ? `/api/auth/oauth-callback?role=artist&redirect=${encodeURIComponent(
-          baseUrl,
+          window.location.origin,
         )}`
       : baseUrl;
   await nextAuthSignIn("facebook", { callbackUrl, redirect: true });

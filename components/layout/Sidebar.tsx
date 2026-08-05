@@ -89,17 +89,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const navigationItems = [
     { label: "Home", href: "/", isActive: pathname === "/" },
     { label: "About us", href: "/about", isActive: pathname === "/about" },
-    { label: "FAQs", href: "/faqs", isActive: pathname === "/faqs" },
+     {
+      label: "Disclaimer",
+      href: "/disclaimer",
+      isActive: pathname === "/disclaimer",
+    },
+    // Artist-facing content, so it only appears for signed-in artists.
+    ...(user?.role === "artist"
+      ? [
+          {
+            label: "How AndAction  Works",
+            href: "/faqs",
+            isActive: pathname === "/faqs",
+          },
+        ]
+      : []),
     {
       label: "Terms & Conditions",
       href: "/terms",
       isActive: pathname === "/terms",
     },
-    {
-      label: "Disclaimer",
-      href: "/disclaimer",
-      isActive: pathname === "/disclaimer",
-    },
+   
     {
       label: "Privacy Policy",
       href: "/privacy",

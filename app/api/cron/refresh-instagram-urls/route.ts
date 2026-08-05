@@ -5,6 +5,7 @@ import {
   getInstagramRefreshIntervalHours,
   scheduleNextInstagramRefresh,
 } from "@/lib/instagram-refresh-schedule";
+import { runWhatsappGreetingBatchSafely } from "@/lib/whatsapp-greetings";
 import type { Prisma } from "@prisma/client";
 
 const MIN_INSTAGRAM_DISCOVERY_DELAY_MS = 2000;
@@ -136,6 +137,19 @@ export async function GET(request: NextRequest) {
       isManualForceRun,
     });
 
+    // Piggyback the WhatsApp welcome greetings on this schedule.
+    //
+    // Deliberately BEFORE the active-run lock below: if an Instagram run ever
+    // wedges (status stays "started"), every later call returns early, and
+    // greetings would silently stop with it. runWhatsappGreetingBatchSafely
+    // never throws, so nothing here can affect the Instagram refresh.
+    // Size it with WHATSAPP_GREETINGS_PER_INSTAGRAM_RUN (0 disables).
+    const whatsappGreetings = isManualForceRun
+      ? { ran: false, reason: "skipped on targeted force run" }
+      : await runWhatsappGreetingBatchSafely();
+
+    console.log("[INSTAGRAM REFRESH] WhatsApp greetings:", whatsappGreetings);
+
     const activeCronJob = await prisma.cronJob.findFirst({
       where: {
         jobName: "refresh-instagram-urls",
@@ -172,6 +186,7 @@ export async function GET(request: NextRequest) {
         message: "Instagram URL refresh is already running",
         activeCronJobId: activeCronJob.id,
         activeCronJobStartedAt: activeCronJob.startedAt.toISOString(),
+        whatsappGreetings,
       });
     }
 
@@ -373,9 +388,15 @@ export async function GET(request: NextRequest) {
         result.apiUsageSnapshot?.windowEndsAt.toISOString() || null,
       apiRateLimitHitsThisHour: result.apiUsageSnapshot?.rateLimitHits || 0,
       errorMessages: result.errorMessages,
+      whatsappGreetings,
     };
 
-    await updateCronJobRecord(cronJobId, "completed", null, metadata);
+    await updateCronJobRecord(
+      cronJobId,
+      "completed",
+      null,
+      metadata as unknown as Prisma.InputJsonValue,
+    );
 
     console.log(`[CRON] Job completed:`, metadata);
 

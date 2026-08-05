@@ -2,6 +2,8 @@ import React from 'react';
 import { Metadata } from 'next';
 import PageLayout from '@/components/layout/PageLayout';
 import FAQAccordion from '@/components/ui/FAQAccordion';
+import { redirect } from 'next/navigation';
+import { auth } from '@/auth';
 import {
   HelpCircle,
   CreditCard,
@@ -160,8 +162,8 @@ const faqCategories = [
 const promises = [
   '100% Free Listing',
   'No Registration Fees',
-  'No Subscription Charges',
-  'No Commissions (as of now)',
+  'No Subscription Charges (as of now)',
+  'No Commissions ',
   'No Exclusive Contracts',
   'Direct Contact with Event Organizers',
   'Full Control Over Your Profile',
@@ -169,33 +171,24 @@ const promises = [
   'Dedicated Support Whenever You Need Assistance',
 ];
 
-// Structured data so the questions can surface directly in search results.
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: faqCategories.flatMap((category) =>
-    category.faqs.map((faq) => ({
-      '@type': 'Question',
-      name: faq.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: faq.answer,
-      },
-    })),
-  ),
-};
+const FAQPage = async () => {
+  // Gated on the server so the content never reaches a non-artist's browser.
+  // A client-side guard would still ship the full text in the HTML payload.
+  const session = await auth();
 
-const FAQPage = () => {
+  if (!session?.user) {
+    redirect(`/auth/signin?redirect=${encodeURIComponent('/faqs')}`);
+  }
+
+  if (session.user.role !== 'artist') {
+    redirect('/');
+  }
+
   return (
     <PageLayout
-      title="Frequently Asked Questions"
+      title="How AndAction Works"
       description="Answers to the questions artists ask us most about being listed on AndAction."
     >
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-
       <div className="space-y-8">
         {/* Intro */}
         <div className="text-center py-6 bg-gradient-to-r from-primary-orange/10 to-primary-pink/10 rounded-xl border border-primary-pink/20">

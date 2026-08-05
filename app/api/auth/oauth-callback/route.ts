@@ -2,11 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * Canonical base for post-OAuth redirects. request.url is only a fallback:
+ * behind a reverse proxy that doesn't forward Host it points at the internal
+ * localhost origin, which would bounce users to localhost after Google login.
+ */
+function getRedirectBase(request: NextRequest): string {
+  return (
+    process.env.NEXTAUTH_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    request.url
+  );
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const role = searchParams.get("role");
   console.log(`Role: ${role}`);
   const redirect = searchParams.get("redirect") || "/";
+  const base = getRedirectBase(request);
 
   try {
     const session = await auth();
@@ -23,7 +37,7 @@ export async function GET(request: NextRequest) {
 
       if (!user) {
         console.error("OAuth callback: User not found");
-        return NextResponse.redirect(new URL("/", request.url));
+        return NextResponse.redirect(new URL("/", base));
       }
 
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
@@ -37,10 +51,10 @@ export async function GET(request: NextRequest) {
         );
         if (user.role === "artist") {
           return NextResponse.redirect(
-            new URL("/artist/dashboard", request.url)
+            new URL("/artist/dashboard", base)
           );
         }
-        return NextResponse.redirect(new URL(redirect, request.url));
+        return NextResponse.redirect(new URL(redirect, base));
       }
 
       // Update role to artist but don't create artist profile yet
@@ -52,13 +66,13 @@ export async function GET(request: NextRequest) {
 
      
       return NextResponse.redirect(
-        new URL("/auth/artist?step=userInfo&oauth=true", request.url)
+        new URL("/auth/artist?step=userInfo&oauth=true", base)
       );
     }
 
-    return NextResponse.redirect(new URL(redirect, request.url));
+    return NextResponse.redirect(new URL(redirect, base));
   } catch (error) {
     console.error("OAuth callback error:", error);
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/", base));
   }
 }

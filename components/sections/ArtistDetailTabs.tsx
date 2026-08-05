@@ -996,7 +996,7 @@ const ArtistDetailTabs: React.FC<ArtistDetailTabsProps> = ({
                     {hasDuration && (
                       <div className="flex-1 md:px-3">
                         <h4 className="text-text-gray">Performing duration</h4>
-                        <p className="text-white mb-1">
+                        <p className="text-white mb-2">
                           {artist.performingDurationFrom || ""}
                           {artist.performingDurationFrom && artist.performingDurationTo ? " - " : ""}
                           {artist.performingDurationTo || ""}

@@ -6,12 +6,12 @@ import { FileText, Users, CreditCard, Shield, AlertTriangle, Scale, Mail, Phone 
 
 
 export const metadata: Metadata = {
-  title: 'Terms & Conditions - ANDACTION | User Agreement & Service Terms',
-  description: 'Read ANDACTION\'s terms of service covering user agreements, platform usage, booking policies, payment terms, and legal obligations for artists and event organizers.',
-  keywords: 'terms of service, user agreement, ANDACTION terms, booking terms, payment policy, platform rules, legal terms',
+  title: 'Terms & Conditions - AndAction | User Agreement & Service Terms',
+  description: 'Read AndAction\'s terms of service covering user agreements, platform usage, booking policies, payment terms, and legal obligations for artists and event organizers.',
+  keywords: 'terms of service, user agreement, AndAction terms, booking terms, payment policy, platform rules, legal terms',
   openGraph: {
-    title: 'Terms & Conditions - ANDACTION',
-    description: 'Important terms and conditions governing the use of ANDACTION platform and services.',
+    title: 'Terms & Conditions - AndAction',
+    description: 'Important terms and conditions governing the use of AndAction platform and services.',
     type: 'website',
   },
 };
@@ -25,11 +25,11 @@ const TermsPage = () => {
       content: [
         {
           subtitle: 'Agreement to Terms',
-          text: 'By accessing and using ANDACTION, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.'
+          text: 'By accessing and using AndAction, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.'
         },
         {
           subtitle: 'Eligibility',
-          text: 'You must be at least 18 years old to use our services. By using ANDACTION, you represent and warrant that you have the legal capacity to enter into this agreement.'
+          text: 'You must be at least 18 years old to use our services. By using AndAction, you represent and warrant that you have the legal capacity to enter into this agreement.'
         },
         {
           subtitle: 'Modifications',
@@ -63,7 +63,7 @@ const TermsPage = () => {
       content: [
         {
           subtitle: 'Booking Process',
-          text: 'All bookings are subject to artist availability and confirmation. ANDACTION facilitates connections but does not guarantee the availability or performance quality of any artist.'
+          text: 'All bookings are subject to artist availability and confirmation. AndAction facilitates connections but does not guarantee the availability or performance quality of any artist.'
         },
         {
           subtitle: 'Cancellation Policy',
@@ -82,11 +82,11 @@ const TermsPage = () => {
       content: [
         {
           subtitle: 'Payment Processing',
-          text: 'All payments are processed through secure third-party payment processors. ANDACTION may charge service fees for facilitating bookings and transactions.'
+          text: 'All payments are processed through secure third-party payment processors. AndAction may charge service fees for facilitating bookings and transactions.'
         },
         {
           subtitle: 'Refund Policy',
-          text: 'Refunds are subject to the specific terms agreed upon between the artist and event organizer. ANDACTION service fees are generally non-refundable except in cases of platform error.'
+          text: 'Refunds are subject to the specific terms agreed upon between the artist and event organizer. AndAction service fees are generally non-refundable except in cases of platform error.'
         },
         {
           subtitle: 'Disputes',
@@ -121,13 +121,13 @@ const TermsPage = () => {
         {/* Introduction */}
         <section>
           <p className="text-text-light-gray leading-relaxed mb-6">
-            ANDACTION is a brand owned and operated by MINDFUL TECH INNOVATIONS (OPC) PVT LTD, a registered company under the laws of India.<br /><br />
-            These Terms and Conditions (&quot;Terms&quot;) govern your use of the ANDACTION platform and services.
+            AndAction is a brand owned and operated by MINDFUL TECH INNOVATIONS (OPC) PVT LTD, a registered company under the laws of India.<br /><br />
+            These Terms and Conditions (&quot;Terms&quot;) govern your use of the AndAction platform and services.
             By accessing or using our service, you agree to be bound by these Terms. If you disagree with
             any part of these terms, then you may not access the service.
           </p>
           <p className="text-text-light-gray leading-relaxed">
-            ANDACTION operates as a platform connecting artists with event organizers. We facilitate these
+            AndAction operates as a platform connecting artists with event organizers. We facilitate these
             connections but are not party to the actual service agreements between users.
           </p>
         </section>
@@ -179,7 +179,7 @@ const TermsPage = () => {
             <div className="bg-card/20 rounded-lg p-6 border border-background-light">
               <h3 className="text-lg font-semibold text-white mb-3">Platform Disclaimer</h3>
               <p className="text-text-light-gray leading-relaxed">
-                ANDACTION provides a platform for connecting artists and event organizers. We do not guarantee
+                AndAction provides a platform for connecting artists and event organizers. We do not guarantee
                 the quality, safety, or legality of any services provided by users. All interactions and
                 transactions are between users at their own risk.
               </p>
@@ -187,15 +187,15 @@ const TermsPage = () => {
             <div className="bg-card/20 rounded-lg p-6 border border-background-light">
               <h3 className="text-lg font-semibold text-white mb-3">Limitation of Liability</h3>
               <p className="text-text-light-gray leading-relaxed">
-                ANDACTION shall not be liable for any indirect, incidental, special, consequential, or punitive
+                AndAction shall not be liable for any indirect, incidental, special, consequential, or punitive
                 damages resulting from your use of the service. Our total liability shall not exceed the amount
-                paid by you to ANDACTION in the 12 months preceding the claim.
+                paid by you to AndAction in the 12 months preceding the claim.
               </p>
             </div>
             <div className="bg-card/20 rounded-lg p-6 border border-background-light">
               <h3 className="text-lg font-semibold text-white mb-3">Indemnification</h3>
               <p className="text-text-light-gray leading-relaxed">
-                You agree to indemnify and hold ANDACTION harmless from any claims, damages, or expenses
+                You agree to indemnify and hold AndAction harmless from any claims, damages, or expenses
                 arising from your use of the service or violation of these terms.
               </p>
             </div>
@@ -224,11 +224,11 @@ const TermsPage = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
-              href="mailto:official@andaction.in"
+              href="mailto:official@AndAction.in"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-orange to-primary-pink text-white font-semibold rounded-full hover:shadow-lg hover:shadow-primary-pink/25 transition-all duration-300"
             >
               <Mail className="w-4 h-4" />
-              <span>official@andaction.in</span>
+              <span>official@AndAction.in</span>
             </a>
             <a
               href="tel:+918595114889"
