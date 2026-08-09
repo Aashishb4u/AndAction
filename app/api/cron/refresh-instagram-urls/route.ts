@@ -5,7 +5,12 @@ import {
   getInstagramRefreshIntervalHours,
   scheduleNextInstagramRefresh,
 } from "@/lib/instagram-refresh-schedule";
-import { runWhatsappGreetingBatchSafely } from "@/lib/whatsapp-greetings";
+import {
+  buildArtistProfileLink,
+  isWhatsappConfigured,
+  sendArtistWelcomeTemplate,
+  toWhatsappRecipient,
+} from "@/lib/whatsapp";
 import type { Prisma } from "@prisma/client";
 
 const MIN_INSTAGRAM_DISCOVERY_DELAY_MS = 2000;
@@ -57,6 +62,29 @@ interface InstagramRefreshArtist {
   instagramUsername: string | null;
   latestInstagramVideoUpdatedAt: Date | null;
   instagramRefreshNextRunAt: Date | null;
+  stageName: string | null;
+  contactNumber: string | null;
+  whatsappNumber: string | null;
+  isWhatsappGreetingSent: boolean;
+  user: {
+    firstName: string | null;
+    lastName: string | null;
+    name: string | null;
+    countryCode: string | null;
+  } | null;
+}
+
+interface ArtistWhatsappGreetingSummary {
+  configured: boolean;
+  pendingArtistsInRun: number;
+  attempted: number;
+  sent: number;
+  failed: number;
+  skippedInvalidNumber: number;
+  skippedAlreadySent: number;
+  failedArtistIds: string[];
+  errorMessages: string[];
+  reason?: string;
 }
 
 interface ArtistBatchProcessingResult {
@@ -72,6 +100,20 @@ interface ArtistBatchProcessingResult {
   stoppedDueToRateLimit: boolean;
   rateLimitBlockedUntil: Date | null;
   apiUsageSnapshot: InstagramRefreshApiUsageSnapshot | null;
+  whatsappGreetings: ArtistWhatsappGreetingSummary;
+}
+
+interface InstagramRefreshArtistQueryRow {
+  id: string;
+  userId: string;
+  instagramUsername: string | null;
+  instagramRefreshNextRunAt: Date | null;
+  stageName: string | null;
+  contactNumber: string | null;
+  whatsappNumber: string | null;
+  isWhatsappGreetingSent: boolean;
+  user: InstagramRefreshArtist["user"];
+  videos: Array<{ updatedAt: Date }>;
 }
 
 interface InstagramRefreshApiUsageSnapshot {
@@ -137,19 +179,6 @@ export async function GET(request: NextRequest) {
       isManualForceRun,
     });
 
-    // Piggyback the WhatsApp welcome greetings on this schedule.
-    //
-    // Deliberately BEFORE the active-run lock below: if an Instagram run ever
-    // wedges (status stays "started"), every later call returns early, and
-    // greetings would silently stop with it. runWhatsappGreetingBatchSafely
-    // never throws, so nothing here can affect the Instagram refresh.
-    // Size it with WHATSAPP_GREETINGS_PER_INSTAGRAM_RUN (0 disables).
-    const whatsappGreetings = isManualForceRun
-      ? { ran: false, reason: "skipped on targeted force run" }
-      : await runWhatsappGreetingBatchSafely();
-
-    console.log("[INSTAGRAM REFRESH] WhatsApp greetings:", whatsappGreetings);
-
     const activeCronJob = await prisma.cronJob.findFirst({
       where: {
         jobName: "refresh-instagram-urls",
@@ -186,7 +215,9 @@ export async function GET(request: NextRequest) {
         message: "Instagram URL refresh is already running",
         activeCronJobId: activeCronJob.id,
         activeCronJobStartedAt: activeCronJob.startedAt.toISOString(),
-        whatsappGreetings,
+        whatsappGreetings: createEmptyWhatsappGreetingSummary(
+          "skipped because Instagram URL refresh is already running",
+        ),
       });
     }
 
@@ -206,7 +237,7 @@ export async function GET(request: NextRequest) {
     console.log("[CRON] Starting Instagram URL refresh job...");
 
     // Get all artists connected through username-based Business Discovery.
-    const allArtists = await prisma.artist.findMany({
+    const artistQuery = {
       where: {
         instagramId: { not: null },
         instagramUsername: { not: null },
@@ -222,6 +253,18 @@ export async function GET(request: NextRequest) {
         userId: true,
         instagramUsername: true,
         instagramRefreshNextRunAt: true,
+        stageName: true,
+        contactNumber: true,
+        whatsappNumber: true,
+        isWhatsappGreetingSent: true,
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            name: true,
+            countryCode: true,
+          },
+        },
         videos: {
           where: {
             source: "instagram",
@@ -235,7 +278,10 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-    });
+    } as any;
+
+    const allArtists =
+      (await prisma.artist.findMany(artistQuery)) as unknown as InstagramRefreshArtistQueryRow[];
 
     console.log(`[CRON] Found ${allArtists.length} total artists with Instagram connected`);
 
@@ -292,6 +338,11 @@ export async function GET(request: NextRequest) {
           instagramUsername: artist.instagramUsername,
           latestInstagramVideoUpdatedAt,
           instagramRefreshNextRunAt: artist.instagramRefreshNextRunAt,
+          stageName: artist.stageName,
+          contactNumber: artist.contactNumber,
+          whatsappNumber: artist.whatsappNumber,
+          isWhatsappGreetingSent: artist.isWhatsappGreetingSent,
+          user: artist.user,
         });
 
         if (isManualForceRun) {
@@ -388,7 +439,7 @@ export async function GET(request: NextRequest) {
         result.apiUsageSnapshot?.windowEndsAt.toISOString() || null,
       apiRateLimitHitsThisHour: result.apiUsageSnapshot?.rateLimitHits || 0,
       errorMessages: result.errorMessages,
-      whatsappGreetings,
+      whatsappGreetings: result.whatsappGreetings,
     };
 
     await updateCronJobRecord(
@@ -601,6 +652,10 @@ async function processArtistsInBatches(params: {
   let stoppedDueToRateLimit = false;
   let rateLimitBlockedUntil: Date | null = null;
   let apiUsageSnapshot: InstagramRefreshApiUsageSnapshot | null = null;
+  const whatsappGreetings = createEmptyWhatsappGreetingSummary();
+  whatsappGreetings.pendingArtistsInRun = artists.filter(
+    (artist) => !artist.isWhatsappGreetingSent,
+  ).length;
 
   for (
     let attemptNumber = 0;
@@ -666,6 +721,33 @@ async function processArtistsInBatches(params: {
             },
           });
 
+          const whatsappGreetingResult =
+            await sendArtistWhatsappGreetingIfPending(artist);
+
+          if (whatsappGreetingResult.status === "sent") {
+            whatsappGreetings.attempted++;
+            whatsappGreetings.sent++;
+          } else if (whatsappGreetingResult.status === "failed") {
+            whatsappGreetings.attempted++;
+            whatsappGreetings.failed++;
+            whatsappGreetings.failedArtistIds.push(artist.id);
+            whatsappGreetings.errorMessages.push(
+              `Artist ${artist.id}: ${whatsappGreetingResult.error}`,
+            );
+          } else if (
+            whatsappGreetingResult.status === "skipped_invalid_number"
+          ) {
+            whatsappGreetings.skippedInvalidNumber++;
+          } else if (
+            whatsappGreetingResult.status === "skipped_already_sent"
+          ) {
+            whatsappGreetings.skippedAlreadySent++;
+          } else if (
+            whatsappGreetingResult.status === "skipped_unconfigured"
+          ) {
+            whatsappGreetings.reason = whatsappGreetingResult.reason;
+          }
+
           artistsProcessed++;
           videosUpdated += result.videosUpdated;
 
@@ -709,6 +791,7 @@ async function processArtistsInBatches(params: {
               stoppedDueToRateLimit,
               rateLimitBlockedUntil,
               apiUsageSnapshot,
+              whatsappGreetings,
             };
           }
 
@@ -748,6 +831,7 @@ async function processArtistsInBatches(params: {
     stoppedDueToRateLimit,
     rateLimitBlockedUntil,
     apiUsageSnapshot,
+    whatsappGreetings,
   };
 }
 
@@ -759,6 +843,99 @@ function chunkArray<T>(items: T[], size: number): T[][] {
   }
 
   return result;
+}
+
+function createEmptyWhatsappGreetingSummary(
+  reason?: string,
+): ArtistWhatsappGreetingSummary {
+  return {
+    configured: isWhatsappConfigured(),
+    pendingArtistsInRun: 0,
+    attempted: 0,
+    sent: 0,
+    failed: 0,
+    skippedInvalidNumber: 0,
+    skippedAlreadySent: 0,
+    failedArtistIds: [],
+    errorMessages: [],
+    ...(reason ? { reason } : {}),
+  };
+}
+
+function resolveArtistGreetingName(artist: InstagramRefreshArtist): string {
+  const stageName = artist.stageName?.trim();
+  if (stageName) return stageName;
+
+  const fullName = [artist.user?.firstName, artist.user?.lastName]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" ");
+  if (fullName) return fullName;
+
+  return artist.user?.name?.trim() || "Artist";
+}
+
+async function sendArtistWhatsappGreetingIfPending(
+  artist: InstagramRefreshArtist,
+): Promise<
+  | { status: "sent" }
+  | { status: "failed"; error: string }
+  | { status: "skipped_invalid_number" }
+  | { status: "skipped_already_sent" }
+  | { status: "skipped_unconfigured"; reason: string }
+> {
+  if (artist.isWhatsappGreetingSent) {
+    return { status: "skipped_already_sent" };
+  }
+
+  if (!isWhatsappConfigured()) {
+    return {
+      status: "skipped_unconfigured",
+      reason:
+        "WhatsApp not configured (WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_ACCESS_TOKEN missing)",
+    };
+  }
+
+  const to = toWhatsappRecipient(
+    artist.whatsappNumber || artist.contactNumber,
+    artist.user?.countryCode,
+  );
+
+  if (!to) {
+    console.warn(
+      `[WHATSAPP] Artist ${artist.id}: no valid WhatsApp number, skipping greeting`,
+    );
+    return { status: "skipped_invalid_number" };
+  }
+
+  const result = await sendArtistWelcomeTemplate({
+    to,
+    artistName: resolveArtistGreetingName(artist),
+    profileLink: buildArtistProfileLink(artist.id),
+  });
+
+  if (!result.success) {
+    console.error(
+      `[WHATSAPP] Failed to send greeting for artist ${artist.id} (${to}): ${result.error}`,
+    );
+    return {
+      status: "failed",
+      error: result.error || "Unknown WhatsApp error",
+    };
+  }
+
+  await prisma.artist.update({
+    where: { id: artist.id },
+    data: { isWhatsappGreetingSent: true },
+  } as any);
+
+  artist.isWhatsappGreetingSent = true;
+
+  console.log(
+    `[WHATSAPP] Sent greeting for artist ${artist.id} (${to}), message ${result.messageId}`,
+  );
+
+  return { status: "sent" };
 }
 
 function compareArtistsByRefreshPriority(

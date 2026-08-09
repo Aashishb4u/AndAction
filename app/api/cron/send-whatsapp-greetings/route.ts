@@ -3,9 +3,9 @@
  *
  * Manual / standalone trigger for the artist WhatsApp welcome greeting.
  *
- * The same batch also runs automatically inside the Instagram refresh cron
- * (see lib/whatsapp-greetings.ts), so this endpoint exists for testing,
- * targeting a single artist, or draining the backlog faster.
+ * The same batch can also run from the Instagram refresh cron, so this
+ * endpoint exists for testing, targeting a single artist, or draining the
+ * backlog faster when explicitly enabled.
  *
  * GET /api/cron/send-whatsapp-greetings
  *   ?limit=50        how many artists this run handles
@@ -23,6 +23,7 @@ import {
 } from "@/lib/whatsapp-greetings";
 import type { Prisma } from "@prisma/client";
 
+const ENABLE_STANDALONE_WHATSAPP_GREETING_ROUTE = false;
 const JOB_NAME = "send-whatsapp-greetings";
 
 /** A run "started" longer ago than this is treated as dead, not active. */
@@ -34,22 +35,32 @@ const STALE_LOCK_MINUTES = Math.max(
 export async function GET(request: NextRequest) {
   let cronJobId: string | null = null;
 
+  const cronSecret = process.env.CRON_SECRET;
+  const bearerMatch = request.headers
+    .get("authorization")
+    ?.match(/^Bearer\s+(.+)$/i);
+  const providedSecret =
+    bearerMatch?.[1] ||
+    request.headers.get("x-cron-secret") ||
+    request.nextUrl.searchParams.get("token") ||
+    request.nextUrl.searchParams.get("secret");
+
+  if (cronSecret && providedSecret !== cronSecret) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!ENABLE_STANDALONE_WHATSAPP_GREETING_ROUTE) {
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          "This endpoint is disabled. WhatsApp greetings only run from /api/cron/refresh-instagram-urls.",
+      },
+      { status: 410 },
+    );
+  }
+
   try {
-    // ---- auth (same contract as the other cron routes) -------------------
-    const cronSecret = process.env.CRON_SECRET;
-    const bearerMatch = request.headers
-      .get("authorization")
-      ?.match(/^Bearer\s+(.+)$/i);
-    const providedSecret =
-      bearerMatch?.[1] ||
-      request.headers.get("x-cron-secret") ||
-      request.nextUrl.searchParams.get("token") ||
-      request.nextUrl.searchParams.get("secret");
-
-    if (cronSecret && providedSecret !== cronSecret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const params = request.nextUrl.searchParams;
     const artistId = params.get("artistId");
     const force = params.get("force")?.toLowerCase() === "true";
@@ -78,7 +89,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // ---- lock: skip if a previous run is still alive ---------------------
     const staleBefore = new Date(Date.now() - STALE_LOCK_MINUTES * 60 * 1000);
     const activeJob = await prisma.cronJob.findFirst({
       where: {

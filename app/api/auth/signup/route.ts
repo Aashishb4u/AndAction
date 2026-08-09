@@ -9,7 +9,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
   let body;
   try {
     body = await request.json();
-  } catch (e) {
+  } catch {
     return ApiErrors.badRequest('Invalid JSON body.');
   }
 
@@ -59,18 +59,24 @@ export async function POST(request: NextRequest): Promise<NextResponse<any>> {
     const normalizedPhone = phone ? String(phone).replace(/\D/g, '') : undefined;
     const normalizedCountryCode = countryCode ? String(countryCode).trim() : undefined;
 
-    // Duplicate checks
-    let existingUser: any = null;
+    // Duplicate checks. Phone number is globally unique on users.phoneNumber,
+    // so do not scope this check by countryCode.
+    let existingUser: {
+      email: string | null;
+      phoneNumber: string | null;
+    } | null = null;
+
     if (lowerCaseEmail) {
-      existingUser = await prisma.user.findUnique({ where: { email: lowerCaseEmail } });
+      existingUser = await prisma.user.findUnique({
+        where: { email: lowerCaseEmail },
+        select: { email: true, phoneNumber: true },
+      });
     }
 
     if (!existingUser && normalizedPhone) {
-      existingUser = await prisma.user.findFirst({
-        where: {
-          phoneNumber: normalizedPhone,
-          countryCode: normalizedCountryCode,
-        },
+      existingUser = await prisma.user.findUnique({
+        where: { phoneNumber: normalizedPhone },
+        select: { email: true, phoneNumber: true },
       });
     }
 

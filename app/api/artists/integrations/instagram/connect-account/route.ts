@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     // Instagram reels -> Shorts tab (isShort: true), feed posts -> Videos tab.
     const media = account.media?.data || [];
     const supported = media.filter((item: InstagramDiscoveryMedia) =>
-      ["VIDEO", "REEL", "IMAGE", "CAROUSEL_ALBUM"].includes(item.media_type),
+      ["VIDEO", "REEL", "IMAGE", "CAROUSEL_ALBUM"].includes(item.media_type) && item.media_url
     );
 
     let synced = 0;
