@@ -171,7 +171,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const rawPhoneNumber = extractPhoneNumber(body as Record<string, unknown>);
 
     if (!rawPhoneNumber) {
-      return ApiErrors.badRequest("phoneNumber is required.");
+      return successResponse(
+        {
+          found: false,
+          phoneNumber: null,
+          matchedOn: null,
+          callingCode: null,
+          source: null,
+          artist: null,
+          prospect: null,
+          artists: [],
+          prospects: [],
+        },
+        "No phone number provided.",
+      );
     }
 
     const rawCountryCode = extractCountryCode(body as Record<string, unknown>);
