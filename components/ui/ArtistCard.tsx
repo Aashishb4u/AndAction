@@ -7,6 +7,8 @@ import { buildArtishProfileUrl } from "@/lib/utils";
 import { useNavigationHistory } from "@/hooks/use-navigation-history";
 import ArtistCardSkeleton from "@/components/ui/ArtistCardSkeleton";
 
+const SKELETON_DELAY_MS = 150;
+
 interface ArtistCardProps {
   id: string;
   name: string;
@@ -28,10 +30,26 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   const { setReturnPath, setReturnTarget } = useNavigationHistory();
   const [isHovered, setIsHovered] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const [shouldShowImageSkeleton, setShouldShowImageSkeleton] = useState(false);
+  const imageSrc = buildArtishProfileUrl(thumbnail);
 
   useEffect(() => {
     setIsImageLoading(true);
-  }, [thumbnail]);
+    setShouldShowImageSkeleton(false);
+
+    const timeoutId = window.setTimeout(() => {
+      setShouldShowImageSkeleton(true);
+    }, SKELETON_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [imageSrc]);
+
+  const handleImageLoadStateChange = () => {
+    setIsImageLoading(false);
+    setShouldShowImageSkeleton(false);
+  };
 
   const handleClick = () => {
     if (typeof window !== "undefined") {
@@ -49,7 +67,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
       className={`relative flex-shrink-0  w-[150px] h-[237px] md:w-[190px] md:h-[300px] rounded-lg overflow-hidden cursor-pointer bg-text-light-gray/10 transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl hover:shadow-primary-pink/20 ${className}`}
       onClick={handleClick}
     >
-      {isImageLoading && (
+      {isImageLoading && shouldShowImageSkeleton && (
         <div className="absolute inset-0 z-10 pointer-events-none">
           <ArtistCardSkeleton />
         </div>
@@ -62,15 +80,15 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
         }`}
       >
         <Image
-          src={buildArtishProfileUrl(thumbnail)}
+          src={imageSrc}
           alt={name}
           fill
           className="object-cover transition-transform duration-500 hover:scale-110"
           sizes="230px"
           priority={false}
           unoptimized
-          onLoad={() => setIsImageLoading(false)}
-          onError={() => setIsImageLoading(false)}
+          onLoad={handleImageLoadStateChange}
+          onError={handleImageLoadStateChange}
         />
       </div>
 
@@ -100,7 +118,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
 
       {/* Hover Border Effect */}
       <div
-        className={`absolute inset-0 rounded-xl border-2 transition-all duration-300 ${isHovered ? "border-primary-pink/50 shadow-[0_0_20px_rgba(232,4,126,0.3)]" : "border-transparent"}`}
+        className={`tester-xyz absolute inset-0 rounded-xl border-2 transition-all duration-300 ${isHovered ? "border-primary-pink/50 shadow-[0_0_20px_rgba(232,4,126,0.3)]" : "border-transparent"}`}
       />
     </div>
   );
