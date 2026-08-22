@@ -19,13 +19,26 @@ import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 // --- Configuration ---
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 50;
+// Number of artists grouped together before the feed moves to the next distance bucket.
+const SHORTS_LOCATION_BUCKET_ARTISTS_PER_BUCKET_RAW = Number(
+  process.env.SHORTS_LOCATION_BUCKET_ARTISTS_PER_BUCKET || 15,
+);
+
+const SHORTS_LOCATION_BUCKET_ARTISTS_PER_BUCKET =
+  Number.isFinite(SHORTS_LOCATION_BUCKET_ARTISTS_PER_BUCKET_RAW) &&
+  SHORTS_LOCATION_BUCKET_ARTISTS_PER_BUCKET_RAW >= 1
+    ? Math.floor(SHORTS_LOCATION_BUCKET_ARTISTS_PER_BUCKET_RAW)
+    : 15;
+// Maximum number of reels the bucketed shorts feed can surface from a single artist.
 const SHORTS_LOCATION_BUCKET_REELS_PER_ARTIST_RAW = Number(
   process.env.SHORTS_LOCATION_BUCKET_REELS_PER_ARTIST || 10,
 );
 const SHORTS_LOCATION_BUCKET_REELS_PER_ARTIST =
-  Number.isFinite(SHORTS_LOCATION_BUCKET_REELS_PER_ARTIST_RAW)
+  Number.isFinite(SHORTS_LOCATION_BUCKET_REELS_PER_ARTIST_RAW) &&
+  SHORTS_LOCATION_BUCKET_REELS_PER_ARTIST_RAW >= 1
     ? Math.floor(SHORTS_LOCATION_BUCKET_REELS_PER_ARTIST_RAW)
     : 10;
+    
 const INDIA_GEO_BOUNDS = {
   minLat: 6,
   maxLat: 37.5,
@@ -308,7 +321,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
               per_artist_videos AS (
                 SELECT
                   v.id,
-                  FLOOR((ra.artist_distance_rank - 1) / 10.0) AS artist_bucket,
+                  FLOOR((ra.artist_distance_rank - 1) / ${SHORTS_LOCATION_BUCKET_ARTISTS_PER_BUCKET}::float) AS artist_bucket,
                   ra.artist_distance_rank,
                   ROW_NUMBER() OVER (
                     PARTITION BY v."userId"
@@ -454,7 +467,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
                 JOIN "users" u ON u.id = ma."userId"
               )
               SELECT
-                FLOOR((ra.artist_distance_rank - 1) / 10.0)::int AS artist_bucket,
+                FLOOR((ra.artist_distance_rank - 1) / ${SHORTS_LOCATION_BUCKET_ARTISTS_PER_BUCKET}::float)::int AS artist_bucket,
                 ra.artist_distance_rank::int AS artist_distance_rank,
                 ra.user_id,
                 (
