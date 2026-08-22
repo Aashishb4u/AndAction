@@ -297,7 +297,7 @@ const FindArtistModal: React.FC<FindArtistModalProps> = ({
       title="Find your artist"
       size="full"
       variant="bottom-sheet"
-      className="md:max-w-2xl border-none bg-background h-[90vh] md:!h-auto md:!max-h-[90vh]"
+      className="md:max-w-2xl border-none bg-background h-[90vh] md:!h-auto md:!max-h-[90vh] overflow-scroll"
       headerClassName="md:px-4 md:py-3 px-2 py-3 text-left"
     >
       <div className="flex flex-col h-full">
