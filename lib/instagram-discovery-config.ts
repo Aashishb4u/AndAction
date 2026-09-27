@@ -511,9 +511,9 @@ export async function getInstagramProspectDiscoveryConfig(): Promise<InstagramPr
     currentStart: normalizeCurrentStart(dbConfig?.prospectDiscoveryCurrentStart),
     startIncrement,
     pagesPerQuery,
-    locationCity: activeLocation.city,
-    locationState: activeLocation.state,
-    locationCountry: activeLocation.country,
+    locationCity: activeLocation.city, // This one is used in the query
+    locationState: activeLocation.state, // This one is used in the query
+    locationCountry: activeLocation.country, // This one is used in the query
     locationLatitude: activeLocation.latitude ?? null,
     locationLongitude: activeLocation.longitude ?? null,
     location: buildProspectDiscoveryLocation({
@@ -562,7 +562,7 @@ export async function getInstagramDiscoveryConfig(): Promise<InstagramDiscoveryR
   const businessAccountId =
     normalizeValue(dbConfig?.businessAccountId) || envFallbacks.businessAccountId;
   const accessToken =
-    normalizeValue(dbConfig?.accessToken) || envFallbacks.accessToken;
+    normalizeValue(envFallbacks.accessToken);
 
   if (!businessAccountId || !accessToken) {
     return null;
