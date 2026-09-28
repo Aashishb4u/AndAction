@@ -100,25 +100,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     const shouldLoadViewerLocation = type === "shorts" && random;
     let viewerLocation: { lat: number; lng: number } | null = null;
 
-    if (withBookmarks || shouldLoadViewerLocation) {
-      const session = await auth();
-      userId = session?.user?.id || null;
+const latitudeParam = url.searchParams.get("latitude");
+const longitudeParam = url.searchParams.get("longitude");
 
-      if (shouldLoadViewerLocation && userId) {
-        const viewer = await prisma.user.findUnique({
-          where: { id: userId },
-          select: {
-            latitude: true,
-            longitude: true,
-          },
-        });
+if (shouldLoadViewerLocation) {
+  viewerLocation = normalizeIndiaLatLng(
+    latitudeParam,
+    longitudeParam,
+  );
+}
 
-        viewerLocation = normalizeIndiaLatLng(
-          viewer?.latitude,
-          viewer?.longitude,
-        );
-      }
-    }
+if (withBookmarks) {
+  const session = await auth();
+  userId = session?.user?.id || null;
+}
 
     // Build filters
     const where: Prisma.VideoWhereInput = { isApproved: true };
@@ -345,7 +340,11 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
               -- opening reel) differs per session instead of being frozen.
               -- It is unique per artist, so the ordering stays total and OFFSET
               -- pagination cannot repeat or skip rows.
-              ORDER BY artist_bucket, video_rank, artist_sort_key, id DESC
+              ORDER BY
+              artist_bucket ASC,
+              video_rank ASC,
+              artist_sort_key ASC,
+              id DESC
               LIMIT ${limit} OFFSET ${offset}
             `
           : prisma.$queryRaw<{ id: string }[]>`

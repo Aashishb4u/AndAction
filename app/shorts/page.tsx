@@ -6,13 +6,15 @@ import { useMemo } from "react";
 const SHORTS_PAGE_LIMIT = 5;
 
 const fetchShortsPage = async ({ pageParam = 1, queryKey }: any) => {
-  const [_key, { category, seed }] = queryKey;
-  const params = new URLSearchParams({
-    type: "shorts",
-    page: pageParam.toString(),
-    limit: SHORTS_PAGE_LIMIT.toString(),
-    random: "true",
-  });
+const [_key, { category, seed, latitude, longitude }] = queryKey;  
+const params = new URLSearchParams({
+  type: "shorts",
+  page: pageParam.toString(),
+  limit: SHORTS_PAGE_LIMIT.toString(),
+  random: "true",
+  latitude: latitude.toString(),
+  longitude: longitude.toString(),
+});
   if (category && category !== "all") {
     params.set("category", category);
   }
@@ -112,21 +114,58 @@ export default function ShortsPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const [userLocation, setUserLocation] = useState<{
+  latitude: number;
+  longitude: number;
+} | null>(null);
+
+useEffect(() => {
+  if (!navigator.geolocation) return;
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      setUserLocation({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+    },
+    (error) => {
+      console.error("Location error:", error);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 5 * 60 * 1000,
+    },
+  );
+}, []);
   // Stable seed for consistent random ordering across pages
   const [shortsSeed] = useState(() => Math.random() * 2 - 1);
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQuery({
-      queryKey: ["shorts", { category: selectedCategory, seed: shortsSeed }],
-      queryFn: fetchShortsPage,
-      initialPageParam: 1,
-      getNextPageParam: (lastPage, allPages) => {
-        return lastPage && lastPage.length >= SHORTS_PAGE_LIMIT
-          ? allPages.length + 1
-          : undefined;
+ const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  useInfiniteQuery({
+    queryKey: [
+      "shorts",
+      {
+        category: selectedCategory,
+        seed: shortsSeed,
+        latitude: userLocation?.latitude,
+        longitude: userLocation?.longitude,
       },
-      refetchOnWindowFocus: true,
-    });
+    ],
+    queryFn: fetchShortsPage,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage && lastPage.length >= SHORTS_PAGE_LIMIT
+        ? allPages.length + 1
+        : undefined;
+    },
+    refetchOnWindowFocus: true,
+    enabled:
+      userLocation !== null &&
+      Number.isFinite(userLocation.latitude) &&
+      Number.isFinite(userLocation.longitude),
+  });
 
   // Group shorts by artist (all shorts from one artist together).
   //
@@ -138,37 +177,23 @@ export default function ShortsPage() {
   // Grouping within a page keeps the list append-only, so positions the
   // viewer has passed can never change.
   const groupedShorts = useMemo(() => {
-    const pages = data?.pages || [];
-    const seenIds = new Set<string>();
-    const result: any[] = [];
+  const pages = data?.pages || [];
+  const seenIds = new Set<string>();
+  const result: any[] = [];
 
-    for (const page of pages) {
-      if (!page?.length) continue;
+  for (const page of pages) {
+    if (!page?.length) continue;
 
-      // Group by profile (fallback: user), in order of first appearance
-      const shortsByArtist: Record<string, any[]> = {};
-      const artistOrder: string[] = [];
+    for (const short of page) {
+      if (seenIds.has(short.id)) continue;
 
-      for (const short of page) {
-        // Guard against a short arriving on more than one page (e.g. new rows
-        // shifting the OFFSET window between requests).
-        if (seenIds.has(short.id)) continue;
-        seenIds.add(short.id);
-
-        if (!shortsByArtist[short.groupId]) {
-          shortsByArtist[short.groupId] = [];
-          artistOrder.push(short.groupId);
-        }
-        shortsByArtist[short.groupId].push(short);
-      }
-
-      for (const artistId of artistOrder) {
-        result.push(...shortsByArtist[artistId]);
-      }
+      seenIds.add(short.id);
+      result.push(short);
     }
+  }
 
-    return result;
-  }, [data?.pages]);
+  return result;
+}, [data?.pages]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {

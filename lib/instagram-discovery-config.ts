@@ -562,7 +562,7 @@ export async function getInstagramDiscoveryConfig(): Promise<InstagramDiscoveryR
   const businessAccountId =
     normalizeValue(dbConfig?.businessAccountId) || envFallbacks.businessAccountId;
   const accessToken =
-    normalizeValue(envFallbacks.accessToken);
+    normalizeValue(dbConfig?.accessToken) || envFallbacks.accessToken;
 
   if (!businessAccountId || !accessToken) {
     return null;
