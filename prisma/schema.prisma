@@ -46,6 +46,7 @@ model User {
   artists                 Artist[]
   bookings                Booking[]
   bookmarks               Bookmark[]
+  profileEvents           ArtistProfileEvent[]
   acceptedProspects       Prospect[] @relation("ProspectAcceptedBy")
   convertedFromProspect   Prospect?  @relation("ProspectConvertedUser")
   sessions                Session[]
@@ -135,6 +136,7 @@ model Artist {
   instagramConnectedAt           DateTime?
   instagramRefreshNextRunAt      DateTime?
   isWhatsappGreetingSent         Boolean    @default(false)
+  analyticsReportFrequency       String     @default("weekly")
   createdAt                      DateTime   @default(now())
   updatedAt                      DateTime   @updatedAt
   profileImage                   String?
@@ -144,6 +146,7 @@ model Artist {
   bookingsReceived               Booking[]
   bookmarkedByUsers              Bookmark[]
   videos                         Video[]
+  profileEvents                  ArtistProfileEvent[]
 
   @@unique([userId, profileOrder])
   @@index([userId])
@@ -182,6 +185,21 @@ model Video {
   @@index([youtubeVideoId])
   @@index([isShort])
   @@map("videos")
+}
+
+model ArtistProfileEvent {
+  id         String   @id @default(cuid())
+  artistId   String
+  userId     String?
+  visitorKey String?
+  type       String
+  createdAt  DateTime @default(now())
+  artist     Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([artistId, type, createdAt])
+  @@index([userId])
+  @@map("artist_profile_events")
 }
 
 model Bookmark {

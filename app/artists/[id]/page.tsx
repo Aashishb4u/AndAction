@@ -238,6 +238,28 @@ export default function ArtistDetailPage() {
     fetchData();
   }, [artistId, session?.user]);
 
+  useEffect(() => {
+    const id = Array.isArray(artistId) ? artistId[0] : artistId;
+    if (!id) return;
+
+    let visitorKey = "";
+    try {
+      visitorKey = sessionStorage.getItem("andaction-visitor") || "";
+      if (!visitorKey) {
+        visitorKey = crypto.randomUUID();
+        sessionStorage.setItem("andaction-visitor", visitorKey);
+      }
+    } catch {
+      visitorKey = crypto.randomUUID();
+    }
+
+    fetch(`/api/artists/${id}/interactions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "PROFILE_VIEW", visitorKey }),
+    }).catch(() => undefined);
+  }, [artistId]);
+
   const displayArtist = useMemo(() => {
     if (!artist) return null;
 
@@ -390,6 +412,21 @@ export default function ArtistDetailPage() {
     }
     console.log("Request booking");
   };
+  const trackClick = (type: "WHATSAPP_CLICK" | "CALL_CLICK") => {
+    if (!artist?.id) return;
+    let visitorKey = "";
+    try {
+      visitorKey = sessionStorage.getItem("andaction-visitor") || "";
+    } catch {
+      visitorKey = "";
+    }
+    fetch(`/api/artists/${artist.id}/interactions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, visitorKey }),
+    }).catch(() => undefined);
+  };
+
   const handleCall = () => {
     if (!session?.user) {
       router.push(
@@ -401,6 +438,7 @@ export default function ArtistDetailPage() {
       return;
     }
     if (artist.contactNumber) {
+      trackClick("CALL_CLICK");
       window.open(`tel:${artist.contactNumber}`, "_self");
     }
   };
@@ -445,6 +483,7 @@ export default function ArtistDetailPage() {
 
       const normalizedNumber = normalizeWhatsappNumber(whatsappTarget);
       if (!normalizedNumber) return;
+      trackClick("WHATSAPP_CLICK");
 
       window.open(
         `https://wa.me/${normalizedNumber}?text=${encodedMessage}`,

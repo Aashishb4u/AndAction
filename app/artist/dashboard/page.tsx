@@ -12,6 +12,7 @@ import { BookingStatus } from "@prisma/client";
 import { useArtistCategories } from "@/hooks/use-artist-categories";
 import { findCategoryLabel } from "@/lib/artist-category-utils";
 import AdditionalProfileModal from "@/components/artist/profile-setup/AdditionalProfileModal";
+import ArtistAnalyticsPanel from "@/components/artist/ArtistAnalyticsPanel";
 import { buildArtishProfileUrl } from "@/lib/utils";
 
 /* ----------------------------------------------------
@@ -137,7 +138,6 @@ export default function ArtistDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<BookingStatusMap>(defaultBookingsState);
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // 'desc' = Newest first
   const [profiles, setProfiles] = useState<ArtistProfileSummary[]>([]);
   const [isAddProfileOpen, setIsAddProfileOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -162,6 +162,7 @@ export default function ArtistDashboard() {
   const desktopCarouselRef = useRef<HTMLDivElement | null>(null);
   const mobileRafRef = useRef<number | null>(null);
   const desktopRafRef = useRef<number | null>(null);
+  const [analyticsDetailOpen, setAnalyticsDetailOpen] = useState(false);
   const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
   const [desktopActiveIndex, setDesktopActiveIndex] = useState(0);
   const totalProfileCards = Math.max(1, profilesForUi.length + 1);
@@ -663,30 +664,14 @@ export default function ArtistDashboard() {
              RIGHT CONTENT - BOOKINGS
         ---------------------------------------------------- */}
         <div className="flex-1 px-4 pb-4  md:p-5">
-          <div className="mb-4 flex items-start justify-between gap-2 sm:items-center">
-            <h1 className="text-white h1 leading-tight">Leads / Bookings</h1>
-            <button
-              className="btn2 flex shrink-0 items-center gap-1 rounded-full border-[1.5px] border-border-color bg-[#262626] px-3 py-2 sm:px-4"
-              onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
-              title="Sort by event date"
-              aria-label={`Sort by event date, currently ${sortOrder === 'desc' ? 'newest first' : 'oldest first'}`}
-            >
-              <span className="gradient-text text-sm sm:text-base font-bold">
-                Sort by
-              </span>
-              <Image
-                src="/icons/up-down.svg"
-                width={18}
-                height={18}
-                alt="Sort"
-                className="shrink-0"
-                style={{ transform: sortOrder === 'desc' ? 'rotate(0deg)' : 'rotate(180deg)' }}
-              />
-            </button>
-          </div>
+          <ArtistAnalyticsPanel
+            artistId={activeProfileId}
+            onActiveChange={setAnalyticsDetailOpen}
+          />
+          {/* <h1 className="text-white h1 leading-tight">Leads / Bookings</h1> */}
 
           {/* EMPTY STATE */}
-          {totalBookings === 0 && (
+          {totalBookings === 0 && !analyticsDetailOpen && (
             <div className="flex flex-col items-center mt-10 text-gray-400">
               <h2 className="text-xl text-white mb-2">No Bookings Yet!</h2>
               <p>Your leads and bookings will appear here.</p>
@@ -702,11 +687,9 @@ export default function ArtistDashboard() {
               if (bookingsList.length === 0) return null;
 
               // Sort by eventDate
-              bookingsList = [...bookingsList].sort((a, b) => {
-                const dateA = new Date(a.eventDate).getTime();
-                const dateB = new Date(b.eventDate).getTime();
-                return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-              });
+              bookingsList = [...bookingsList].sort(
+                (a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime(),
+              );
 
               const sectionTitle =
                 status.charAt(0) + status.slice(1).toLowerCase();

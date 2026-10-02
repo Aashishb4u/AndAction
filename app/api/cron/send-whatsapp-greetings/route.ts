@@ -122,11 +122,22 @@ export async function GET(request: NextRequest) {
       dryRun,
     });
 
+    let analyticsReports: { prepared: number; artistIds: string[] } | null = null;
+    if (!artistId && !dryRun) {
+      try {
+        const { runArtistAnalyticsReports } = await import("@/lib/artist-analytics-report");
+        analyticsReports = await runArtistAnalyticsReports();
+      } catch (reportError) {
+        console.error("Artist analytics WhatsApp report failed:", reportError);
+      }
+    }
+
     const metadata = {
       ...result,
       forced: force,
       targetedArtistId: artistId,
       limit,
+      analyticsReports,
     };
 
     await prisma.cronJob.update({
