@@ -64,7 +64,7 @@ export default function ArtistAnalyticsPanel({
     visitors: 0,
   });
   const [frequency, setFrequency] = useState("weekly");
-  const [selected, setSelected] = useState<Selection | null>(null);
+  const [selected, setSelected] = useState<Selection | null>(METRIC_CARDS[0]);
   const [rows, setRows] = useState<EventRow[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -161,18 +161,26 @@ export default function ArtistAnalyticsPanel({
               type="button"
               onClick={() => {
                 setPage(1);
-                setSelected(active ? null : card);
+                setSelected(card);
               }}
-              className={`min-h-[108px] rounded-2xl border bg-gradient-to-b from-[#1F1F1F] to-[#141414] px-5 py-4 text-left shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition hover:-translate-y-0.5 hover:border-white/25 ${
-                active ? "border-primary-orange" : "border-border-color"
+              className={`flex min-h-[112px] flex-col rounded-2xl border px-5 py-4 text-left shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition hover:-translate-y-0.5 ${
+                active
+                  ? "border-white bg-white text-black"
+                  : "border-border-color bg-gradient-to-b from-[#1F1F1F] to-[#141414] text-white hover:border-white/25"
               }`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-medium text-text-gray">{card.label}</div>
-                <ChevronRight className={`h-4 w-4 shrink-0 ${active ? "text-primary-orange" : "text-text-gray"}`} />
-              </div>
-              <div className="mt-4 text-[32px] font-semibold leading-none tracking-tight text-white">
-                {counts[card.key].toLocaleString("en-IN")}
+              <div className={`text-sm font-medium ${active ? "text-black/60" : "text-text-gray"}`}>{card.label}</div>
+              <div className="mt-auto flex items-end justify-between pt-4">
+                <div className={`text-[32px] font-semibold leading-none tracking-tight ${active ? "text-black" : "text-white"}`}>
+                  {counts[card.key].toLocaleString("en-IN")}
+                </div>
+                <span
+                  className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                    active ? "bg-black text-white" : "bg-white/10 text-white"
+                  }`}
+                >
+                  <ChevronRight className={`h-4 w-4 transition-transform ${active ? "rotate-90" : ""}`} />
+                </span>
               </div>
             </button>
           );
