@@ -80,6 +80,18 @@ export const getBookingsByStatus = async (artistId: string) => {
   }
 };
 
+function readVisitorKey() {
+  try {
+    const existing = sessionStorage.getItem("andaction-visitor") || "";
+    if (existing) return existing;
+    const created = crypto.randomUUID();
+    sessionStorage.setItem("andaction-visitor", created);
+    return created;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
 export default function ArtistDetailPage() {
   const router = useRouter();
   const { id: artistId } = useParams();
@@ -242,16 +254,7 @@ export default function ArtistDetailPage() {
     const id = Array.isArray(artistId) ? artistId[0] : artistId;
     if (!id) return;
 
-    let visitorKey = "";
-    try {
-      visitorKey = sessionStorage.getItem("andaction-visitor") || "";
-      if (!visitorKey) {
-        visitorKey = crypto.randomUUID();
-        sessionStorage.setItem("andaction-visitor", visitorKey);
-      }
-    } catch {
-      visitorKey = crypto.randomUUID();
-    }
+    const visitorKey = readVisitorKey();
 
     fetch(`/api/artists/${id}/interactions`, {
       method: "POST",
@@ -414,20 +417,15 @@ export default function ArtistDetailPage() {
   };
   const trackClick = (type: "WHATSAPP_CLICK" | "CALL_CLICK") => {
     if (!artist?.id) return;
-    let visitorKey = "";
-    try {
-      visitorKey = sessionStorage.getItem("andaction-visitor") || "";
-    } catch {
-      visitorKey = "";
-    }
     fetch(`/api/artists/${artist.id}/interactions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, visitorKey }),
+      body: JSON.stringify({ type, visitorKey: readVisitorKey() }),
     }).catch(() => undefined);
   };
 
   const handleCall = () => {
+    if (artist.contactNumber) trackClick("CALL_CLICK");
     if (!session?.user) {
       router.push(
         createAuthRedirectUrl(
@@ -438,12 +436,13 @@ export default function ArtistDetailPage() {
       return;
     }
     if (artist.contactNumber) {
-      trackClick("CALL_CLICK");
       window.open(`tel:${artist.contactNumber}`, "_self");
     }
   };
   const handleWhatsApp = () => {
+    const whatsappTarget = artist.whatsappNumber || artist.contactNumber;
     if (!session?.user) {
+      if (whatsappTarget) trackClick("WHATSAPP_CLICK");
       router.push(
         createAuthRedirectUrl(
           "/auth/signin",
@@ -452,7 +451,6 @@ export default function ArtistDetailPage() {
       );
       return;
     }
-    const whatsappTarget = artist.whatsappNumber || artist.contactNumber;
     if (whatsappTarget) {
       const normalizeWhatsappNumber = (raw: string) => {
         const digitsOnly = raw.replace(/[^0-9]/g, "");

@@ -99,14 +99,37 @@ export async function getArtistAnalytics(input: {
     createdAt: { gte: start, lte: end },
   };
 
-  const [profileViews, whatsappClicks, callClicks, platformUsers, visitors, anonymousInteractions] =
-    await Promise.all([
+  const uniqueAudience = async (type: AnalyticsEventType) => {
+    const [platform, visitors] = await Promise.all([
       prisma.artistProfileEvent.groupBy({
         by: ["userId"],
-        where: { ...where, type: PROFILE_VIEW, userId: { not: null } },
+        where: { ...where, type, userId: { not: null } },
       }).then((rows) => rows.length),
-      prisma.artistProfileEvent.count({ where: { ...where, type: WHATSAPP_CLICK } }),
-      prisma.artistProfileEvent.count({ where: { ...where, type: CALL_CLICK } }),
+      prisma.artistProfileEvent.groupBy({
+        by: ["visitorKey"],
+        where: { ...where, type, userId: null, visitorKey: { not: null } },
+      }).then((rows) => rows.length),
+    ]);
+    return { platform, visitors, total: platform + visitors };
+  };
+
+  const eventAudience = async (type: AnalyticsEventType) => {
+    const [platform, visitors] = await Promise.all([
+      prisma.artistProfileEvent.count({
+        where: { ...where, type, userId: { not: null } },
+      }),
+      prisma.artistProfileEvent.count({
+        where: { ...where, type, userId: null, visitorKey: { not: null } },
+      }),
+    ]);
+    return { platform, visitors, total: platform + visitors };
+  };
+
+  const [profileSplit, whatsappSplit, callSplit, platformUsers, visitors, anonymousInteractions] =
+    await Promise.all([
+      uniqueAudience(PROFILE_VIEW),
+      eventAudience(WHATSAPP_CLICK),
+      eventAudience(CALL_CLICK),
       prisma.artistProfileEvent.groupBy({
         by: ["userId"],
         where: { ...where, userId: { not: null } },
@@ -117,6 +140,10 @@ export async function getArtistAnalytics(input: {
       }).then((rows) => rows.length),
       prisma.artistProfileEvent.count({ where: { ...where, userId: null } }),
     ]);
+
+  const profileViews = profileSplit.total;
+  const whatsappClicks = whatsappSplit.total;
+  const callClicks = callSplit.total;
 
   const loggedInUsers = platformUsers;
 
@@ -157,6 +184,7 @@ export async function getArtistAnalytics(input: {
     const eventWhere = {
       ...where,
       ...(type ? { type } : {}),
+      ...(type === WHATSAPP_CLICK || type === CALL_CLICK ? { userId: { not: null } } : {}),
       ...(input.audience === "platform" ? { userId: { not: null } } : {}),
       ...(input.audience === "visitor" ? { userId: null } : {}),
     };
@@ -184,6 +212,11 @@ export async function getArtistAnalytics(input: {
       anonymousInteractions,
       platformUsers,
       visitors,
+      breakdown: {
+        PROFILE_VIEW: { platform: profileSplit.platform, visitors: profileSplit.visitors },
+        WHATSAPP_CLICK: { platform: whatsappSplit.platform, visitors: whatsappSplit.visitors },
+        CALL_CLICK: { platform: callSplit.platform, visitors: callSplit.visitors },
+      },
     },
     events: {
       page,

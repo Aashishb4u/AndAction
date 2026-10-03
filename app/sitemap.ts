@@ -1,16 +1,6 @@
 import type { MetadataRoute } from "next";
-
-function getSiteUrl(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXTAUTH_URL ||
-    "https://andaction.in";
-  try {
-    return new URL(raw).toString().replace(/\/$/, "");
-  } catch {
-    return "https://andaction.in";
-  }
-}
+import { DEVOTIONAL_SERVICES } from "@/lib/devotional-services";
+import { getSiteUrl } from "@/lib/site-url";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = getSiteUrl();
@@ -23,6 +13,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 1,
     },
+    {
+      url: `${siteUrl}/services`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    ...DEVOTIONAL_SERVICES.map((service) => ({
+      url: `${siteUrl}/services/${service.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    })),
     {
       url: `${siteUrl}/artists`,
       lastModified: now,

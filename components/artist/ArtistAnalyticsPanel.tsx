@@ -3,12 +3,19 @@
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 
+type AudienceSplit = { platform: number; visitors: number };
+
 type Counts = {
   profileViews: number;
   whatsappClicks: number;
   callClicks: number;
   platformUsers: number;
   visitors: number;
+  breakdown: {
+    PROFILE_VIEW: AudienceSplit;
+    WHATSAPP_CLICK: AudienceSplit;
+    CALL_CLICK: AudienceSplit;
+  };
 };
 
 type EventRow = {
@@ -29,10 +36,20 @@ const METRIC_CARDS: Selection[] = [
   { kind: "type", value: "CALL_CLICK", label: "Call Clicks", key: "callClicks" },
 ];
 
-const AUDIENCE_CHIPS: Selection[] = [
-  { kind: "audience", value: "platform", label: "Platform Users", key: "platformUsers" },
-  { kind: "audience", value: "visitor", label: "Visitors", key: "visitors" },
-];
+const EMPTY_SPLIT: AudienceSplit = { platform: 0, visitors: 0 };
+
+const EMPTY_COUNTS: Counts = {
+  profileViews: 0,
+  whatsappClicks: 0,
+  callClicks: 0,
+  platformUsers: 0,
+  visitors: 0,
+  breakdown: {
+    PROFILE_VIEW: EMPTY_SPLIT,
+    WHATSAPP_CLICK: EMPTY_SPLIT,
+    CALL_CLICK: EMPTY_SPLIT,
+  },
+};
 
 function formatWhen(iso: string) {
   const date = new Date(iso);
@@ -56,13 +73,7 @@ export default function ArtistAnalyticsPanel({
   const [range, setRange] = useState("month");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [counts, setCounts] = useState<Counts>({
-    profileViews: 0,
-    whatsappClicks: 0,
-    callClicks: 0,
-    platformUsers: 0,
-    visitors: 0,
-  });
+  const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
   const [frequency, setFrequency] = useState("weekly");
   const [selected, setSelected] = useState<Selection | null>(METRIC_CARDS[0]);
   const [rows, setRows] = useState<EventRow[]>([]);
@@ -89,12 +100,18 @@ export default function ArtistAnalyticsPanel({
       .then((res) => res.json())
       .then((json) => {
         if (cancelled || !json?.success) return;
+        const breakdown = json.data.counts.breakdown ?? EMPTY_COUNTS.breakdown;
         setCounts({
           profileViews: json.data.counts.profileViews ?? 0,
           whatsappClicks: json.data.counts.whatsappClicks ?? 0,
           callClicks: json.data.counts.callClicks ?? 0,
           platformUsers: json.data.counts.platformUsers ?? 0,
           visitors: json.data.counts.visitors ?? 0,
+          breakdown: {
+            PROFILE_VIEW: breakdown.PROFILE_VIEW ?? EMPTY_SPLIT,
+            WHATSAPP_CLICK: breakdown.WHATSAPP_CLICK ?? EMPTY_SPLIT,
+            CALL_CLICK: breakdown.CALL_CLICK ?? EMPTY_SPLIT,
+          },
         });
         setFrequency(json.data.frequency || "weekly");
         if (selected) {
@@ -107,6 +124,9 @@ export default function ArtistAnalyticsPanel({
       cancelled = true;
     };
   }, [artistId, range, from, to, selected, page]);
+
+  const activeSplit =
+    selected?.kind === "type" ? counts.breakdown[selected.value] : counts.breakdown.PROFILE_VIEW;
 
   return (
     <div className="mb-6">
@@ -188,13 +208,18 @@ export default function ArtistAnalyticsPanel({
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        {AUDIENCE_CHIPS.map((chip) => (
+        {(
+          [
+            ["Platform Users", activeSplit.platform],
+            ["Visitors", activeSplit.visitors],
+          ] as const
+        ).map(([label, value]) => (
           <div
-            key={chip.label}
+            key={label}
             className="inline-flex items-center gap-2 rounded-full border border-border-color bg-[#262626] px-3 py-1.5 text-sm text-text-gray"
           >
-            <span>{chip.label}</span>
-            <span className="font-semibold text-white">{counts[chip.key].toLocaleString("en-IN")}</span>
+            <span>{label}</span>
+            <span className="font-semibold text-white">{value.toLocaleString("en-IN")}</span>
           </div>
         ))}
       </div>
