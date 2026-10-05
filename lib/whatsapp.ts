@@ -90,6 +90,98 @@ export function buildArtistProfileLink(artistId: string): string {
  * The template takes TWO named body parameters and rejects anything else
  * with (#132000): artist_name and profile_link.
  */
+/**
+ * Sends a session text message through the same Graph API call the welcome
+ * template uses (same phone id, token, timeout, and error handling).
+ */
+export async function sendWhatsappText(params: {
+  to: string;
+  body: string;
+}): Promise<WhatsappSendResult> {
+  const { to, body } = params;
+
+  if (!isWhatsappConfigured()) {
+    return {
+      success: false,
+      messageId: null,
+      status: null,
+      error:
+        "WhatsApp is not configured (WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_ACCESS_TOKEN missing)",
+      isPermanentFailure: true,
+    };
+  }
+
+  const url = `https://graph.facebook.com/${GRAPH_VERSION}/${PHONE_NUMBER_ID}/messages`;
+  const payload = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to,
+    type: "text",
+    text: { body },
+  };
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    const responseBody = await response.json().catch(() => null);
+
+    if (response.ok && responseBody?.messages?.[0]?.id) {
+      return {
+        success: true,
+        messageId: responseBody.messages[0].id,
+        status: response.status,
+        error: null,
+        isPermanentFailure: false,
+      };
+    }
+
+    const code = Number(responseBody?.error?.code);
+    const message =
+      responseBody?.error?.message ||
+      responseBody?.error?.error_user_msg ||
+      `WhatsApp API returned ${response.status}`;
+
+    return {
+      success: false,
+      messageId: null,
+      status: response.status,
+      error: `${message}${Number.isFinite(code) ? ` (code ${code})` : ""}`,
+      isPermanentFailure:
+        PERMANENT_ERROR_CODES.has(code) ||
+        (response.status >= 400 &&
+          response.status < 500 &&
+          response.status !== 429),
+    };
+  } catch (error) {
+    const isAbort = error instanceof Error && error.name === "AbortError";
+
+    return {
+      success: false,
+      messageId: null,
+      status: null,
+      error: isAbort
+        ? `WhatsApp request timed out after ${REQUEST_TIMEOUT_MS}ms`
+        : error instanceof Error
+          ? error.message
+          : "Unknown WhatsApp error",
+      isPermanentFailure: false,
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function sendArtistWelcomeTemplate(params: {
   to: string;
   artistName: string;

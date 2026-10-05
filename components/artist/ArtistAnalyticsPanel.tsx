@@ -227,11 +227,26 @@ export default function ArtistAnalyticsPanel({
       {selected && (
         <div className="mt-6">
           <h2 className="mb-3 text-xl font-semibold text-white">{selected.label}</h2>
-          <div className="overflow-x-auto rounded-2xl border border-border-color bg-[#1A1A1A]">
+          <div className="space-y-2 md:hidden">
+            {rows.map((row) => {
+              const when = formatWhen(row.createdAt);
+              return (
+                <div key={row.id} className="rounded-2xl border border-border-color bg-[#1A1A1A] px-4 py-3 text-sm text-white">
+                  <div className="font-medium">{row.userName}</div>
+                  <div className="mt-1 text-text-gray">{row.phone || "—"}</div>
+                  <div className="mt-2 text-text-gray">{when.day} · {when.time}</div>
+                </div>
+              );
+            })}
+            {rows.length === 0 && (
+              <div className="rounded-2xl border border-border-color bg-[#1A1A1A] px-4 py-6 text-sm text-text-gray">No activity in this range.</div>
+            )}
+          </div>
+          <div className="hidden overflow-x-auto rounded-2xl border border-border-color bg-[#1A1A1A] md:block">
             <table className="w-full min-w-[520px] text-left text-sm text-white">
               <thead className="text-text-gray">
                 <tr>
-                  <th className="px-4 py-3 font-medium">User</th>
+                  <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Phone / WhatsApp</th>
                   <th className="px-4 py-3 font-medium">Date</th>
                   <th className="px-4 py-3 font-medium">Time</th>

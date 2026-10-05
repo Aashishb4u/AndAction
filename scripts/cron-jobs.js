@@ -32,6 +32,15 @@ const JOBS = [
     endpoint: "/api/cron/sync-youtube-videos",
   },
   ...buildProspectDiscoveryJobs(PROSPECT_DISCOVERY_RUNS_PER_DAY),
+  {
+    name: "Artist WhatsApp Analytics Reports",
+    slug: "send-whatsapp-analytics-reports",
+    // 09:00 Asia/Kolkata, then every 5 minutes through 21:55.
+    // Each API call sends at most one report. The gap is the schedule,
+    // not a setTimeout inside the request.
+    schedule: "*/5 9-21 * * *",
+    endpoint: "/api/cron/send-whatsapp-analytics-reports",
+  },
 ];
 
 // ┌───────────── Minute       (0–59)

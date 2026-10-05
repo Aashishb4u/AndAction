@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SiteLayout from "@/components/layout/SiteLayout";
@@ -100,6 +100,7 @@ export default function ArtistDetailPage() {
   const { disableSmoothScrollTemporarily, goBackInstant, goBackToArtists } =
     useNavigationHistory({ fallbackPath: "/artists" });
   const [artist, setArtist] = useState<any | null>(null);
+  const recordedProfileView = useRef<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
   const [isMobileView, setIsMobileView] = useState(false);
@@ -252,7 +253,8 @@ export default function ArtistDetailPage() {
 
   useEffect(() => {
     const id = Array.isArray(artistId) ? artistId[0] : artistId;
-    if (!id) return;
+    if (!id || recordedProfileView.current === id) return;
+    recordedProfileView.current = id;
 
     const visitorKey = readVisitorKey();
 

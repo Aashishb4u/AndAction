@@ -147,6 +147,7 @@ model Artist {
   bookmarkedByUsers              Bookmark[]
   videos                         Video[]
   profileEvents                  ArtistProfileEvent[]
+  whatsappReports                WhatsappReport[]
 
   @@unique([userId, profileOrder])
   @@index([userId])
@@ -200,6 +201,36 @@ model ArtistProfileEvent {
   @@index([artistId, type, createdAt])
   @@index([userId])
   @@map("artist_profile_events")
+}
+
+enum WhatsappReportType {
+  WEEKLY
+  MONTHLY
+}
+
+enum WhatsappReportStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model WhatsappReport {
+  id          String               @id @default(cuid())
+  artistId    String
+  type        WhatsappReportType
+  periodStart DateTime
+  periodEnd   DateTime
+  status      WhatsappReportStatus @default(PENDING)
+  message     String?              @db.Text
+  sentAt      DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  artist      Artist               @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([artistId, type, periodStart, periodEnd])
+  @@index([status, createdAt])
+  @@index([artistId, type, status])
+  @@map("whatsapp_reports")
 }
 
 model Bookmark {

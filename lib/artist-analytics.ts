@@ -99,37 +99,28 @@ export async function getArtistAnalytics(input: {
     createdAt: { gte: start, lte: end },
   };
 
-  const uniqueAudience = async (type: AnalyticsEventType) => {
-    const [platform, visitors] = await Promise.all([
-      prisma.artistProfileEvent.groupBy({
-        by: ["userId"],
-        where: { ...where, type, userId: { not: null } },
-      }).then((rows) => rows.length),
-      prisma.artistProfileEvent.groupBy({
-        by: ["visitorKey"],
-        where: { ...where, type, userId: null, visitorKey: { not: null } },
-      }).then((rows) => rows.length),
-    ]);
-    return { platform, visitors, total: platform + visitors };
-  };
-
-  const eventAudience = async (type: AnalyticsEventType) => {
+  const splitFor = async (type: AnalyticsEventType, uniqueVisitors: boolean) => {
     const [platform, visitors] = await Promise.all([
       prisma.artistProfileEvent.count({
         where: { ...where, type, userId: { not: null } },
       }),
-      prisma.artistProfileEvent.count({
-        where: { ...where, type, userId: null, visitorKey: { not: null } },
-      }),
+      uniqueVisitors
+        ? prisma.artistProfileEvent.groupBy({
+            by: ["visitorKey"],
+            where: { ...where, type, userId: null, visitorKey: { not: null } },
+          }).then((rows) => rows.length)
+        : prisma.artistProfileEvent.count({
+            where: { ...where, type, userId: null, visitorKey: { not: null } },
+          }),
     ]);
     return { platform, visitors, total: platform + visitors };
   };
 
   const [profileSplit, whatsappSplit, callSplit, platformUsers, visitors, anonymousInteractions] =
     await Promise.all([
-      uniqueAudience(PROFILE_VIEW),
-      eventAudience(WHATSAPP_CLICK),
-      eventAudience(CALL_CLICK),
+      splitFor(PROFILE_VIEW, true),
+      splitFor(WHATSAPP_CLICK, false),
+      splitFor(CALL_CLICK, false),
       prisma.artistProfileEvent.groupBy({
         by: ["userId"],
         where: { ...where, userId: { not: null } },
@@ -171,36 +162,24 @@ export async function getArtistAnalytics(input: {
   let total = 0;
   let rows: Awaited<ReturnType<typeof prisma.artistProfileEvent.findMany<{ select: typeof eventSelect }>>> = [];
 
-  if (type === PROFILE_VIEW) {
-    const viewed = await prisma.artistProfileEvent.findMany({
-      where: { ...where, type: PROFILE_VIEW, userId: { not: null } },
+  const eventWhere = {
+    ...where,
+    ...(type ? { type, userId: { not: null } } : {}),
+    ...(!type && input.audience === "platform" ? { userId: { not: null } } : {}),
+    ...(!type && input.audience === "visitor" ? { userId: null } : {}),
+  };
+  const [eventTotal, eventRows] = await Promise.all([
+    prisma.artistProfileEvent.count({ where: eventWhere }),
+    prisma.artistProfileEvent.findMany({
+      where: eventWhere,
       orderBy: { createdAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
       select: eventSelect,
-    });
-    const unique = viewed.filter((row, index) => row.userId && viewed.findIndex((item) => item.userId === row.userId) === index);
-    total = unique.length;
-    rows = unique.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  } else {
-    const eventWhere = {
-      ...where,
-      ...(type ? { type } : {}),
-      ...(type === WHATSAPP_CLICK || type === CALL_CLICK ? { userId: { not: null } } : {}),
-      ...(input.audience === "platform" ? { userId: { not: null } } : {}),
-      ...(input.audience === "visitor" ? { userId: null } : {}),
-    };
-    const [eventTotal, eventRows] = await Promise.all([
-      prisma.artistProfileEvent.count({ where: eventWhere }),
-      prisma.artistProfileEvent.findMany({
-        where: eventWhere,
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * PAGE_SIZE,
-        take: PAGE_SIZE,
-        select: eventSelect,
-      }),
-    ]);
-    total = eventTotal;
-    rows = eventRows;
-  }
+    }),
+  ]);
+  total = eventTotal;
+  rows = eventRows;
 
   return {
     range: { start: start.toISOString(), end: end.toISOString(), preset: input.range },
