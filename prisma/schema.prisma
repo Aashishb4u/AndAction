@@ -211,26 +211,43 @@ enum WhatsappReportType {
 enum WhatsappReportStatus {
   PENDING
   SENT
+  DELIVERED
+  READ
   FAILED
 }
 
 model WhatsappReport {
-  id          String               @id @default(cuid())
-  artistId    String
-  type        WhatsappReportType
-  periodStart DateTime
-  periodEnd   DateTime
-  status      WhatsappReportStatus @default(PENDING)
-  message     String?              @db.Text
-  sentAt      DateTime?
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  artist      Artist               @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  id            String               @id @default(cuid())
+  artistId      String
+  type          WhatsappReportType
+  periodStart   DateTime
+  periodEnd     DateTime
+  status        WhatsappReportStatus @default(PENDING)
+  message       String?              @db.Text
+  messageId     String?
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  readAt        DateTime?
+  failedAt      DateTime?
+  failureReason String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  artist        Artist               @relation(fields: [artistId], references: [id], onDelete: Cascade)
 
   @@unique([artistId, type, periodStart, periodEnd])
   @@index([status, createdAt])
   @@index([artistId, type, status])
+  @@index([messageId])
   @@map("whatsapp_reports")
+}
+
+/// Single-row Admin switch. Missing row means the cron stays active.
+model WhatsappReportControl {
+  id        String   @id
+  paused    Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@map("whatsapp_report_controls")
 }
 
 model Bookmark {

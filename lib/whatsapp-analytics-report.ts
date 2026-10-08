@@ -1,10 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { getArtistAnalytics } from "@/lib/artist-analytics";
 import { sendWhatsappText, toWhatsappRecipient } from "@/lib/whatsapp";
+import { acceptedSendRecord } from "@/lib/whatsapp-report-delivery";
 
 const IST = "Asia/Kolkata";
 export const WHATSAPP_REPORT_GAP_MS = 5 * 60 * 1000;
+export const WHATSAPP_REPORT_CONTROL_ID = "whatsapp_analytics_reports";
 const LOCK_PREFIX = "LOCK:";
+
+/** Missing control row keeps the existing cron active. */
+export function isWhatsappReportCronPaused(paused: boolean | null | undefined): boolean {
+  return paused === true;
+}
 
 export function reportIntervalDays(frequency: string): number | null {
   if (frequency === "monthly") return 30;
@@ -88,6 +95,19 @@ export function formatWhatsappAnalyticsMessage(input: {
 }
 
 export async function runWhatsappAnalyticsReportTick(now: Date = new Date()) {
+  const control = await prisma.whatsappReportControl.findUnique({
+    where: { id: WHATSAPP_REPORT_CONTROL_ID },
+    select: { paused: true },
+  });
+  if (isWhatsappReportCronPaused(control?.paused)) {
+    return {
+      enqueued: 0,
+      sent: 0,
+      failed: 0,
+      skipped: "paused by admin",
+    };
+  }
+
   const enqueued = await enqueueDueReports(now);
   const latestSent = await prisma.whatsappReport.findFirst({
     where: { status: "SENT", sentAt: { not: null } },
@@ -185,9 +205,14 @@ export async function runWhatsappAnalyticsReportTick(now: Date = new Date()) {
 
   const result = await sendWhatsappText({ to, body: text });
   if (result.success) {
+    const sentAt = new Date();
     await prisma.whatsappReport.update({
       where: { id: next.id },
-      data: { status: "SENT", message: text, sentAt: new Date() },
+      data: acceptedSendRecord({
+        message: text,
+        messageId: result.messageId || "",
+        sentAt,
+      }),
     });
     return { enqueued, sent: 1, failed: 0, reportId: next.id };
   }
