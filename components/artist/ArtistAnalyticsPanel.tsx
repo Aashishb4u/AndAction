@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
 
 type AudienceSplit = { platform: number; visitors: number };
 
@@ -74,11 +75,12 @@ export default function ArtistAnalyticsPanel({
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
-  const [frequency, setFrequency] = useState("weekly");
+  const [, setFrequency] = useState("weekly");
   const [selected, setSelected] = useState<Selection | null>(METRIC_CARDS[0]);
   const [rows, setRows] = useState<EventRow[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     onActiveChange?.(Boolean(selected));
@@ -152,6 +154,7 @@ export default function ArtistAnalyticsPanel({
             <input type="date" value={to} onChange={(e) => { setPage(1); setTo(e.target.value); }} className="rounded-md border border-border-color bg-[#262626] px-2 py-1 text-sm text-white" />
           </>
         )}
+        {/* Weekly / monthly WhatsApp report
         <select
           value={frequency}
           onChange={(event) => {
@@ -170,6 +173,7 @@ export default function ArtistAnalyticsPanel({
           <option value="weekly">Weekly report</option>
           <option value="monthly">Monthly report</option>
         </select>
+        */}
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -182,6 +186,11 @@ export default function ArtistAnalyticsPanel({
               onClick={() => {
                 setPage(1);
                 setSelected(card);
+                if (window.matchMedia("(max-width: 767px)").matches) {
+                  requestAnimationFrame(() => {
+                    listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  });
+                }
               }}
               className={`flex min-h-[112px] flex-col rounded-2xl border px-5 py-4 text-left shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition hover:-translate-y-0.5 ${
                 active
@@ -210,22 +219,21 @@ export default function ArtistAnalyticsPanel({
       <div className="mt-3 flex flex-wrap gap-2">
         {(
           [
-            ["Platform Users", activeSplit.platform],
-            ["Visitors", activeSplit.visitors],
+            ["Platform Users", activeSplit.platform, "People who were signed in to AndAction when they did this."],
+            ["Visitors", activeSplit.visitors, "People who stopped by without signing in."],
           ] as const
-        ).map(([label, value]) => (
-          <div
-            key={label}
-            className="inline-flex items-center gap-2 rounded-full border border-border-color bg-[#262626] px-3 py-1.5 text-sm text-text-gray"
-          >
-            <span>{label}</span>
-            <span className="font-semibold text-white">{value.toLocaleString("en-IN")}</span>
-          </div>
+        ).map(([label, value, tip]) => (
+          <Tooltip key={label} content={tip} position="top">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border-color bg-[#262626] px-3 py-1.5 text-sm text-text-gray">
+              <span>{label}</span>
+              <span className="font-semibold text-white">{value.toLocaleString("en-IN")}</span>
+            </div>
+          </Tooltip>
         ))}
       </div>
 
       {selected && (
-        <div className="mt-6">
+        <div ref={listRef} className="mt-6 scroll-mt-4">
           <h2 className="mb-3 text-xl font-semibold text-white">{selected.label}</h2>
           <div className="space-y-2 md:hidden">
             {rows.map((row) => {
@@ -233,8 +241,10 @@ export default function ArtistAnalyticsPanel({
               return (
                 <div key={row.id} className="rounded-2xl border border-border-color bg-[#1A1A1A] px-4 py-3 text-sm text-white">
                   <div className="font-medium">{row.userName}</div>
-                  <div className="mt-1 text-text-gray">{row.phone || "—"}</div>
-                  <div className="mt-2 text-text-gray">{when.day} · {when.time}</div>
+                  <div className="mt-1 flex items-start justify-between gap-3">
+                    <div className="text-text-gray">{row.phone || "—"}</div>
+                    <div className="shrink-0 text-right text-text-gray">{when.day} · {when.time}</div>
+                  </div>
                 </div>
               );
             })}
