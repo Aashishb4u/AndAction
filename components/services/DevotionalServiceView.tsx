@@ -1,9 +1,57 @@
+import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { buildArtishProfileUrl } from "@/lib/utils";
 import { getSiteUrl } from "@/lib/site-url";
 import type { DevotionalService } from "@/lib/devotional-services";
 import type { ServiceArtistCard } from "@/lib/get-service-artists";
 import { DEVOTIONAL_SERVICES } from "@/lib/devotional-services";
+
+const SERVICE_MENTIONS: { phrase: string; slug: string }[] = [
+  { phrase: "Mata Ki Chowki", slug: "mata-ki-chowki" },
+  { phrase: "Sunderkand path", slug: "sunderkand-path" },
+  { phrase: "Sunderkand", slug: "sunderkand-path" },
+  { phrase: "Akhand Ramayan path", slug: "akhand-ramayan-path" },
+  { phrase: "Akhand Ramayan", slug: "akhand-ramayan-path" },
+  { phrase: "Bhagwati Jagran", slug: "bhagwati-jagran" },
+  { phrase: "Khatu Shyam bhajan", slug: "khatu-shyam-bhajan" },
+  { phrase: "Khatu Shyam", slug: "khatu-shyam-bhajan" },
+  { phrase: "Sai Sandhya", slug: "sai-sandhya" },
+  { phrase: "Sai bhajans", slug: "sai-sandhya" },
+];
+
+function linkify(text: string, currentSlug: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  let rest = text;
+  let key = 0;
+
+  while (rest.length) {
+    let earliest = -1;
+    let match: (typeof SERVICE_MENTIONS)[number] | null = null;
+    for (const candidate of SERVICE_MENTIONS) {
+      if (candidate.slug === currentSlug) continue;
+      const index = rest.indexOf(candidate.phrase);
+      if (index === -1) continue;
+      if (earliest === -1 || index < earliest || (index === earliest && match && candidate.phrase.length > match.phrase.length)) {
+        earliest = index;
+        match = candidate;
+      }
+    }
+    if (!match || earliest === -1) {
+      nodes.push(rest);
+      break;
+    }
+    if (earliest > 0) nodes.push(rest.slice(0, earliest));
+    nodes.push(
+      <Link key={key++} href={`/services/${match.slug}`} className="text-primary-pink hover:underline">
+        {match.phrase}
+      </Link>,
+    );
+    rest = rest.slice(earliest + match.phrase.length);
+  }
+
+  return nodes;
+}
 
 function formatInr(amount: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -52,13 +100,27 @@ function ArtistGrid({
                   <p className="text-xs text-text-light-gray">{artist.category}</p>
                 ) : null}
                 {place ? <p className="text-xs text-text-light-gray">{place}</p> : null}
+                {artist.servesNcr ? (
+                  <p className="text-xs text-text-light-gray">Listed in Delhi NCR</p>
+                ) : null}
                 {artist.yearsOfExperience ? (
                   <p className="text-xs text-text-light-gray">
                     {artist.yearsOfExperience} years on profile
                   </p>
                 ) : null}
+                {artist.languages ? (
+                  <p className="text-xs text-text-light-gray">Languages: {artist.languages}</p>
+                ) : null}
+                {artist.durationLabel ? (
+                  <p className="text-xs text-text-light-gray">Duration on profile: {artist.durationLabel}</p>
+                ) : null}
+                {artist.members ? (
+                  <p className="text-xs text-text-light-gray">Members: {artist.members}</p>
+                ) : null}
                 {artist.chargesFrom ? (
-                  <p className="text-xs text-white">From {formatInr(artist.chargesFrom)}</p>
+                  <p className="text-xs text-white">
+                    Starting price listed by the artist: {formatInr(artist.chargesFrom)}
+                  </p>
                 ) : null}
                 <span className="inline-block text-xs text-primary-pink pt-1">View profile</span>
               </div>
@@ -83,18 +145,31 @@ export default function DevotionalServiceView({
   const isChowki = service.slug === "mata-ki-chowki";
   const siteUrl = getSiteUrl();
   const pageUrl = `${siteUrl}/services/${service.slug}`;
+  const ncrArtists = matched.filter((artist) => artist.servesNcr);
+  const otherMatches = matched.filter((artist) => !artist.servesNcr);
+  const bookingHref = ncrArtists.length || otherMatches.length
+    ? "#artists"
+    : `/artists?search=${encodeURIComponent(service.searchQuery)}`;
+
+  const artistsHeading = isChowki
+    ? "Mata Ki Chowki Singers & Mandalis in Delhi NCR"
+    : `${service.name} artists in Delhi NCR`;
+  const pricingHeading = isChowki
+    ? "Mata Ki Chowki Price & Charges in Delhi NCR"
+    : `${service.name} price and charges in Delhi NCR`;
+  const faqHeading = isChowki
+    ? "Frequently Asked Questions About Mata Ki Chowki Booking"
+    : `Frequently asked questions about ${service.name} booking`;
 
   const serviceJsonLd = {
     "@context": "https://schema.org",
     "@type": "Service",
+    "@id": `${pageUrl}#service`,
     name: service.h1,
+    serviceType: service.name,
     description: service.description,
     url: pageUrl,
-    provider: {
-      "@type": "Organization",
-      name: "ANDACTION",
-      url: siteUrl,
-    },
+    provider: { "@id": `${siteUrl}/#organization` },
     areaServed: {
       "@type": "AdministrativeArea",
       name: "Delhi NCR",
@@ -115,12 +190,12 @@ export default function DevotionalServiceView({
   };
 
   const itemList =
-    matched.length > 0
+    ncrArtists.length > 0
       ? {
           "@context": "https://schema.org",
           "@type": "ItemList",
-          name: `${service.name} artists on ANDACTION`,
-          itemListElement: matched.map((artist, index) => ({
+          name: artistsHeading,
+          itemListElement: ncrArtists.map((artist, index) => ({
             "@type": "ListItem",
             position: index + 1,
             name: artist.name,
@@ -153,9 +228,32 @@ export default function DevotionalServiceView({
 
       <header className="mb-10">
         <h1 className="text-3xl md:text-5xl font-bold text-white mb-5 leading-tight">{service.h1}</h1>
+        <div className="mb-6">
+          <a
+            href={bookingHref}
+            className="inline-flex items-center justify-center rounded-full bg-primary-pink text-white px-6 py-3 text-base font-semibold"
+          >
+            Request Booking
+          </a>
+          <p className="text-sm text-text-light-gray mt-3 max-w-2xl">
+            Choose an artist, then send a booking request from their profile. The artist confirms whether they are free and what the programme will cost.
+          </p>
+        </div>
+        <figure className="mb-8">
+          <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] overflow-hidden rounded-2xl border border-background-light bg-background-light">
+            <Image
+              src={service.image}
+              alt={service.imageAlt}
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 960px"
+              className="object-cover"
+            />
+          </div>
+        </figure>
         <div className="space-y-4 text-text-light-gray leading-relaxed text-base md:text-lg">
           {service.intro.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
+            <p key={paragraph}>{linkify(paragraph, service.slug)}</p>
           ))}
         </div>
         <div className="flex flex-wrap gap-3 mt-6">
@@ -184,7 +282,7 @@ export default function DevotionalServiceView({
               <h3 className="text-xl font-semibold text-white mb-3">{block.heading}</h3>
               <div className="space-y-3 text-text-light-gray leading-relaxed">
                 {block.paragraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
+                  <p key={paragraph}>{linkify(paragraph, service.slug)}</p>
                 ))}
               </div>
             </div>
@@ -196,7 +294,7 @@ export default function DevotionalServiceView({
         <h2 id="occasions-heading" className="text-2xl md:text-3xl font-semibold text-white mb-4">
           {isChowki ? "Book Mata Ki Chowki for different occasions" : `Where people book ${service.name}`}
         </h2>
-        <p className="text-text-light-gray leading-relaxed mb-6">{service.occasionsIntro}</p>
+        <p className="text-text-light-gray leading-relaxed mb-6">{linkify(service.occasionsIntro, service.slug)}</p>
         <div className="grid md:grid-cols-2 gap-4">
           {service.occasions.map((occasion) => (
             <div key={occasion.title} className="rounded-xl border border-background-light bg-card/30 p-5">
@@ -211,7 +309,7 @@ export default function DevotionalServiceView({
         <h2 id="included-heading" className="text-2xl md:text-3xl font-semibold text-white mb-4">
           {isChowki ? "What’s included in a Mata Ki Chowki programme" : `What a ${service.name} booking can include`}
         </h2>
-        <p className="text-text-light-gray leading-relaxed mb-6">{service.inclusionsIntro}</p>
+        <p className="text-text-light-gray leading-relaxed mb-6">{linkify(service.inclusionsIntro, service.slug)}</p>
         <ul className="grid sm:grid-cols-2 gap-3">
           {service.inclusions.map((item) => (
             <li key={item.title} className="rounded-xl border border-background-light p-4">
@@ -224,19 +322,32 @@ export default function DevotionalServiceView({
 
       <section id="artists" className="mb-12 scroll-mt-24" aria-labelledby="artists-heading">
         <h2 id="artists-heading" className="text-2xl md:text-3xl font-semibold text-white mb-4">
-          {isChowki ? "Mata Ki Chowki artists and mandalis" : `${service.name} artists on ANDACTION`}
+          {artistsHeading}
         </h2>
         <p className="text-text-light-gray leading-relaxed mb-6">
-          Profiles below come from ANDACTION’s artist records. The first group matched words such as “{service.artistKeywords[0]}” in the artist’s own name, bio, or event types. A second group, when shown, is other devotional listings — useful to contact, but not labelled as confirmed {service.name} providers.
+          This list uses artist records on ANDACTION. A profile appears here when the artist’s name, bio, category, or event type mentions this programme, and their city, state, or performing states include Delhi NCR. A biography that merely names a city is not treated as a service area.
         </p>
-        <h3 className="text-lg font-semibold text-white mb-3">Profiles that mention this work</h3>
         <ArtistGrid
-          artists={matched}
-          emptyLabel={`No artist profile currently mentions ${service.name} in the stored name, bio, or event type. You can still search devotional singers and ask them directly.`}
+          artists={ncrArtists}
+          emptyLabel={`No profile currently matches ${service.name} and a Delhi NCR location together. You can still search artists and ask about this programme from their profile.`}
         />
+        {otherMatches.length > 0 ? (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-white mb-3">
+              Profiles that mention {service.name}, outside the listed Delhi NCR area
+            </h3>
+            <p className="text-sm text-text-light-gray mb-3">
+              These artists mention the programme, but their city or performing states do not show Delhi NCR. Ask them about travel before you treat them as a local option.
+            </p>
+            <ArtistGrid artists={otherMatches} emptyLabel="" />
+          </div>
+        ) : null}
         {related.length > 0 ? (
           <div className="mt-8">
             <h3 className="text-lg font-semibold text-white mb-3">Other devotional artists</h3>
+            <p className="text-sm text-text-light-gray mb-3">
+              These profiles are other devotional listings. They are not shown as confirmed {service.name} providers.
+            </p>
             <ArtistGrid artists={related} emptyLabel="" />
           </div>
         ) : null}
@@ -248,7 +359,7 @@ export default function DevotionalServiceView({
         </h2>
         <div className="space-y-3 text-text-light-gray leading-relaxed">
           {service.area.paragraphs.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
+            <p key={paragraph}>{linkify(paragraph, service.slug)}</p>
           ))}
         </div>
       </section>
@@ -267,11 +378,11 @@ export default function DevotionalServiceView({
 
       <section className="mb-12" aria-labelledby="price-heading">
         <h2 id="price-heading" className="text-2xl md:text-3xl font-semibold text-white mb-4">
-          {service.name} price and charges
+          {pricingHeading}
         </h2>
         <div className="space-y-3 text-text-light-gray leading-relaxed">
           {service.pricing.paragraphs.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
+            <p key={paragraph}>{linkify(paragraph, service.slug)}</p>
           ))}
         </div>
       </section>
@@ -291,13 +402,13 @@ export default function DevotionalServiceView({
 
       <section className="mb-12" aria-labelledby="faq-heading">
         <h2 id="faq-heading" className="text-2xl md:text-3xl font-semibold text-white mb-4">
-          Questions before you book
+          {faqHeading}
         </h2>
         <div className="space-y-3">
           {service.faqs.map((faq) => (
             <div key={faq.question} className="rounded-xl border border-background-light bg-card/30 p-4">
               <h3 className="text-base md:text-lg font-semibold text-white">{faq.question}</h3>
-              <p className="text-text-light-gray leading-relaxed mt-3">{faq.answer}</p>
+              <p className="text-text-light-gray leading-relaxed mt-3">{linkify(faq.answer, service.slug)}</p>
             </div>
           ))}
         </div>

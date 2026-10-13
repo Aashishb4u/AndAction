@@ -10,8 +10,24 @@ export type ServiceArtistCard = {
   category: string | null;
   yearsOfExperience: number | null;
   chargesFrom: number | null;
+  languages: string | null;
+  durationLabel: string | null;
+  members: string | null;
+  /** City, state, or performing states mention Delhi NCR. Bios are not used. */
+  servesNcr: boolean;
   matched: boolean;
 };
+
+const NCR_TOKENS = [
+  "delhi",
+  "noida",
+  "gurugram",
+  "gurgaon",
+  "ghaziabad",
+  "faridabad",
+  "greater noida",
+  "ncr",
+];
 
 function toNumber(value: unknown): number | null {
   if (value == null) return null;
@@ -19,11 +35,24 @@ function toNumber(value: unknown): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+function servesNcr(city: string | null, state: string | null, performingStates: string | null): boolean {
+  const text = [city, state, performingStates].filter(Boolean).join(" ").toLowerCase();
+  if (!text.trim()) return false;
+  return NCR_TOKENS.some((token) => text.includes(token));
+}
+
+function durationLabel(from: string | null, to: string | null): string | null {
+  const start = from?.trim() || "";
+  const end = to?.trim() || "";
+  if (start && end && start !== end) return `${start}–${end}`;
+  return start || end || null;
+}
+
 /**
  * Public artist cards for a service page.
- * `keywords` must appear in profile text. Broader devotional profiles are
- * returned separately and labelled as related, not as confirmed providers
- * of this exact programme.
+ * A profile is "matched" only when a service keyword appears in the artist's
+ * name, bio, category, or event type — not in the city field.
+ * Delhi NCR is decided only from city, state, and performing states.
  */
 export async function getServiceArtists(
   keywords: string[],
@@ -48,6 +77,11 @@ export async function getServiceArtists(
       yearsOfExperience: true,
       soloChargesFrom: true,
       profileImage: true,
+      performingLanguage: true,
+      performingDurationFrom: true,
+      performingDurationTo: true,
+      performingMembers: true,
+      performingStates: true,
       user: {
         select: {
           firstName: true,
@@ -63,7 +97,7 @@ export async function getServiceArtists(
     const matchedRows = await prisma.artist.findMany({
       where: { OR: or },
       select,
-      take: 8,
+      take: 12,
       orderBy: { updatedAt: "desc" },
     });
 
@@ -96,11 +130,19 @@ export async function getServiceArtists(
       category: row.subArtistType || row.artistType,
       yearsOfExperience: row.yearsOfExperience,
       chargesFrom: toNumber(row.soloChargesFrom),
+      languages: row.performingLanguage?.trim() || null,
+      durationLabel: durationLabel(row.performingDurationFrom, row.performingDurationTo),
+      members: row.performingMembers?.trim() || null,
+      servesNcr: servesNcr(row.user.city, row.user.state, row.performingStates),
       matched,
     });
 
+    const matched = matchedRows
+      .map((row) => mapRow(row, true))
+      .sort((a, b) => Number(b.servesNcr) - Number(a.servesNcr));
+
     return {
-      matched: matchedRows.map((row) => mapRow(row, true)),
+      matched,
       related: relatedRows.map((row) => mapRow(row, false)),
     };
   } catch (error) {

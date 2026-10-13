@@ -5,11 +5,15 @@ export type DevotionalService = {
   name: string;
   title: string;
   description: string;
+  ogTitle: string;
+  ogDescription: string;
   h1: string;
   intro: string[];
   keywords: string[];
   artistKeywords: string[];
   searchQuery: string;
+  image: string;
+  imageAlt: string;
   about: { heading: string; paragraphs: string[] }[];
   occasionsIntro: string;
   occasions: { title: string; text: string }[];
@@ -29,7 +33,10 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     name: "Mata Ki Chowki",
     title: "Mata Ki Chowki Mandali & Booking in Delhi | ANDACTION",
     description:
-      "Book Mata Ki Chowki in Delhi NCR with experienced devotional singers and mandalis. Explore artists, services, availability and booking options on ANDACTION.",
+      "Book Mata Ki Chowki in Delhi NCR with devotional singers and mandalis on ANDACTION. Compare profiles, then send a booking request for your date and venue.",
+    ogTitle: "Book Mata Ki Chowki in Delhi NCR",
+    ogDescription:
+      "Find Mata Ki Chowki singers and mandalis for a home, society, or community programme in Delhi NCR, and request a booking from the artist.",
     h1: "Mata Ki Chowki Booking in Delhi NCR",
     intro: [
       "ANDACTION lists devotional singers and mandalis you can contact for a Mata Ki Chowki at home, in a society, or at a community hall across Delhi NCR.",
@@ -37,8 +44,10 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
       "On this page you can read how a typical programme is put together, what hosts usually arrange, and which artists on ANDACTION mention this kind of work. Open a profile to check the city, starting charges if the artist has added them, and send a booking request with your date and venue.",
     ],
     keywords: ["mata ki chowki", "mata ki chowki delhi", "devotional singer", "bhajan mandali"],
-    artistKeywords: ["mata ki chowki", "chowki", "mata bhajan", "jagran", "bhajan mandali"],
+    artistKeywords: ["mata ki chowki", "mata chowki", "chowki", "mata bhajan"],
     searchQuery: "mata ki chowki",
+    image: "/mata-ki-chowki.jpg",
+    imageAlt: "A singer and musicians performing in front of a flower-covered Mata darbar.",
     about: [
       {
         heading: "What Is Mata Ki Chowki?",
@@ -115,8 +124,8 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     area: {
       heading: "Mata Ki Chowki Services in Delhi NCR",
       paragraphs: [
-        "These pages are written for people booking in Delhi NCR — Delhi, and nearby cities such as Noida, Gurugram, Ghaziabad, and Faridabad — because that is where most enquiries for this programme start.",
-        "A profile’s city is the artist’s own location on ANDACTION. Appearing in search does not mean every singer travels to every NCR city on every date. Check the city on the profile and ask about travel when you send the request. We do not publish separate city pages until there is enough real inventory to support them.",
+        "Hosts book this programme across Delhi NCR, including Noida, Gurugram, Ghaziabad, and Faridabad as well as Delhi. A Mata Ki Chowki booking in Noida uses the same request: pick a profile, share the sector or society, and ask whether the artist can travel that day.",
+        "A singer is shown as Delhi NCR only when their city, state, or performing states say so. A mention of a city inside a biography is not treated as a service area. If a profile has no location, ask before you assume they can reach Noida or another NCR city. If the evening should run late, look at Bhagwati Jagran as a separate booking. A Sunderkand path is a Ramayan reading, not a Mata sitting.",
       ],
     },
     bookingIntro:
@@ -127,19 +136,19 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
       "Send a booking request with the date, city, venue type, and a short note about home, society, or jagran.",
       "The artist confirms whether they are free and what the programme includes.",
       "Agree the fee, travel, and sound or decor separately if those are not part of their usual set.",
-      "Keep the confirmation between you and the artist. ANDACTION does not invent a fixed package price.",
+      "Keep the confirmation between you and the artist. Share your event requirements with the artist to confirm the final programme cost.",
     ],
     pricing: {
       paragraphs: [
         "Mata Ki Chowki charges are set by the artist. They move with the size of the mandali, how long the programme runs, whether musicians and a sound system are included, decoration or darbar work, the venue, travel inside NCR, the date, and anything extra you add.",
-        "ANDACTION does not publish a universal price. If an artist has saved a starting solo charge, it can show on their card and profile. That figure is a starting point. The amount you pay is what you and the artist confirm for your event.",
+        "If an artist has saved a starting solo charge, it shows on their card as their listed starting price, not as the confirmed fee for your programme. Share the duration, venue, and arrangements you need so the artist can confirm the final cost.",
       ],
     },
     why: [
       "You can discover devotional singers who already have a public profile, instead of relying only on forwarded phone numbers.",
       "Profiles show the name, photo, category, and city the artist has provided.",
       "You can compare a few options and send the same event details to the person you prefer.",
-      "Starting charges appear only when the artist has added them, so the page does not guess a rate.",
+      "A starting charge appears when the artist has added one, so you can see their listed starting price before you write.",
       "The booking request records date, location, and notes so coordination starts with the actual requirement.",
     ],
     faqs: [
@@ -171,7 +180,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
       {
         question: "Can I choose a specific singer or mandali?",
         answer:
-          "Yes. Pick the profile you want and send the request to that artist. If they are booked, you can enquire with another profile. ANDACTION does not assign a random group.",
+          "Yes. Pick the profile you want and send the request to that artist. If that date is taken, send the same details to another profile. You choose the mandali.",
       },
       {
         question: "Can I book Mata Ki Chowki for a society event?",
@@ -191,6 +200,9 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     title: "Sunderkand Path Booking in Delhi NCR | ANDACTION",
     description:
       "Book a Sunderkand path in Delhi NCR with devotional readers and singers. Compare artists, confirm the format, and send a booking request on ANDACTION.",
+    ogTitle: "Book a Sunderkand Path in Delhi NCR",
+    ogDescription:
+      "Arrange a spoken or sung Sunderkand path at home or in a society, and send the date to a reader on ANDACTION.",
     h1: "Sunderkand Path Booking in Delhi NCR",
     intro: [
       "ANDACTION helps you find devotional artists for a Sunderkand path in Delhi NCR — at home, in a society, or in a hall.",
@@ -198,8 +210,10 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
       "Use the artist list to see who on ANDACTION mentions this work, then send a booking request with the date, language, and whether you want a spoken path, a musical reading, or both.",
     ],
     keywords: ["sunderkand path", "sunderkand delhi", "devotional path"],
-    artistKeywords: ["sunderkand", "sundar kand", "ramcharitmanas", "ramayan path"],
+    artistKeywords: ["sunderkand", "sundar kand", "sunder kand"],
     searchQuery: "sunderkand",
+    image: "/sunderkand-path.jpg",
+    imageAlt: "A family seated for a Ramayan reading in front of a Hanuman shrine.",
     about: [
       {
         heading: "What a Sunderkand path involves",
@@ -218,7 +232,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
       {
         heading: "Who performs it",
         paragraphs: [
-          "Readers range from a single experienced path reader to a small team with supporting voices and a musician. ANDACTION only lists people who have a profile. We do not add unnamed pandits or stock photos.",
+          "Readers range from a single experienced path reader to a small team with supporting voices and a musician. The list below uses profiles that exist on ANDACTION. A continuous sitting is an Akhand Ramayan path, which is booked separately.",
         ],
       },
     ],
@@ -254,7 +268,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     area: {
       heading: "Sunderkand path in Delhi NCR",
       paragraphs: [
-        "Enquiries are framed for Delhi NCR. An artist’s profile city is their base. Travel to Noida, Gurugram, Ghaziabad, or Faridabad is something you confirm with them — the page does not promise coverage in every sector.",
+        "Enquiries are for Delhi NCR, including Noida, Gurugram, Ghaziabad, and Faridabad. Travel is confirmed from the city and performing states on the profile, then by the artist’s reply. A Mata Ki Chowki is a different programme if you also want a Mata bhajan sitting.",
       ],
     },
     bookingIntro: "The live product flow is a booking request from the artist profile.",
@@ -268,7 +282,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     pricing: {
       paragraphs: [
         "A path fee depends on the reader’s experience, solo versus group, musical accompaniment, travel, and whether you have asked for extra bhajans after the path.",
-        "ANDACTION does not set a Sunderkand price list. Pay the amount the artist confirms for your date.",
+        "A starting charge on a profile is the figure that artist saved. Share your date, locality, and whether you want extra bhajans so they can confirm the final cost.",
       ],
     },
     why: [
@@ -316,14 +330,19 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     title: "Akhand Ramayan Path Booking in Delhi NCR | ANDACTION",
     description:
       "Plan an Akhand Ramayan path in Delhi NCR with devotional readers. Check format, team size, and send a booking request through ANDACTION.",
+    ogTitle: "Book an Akhand Ramayan Path in Delhi NCR",
+    ogDescription:
+      "Request a continuous Ramayan path for home or a hall. The reading team confirms timing, headcount, and cost.",
     h1: "Akhand Ramayan Path Booking in Delhi NCR",
     intro: [
       "An Akhand Ramayan path is a continuous reading of the Ramayan, kept without a planned break until the path is complete. Families and societies in Delhi NCR book readers for home, a hall, or a temple-side programme.",
       "ANDACTION is where you look up devotional artists and send a dated request. Continuous readings need a team and a realistic timetable, so the notes you send matter more than a generic package name.",
     ],
     keywords: ["akhand ramayan", "ramayan path delhi"],
-    artistKeywords: ["akhand ramayan", "ramayan path", "ramcharitmanas", "akhand path"],
+    artistKeywords: ["akhand ramayan", "akhand path", "akhand ramcharitmanas"],
     searchQuery: "ramayan path",
+    image: "/ahand-ramayan-path.jpg",
+    imageAlt: "A group seated around a havan during an Akhand Ramayan path.",
     about: [
       {
         heading: "What “akhand” means for booking",
@@ -366,7 +385,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     area: {
       heading: "Delhi NCR coverage",
       paragraphs: [
-        "The page speaks to Delhi NCR hosts. Whether a team can reach your sector depends on their profile city and the reply to your request. We are not opening city doorway pages for Noida or Gurugram until listings support them.",
+        "Delhi NCR hosts, including in Noida and Gurugram, use this page. A team is treated as local only when their city, state, or performing states say so. For a single Sunderkand path rather than a continuous reading, book that service instead.",
       ],
     },
     bookingIntro: "Use the artist profile’s booking request. There is no separate akhand checkout.",
@@ -378,7 +397,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     ],
     pricing: {
       paragraphs: [
-        "Akhand readings cost more than a short bhajan set because of hours and headcount. Travel and overnight stay add to the conversation. There is no ANDACTION rate card for this.",
+        "Akhand readings cost more than a short bhajan set because of hours and headcount. Travel and an overnight stay are part of the quote. Share those details with the team so they can confirm the final cost.",
         "A starting charge on a profile, when present, is the artist’s own figure — often for a different, shorter performance. Treat it as a signal, then get a quote for the akhand booking.",
       ],
     },
@@ -396,7 +415,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
       {
         question: "How many readers are required?",
         answer:
-          "The performing group decides the rotation. Ask them. This page does not prescribe a number.",
+          "The performing group decides the rotation. Ask them how many readers they bring for a continuous path.",
       },
       {
         question: "Does the fee include food for the team?",
@@ -421,19 +440,24 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     title: "Bhagwati Jagran Booking in Delhi NCR | ANDACTION",
     description:
       "Book a Bhagwati jagran in Delhi NCR with devotional mandalis. See artists, understand a night programme, and send a request on ANDACTION.",
+    ogTitle: "Book a Bhagwati Jagran in Delhi NCR",
+    ogDescription:
+      "Request a late-night Mata bhajan programme for a society, ground, or home gathering. The mandali confirms timing and cost.",
     h1: "Bhagwati Jagran Booking in Delhi NCR",
     intro: [
       "A Bhagwati jagran is an overnight or late-night Mata bhajan programme. Societies, families, and neighbourhood groups in Delhi NCR organise it around Navratri and other devotional dates.",
       "ANDACTION lists singers and groups you can request. A jagran is louder and longer than a short home chowki, so venue rules, end time, and sound need to be in the first message.",
     ],
     keywords: ["bhagwati jagran", "jagran delhi", "mata jagran"],
-    artistKeywords: ["bhagwati jagran", "jagran", "mata ki chowki", "mata bhajan"],
+    artistKeywords: ["bhagwati jagran", "mata jagran", "jagran"],
     searchQuery: "jagran",
+    image: "/bhagwati-jagran.jpg",
+    imageAlt: "A mandali performing on stage in front of a Mata darbar at a night programme.",
     about: [
       {
         heading: "How a jagran differs from a short chowki",
         paragraphs: [
-          "Both centre on Mata bhajans. A jagran is planned to run late, sometimes through the night, with a larger audience and a stronger sound system. A home chowki is often a shorter sitting.",
+          "Both centre on Mata bhajans. A jagran is planned to run late, sometimes through the night, with a larger audience and a stronger sound system. A shorter sitting is usually booked as Mata Ki Chowki.",
           "Hosts still decide the length. Some “jagrans” end before midnight because of society rules. Say which one you mean.",
         ],
       },
@@ -476,7 +500,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     area: {
       heading: "Jagran artists and Delhi NCR",
       paragraphs: [
-        "Night programmes involve travel and return time, so an artist based in one NCR city may decline another on a given date. Read the city on the profile and ask. This page does not claim a mandali in every sector.",
+        "Night programmes involve travel and a return journey, so a mandali listed in one NCR city may decline another date. Delhi NCR here includes Noida, Gurugram, Ghaziabad, and Faridabad when the profile’s city or performing states say so. Ask in the request. For a shorter Mata programme, use Mata Ki Chowki.",
       ],
     },
     bookingIntro: "Send a booking request from the profile. Describe the night clearly.",
@@ -490,7 +514,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     pricing: {
       paragraphs: [
         "Jagran pricing reflects hours, headcount, sound, and how late the programme ends. A society slot that must stop at 11 pm is a different job from an all-night ground programme.",
-        "No standard Bhagwati jagran price is published here. Use an artist’s saved starting charge only as their own listing, then request a figure for your night.",
+        "A starting charge on a profile is that artist’s listed starting price. Describe the hours, sound, and venue so they can confirm the final cost for your night.",
       ],
     },
     why: [
@@ -532,6 +556,9 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     title: "Khatu Shyam Bhajan Booking in Delhi NCR | ANDACTION",
     description:
       "Book Khatu Shyam bhajan singers in Delhi NCR for home and community gatherings. View artists and send a booking request on ANDACTION.",
+    ogTitle: "Book Khatu Shyam Bhajans in Delhi NCR",
+    ogDescription:
+      "Request a Khatu Shyam bhajan singer for a home shaam or society gathering. The artist confirms the set and the cost.",
     h1: "Khatu Shyam Bhajan Booking in Delhi NCR",
     intro: [
       "Khatu Shyam bhajans are devotional songs centred on Shyam Baba, sung at homes, societies, and small community sittings. Hosts in Delhi NCR book a singer or a small group for a shaam, a birthday, or a personal gathering.",
@@ -540,6 +567,8 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     keywords: ["khatu shyam bhajan", "shyam bhajan delhi"],
     artistKeywords: ["khatu shyam", "shyam baba", "shyam bhajan", "khatu"],
     searchQuery: "khatu shyam",
+    image: "/khatu-shyam-bhajan.jpg",
+    imageAlt: "A singer performing in front of a Khatu Shyam shrine decorated with peacock feathers.",
     about: [
       {
         heading: "What hosts usually book",
@@ -551,7 +580,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
       {
         heading: "Format and length",
         paragraphs: [
-          "A home shaam might be a compact set. A society programme can run longer and need clearer sound. Duration is agreed with the singer. This page does not fix a runtime.",
+          "A home shaam might be a compact set. A society programme can run longer and need clearer sound. Agree the duration with the singer when you send the request.",
           "If you want a specific bhajan list, send it in the notes. Not every singer uses the same popular set.",
         ],
       },
@@ -582,7 +611,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     area: {
       heading: "Delhi NCR",
       paragraphs: [
-        "The copy is aimed at Delhi NCR bookings. Artist travel follows the city on their profile and their reply. We do not list fake local mandalis for sectors where ANDACTION has no matching profile.",
+        "Bookings are for Delhi NCR, including Noida and Gurugram. A profile is shown as local only from its city, state, or performing states. If you also want an evening of Sai bhajans, that is a Sai Sandhya and a separate request.",
       ],
     },
     bookingIntro: "Same booking request used across artist profiles.",
@@ -595,7 +624,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     pricing: {
       paragraphs: [
         "Fees follow the singer, the number of musicians, hours, sound, and distance inside NCR. A solo baithak and a five-person set are not the same quote.",
-        "ANDACTION does not publish a Khatu Shyam price band. Starting charges appear only if that artist stored one.",
+        "When an artist has stored a starting charge, it appears as their listed starting price. Share the team size and venue so they can confirm the final cost.",
       ],
     },
     why: [
@@ -622,7 +651,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
       {
         question: "How much should we budget?",
         answer:
-          "Ask the artist for your date and team size. This page will not invent a range.",
+          "Ask the artist for your date and team size. The final amount is the figure they confirm for that programme.",
       },
       {
         question: "How do I book on ANDACTION?",
@@ -637,6 +666,9 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     title: "Sai Sandhya Bhajan Booking in Delhi NCR | ANDACTION",
     description:
       "Book a Sai Sandhya in Delhi NCR with bhajan singers. Review artists, plan the evening, and send a booking request on ANDACTION.",
+    ogTitle: "Book a Sai Sandhya in Delhi NCR",
+    ogDescription:
+      "Request a Sai bhajan evening for a Thursday home sitting or a society satsang. The singer confirms the time and the cost.",
     h1: "Sai Sandhya Booking in Delhi NCR",
     intro: [
       "A Sai Sandhya is an evening of Sai bhajans — often a Thursday gathering at home, in a society, or with a small satsang group. People in Delhi NCR book a singer who knows the common Sai repertoire and can hold a calm, seated programme.",
@@ -645,6 +677,8 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     keywords: ["sai sandhya", "sai bhajan delhi"],
     artistKeywords: ["sai sandhya", "sai bhajan", "sai baba", "shirdi"],
     searchQuery: "sai bhajan",
+    image: "/sai-sandhya.jpg",
+    imageAlt: "A decorated Sai Baba shrine prepared for an evening aarti.",
     about: [
       {
         heading: "What a Sai Sandhya looks like",
@@ -686,7 +720,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     area: {
       heading: "Sai Sandhya in Delhi NCR",
       paragraphs: [
-        "This page is for Delhi NCR hosts. Availability in a particular block of Noida or Gurugram is a question for the artist, based on the city they have listed and the date you need.",
+        "This page is for Delhi NCR hosts, including Noida and Gurugram. Whether a singer can reach a particular sector depends on the city and performing states on their profile, and on their reply for your date. A Khatu Shyam bhajan evening is a different repertoire if that is what you need.",
       ],
     },
     bookingIntro: "Booking is the profile request flow, with your evening details in the notes.",
@@ -699,13 +733,13 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     pricing: {
       paragraphs: [
         "A Sai Sandhya fee tracks the singer, duration, extra musicians, sound, and travel. A one-hour home Thursday is not priced like a hall programme.",
-        "There is no fixed ANDACTION tariff. If a starting charge is visible, it was entered by the artist and still needs confirmation for your evening.",
+        "If a starting charge is visible, the artist entered it as a starting price. Share the duration and locality so they can confirm the final cost for your evening.",
       ],
     },
     why: [
       "You book a person you can read about, not an unnamed “Sai package”.",
       "Notes capture Thursday timing, venue, and repeat dates.",
-      "We do not add testimonials or ratings the product does not store.",
+      "You can read the singer’s profile, city, and starting price when they have added one, then send the request yourself.",
     ],
     faqs: [
       {
@@ -731,7 +765,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
       {
         question: "How is the price decided?",
         answer:
-          "The artist quotes for your duration and location. ANDACTION does not add a markup table on this page.",
+          "The artist quotes for your duration and location. That confirmed figure is the programme cost.",
       },
     ],
   },

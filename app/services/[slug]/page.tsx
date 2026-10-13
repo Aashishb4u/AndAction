@@ -37,11 +37,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     openGraph: {
-      title: service.title,
-      description: service.description,
+      title: service.ogTitle,
+      description: service.ogDescription,
       url: canonical,
       siteName: "ANDACTION",
       type: "website",
+      images: [
+        {
+          url: service.image,
+          alt: service.imageAlt,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: service.ogTitle,
+      description: service.ogDescription,
+      images: [service.image],
     },
   };
 }

@@ -32,9 +32,12 @@ export default function BreadcrumbJsonLd({ siteUrl }: { siteUrl: string }) {
       });
     }
 
+    const pageUrl = `${normalizedSiteUrl}${pathname === "/" ? "" : pathname}`;
+
     return {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
+      "@id": `${pageUrl}#breadcrumb`,
       itemListElement: items.map((it, idx) => ({
         "@type": "ListItem",
         position: idx + 1,

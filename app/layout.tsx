@@ -90,9 +90,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const organizationId = `${siteUrl}/#organization`;
+  const websiteId = `${siteUrl}/#website`;
+
   const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': organizationId,
     name: 'ANDACTION',
     url: siteUrl,
     logo: `${siteUrl}/logo.png`,
@@ -101,11 +105,16 @@ export default function RootLayout({
   const websiteJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
+    '@id': websiteId,
     name: 'ANDACTION',
     url: siteUrl,
+    publisher: { '@id': organizationId },
     potentialAction: {
       '@type': 'SearchAction',
-      target: `${siteUrl}/artists?q={search_term_string}`,
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${siteUrl}/artists?search={search_term_string}`,
+      },
       'query-input': 'required name=search_term_string',
     },
   };
