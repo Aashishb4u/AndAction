@@ -11,8 +11,7 @@ const SERVICE_MENTIONS: { phrase: string; slug: string }[] = [
   { phrase: "Mata Ki Chowki", slug: "mata-ki-chowki" },
   { phrase: "Sunderkand path", slug: "sunderkand-path" },
   { phrase: "Sunderkand", slug: "sunderkand-path" },
-  { phrase: "Akhand Ramayan path", slug: "akhand-ramayan-path" },
-  { phrase: "Akhand Ramayan", slug: "akhand-ramayan-path" },
+  { phrase: "Bhajan Sandhya", slug: "bhajan-sandhya" },
   { phrase: "Bhagwati Jagran", slug: "bhagwati-jagran" },
   { phrase: "Khatu Shyam bhajan", slug: "khatu-shyam-bhajan" },
   { phrase: "Khatu Shyam", slug: "khatu-shyam-bhajan" },
@@ -239,18 +238,20 @@ export default function DevotionalServiceView({
             Choose an artist, then send a booking request from their profile. The artist confirms whether they are free and what the programme will cost.
           </p>
         </div>
-        <figure className="mb-8">
-          <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] overflow-hidden rounded-2xl border border-background-light bg-background-light">
-            <Image
-              src={service.image}
-              alt={service.imageAlt}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 960px"
-              className="object-cover"
-            />
-          </div>
-        </figure>
+        {service.image ? (
+          <figure className="mb-8">
+            <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] overflow-hidden rounded-2xl border border-background-light bg-background-light">
+              <Image
+                src={service.image}
+                alt={service.imageAlt}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 960px"
+                className="object-cover"
+              />
+            </div>
+          </figure>
+        ) : null}
         <div className="space-y-4 text-text-light-gray leading-relaxed text-base md:text-lg">
           {service.intro.map((paragraph) => (
             <p key={paragraph}>{linkify(paragraph, service.slug)}</p>

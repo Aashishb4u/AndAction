@@ -33,8 +33,8 @@ type Selection =
 
 const METRIC_CARDS: Selection[] = [
   { kind: "type", value: "PROFILE_VIEW", label: "Profile Views", key: "profileViews" },
-  { kind: "type", value: "WHATSAPP_CLICK", label: "WhatsApp Clicks", key: "whatsappClicks" },
-  { kind: "type", value: "CALL_CLICK", label: "Call Clicks", key: "callClicks" },
+  { kind: "type", value: "WHATSAPP_CLICK", label: "WhatsApp button clicks", key: "whatsappClicks" },
+  { kind: "type", value: "CALL_CLICK", label: "Phone button clicks", key: "callClicks" },
 ];
 
 const EMPTY_SPLIT: AudienceSplit = { platform: 0, visitors: 0 };

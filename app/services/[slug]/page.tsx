@@ -44,8 +44,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "website",
       images: [
         {
-          url: service.image,
-          alt: service.imageAlt,
+          url: service.image || "/logo.png",
+          alt: service.imageAlt || "ANDACTION",
         },
       ],
     },
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title: service.ogTitle,
       description: service.ogDescription,
-      images: [service.image],
+      images: [service.image || "/logo.png"],
     },
   };
 }

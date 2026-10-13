@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/services/akhand-ramayan-path",
+        destination: "/services/bhajan-sandhya",
+        permanent: true,
+      },
+    ];
+  },
   experimental: {
     proxyClientMaxBodySize: 20 * 1024 * 1024,
   },

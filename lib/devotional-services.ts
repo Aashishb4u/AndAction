@@ -232,7 +232,7 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
       {
         heading: "Who performs it",
         paragraphs: [
-          "Readers range from a single experienced path reader to a small team with supporting voices and a musician. The list below uses profiles that exist on ANDACTION. A continuous sitting is an Akhand Ramayan path, which is booked separately.",
+          "Readers range from a single experienced path reader to a small team with supporting voices and a musician. The list below uses profiles that exist on ANDACTION. An evening of mixed bhajans is a Bhajan Sandhya, which is booked separately.",
         ],
       },
     ],
@@ -325,112 +325,112 @@ export const DEVOTIONAL_SERVICES: DevotionalService[] = [
     ],
   },
   {
-    slug: "akhand-ramayan-path",
-    name: "Akhand Ramayan Path",
-    title: "Akhand Ramayan Path Booking in Delhi NCR | ANDACTION",
+    slug: "bhajan-sandhya",
+    name: "Bhajan Sandhya",
+    title: "Bhajan Sandhya Booking in Delhi NCR | ANDACTION",
     description:
-      "Plan an Akhand Ramayan path in Delhi NCR with devotional readers. Check format, team size, and send a booking request through ANDACTION.",
-    ogTitle: "Book an Akhand Ramayan Path in Delhi NCR",
+      "Book a Bhajan Sandhya in Delhi NCR with devotional singers. Choose an artist, share the evening details, and send a booking request on ANDACTION.",
+    ogTitle: "Book a Bhajan Sandhya in Delhi NCR",
     ogDescription:
-      "Request a continuous Ramayan path for home or a hall. The reading team confirms timing, headcount, and cost.",
-    h1: "Akhand Ramayan Path Booking in Delhi NCR",
+      "Request an evening of bhajans for home or a society gathering. The singer confirms the set, timing, and cost.",
+    h1: "Bhajan Sandhya Booking in Delhi NCR",
     intro: [
-      "An Akhand Ramayan path is a continuous reading of the Ramayan, kept without a planned break until the path is complete. Families and societies in Delhi NCR book readers for home, a hall, or a temple-side programme.",
-      "ANDACTION is where you look up devotional artists and send a dated request. Continuous readings need a team and a realistic timetable, so the notes you send matter more than a generic package name.",
+      "A Bhajan Sandhya is an evening of devotional singing: a seated programme of bhajans for family, a society, or a small satsang. Hosts in Delhi NCR book it for a weekday gathering, a festival evening, or a family function.",
+      "ANDACTION lists singers you can request. Tell them the deity or tradition you want, how long the evening should run, and whether it is at home or in a hall. A Sai evening is a Sai Sandhya, and a Mata sitting is a Mata Ki Chowki. This page is for a general bhajan evening.",
     ],
-    keywords: ["akhand ramayan", "ramayan path delhi"],
-    artistKeywords: ["akhand ramayan", "akhand path", "akhand ramcharitmanas"],
-    searchQuery: "ramayan path",
-    image: "/ahand-ramayan-path.jpg",
-    imageAlt: "A group seated around a havan during an Akhand Ramayan path.",
+    keywords: ["bhajan sandhya", "bhajan evening delhi", "devotional evening"],
+    artistKeywords: ["bhajan sandhya", "bhajan evening", "sandhya bhajan"],
+    searchQuery: "bhajan sandhya",
+    image: "/bhajan-sandhya.png",
+    imageAlt: "A singer and musicians performing bhajans before a Krishna and Radha shrine, with guests seated in front.",
     about: [
       {
-        heading: "What “akhand” means for booking",
+        heading: "What a Bhajan Sandhya includes",
         paragraphs: [
-          "Akhand means the reading is meant to continue in turn until the chosen text is finished. Hosts arrange a place where readers can sit for many hours, with water, a second shift of voices, and a quiet room.",
-          "Confirm which text the group reads — often Ramcharitmanas — and whether your family expects the full granth or a defined portion. Those are different commitments.",
+          "The singer or small group leads bhajans while guests sit and join the chorus. Many hosts keep a simple shrine, flowers, and an aarti at the end. The exact bhajans depend on the artist and what you ask for.",
+          "It is a satsang-style evening, not a stage concert. Share the room size so the singer knows whether one voice is enough or a small group with musicians is a better fit.",
         ],
       },
       {
-        heading: "Team and timing",
+        heading: "How long it usually runs",
         paragraphs: [
-          "A single reader rarely covers a full akhand path alone. Groups rotate. Ask how many people they bring, how they split hours, and what they need overnight if the path crosses midnight.",
-          "Duration is not a fixed number of hours on this page. It follows the text, the pace, and the size of the team. Get that estimate from the artist before you print invitations.",
+          "A home sandhya is often a compact set. A society programme can run longer and may need a microphone. Agree the start and finish with the artist when you send the request.",
+          "If you want only one tradition, such as a Sunderkand path or Khatu Shyam bhajans, book that page instead and say so in the notes.",
         ],
       },
     ],
-    occasionsIntro: "Akhand paths are usually planned events, not last-hour add-ons.",
+    occasionsIntro: "Say who the evening is for. The repertoire and the sound follow from that.",
     occasions: [
       {
-        title: "Home path",
-        text: "Possible when the house can hold a rotating team and the neighbours can accept a long, low-volume reading. Night access and washrooms should be clear.",
+        title: "At home",
+        text: "A living-room sitting with family and neighbours. Mention the floor, guest count, and whether you already have a speaker.",
       },
       {
-        title: "Community hall or society",
-        text: "Easier for longer sittings. You will need permission for hours, power, and sometimes an overnight stay for the team.",
+        title: "Society or community room",
+        text: "A clubhouse slot with a published start and end. Share gate entry and any rule on speaker volume.",
       },
       {
-        title: "Religious occasions",
-        text: "Ram Navami and other dates draw more demand. Share the date early if you want a specific group.",
+        title: "Festival and family evenings",
+        text: "A bhajan hour is often placed before or after another ritual. Give the exact window so it does not clash with the rest of the day.",
       },
     ],
     inclusionsIntro:
-      "Inclusions are whatever that team agrees to. A path booking does not automatically include bhojan, bedding, sound, or decoration.",
+      "You are booking the performance. Prasad, decoration, and a larger sound system are included only when you and the artist agree.",
     inclusions: [
-      { title: "Reading team", text: "The voices who keep the path continuous in shifts." },
-      { title: "Lead reader", text: "Someone accountable for sequence and completion." },
-      { title: "Musicians", text: "Only if the style is sung and the group carries instruments." },
-      { title: "Host arrangements", text: "Space, light, water, and meals are usually the host’s side unless agreed otherwise." },
+      { title: "Singer or group", text: "The voices leading the bhajans." },
+      { title: "Musicians", text: "Harmonium, dholak, or other players only when that artist brings them." },
+      { title: "Sound", text: "A room may need one microphone. A hall usually needs more, confirmed in the request." },
+      { title: "Aarti", text: "Often placed at the close. The host usually keeps the aarti thali and prasad." },
     ],
     area: {
-      heading: "Delhi NCR coverage",
+      heading: "Bhajan Sandhya in Delhi NCR",
       paragraphs: [
-        "Delhi NCR hosts, including in Noida and Gurugram, use this page. A team is treated as local only when their city, state, or performing states say so. For a single Sunderkand path rather than a continuous reading, book that service instead.",
+        "This page is for hosts in Delhi, Noida, Gurugram, Ghaziabad, and Faridabad. A singer is shown as Delhi NCR only when their city, state, or performing states say so. Ask about travel for your sector when you write.",
       ],
     },
-    bookingIntro: "Use the artist profile’s booking request. There is no separate akhand checkout.",
+    bookingIntro: "Booking is a request from the artist profile. The artist confirms the date and the cost.",
     bookingSteps: [
-      "Shortlist artists who mention Ramayan or akhand path.",
-      "Ask, in the notes, for team size and whether they cover the full text you want.",
-      "Share start time, venue, and if the path may run overnight.",
-      "Confirm fee, meals, and travel before you lock the date with relatives.",
+      "Open a singer whose profile mentions bhajan sandhya or a bhajan evening.",
+      "Send the date, start time, locality, and whether this is a home or society sitting.",
+      "Name any bhajans or tradition you want included.",
+      "Confirm duration, musicians, and the fee before you tell guests the time.",
     ],
     pricing: {
       paragraphs: [
-        "Akhand readings cost more than a short bhajan set because of hours and headcount. Travel and an overnight stay are part of the quote. Share those details with the team so they can confirm the final cost.",
-        "A starting charge on a profile, when present, is the artist’s own figure — often for a different, shorter performance. Treat it as a signal, then get a quote for the akhand booking.",
+        "The cost follows the singer, the length of the evening, extra musicians, sound, and travel inside NCR.",
+        "A starting charge on a profile is the artist’s listed starting price. Share your venue and duration so they can confirm the final cost.",
       ],
     },
     why: [
-      "You see who is actually listed before you commit to a long programme.",
-      "The request can carry the practical details a continuous path needs.",
-      "You are not shown fabricated team sizes or completion counts.",
+      "You choose a named singer and read their profile before you enquire.",
+      "The booking request carries the date, place, and the kind of evening you want.",
+      "A starting price appears when the artist has saved one.",
     ],
     faqs: [
       {
-        question: "Can I book an Akhand Ramayan path at home?",
+        question: "Can I book a Bhajan Sandhya at home?",
         answer:
-          "Only if the team agrees the house can support a long sitting. Describe rooms, night access, and guest count in the request.",
+          "Yes. Tell the artist the locality, guest count, and how long you want the evening to run. They confirm whether they are free.",
       },
       {
-        question: "How many readers are required?",
+        question: "Can I choose the bhajans?",
         answer:
-          "The performing group decides the rotation. Ask them how many readers they bring for a continuous path.",
+          "You can send a list or name the tradition. The artist confirms what they actually perform.",
       },
       {
-        question: "Does the fee include food for the team?",
+        question: "Is this the same as a Sai Sandhya?",
         answer:
-          "Assume it does not until the artist says it does. Hosts often arrange simple meals for a long path.",
+          "No. A Sai Sandhya is an evening of Sai bhajans. Use that page if Sai is the programme you want. This page is for a general bhajan evening.",
       },
       {
-        question: "How early should we book?",
+        question: "Do musicians come with the singer?",
         answer:
-          "Earlier than a two-hour bhajan evening. Festival dates and weekends need more lead time because the team is committed for many hours.",
+          "Only when that artist works with them. Ask in the request so the quote includes the right team.",
       },
       {
-        question: "Will the path be in Hindi?",
+        question: "How is the price decided?",
         answer:
-          "Ramcharitmanas paths are in Awadhi. Ask if you want Hindi explanation between sections; that is extra and not always offered.",
+          "The artist quotes for your duration, team, and location. The figure they confirm is the programme cost.",
       },
     ],
   },

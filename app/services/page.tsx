@@ -6,7 +6,7 @@ import { getSiteUrl } from "@/lib/site-url";
 
 const title = "Devotional Event Services in Delhi NCR | ANDACTION";
 const description =
-  "Book Mata Ki Chowki, Sunderkand path, Akhand Ramayan, Bhagwati jagran, Khatu Shyam bhajans, and Sai Sandhya with artists listed on ANDACTION.";
+  "Book Mata Ki Chowki, Sunderkand path, Bhajan Sandhya, Bhagwati jagran, Khatu Shyam bhajans, and Sai Sandhya with artists listed on ANDACTION.";
 
 export const metadata: Metadata = {
   title,
