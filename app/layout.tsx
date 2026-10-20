@@ -5,6 +5,7 @@ import { Providers } from './providers';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { getSiteUrl } from '@/lib/site-url';
 
 const raleway = Raleway({
   subsets: ['latin'],
@@ -20,24 +21,11 @@ const poppins = Poppins({
   display: 'swap',
 });
 
-function getSiteUrl(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXTAUTH_URL ||
-    'https://andaction.in';
-  try {
-    return new URL(raw).toString().replace(/\/$/, '');
-  } catch {
-    return 'https://andaction.in';
-  }
-}
-
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   title: 'ANDACTION - Discover and Book Perfect Artists for your Events',
   description: 'Connecting talent with unforgettable experiences, all in one place! Find and book the perfect artists for your events with ANDACTION.',
-  keywords: 'artists, events, booking, entertainment, performers, talent, shows',
   authors: [{ name: 'ANDACTION Team' }],
   metadataBase: new URL(siteUrl),
   icons: {
@@ -100,6 +88,14 @@ export default function RootLayout({
     name: 'ANDACTION',
     url: siteUrl,
     logo: `${siteUrl}/logo.png`,
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+91-8595114889',
+      email: 'support@andaction.com',
+      contactType: 'customer support',
+      areaServed: 'IN',
+      availableLanguage: ['English', 'Hindi'],
+    },
   };
 
   const websiteJsonLd = {

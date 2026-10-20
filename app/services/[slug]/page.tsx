@@ -23,7 +23,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: service.title,
     description: service.description,
-    keywords: service.keywords.join(", "),
     alternates: { canonical },
     robots: {
       index: true,

@@ -87,7 +87,7 @@ function ArtistGrid({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={image}
-                    alt={`${artist.name}, devotional artist listed on ANDACTION`}
+                    alt={`Profile photo of ${artist.name}`}
                     className="absolute inset-0 w-full h-full object-cover"
                     loading="lazy"
                   />
@@ -134,7 +134,6 @@ function ArtistGrid({
 export default function DevotionalServiceView({
   service,
   matched,
-  related,
 }: {
   service: DevotionalService;
   matched: ServiceArtistCard[];
@@ -326,7 +325,7 @@ export default function DevotionalServiceView({
           {artistsHeading}
         </h2>
         <p className="text-text-light-gray leading-relaxed mb-6">
-          This list uses artist records on ANDACTION. A profile appears here when the artist’s name, bio, category, or event type mentions this programme, and their city, state, or performing states include Delhi NCR. A biography that merely names a city is not treated as a service area.
+          These profiles mention this programme in the artist’s name, category, or event type, and their city, state, or performing states include Delhi NCR. A biography is not used as proof of the service or the service area.
         </p>
         <ArtistGrid
           artists={ncrArtists}
@@ -343,15 +342,6 @@ export default function DevotionalServiceView({
             <ArtistGrid artists={otherMatches} emptyLabel="" />
           </div>
         ) : null}
-        {related.length > 0 ? (
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold text-white mb-3">Other devotional artists</h3>
-            <p className="text-sm text-text-light-gray mb-3">
-              These profiles are other devotional listings. They are not shown as confirmed {service.name} providers.
-            </p>
-            <ArtistGrid artists={related} emptyLabel="" />
-          </div>
-        ) : null}
       </section>
 
       <section className="mb-12" aria-labelledby="area-heading">
@@ -364,6 +354,22 @@ export default function DevotionalServiceView({
           ))}
         </div>
       </section>
+
+      {isChowki ? (
+        <section className="mb-12" aria-labelledby="noida-heading">
+          <h2 id="noida-heading" className="text-2xl md:text-3xl font-semibold text-white mb-4">
+            Mata Ki Chowki Booking in Noida
+          </h2>
+          <div className="space-y-3 text-text-light-gray leading-relaxed">
+            <p>
+              Noida bookings use this same Delhi NCR page. Choose a singer whose city or performing states include Noida or Delhi NCR, then send a booking request with your sector, society or home address, date, and guest count.
+            </p>
+            <p>
+              The artist confirms whether they can travel to that part of Noida and what the programme will cost. A profile is not shown as a Noida option unless those location fields say so.
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       <section className="mb-12" aria-labelledby="book-heading">
         <h2 id="book-heading" className="text-2xl md:text-3xl font-semibold text-white mb-4">

@@ -38,7 +38,10 @@ function toNumber(value: unknown): number | null {
 function servesNcr(city: string | null, state: string | null, performingStates: string | null): boolean {
   const text = [city, state, performingStates].filter(Boolean).join(" ").toLowerCase();
   if (!text.trim()) return false;
-  return NCR_TOKENS.some((token) => text.includes(token));
+  return NCR_TOKENS.some((token) => {
+    const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:[^a-z0-9]|$)`).test(text);
+  });
 }
 
 function durationLabel(from: string | null, to: string | null): string | null {
@@ -50,8 +53,8 @@ function durationLabel(from: string | null, to: string | null): string | null {
 
 /**
  * Public artist cards for a service page.
- * A profile is "matched" only when a service keyword appears in the artist's
- * name, bio, category, or event type — not in the city field.
+ * A profile is matched only when a service keyword appears in the artist's
+ * name, category, or event type. Biography text is not used.
  * Delhi NCR is decided only from city, state, and performing states.
  */
 export async function getServiceArtists(
@@ -63,7 +66,6 @@ export async function getServiceArtists(
   try {
     const or = keywords.flatMap((keyword) => [
       { stageName: { contains: keyword, mode: "insensitive" as const } },
-      { shortBio: { contains: keyword, mode: "insensitive" as const } },
       { subArtistType: { contains: keyword, mode: "insensitive" as const } },
       { performingEventType: { contains: keyword, mode: "insensitive" as const } },
       { artistType: { contains: keyword, mode: "insensitive" as const } },
@@ -101,23 +103,6 @@ export async function getServiceArtists(
       orderBy: { updatedAt: "desc" },
     });
 
-    const matchedIds = matchedRows.map((row) => row.id);
-
-    const relatedRows = await prisma.artist.findMany({
-      where: {
-        id: { notIn: matchedIds },
-        OR: [
-          { artistType: { contains: "spiritual", mode: "insensitive" } },
-          { artistType: { contains: "devotional", mode: "insensitive" } },
-          { subArtistType: { contains: "bhajan", mode: "insensitive" } },
-          { subArtistType: { contains: "devotional", mode: "insensitive" } },
-        ],
-      },
-      select,
-      take: 6,
-      orderBy: { updatedAt: "desc" },
-    });
-
     const mapRow = (
       row: (typeof matchedRows)[number],
       matched: boolean,
@@ -143,7 +128,7 @@ export async function getServiceArtists(
 
     return {
       matched,
-      related: relatedRows.map((row) => mapRow(row, false)),
+      related: [],
     };
   } catch (error) {
     console.error("getServiceArtists failed", error);
