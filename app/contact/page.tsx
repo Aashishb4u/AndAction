@@ -4,6 +4,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import { Mail, Phone, MapPin, Send, MessageCircle, Clock } from 'lucide-react';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/contact' },
   title: 'Contact Us - ANDACTION | Get in Touch with Our Team',
   description: 'Have questions about booking artists or need support? Contact ANDACTION team through email, phone, or our contact form. We\'re here to help make your event memorable.',
   keywords: 'contact ANDACTION, customer support, booking help, artist platform contact, event planning assistance',
@@ -26,8 +27,8 @@ const ContactPage = () => {
     {
       icon: <Mail className="w-6 h-6" />,
       title: 'Email',
-      details: 'support@andaction.com',
-      link: 'mailto:support@andaction.com',
+      details: 'official@andaction.com',
+      link: 'mailto:official@andaction.com',
       description: 'We\'ll respond within 24 hours',
     },
     {
@@ -59,9 +60,9 @@ const ContactPage = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         {/* Header */}
         <div className="text-center mb-12 lg:mb-16">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
             <span className="gradient-text">Get in Touch</span>
-          </h1>
+          </h2>
           <p className="text-text-gray text-base sm:text-lg max-w-2xl mx-auto">
             Have a question or need assistance? We&apos;re here to help! Reach out to us
             through any of the following channels.

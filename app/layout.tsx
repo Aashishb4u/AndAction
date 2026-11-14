@@ -54,6 +54,9 @@ export const metadata: Metadata = {
     description: 'Connecting talent with unforgettable experiences, all in one place! Find and book the perfect artists for your events with ANDACTION.',
     images: ['/logo.png'],
   },
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+    : {}),
   robots: {
     index: true,
     follow: true,
@@ -91,7 +94,7 @@ export default function RootLayout({
     contactPoint: {
       '@type': 'ContactPoint',
       telephone: '+91-8595114889',
-      email: 'support@andaction.com',
+      email: 'official@andaction.com',
       contactType: 'customer support',
       areaServed: 'IN',
       availableLanguage: ['English', 'Hindi'],

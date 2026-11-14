@@ -4,6 +4,13 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        // One canonical host: send www.andaction.in to andaction.in.
+        source: "/:path*",
+        has: [{ type: "host", value: "www.andaction.in" }],
+        destination: "https://andaction.in/:path*",
+        permanent: true,
+      },
+      {
         source: "/services/akhand-ramayan-path",
         destination: "/services/bhajan-sandhya",
         permanent: true,

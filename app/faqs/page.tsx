@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/faqs' },
   title: 'FAQs - ANDACTION | Frequently Asked Questions for Artists',
   description:
     'Answers to common questions from artists about AndAction: free listing, profile control, how event organizers contact you, updating your profile, location and privacy, and how search results work.',

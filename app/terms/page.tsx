@@ -6,6 +6,7 @@ import { FileText, Users, CreditCard, Shield, AlertTriangle, Scale, Mail, Phone 
 
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/terms' },
   title: 'Terms & Conditions - AndAction | User Agreement & Service Terms',
   description: 'Read AndAction\'s terms of service covering user agreements, platform usage, booking policies, payment terms, and legal obligations for artists and event organizers.',
   keywords: 'terms of service, user agreement, AndAction terms, booking terms, payment policy, platform rules, legal terms',

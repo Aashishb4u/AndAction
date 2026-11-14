@@ -4,6 +4,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import { Users, Target, Heart, Zap, Music, Calendar, Shield, Award, Mail, Phone } from 'lucide-react';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/about' },
   title: 'About Us - ANDACTION | Connecting Talent with Unforgettable Experiences',
   description: 'Learn about ANDACTION\'s mission to revolutionize event entertainment by connecting talented artists with event organizers. Discover our story, values, and commitment to creating unforgettable experiences.',
   keywords: 'about ANDACTION, artist booking platform, event entertainment, talent discovery, artist management, event planning',
@@ -68,7 +69,7 @@ const AboutPage = () => {
     >
       <div className="space-y-12">
         <section>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">About Us</h1>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">About Us</h2>
 
           <h2 className="text-2xl md:text-3xl font-semibold text-white mb-6">Connecting Talent with Opportunity</h2>
 

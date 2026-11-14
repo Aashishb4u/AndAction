@@ -1,12 +1,35 @@
 import type { MetadataRoute } from "next";
 import { DEVOTIONAL_SERVICES } from "@/lib/devotional-services";
 import { getSiteUrl } from "@/lib/site-url";
+import { prisma } from "@/lib/prisma";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export const revalidate = 3600;
+
+async function getArtistEntries(siteUrl: string): Promise<MetadataRoute.Sitemap> {
+  try {
+    const artists = await prisma.artist.findMany({
+      select: { id: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+      take: 5000,
+    });
+    return artists.map((artist) => ({
+      url: `${siteUrl}/artists/${artist.id}`,
+      lastModified: artist.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
   const now = new Date();
+  const artistEntries = await getArtistEntries(siteUrl);
 
   return [
+    ...artistEntries,
     {
       url: `${siteUrl}/`,
       lastModified: now,

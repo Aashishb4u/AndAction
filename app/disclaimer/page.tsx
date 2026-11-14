@@ -6,6 +6,7 @@ import { Building2, BadgeCheck, Copyright, Handshake, FileEdit, Scale, Sparkles,
 
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/disclaimer' },
   title: 'Disclaimer - ANDACTION | Platform Information & Content Policy',
   description: 'Read ANDACTION\'s disclaimer covering platform independence, artist representation, intellectual property, platform role, content updates, and limitation of liability.',
   keywords: 'disclaimer, ANDACTION disclaimer, platform disclaimer, intellectual property, limitation of liability, content removal',

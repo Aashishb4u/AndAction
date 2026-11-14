@@ -4,6 +4,7 @@ import PageLayout from "@/components/layout/PageLayout";
 import { Shield, Eye, Lock, Users, Mail, Phone } from "lucide-react";
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/privacy' },
   title: "Privacy Policy - AndAction | Your Data Protection & Privacy Rights",
   description:
     "Learn how AndAction protects your personal information, data collection practices, cookie usage, and your privacy rights. Updated privacy policy for transparent data handling.",
