@@ -14,6 +14,7 @@ interface SiteLayoutProps {
   hideNavbar?: boolean;
   hideBottomBar?: boolean;
   hideNavbarOnMobile?: boolean;
+  hideFooter?: boolean;
 }
 
 const SiteLayout: React.FC<SiteLayoutProps> = ({
@@ -23,6 +24,7 @@ const SiteLayout: React.FC<SiteLayoutProps> = ({
   hideNavbar = false,
   hideBottomBar = false,
   hideNavbarOnMobile = false,
+  hideFooter = false,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(showPreloader);
@@ -64,7 +66,7 @@ const SiteLayout: React.FC<SiteLayoutProps> = ({
             {children}
           </main>
 
-          <SiteFooter padForBottomBar={!hideBottomBar} />
+          {!hideFooter && <SiteFooter padForBottomBar={!hideBottomBar} />}
 
           {/* Mobile Bottom Bar */}
           {!hideBottomBar && <MobileBottomBar />}
