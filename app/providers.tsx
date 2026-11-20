@@ -3,6 +3,8 @@
 import { LocationProvider } from "@/components/providers/location-provider";
 import QueryProvider from "@/components/providers/query-provider";
 import { SessionProvider } from "next-auth/react";
+import { AndyProvider } from "@/components/andy/AndyProvider";
+import AndyWidget from "@/components/andy/AndyWidget";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -11,7 +13,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <LocationProvider>
         <QueryProvider>
-          {children}
+          <AndyProvider>
+            {children}
+            <AndyWidget />
+          </AndyProvider>
           <ToastContainer
             position="top-right"
             autoClose={2000}

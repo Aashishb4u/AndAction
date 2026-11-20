@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { Prisma } from "@prisma/client";
 import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
+import { expandSearchTerm } from "@/lib/search-aliases";
 
 // Define pagination defaults
 const DEFAULT_PAGE_SIZE = 10;
@@ -61,8 +62,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
       
       // Search across stageName, artistType (with mapping), and user fields
       where.OR = [
-        { stageName: { contains: queryTerm, mode: "insensitive" } },
-        { subArtistType: { contains: queryTerm, mode: "insensitive" } },
+        ...expandSearchTerm(queryTerm).flatMap((term) => [
+          { stageName: { contains: term, mode: "insensitive" as const } },
+          { subArtistType: { contains: term, mode: "insensitive" as const } },
+        ]),
         { artistType: { in: typeMatches } },
         { artistType: { contains: queryTerm, mode: "insensitive" } },
         {
@@ -141,8 +144,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
             END`;
 
             const orConditions: Prisma.Sql[] = [
-              Prisma.sql`a."stageName" ILIKE ${like}`,
-              Prisma.sql`a."subArtistType" ILIKE ${like}`,
+              ...expandSearchTerm(queryTerm).flatMap((term) => [
+                Prisma.sql`a."stageName" ILIKE ${`%${term}%`}`,
+                Prisma.sql`a."subArtistType" ILIKE ${`%${term}%`}`,
+              ]),
               Prisma.sql`a."artistType" ILIKE ${like}`,
               Prisma.sql`u."firstName" ILIKE ${like}`,
               Prisma.sql`u."lastName" ILIKE ${like}`,

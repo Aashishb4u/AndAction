@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Button from '@/components/ui/Button';
-import FindArtistModal from '@/components/modals/FindArtistModal';
+import { useRouter } from 'next/navigation';
 import { HeroProps } from '@/types';
 
 const Hero: React.FC<HeroProps> = ({ className = '' }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Trigger animations on component mount
@@ -16,7 +16,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
   }, []);
 
   const handleFindArtist = () => {
-    setIsModalOpen(true);
+    router.push('/find-artist');
   };
 
   return (
@@ -27,7 +27,9 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
     /* h-[75vh] = 75% of viewport height for mobile, md:h-[70vh] = 70% for desktop */
     >
       {/* Background Video - covers the entire hero section (3/4 of viewport) */}
-      <div className="absolute inset-0 z-0">
+      {/* overflow-hidden: the zoom-in animation scales the video past the screen edge; without
+          clipping, mobile browsers widen the page and the fixed bars jump on first load. */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
         <video
           autoPlay
           loop
@@ -72,7 +74,7 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
               onClick={handleFindArtist}
               className="px-8 py-3 w-full max-w-96 shadow-2xl hover:shadow-pink-500/25 transform hover:scale-105 transition-all duration-300 btn1-responsive"
             >
-              Find Your Artist
+              Find Artist with AI
             </Button>
           </div>
         </div>
@@ -126,13 +128,6 @@ const Hero: React.FC<HeroProps> = ({ className = '' }) => {
           }}
         />
       </div>
-
-
-      {/* Find Artist Modal */}
-      <FindArtistModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </section>
   );
 };

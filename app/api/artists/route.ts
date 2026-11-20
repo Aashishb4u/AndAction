@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { ApiErrors, successResponse } from "@/lib/api-response";
 import { Prisma } from "@prisma/client";
 import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
+import { expandSearchTerm } from "@/lib/search-aliases";
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
@@ -177,9 +178,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     if (search) {
       const typeMatches = getArtistTypeMatches(search);
       where.OR = [
-        { stageName: { contains: search, mode: "insensitive" } },
-        { shortBio: { contains: search, mode: "insensitive" } },
-        { subArtistType: { contains: search, mode: "insensitive" } },
+        // Spelling variants (e.g. sunderkand / sundarkand) are matched on name, bio and sub-category.
+        ...expandSearchTerm(search).flatMap((term) => [
+          { stageName: { contains: term, mode: "insensitive" as const } },
+          { shortBio: { contains: term, mode: "insensitive" as const } },
+          { subArtistType: { contains: term, mode: "insensitive" as const } },
+        ]),
         { artistType: { in: typeMatches } },
         { artistType: { contains: search, mode: "insensitive" } },
         {
@@ -209,15 +213,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<any>> {
     if (subType) {
       // Support comma-separated sub-types: match any of the provided values
       const subTypes = subType.split(",").map((s) => s.trim()).filter(Boolean);
-      if (subTypes.length === 1) {
+      if (subTypes.length > 0) {
         dynamicOrFilters.push({
-          subArtistType: { contains: subTypes[0], mode: "insensitive" },
-        });
-      } else if (subTypes.length > 1) {
-        dynamicOrFilters.push({
-          OR: subTypes.map((st) => ({
-            subArtistType: { contains: st, mode: "insensitive" },
-          })),
+          OR: subTypes.flatMap((st) =>
+            expandSearchTerm(st).map((term) => ({
+              subArtistType: { contains: term, mode: "insensitive" as const },
+            })),
+          ),
         });
       }
     }
