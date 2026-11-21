@@ -15,6 +15,8 @@ interface ArtistCardProps {
   location: string;
   thumbnail: string;
   videoUrl: string;
+  /** Optional price line under the location, e.g. "From ₹10,000" or "Price on Request". */
+  priceLabel?: string;
   className?: string;
 }
 
@@ -24,6 +26,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   location,
   thumbnail,
   videoUrl,
+  priceLabel,
   className = "",
 }) => {
   const router = useRouter();
@@ -114,6 +117,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
         >
           {location}
         </p>
+        {priceLabel && <p className="footnote line-clamp-1 font-semibold text-primary-orange">{priceLabel}</p>}
       </div>
 
       {/* Hover Border Effect */}

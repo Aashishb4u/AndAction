@@ -7,6 +7,7 @@ import AndyChat from "./AndyChat";
 import AndyIntroCard from "./AndyIntroCard";
 import AndyMascot from "./AndyMascot";
 import AndyNudge from "./AndyNudge";
+import { useLocation } from "@/components/providers/location-provider";
 import { useAndy } from "./AndyProvider";
 
 const COLLAPSED_KEY = "andy-card-collapsed";
@@ -16,6 +17,7 @@ export default function AndyWidget() {
   const pathname = usePathname();
   const router = useRouter();
   const { isWidgetOpen, setWidgetOpen, reset, messages, send } = useAndy();
+  const { isLocationResolved } = useLocation();
   const [started, setStarted] = useState(false);
   const [nudgeVisible, setNudgeVisible] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -53,7 +55,8 @@ export default function AndyWidget() {
     setWidgetOpen(!isWidgetOpen);
   };
 
-  if (hidden) return null;
+  // The Enable Location popup comes first; Andy appears once the user has answered it.
+  if (hidden || !isLocationResolved) return null;
 
   const clear = () => {
     reset();
@@ -76,14 +79,14 @@ export default function AndyWidget() {
           <header className="flex items-center gap-2.5 border-b border-white/10 px-4 py-3">
             <AndyAvatar className="h-9 w-9" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white">Andy</p>
-              <p className="text-xs text-[#9A9A9A]">Find artists with AI</p>
+              <p className="font-[family-name:var(--font-raleway)] text-lg font-bold text-white">Andy</p>
+              <p className="text-sm text-[#9A9A9A]">Find artists with AI</p>
             </div>
             {messages.length > 0 && (
               <button
                 type="button"
                 onClick={clear}
-                className="rounded-md px-2 py-1 text-xs text-[#9A9A9A] hover:text-white"
+                className="rounded-md px-2 py-1 text-sm text-[#9A9A9A] hover:text-white"
               >
                 Clear
               </button>
@@ -132,8 +135,8 @@ export default function AndyWidget() {
             <div className="flex min-w-0 flex-1 flex-col justify-between">
               <div className="flex items-start gap-1">
                 <div className="min-w-0 flex-1">
-                  <p className="pt-1 text-sm font-semibold leading-tight text-white">Need help?</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-[11px] text-[#9A9A9A]">
+                  <p className="pt-1 font-[family-name:var(--font-raleway)] text-base font-bold leading-tight text-white">Need help?</p>
+                  <p className="mt-0.5 flex items-center gap-1 text-xs text-[#9A9A9A]">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                     Andy is online
                   </p>
@@ -155,7 +158,7 @@ export default function AndyWidget() {
                   setStarted(true);
                   setWidgetOpen(true);
                 }}
-                className="h-10 w-full rounded-full bg-[linear-gradient(135deg,#ED4B22,#E8047E)] px-2 text-[12.5px] font-semibold text-white transition-transform hover:scale-[1.02]"
+                className="h-10 w-full rounded-full bg-[linear-gradient(135deg,#ED4B22,#E8047E)] px-2 font-[family-name:var(--font-raleway)] text-sm font-bold text-white transition-transform hover:scale-[1.02]"
               >
                 Start conversation
               </button>

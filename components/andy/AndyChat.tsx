@@ -21,6 +21,9 @@ export default function AndyChat({ showStarters = false, autoFocus = false, show
   const { messages, isLoading, send } = useAndy();
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  // Answer buttons for Andy's latest question replace the starters, so the row never shows both.
+  const lastOptions = messages[messages.length - 1]?.options;
+  const chips = lastOptions?.length ? lastOptions : showStarters ? ANDY_STARTERS : [];
 
   useEffect(() => {
     if (messages.length === 0) return; // keep the greeting and mascot in view
@@ -41,38 +44,23 @@ export default function AndyChat({ showStarters = false, autoFocus = false, show
         {showMascot && messages.length === 0 && (
           <div className="flex flex-col items-center pb-2 pt-4 text-center">
             <AndyMascot waving className={mascotClass} />
-            <p className="mt-2 text-lg font-bold text-white">
+            <p className="mt-2 font-[family-name:var(--font-raleway)] text-2xl font-bold text-white">
               Hey! I&apos;m Andy <span aria-hidden="true">👋</span>
             </p>
-            <p className="text-sm text-[#9A9A9A]">Pick a suggestion or type what you need.</p>
+            <p className="text-base text-[#9A9A9A]">Pick a suggestion or type what you need.</p>
           </div>
         )}
         <div className="flex items-start gap-2.5">
           <AndyAvatar />
-          <p className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/[0.07] px-3.5 py-2.5 text-sm leading-relaxed text-white">
+          <p className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/[0.07] px-4 py-3 text-base leading-relaxed text-white">
             {ANDY_GREETING}
           </p>
         </div>
 
-        {messages.length === 0 && showStarters && (
-          <div className="flex flex-wrap gap-2 pl-10">
-            {ANDY_STARTERS.slice(0, 5).map((starter) => (
-              <button
-                key={starter}
-                type="button"
-                onClick={() => void send(starter)}
-                className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs text-[#D0D0D0] transition-colors hover:border-primary-pink hover:text-white"
-              >
-                {starter}
-              </button>
-            ))}
-          </div>
-        )}
-
         {messages.map((message) =>
           message.role === "user" ? (
             <div key={message.id} className="flex justify-end">
-              <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm bg-[linear-gradient(135deg,#ED4B22,#E8047E)] px-3.5 py-2.5 text-sm leading-relaxed text-white">
+              <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm bg-[linear-gradient(135deg,#ED4B22,#E8047E)] px-4 py-3 text-base leading-relaxed text-white">
                 {message.content}
               </p>
             </div>
@@ -81,28 +69,12 @@ export default function AndyChat({ showStarters = false, autoFocus = false, show
               <AndyAvatar />
               <div className="min-w-0 flex-1 space-y-3">
                 <p
-                  className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-sm leading-relaxed ${
+                  className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-tl-sm px-4 py-3 text-base leading-relaxed ${
                     message.error ? "bg-red-500/15 text-red-200" : "bg-white/[0.07] text-white"
                   }`}
                 >
                   {message.content}
                 </p>
-
-                {message.options && (
-                  <div className="flex flex-wrap gap-2">
-                    {message.options.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        disabled={isLoading}
-                        onClick={() => void send(option)}
-                        className="rounded-full border border-primary-pink/60 px-3 py-1.5 text-xs text-white transition-colors hover:bg-primary-pink/20 disabled:opacity-50"
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                )}
 
                 {message.artists && (
                   <div className="-mr-4 flex gap-3 overflow-x-auto pb-2 pr-4 [scrollbar-width:thin]">
@@ -114,6 +86,7 @@ export default function AndyChat({ showStarters = false, autoFocus = false, show
                         location={artist.location}
                         thumbnail={artist.image}
                         videoUrl=""
+                        priceLabel={artist.startingPrice ? `From ₹${artist.startingPrice.toLocaleString("en-IN")}` : "Price on Request"}
                       />
                     ))}
                   </div>
@@ -148,19 +121,38 @@ export default function AndyChat({ showStarters = false, autoFocus = false, show
           autoFocus={autoFocus}
           placeholder="e.g. Mata Ki Chowki, budget ₹20,000"
           aria-label="Message Andy"
-          className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm text-white outline-none placeholder:text-[#7F7F7F] focus:border-primary-pink"
+          className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/[0.05] px-4 py-3 text-base text-white outline-none placeholder:text-[#7F7F7F] focus:border-primary-pink"
         />
         <button
           type="submit"
           disabled={!draft.trim() || isLoading}
           aria-label="Send"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#ED4B22,#E8047E)] text-white transition-opacity disabled:opacity-40"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#ED4B22,#E8047E)] text-white transition-opacity disabled:opacity-40"
         >
           <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
             <path d="M3.4 20.4l17.4-7.5a1 1 0 000-1.8L3.4 3.6a1 1 0 00-1.4 1.2L4 11l9 1-9 1-2 6.2a1 1 0 001.4 1.2z" />
           </svg>
         </button>
       </form>
+
+      {chips.length > 0 && (
+        <div
+          aria-label="Suggestions"
+          className="flex gap-2 overflow-x-auto px-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {chips.map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              disabled={isLoading}
+              onClick={() => void send(chip)}
+              className="shrink-0 whitespace-nowrap rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-sm text-[#D0D0D0] transition-colors hover:border-primary-pink hover:text-white disabled:opacity-50"
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -38,21 +38,21 @@ export default function AndyIntroCard({ onStart, onDismiss, compact = false, cla
 
         <div className="relative min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pr-5">
-            <p className={`font-bold text-white ${compact ? "text-base" : "text-lg"}`}>
+            <p className={`font-[family-name:var(--font-raleway)] font-bold text-white ${compact ? "text-lg" : "text-xl"}`}>
               Hey! I&apos;m Andy <span aria-hidden="true">👋</span>
             </p>
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 px-2 py-0.5 text-xs font-medium text-emerald-400">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
               Online
             </span>
           </div>
-          <p className="mt-1 text-[13px] leading-snug text-[#BDBDBD]">
+          <p className="mt-1 text-sm leading-snug text-[#BDBDBD]">
             Tell me your event, budget and city. I&apos;ll find matching artists for you.
           </p>
           <button
             type="button"
             onClick={onStart}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#ED4B22,#E8047E)] px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-[1.02]"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#ED4B22,#E8047E)] px-4 py-3 font-[family-name:var(--font-raleway)] text-base font-bold text-white transition-transform hover:scale-[1.02]"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden="true">
               <path
@@ -64,7 +64,7 @@ export default function AndyIntroCard({ onStart, onDismiss, compact = false, cla
             </svg>
             Start a conversation
           </button>
-          <p className="mt-2 flex items-center justify-center gap-1 text-[11px] text-[#9A9A9A]">
+          <p className="mt-2 flex items-center justify-center gap-1 text-xs text-[#9A9A9A]">
             <svg viewBox="0 0 24 24" className="h-3 w-3 text-primary-orange" fill="currentColor" aria-hidden="true">
               <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />
             </svg>

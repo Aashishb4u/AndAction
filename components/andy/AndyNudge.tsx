@@ -100,7 +100,7 @@ export default function AndyNudge({ active, onAccept, onVisibleChange }: Props) 
           onAccept(nudge.query);
         }}
         aria-label={`Andy says: ${nudge.text}. Tap to chat.`}
-        className="relative block rounded-[22px] border-2 border-[#000000] bg-[#FFFFFF] px-4 py-3 text-left text-[13px] font-semibold leading-snug text-[#000000] shadow-[4px_4px_0_#000000] transition-transform hover:-translate-y-0.5"
+        className="relative block rounded-[22px] border-2 border-[#000000] bg-[#FFFFFF] px-4 py-3 text-left text-sm font-semibold leading-snug text-[#000000] shadow-[4px_4px_0_#000000] transition-transform hover:-translate-y-0.5"
       >
         {nudge.text}
         <span

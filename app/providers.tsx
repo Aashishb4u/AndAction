@@ -1,6 +1,7 @@
 "use client";
 
 import { LocationProvider } from "@/components/providers/location-provider";
+import LocationModal from "@/components/providers/LocationModal";
 import QueryProvider from "@/components/providers/query-provider";
 import { SessionProvider } from "next-auth/react";
 import { AndyProvider } from "@/components/andy/AndyProvider";
@@ -16,6 +17,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <AndyProvider>
             {children}
             <AndyWidget />
+            <LocationModal />
           </AndyProvider>
           <ToastContainer
             position="top-right"

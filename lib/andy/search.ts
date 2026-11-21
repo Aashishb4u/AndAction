@@ -2,14 +2,14 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getArtistTypeMatches } from "@/lib/artist-type-mapping";
 import { expandSearchTerm } from "@/lib/search-aliases";
-import { fetchArtistsWithProgressiveSearch, type NearbyArtist } from "@/lib/nearby-artists";
+import { calculateDistanceKm, normalizeIndiaLatLng } from "@/lib/nearby-artists";
 import { formatDisplayLabel, getArtishName } from "@/lib/utils";
 import type { AndyArtist, AndySearchFilters } from "./types";
 
 const MAX_RESULTS = 10;
-// Same defaults the home page rows use for /api/artists/nearby.
-const MIN_RESULTS = 10;
-const MAX_RADIUS_KM = 500;
+// shortcut: candidates are ranked in memory from a capped pool; move ranking into SQL if matching artists exceed this.
+const POOL_SIZE = 300;
+const PLACE_POOL_SIZE = 100;
 
 export type AndyLocation = { lat: number; lng: number };
 
@@ -20,52 +20,34 @@ const num = (value: unknown): number | null => {
   return Number.isFinite(n) && n >= 0 ? n : null;
 };
 
-const col = (name: string) => Prisma.raw(name);
-const ilikeAny = (column: Prisma.Sql, terms: string[]) =>
-  Prisma.sql`(${Prisma.join(terms.map((t) => Prisma.sql`${column} ILIKE ${`%${t}%`}`), " OR ")})`;
+type PriceState = "fit" | "unpriced" | "out";
 
-type Condition = { where: Prisma.ArtistWhereInput; sql: Prisma.Sql };
+const UNPRICED: Prisma.ArtistWhereInput = {
+  OR: [{ soloChargesFrom: null }, { soloChargesFrom: 0 }],
+};
 
-/**
- * Each filter is written twice, side by side: once as a Prisma filter (no-location search) and once as SQL
- * (the nearby radius search). Keep the two in step when you change one.
- */
-function buildConditions(filters: AndySearchFilters): Condition[] {
-  const out: Condition[] = [];
+/** Prisma filters for everything except place and budget. */
+function buildConditions(filters: AndySearchFilters): Prisma.ArtistWhereInput[] {
+  const out: Prisma.ArtistWhereInput[] = [];
 
   const service = clean(filters.service);
   if (service) {
     const terms = expandSearchTerm(service);
     out.push({
-      where: {
-        OR: terms.flatMap((term) => [
-          { stageName: { contains: term, mode: "insensitive" as const } },
-          { subArtistType: { contains: term, mode: "insensitive" as const } },
-          { performingEventType: { contains: term, mode: "insensitive" as const } },
-          { artistType: { contains: term, mode: "insensitive" as const } },
-        ]),
-      },
-      sql: Prisma.sql`(${Prisma.join(
-        [`a."stageName"`, `a."subArtistType"`, `a."performingEventType"`, `a."artistType"`].map((c) =>
-          ilikeAny(col(c), terms),
-        ),
-        " OR ",
-      )})`,
+      OR: terms.flatMap((term) => [
+        { stageName: { contains: term, mode: "insensitive" as const } },
+        { subArtistType: { contains: term, mode: "insensitive" as const } },
+        { performingEventType: { contains: term, mode: "insensitive" as const } },
+        { artistType: { contains: term, mode: "insensitive" as const } },
+      ]),
     });
   }
 
   // Category: the artist's main type, e.g. "Live Band" or "spiritual".
   const type = clean(filters.artist_type);
   if (type) {
-    const matches = getArtistTypeMatches(type);
     out.push({
-      where: {
-        OR: [
-          { artistType: { in: matches } },
-          { artistType: { contains: type, mode: "insensitive" } },
-        ],
-      },
-      sql: Prisma.sql`(a."artistType" IN (${Prisma.join(matches)}) OR a."artistType" ILIKE ${`%${type}%`})`,
+      OR: [{ artistType: { in: getArtistTypeMatches(type) } }, { artistType: { contains: type, mode: "insensitive" } }],
     });
   }
 
@@ -73,77 +55,40 @@ function buildConditions(filters: AndySearchFilters): Condition[] {
   // comma-separated string, so "contains" matches any of the artist's sub-categories.
   const subCategory = clean(filters.sub_category);
   if (subCategory) {
-    const terms = expandSearchTerm(subCategory);
     out.push({
-      where: {
-        OR: terms.map((term) => ({ subArtistType: { contains: term, mode: "insensitive" as const } })),
-      },
-      sql: ilikeAny(col(`a."subArtistType"`), terms),
+      OR: expandSearchTerm(subCategory).map((term) => ({
+        subArtistType: { contains: term, mode: "insensitive" as const },
+      })),
     });
   }
 
   const eventType = clean(filters.event_type);
-  if (eventType) {
-    out.push({
-      where: { performingEventType: { contains: eventType, mode: "insensitive" } },
-      sql: Prisma.sql`a."performingEventType" ILIKE ${`%${eventType}%`}`,
-    });
-  }
+  if (eventType) out.push({ performingEventType: { contains: eventType, mode: "insensitive" } });
 
   const language = clean(filters.language);
-  if (language) {
-    out.push({
-      where: { performingLanguage: { contains: language, mode: "insensitive" } },
-      sql: Prisma.sql`a."performingLanguage" ILIKE ${`%${language}%`}`,
-    });
-  }
-
-  const place = clean(filters.place);
-  if (place) {
-    out.push({
-      where: {
-        OR: [
-          { performingStates: { contains: place, mode: "insensitive" } },
-          { user: { is: { state: { contains: place, mode: "insensitive" } } } },
-          { user: { is: { city: { contains: place, mode: "insensitive" } } } },
-        ],
-      },
-      sql: Prisma.sql`(a."performingStates" ILIKE ${`%${place}%`} OR u.state ILIKE ${`%${place}%`} OR u.city ILIKE ${`%${place}%`})`,
-    });
-  }
-
-  const min = num(filters.budget_min);
-  const max = num(filters.budget_max);
-  if (min !== null || max !== null) {
-    // Same overlap rule as the main artist list: a fixed fee must sit inside the range, a fee range
-    // must overlap it. Artists with no price are left out.
-    const lower = min ?? 0;
-    const upper = max ?? Number.MAX_SAFE_INTEGER;
-    out.push({
-      where: {
-        OR: [
-          {
-            AND: [
-              { soloChargesTo: null },
-              { soloChargesFrom: { gte: lower } },
-              { soloChargesFrom: { lte: upper } },
-            ],
-          },
-          {
-            AND: [
-              { soloChargesTo: { not: null } },
-              { soloChargesFrom: { lte: upper } },
-              { soloChargesTo: { gte: lower } },
-            ],
-          },
-        ],
-      },
-      sql: Prisma.sql`((a."soloChargesTo" IS NULL AND a."soloChargesFrom" >= ${lower} AND a."soloChargesFrom" <= ${upper})
-        OR (a."soloChargesTo" IS NOT NULL AND a."soloChargesFrom" <= ${upper} AND a."soloChargesTo" >= ${lower}))`,
-    });
-  }
+  if (language) out.push({ performingLanguage: { contains: language, mode: "insensitive" } });
 
   return out;
+}
+
+const placeWhere = (place: string): Prisma.ArtistWhereInput => ({
+  OR: [
+    { performingStates: { contains: place, mode: "insensitive" } },
+    { user: { is: { state: { contains: place, mode: "insensitive" } } } },
+    { user: { is: { city: { contains: place, mode: "insensitive" } } } },
+  ],
+});
+
+/**
+ * Same overlap rule as the main artist list: a fixed fee must sit inside the range, a fee range must
+ * overlap it. Artists with no price are not "out of budget": they rank after the ones that fit.
+ */
+function priceState(from: unknown, to: unknown, min: number | null, max: number | null): PriceState {
+  const lo = num(from) ?? 0;
+  const hi = num(to) ?? lo;
+  if (!lo && !hi) return "unpriced";
+  if (min === null && max === null) return "fit";
+  return lo <= (max ?? Infinity) && hi >= (min ?? 0) ? "fit" : "out";
 }
 
 const toCard = (
@@ -160,76 +105,100 @@ const toCard = (
   distanceKm: extra.distanceKm != null ? Math.round(extra.distanceKm) : null,
 });
 
+const poolSelect = {
+  id: true,
+  profileImage: true,
+  stageName: true,
+  artistType: true,
+  subArtistType: true,
+  performingStates: true,
+  soloChargesFrom: true,
+  soloChargesTo: true,
+  user: {
+    select: { firstName: true, lastName: true, city: true, state: true, latitude: true, longitude: true },
+  },
+} satisfies Prisma.ArtistSelect;
+
 /**
  * Public artist search used by Andy. Every card shown in chat comes from here, never from model text.
  *
- * With the user's location (and no other city named), it uses the same radius-bucket logic as the
- * home page (lib/nearby-artists.ts): nearest first, widening 50 → 500 km until enough artists match.
- * Without it, it falls back to a plain filter search.
+ * Ranking, in order: (1) within the requested budget, then artists with no price listed;
+ * (2) artists in the named city; (3) nearest to the user's location (when known), else most recently updated.
+ * Artists priced outside the budget are dropped.
  */
 export async function searchArtistsForAndy(
   filters: AndySearchFilters,
   location?: AndyLocation | null,
 ): Promise<{ artists: AndyArtist[]; area: string | null }> {
-  const namedPlace = clean(filters.place);
-  const useGeo = !!location && !namedPlace;
-  // When geo is used the radius replaces the text place filter; a named city always wins over it.
-  const conditions = buildConditions(useGeo ? { ...filters, place: undefined } : filters);
+  const place = clean(filters.place);
+  const min = num(filters.budget_min);
+  const max = num(filters.budget_max);
+  const hasBudget = min !== null || max !== null;
 
-  const plainSearch = (take: number) =>
-    prisma.artist.findMany({
-      where: { AND: conditions.map((c) => c.where), user: { is: { role: "artist" } } },
-      take,
-      orderBy: { updatedAt: "desc" },
-      select: {
-        id: true,
-        profileImage: true,
-        stageName: true,
-        artistType: true,
-        subArtistType: true,
-        shortBio: true,
-        yearsOfExperience: true,
-        soloChargesFrom: true,
-        user: {
-          select: { id: true, firstName: true, lastName: true, avatar: true, city: true, state: true, latitude: true, longitude: true },
-        },
-      },
+  const base: Prisma.ArtistWhereInput[] = [{ user: { is: { role: "artist" } } }, ...buildConditions(filters)];
+  if (hasBudget) {
+    const lower = min ?? 0;
+    const upper = max ?? Number.MAX_SAFE_INTEGER;
+    base.push({
+      OR: [
+        UNPRICED,
+        { AND: [{ soloChargesTo: null }, { soloChargesFrom: { gte: lower } }, { soloChargesFrom: { lte: upper } }] },
+        { AND: [{ soloChargesTo: { not: null } }, { soloChargesFrom: { lte: upper } }, { soloChargesTo: { gte: lower } }] },
+      ],
     });
-
-  if (!useGeo) {
-    const rows = await plainSearch(MAX_RESULTS);
-    return {
-      artists: rows.map((r) => toCard(r, r.user, { startingPrice: num(r.soloChargesFrom) || null })),
-      area: namedPlace ? `around ${namedPlace}` : null,
-    };
   }
 
-  const { artists, metadata } = await fetchArtistsWithProgressiveSearch({
-    whereSql: Prisma.sql`u.role = 'artist'${conditions.length ? Prisma.sql` AND ${Prisma.join(conditions.map((c) => c.sql), " AND ")}` : Prisma.empty}`,
-    userLat: location!.lat,
-    userLng: location!.lng,
-    minResults: MIN_RESULTS,
-    maxRadius: MAX_RADIUS_KM,
-    limit: MAX_RESULTS,
-    fetchFallback: async () =>
-      (await plainSearch(50)).map<NearbyArtist>((r) => ({
-        id: r.id,
-        profileImage: r.profileImage,
-        stageName: r.stageName,
-        artistType: r.artistType,
-        subArtistType: r.subArtistType,
-        shortBio: r.shortBio,
-        yearsOfExperience: r.yearsOfExperience,
-        distance: null,
-        user: { ...r.user, latitude: num(r.user.latitude), longitude: num(r.user.longitude) },
-      })),
-  });
+  const find = (extra: Prisma.ArtistWhereInput[], take: number) =>
+    prisma.artist.findMany({
+      where: { AND: [...base, ...extra] },
+      take,
+      orderBy: { updatedAt: "desc" },
+      select: poolSelect,
+    });
+
+  // The named city is queried on its own so it cannot be cut off by the general pool.
+  const [inPlace, general] = await Promise.all([
+    place ? find([placeWhere(place)], PLACE_POOL_SIZE) : [],
+    find([], POOL_SIZE),
+  ]);
+
+  const needle = place.toLowerCase();
+  const seen = new Set<string>();
+  const ranked = [...inPlace, ...general]
+    .filter((r) => !seen.has(r.id) && !!seen.add(r.id))
+    .map((r) => {
+      const coords = normalizeIndiaLatLng(r.user.latitude, r.user.longitude);
+      const distance =
+        location && coords ? calculateDistanceKm(location.lat, location.lng, coords.lat, coords.lng) : NaN;
+      const inCity =
+        !!needle &&
+        [r.user.city, r.user.state, r.performingStates].some((v) => (v ?? "").toLowerCase().includes(needle));
+      return {
+        r,
+        price: priceState(r.soloChargesFrom, r.soloChargesTo, min, max),
+        inCity,
+        distance: Number.isFinite(distance) ? distance : null,
+      };
+    })
+    .filter((x) => x.price !== "out")
+    .sort(
+      (a, b) =>
+        Number(a.price === "unpriced") - Number(b.price === "unpriced") ||
+        Number(b.inCity) - Number(a.inCity) ||
+        (a.distance ?? Infinity) - (b.distance ?? Infinity),
+    )
+    .slice(0, MAX_RESULTS);
+
+  const area = place
+    ? `${place} first${location ? ", then nearest to the user" : ", then other cities"}`
+    : location
+      ? "nearest to the user first"
+      : null;
 
   return {
-    artists: artists.map((a) => toCard(a, a.user, { distanceKm: a.distance })),
-    area:
-      metadata.strategy === "nationwide"
-        ? "from across India (few matches nearby)"
-        : `within ${metadata.radiusUsed} km of the user`,
+    artists: ranked.map(({ r, distance }) =>
+      toCard(r, r.user, { startingPrice: num(r.soloChargesFrom) || null, distanceKm: distance }),
+    ),
+    area,
   };
 }
