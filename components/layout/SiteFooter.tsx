@@ -158,8 +158,8 @@ const SiteFooter = ({ padForBottomBar = true }: SiteFooterProps) => {
         <div className="mt-8 flex flex-col gap-2.5 border-t border-white/[0.06] pt-5 sm:mt-10 sm:flex-row sm:items-center sm:justify-between sm:pt-6">
           <p className="text-[11px] text-[#7F7F7F] sm:text-xs">© {year} ANDACTION. All rights reserved.</p>
           <p className="flex items-center gap-2 whitespace-nowrap text-[11px] text-[#9A9A9A] sm:text-xs">
-            <a href="mailto:official@andaction.com" className="hover:text-white">
-              official@andaction.com
+            <a href="mailto:official@andaction.in" className="hover:text-white">
+              official@andaction.in
             </a>
             <span aria-hidden="true" className="text-[#7F7F7F]">·</span>
             <a href="tel:+918595114889" className="hover:text-white">

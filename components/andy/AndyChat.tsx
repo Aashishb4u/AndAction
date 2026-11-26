@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import ArtistCard from "@/components/ui/ArtistCard";
 import AndyAvatar from "./AndyAvatar";
 import AndyMascot from "./AndyMascot";
-import { ANDY_GREETING, ANDY_STARTERS, useAndy } from "./AndyProvider";
+import { ANDY_GREETING, ANDY_GREETINGS, ANDY_STARTERS, useAndy } from "./AndyProvider";
 
 type Props = {
   /** Show starter chips above the first message (widget). The page shows them in a side panel. */
@@ -50,12 +50,16 @@ export default function AndyChat({ showStarters = false, autoFocus = false, show
             <p className="text-base text-[#9A9A9A]">Pick a suggestion or type what you need.</p>
           </div>
         )}
-        <div className="flex items-start gap-2.5">
-          <AndyAvatar />
-          <p className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/[0.07] px-4 py-3 text-base leading-relaxed text-white">
-            {ANDY_GREETING}
-          </p>
-        </div>
+        {messages.length === 0 ? (
+          <RotatingGreeting />
+        ) : (
+          <div className="flex items-start gap-2.5">
+            <AndyAvatar />
+            <p id="andy_greetings" className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/[0.07] px-4 py-3 text-base leading-relaxed text-white">
+              {ANDY_GREETING}
+            </p>
+          </div>
+        )}
 
         {messages.map((message) =>
           message.role === "user" ? (
@@ -78,7 +82,7 @@ export default function AndyChat({ showStarters = false, autoFocus = false, show
 
                 {message.artists && (
                   <div className="-mr-4 flex gap-3 overflow-x-auto pb-2 pr-4 [scrollbar-width:thin]">
-                    {message.artists.map((artist) => (
+                    {message.artists.map((artist, i) => (
                       <ArtistCard
                         key={artist.id}
                         id={artist.id}
@@ -86,6 +90,8 @@ export default function AndyChat({ showStarters = false, autoFocus = false, show
                         location={artist.location}
                         thumbnail={artist.image}
                         videoUrl=""
+                        optimizeImage
+                        eager={i < 3}
                         priceLabel={artist.startingPrice ? `From ₹${artist.startingPrice.toLocaleString("en-IN")}` : "Price on Request"}
                       />
                     ))}
@@ -152,6 +158,71 @@ export default function AndyChat({ showStarters = false, autoFocus = false, show
             </button>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+const TYPE_MS = 30;
+/** Typing dots shown before each greeting. */
+const DOTS_MS = 900;
+/** How long a fully typed greeting stays before the next one. */
+const GREETING_HOLD_MS = 10_000;
+
+/**
+ * Before the first message: Andy's greeting (#andy_greetings) changes on its own. Each one starts
+ * with typing dots, types itself out, then stays for 10 seconds. No chips under it.
+ */
+function RotatingGreeting() {
+  const [index, setIndex] = useState(0);
+  // -1 = typing dots; otherwise number of characters shown.
+  const [shown, setShown] = useState(-1);
+  const text = ANDY_GREETINGS[index];
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setShown(text.length);
+      return; // no animation, no rotation
+    }
+    const delay = shown < 0 ? DOTS_MS : shown < text.length ? TYPE_MS : GREETING_HOLD_MS;
+    const timer = window.setTimeout(() => {
+      if (shown < text.length) {
+        setShown(shown + 1);
+      } else {
+        setIndex((i) => (i + 1) % ANDY_GREETINGS.length);
+        setShown(-1);
+      }
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [shown, text]);
+
+  return (
+    <div className="flex items-start gap-2.5">
+      <AndyAvatar />
+      {shown < 0 ? (
+        <span className="flex gap-1 rounded-2xl rounded-tl-sm bg-white/[0.07] px-3.5 py-3" aria-hidden="true">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#9A9A9A]"
+              style={{ animationDelay: `${i * 0.15}s` }}
+            />
+          ))}
+        </span>
+      ) : (
+        <p
+          id="andy_greetings"
+          className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/[0.07] px-4 py-3 text-base leading-relaxed text-white"
+        >
+          {/* Screen readers get the whole greeting once, not every typed letter. */}
+          <span className="sr-only">{text}</span>
+          <span aria-hidden="true">
+            {text.slice(0, shown)}
+            {shown < text.length && (
+              <span className="ml-px inline-block h-4 w-px translate-y-0.5 animate-pulse bg-white" />
+            )}
+          </span>
+        </p>
       )}
     </div>
   );

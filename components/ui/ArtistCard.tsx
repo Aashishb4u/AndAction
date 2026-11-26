@@ -18,7 +18,14 @@ interface ArtistCardProps {
   /** Optional price line under the location, e.g. "From ₹10,000" or "Price on Request". */
   priceLabel?: string;
   className?: string;
+  /** Serve a resized WebP through next/image (Andy chat). Only for hosts allowed in next.config. */
+  optimizeImage?: boolean;
+  /** Load the image right away instead of lazily (first cards in view). */
+  eager?: boolean;
 }
+
+// Hosts listed in next.config images.remotePatterns; other hosts stay unoptimized.
+const OPTIMIZABLE = /^(\/|https:\/\/(media\.andaction\.in\/uploads\/|lh3\.googleusercontent\.com\/))/;
 
 const ArtistCard: React.FC<ArtistCardProps> = ({
   id,
@@ -28,6 +35,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   videoUrl,
   priceLabel,
   className = "",
+  optimizeImage = false,
+  eager = false,
 }) => {
   const router = useRouter();
   const { setReturnPath, setReturnTarget } = useNavigationHistory();
@@ -87,9 +96,11 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
           alt={name}
           fill
           className="object-cover transition-transform duration-500 hover:scale-110"
-          sizes="230px"
+          sizes={optimizeImage ? "(min-width: 768px) 190px, 150px" : "230px"}
           priority={false}
-          unoptimized
+          loading={eager ? "eager" : undefined}
+          fetchPriority={eager ? "high" : undefined}
+          unoptimized={!(optimizeImage && OPTIMIZABLE.test(imageSrc))}
           onLoad={handleImageLoadStateChange}
           onError={handleImageLoadStateChange}
         />

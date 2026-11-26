@@ -10,7 +10,7 @@ const SKIP_PREFIXES = ["/auth", "/shorts"];
 /** Global "Enable Location" popup. Andy waits for the answer (see AndyWidget). */
 export default function LocationModal() {
   const pathname = usePathname();
-  const { showLocationModal, isRequestingLocation, requestLocation, skipLocation } = useLocation();
+  const { showLocationModal, isRequestingLocation, requestLocation, skipLocation, isLocationBlocked } = useLocation();
 
   if (!showLocationModal || SKIP_PREFIXES.some((p) => pathname.startsWith(p))) return null;
 
@@ -25,7 +25,7 @@ export default function LocationModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-card border border-border-color rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
         {/* Modal Header with Icon */}
         <div className="pt-8 pb-4 px-6 text-center">
@@ -57,6 +57,11 @@ export default function LocationModal() {
             For better artist recommendations, please enable location
             access. This helps us show you artists near your area.
           </p>
+          {isLocationBlocked && (
+            <p className="mt-3 rounded-lg bg-white/5 px-3 py-2 text-sm text-text-light-gray">
+              Location is blocked in your browser. Allow it in your browser&apos;s site settings, then tap Enable Location.
+            </p>
+          )}
         </div>
 
         {/* Modal Actions */}

@@ -19,6 +19,10 @@ type LocationContextValue = {
   isRequestingLocation: boolean;
   requestLocation: (showLoader?: boolean) => void;
   skipLocation: () => void;
+  /** Show the Enable Location popup again, e.g. when Andy gets a "near me" query. */
+  openLocationModal: () => void;
+  /** The browser has location blocked for this site, so only its site settings can turn it on. */
+  isLocationBlocked: boolean;
 };
 
 const LocationContext = createContext<LocationContextValue | null>(null);
@@ -34,6 +38,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [isLocationResolved, setIsLocationResolved] = useState(false);
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+  const [isLocationBlocked, setIsLocationBlocked] = useState(false);
 
   const hasInitializedRef = useRef(false);
   const requestInFlightRef = useRef(false);
@@ -72,6 +77,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           };
 
           updateLocationState(nextLocation, true);
+          setIsLocationBlocked(false);
           sessionStorage.setItem("locationPermissionAsked", "allowed");
           sessionStorage.setItem(
             "userLocationCoords",
@@ -82,10 +88,14 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           requestInFlightRef.current = false;
         },
         (err) => {
-          console.error("Location permission denied", err);
+          // warn, not error: a refused permission is expected and must not open the Next.js dev overlay.
+          console.warn("Location unavailable:", err.message);
+          const blocked = err.code === err.PERMISSION_DENIED;
+          setIsLocationBlocked(blocked);
           updateLocationState(null, true);
           sessionStorage.setItem("locationPermissionAsked", "denied");
-          setShowLocationModal(false);
+          // Blocked in the browser: keep the popup open so its "allow it in site settings" note shows.
+          if (!blocked) setShowLocationModal(false);
           setIsRequestingLocation(false);
           requestInFlightRef.current = false;
         },
@@ -100,6 +110,42 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     setShowLocationModal(false);
     updateLocationState(null, true);
   }, [updateLocationState]);
+
+  const openLocationModal = useCallback(() => setShowLocationModal(true), []);
+
+  // The cached coordinates outlive the browser permission. When the user turns location off
+  // in browser settings, forget them so "near me" asks again; when it is turned back on, refresh.
+  useEffect(() => {
+    let status: PermissionStatus | null = null;
+    let cancelled = false;
+    const sync = (changed: boolean) => {
+      if (!status) return;
+      setIsLocationBlocked(status.state === "denied");
+      if (status.state === "granted") {
+        // Turned back on in settings: fetch fresh coordinates. On page load, keep the user's earlier choice.
+        if (changed) requestLocation();
+        return;
+      }
+      sessionStorage.removeItem("userLocationCoords");
+      if (sessionStorage.getItem("locationPermissionAsked") === "allowed") {
+        sessionStorage.setItem("locationPermissionAsked", "denied");
+      }
+      setLocation(null);
+    };
+    navigator.permissions
+      ?.query({ name: "geolocation" })
+      .then((result) => {
+        if (cancelled) return;
+        status = result;
+        status.onchange = () => sync(true);
+        sync(false);
+      })
+      .catch(() => {}); // Permissions API missing (older browsers): keep current behaviour.
+    return () => {
+      cancelled = true;
+      if (status) status.onchange = null;
+    };
+  }, [requestLocation]);
 
   useEffect(() => {
     if (hasInitializedRef.current) return;
@@ -157,6 +203,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       isRequestingLocation,
       requestLocation,
       skipLocation,
+      openLocationModal,
+      isLocationBlocked,
     }),
     [
       location,
@@ -165,6 +213,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       isRequestingLocation,
       requestLocation,
       skipLocation,
+      openLocationModal,
+      isLocationBlocked,
     ],
   );
 

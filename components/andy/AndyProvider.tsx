@@ -9,6 +9,14 @@ const STORAGE_KEY = "andy-chat-v1";
 export const ANDY_GREETING =
   "Hi, I'm Andy. Tell me what you need, like the service, your budget and the city, and I'll find artists for you.";
 
+/** Greetings Andy cycles through before the first message. Each one hints at what to ask him. */
+export const ANDY_GREETINGS = [
+  "Namaste ji! 🙏 I'm Andy, your full-time artist-finding jugaadu. Ask me for a Mata Ki Chowki in Delhi and watch the magic!",
+  "Jai Mata Di! 🔔 Jagran, chowki, Sunderkand Path... I know EVERY devotional artist in town. Go on, test me!",
+  "Arre wah, a party! 🎉 Birthday, sangeet or office bash? Tell me and I'll bring the DJ, the singer, the whole show!",
+  "Psst... tight budget? No tension! 😎 Say \"bhajan singer under ₹15,000\" and I'll find magic at your price.",
+];
+
 export const ANDY_STARTERS = [
   "Mata Ki Chowki in Delhi",
   "Singer for a wedding",
@@ -31,13 +39,16 @@ type AndyContextValue = {
 
 const AndyContext = createContext<AndyContextValue | null>(null);
 
+const NEAR_ME = /\b(near ?(me|by)|nearby|around me|close to me|my (area|location|city))\b|आस ?पास|पास में/i;
+
 const makeId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 export function AndyProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<AndyMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isWidgetOpen, setWidgetOpen] = useState(false);
-  const { location } = useLocation();
+  const { location, openLocationModal } = useLocation();
+  const askedLocation = useRef(false);
   const locationRef = useRef(location);
   locationRef.current = location;
   const messagesRef = useRef<AndyMessage[]>([]);
@@ -71,6 +82,12 @@ export function AndyProvider({ children }: { children: React.ReactNode }) {
     async (text: string) => {
       const content = text.trim().slice(0, 500);
       if (!content || loadingRef.current) return;
+
+      // No location yet: ask for it on a "near me" query, and once on the first query of any kind.
+      if (!locationRef.current && (NEAR_ME.test(content) || !askedLocation.current)) {
+        askedLocation.current = true;
+        openLocationModal();
+      }
 
       loadingRef.current = true;
       setIsLoading(true);
@@ -118,7 +135,7 @@ export function AndyProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [commit],
+    [commit, openLocationModal],
   );
 
   const reset = useCallback(() => commit([]), [commit]);
