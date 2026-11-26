@@ -17,15 +17,22 @@ export const ANDY_GREETINGS = [
   "Psst... tight budget? No tension! 😎 Say \"bhajan singer under ₹15,000\" and I'll find magic at your price.",
 ];
 
+// One chip per category, mixed so neighbouring chips are never the same kind of artist.
 export const ANDY_STARTERS = [
-  "Mata Ki Chowki in Delhi",
-  "Singer for a wedding",
-  "Bhajan Sandhya under ₹25,000",
-  "Sunderkand Path at home",
-  "Khatu Shyam bhajan singer",
-  "Bhagwati Jagran for society",
+  "Live band for a wedding",
   "DJ for a birthday party",
+  "Mata Ki Chowki in Delhi",
   "Anchor for a corporate event",
+  "Bollywood singer for a sangeet",
+  "Magician for a kids' party",
+  "Dance group for a wedding",
+  "Comedian for an office party",
+  "Sunderkand Path at home",
+  "Dhol player for a baraat",
+  "Folk artist for a cultural event",
+  "Motivational speaker for a seminar",
+  "DJ based band for a reception",
+  "Model for a fashion show",
 ];
 
 type AndyContextValue = {
